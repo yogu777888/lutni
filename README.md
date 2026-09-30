@@ -59,10 +59,14 @@ SSTATS_MOCK=1 npm run dev        # http://localhost:3000
 ## Подключение реального SStats API
 
 ```bash
-cp .env.example .env.local       # SSTATS_MOCK=0, при желании SSTATS_API_KEY
-npm run inspect-api              # проверка доступа + сырые ответы в scripts/samples/
+cp .env.example .env.local       # SSTATS_MOCK=0 и SSTATS_API_KEY=<ваш ключ>
+npm run inspect-api              # проверит ключ, доступ и сохранит сырые ответы в scripts/samples/
 npm run build && npm start
 ```
+
+Ключ храните только в `.env.local` (локально) или `.env` (на сервере) — оба файла в `.gitignore`
+и не попадают ни в репозиторий, ни в Docker-образ. С ключом сайт по умолчанию делает до 60 запросов
+в минуту (`SSTATS_RPM`); если квота ключа больше — поднимите значение.
 
 > Код разбора рынков написан по OpenAPI-спецификации SStats и терпим к разным
 > названиям («Match Winner» / «1X2» / «Исход», «Over 2.5» / «ТБ(2.5)» и т.п.), но на живых

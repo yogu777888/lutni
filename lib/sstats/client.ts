@@ -8,13 +8,14 @@ import type { ApiEnvelope } from './types'
  * Env:
  *  SSTATS_API_URL — базовый адрес (по умолчанию https://api.sstats.net)
  *  SSTATS_API_KEY — ключ (передаётся как ?apikey=…); без ключа лимит 30 запросов/мин на IP
- *  SSTATS_RPM     — наш собственный потолок запросов в минуту (по умолчанию 25 без ключа, 100 с ключом)
+ *  SSTATS_RPM     — наш собственный потолок запросов в минуту (по умолчанию 25 без ключа, 60 с ключом;
+ *                   если квота вашего ключа выше — поднимите, при ответе 429 клиент сам притормозит)
  *  SSTATS_MOCK=1  — демо-режим без сети (синтетические данные)
  */
 const BASE = (process.env.SSTATS_API_URL || 'https://api.sstats.net').replace(/\/+$/, '')
 const API_KEY = process.env.SSTATS_API_KEY || ''
 export const IS_MOCK = process.env.SSTATS_MOCK === '1'
-const RPM = Number(process.env.SSTATS_RPM || (API_KEY ? 100 : 25))
+const RPM = Number(process.env.SSTATS_RPM || (API_KEY ? 60 : 25))
 
 export const limiter = singleton(
   'limiter',

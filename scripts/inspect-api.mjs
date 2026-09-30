@@ -10,14 +10,37 @@
  * по ним легко поправить разбор рынков (lib/odds.ts) и сопоставление
  * букмекеров с партнёрами (config/bookmakers.ts → apiNames).
  */
+import { existsSync, readFileSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const HERE = path.dirname(fileURLToPath(import.meta.url))
+const ROOT = path.resolve(HERE, '..')
+
+/** Подхватываем .env.local и .env, как это делает Next.js (уже заданные переменные не трогаем). */
+function loadEnvFile(file) {
+  const p = path.join(ROOT, file)
+  if (!existsSync(p)) return
+  const buf = readFileSync(p)
+  // файл, сохранённый в UTF-16 (например, `echo > .env.local` в старом PowerShell)
+  const text = buf[0] === 0xff && buf[1] === 0xfe ? buf.toString('utf16le') : buf.toString('utf8')
+  for (const raw of text.replace(/^\uFEFF/, '').split(/\r?\n/)) {
+    const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(raw)
+    if (!m || raw.trim().startsWith('#')) continue
+    const value = m[2].replace(/^(['"])(.*)\1$/, '$2')
+    if (process.env[m[1]] === undefined) process.env[m[1]] = value
+  }
+}
+loadEnvFile('.env.local')
+loadEnvFile('.env')
 
 const BASE = (process.env.SSTATS_API_URL || 'https://api.sstats.net').replace(/\/+$/, '')
 const KEY = process.env.SSTATS_API_KEY || ''
-const OUT = path.join(path.dirname(new URL(import.meta.url).pathname), 'samples')
+const OUT = path.join(HERE, 'samples')
 
-async function get(pathname, params = {}) {
+/** GET к API. Ключ уходит только в запрос: в консоль и в файлы он не пишется. */
+async function get(pathname, params = {}, { save = true } = {}) {
   const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''))
   if (KEY) qs.set('apikey', KEY)
   const url = `${BASE}${pathname}?${qs}`
@@ -30,9 +53,11 @@ async function get(pathname, params = {}) {
     throw new Error(`${pathname}: HTTP ${res.status}, не JSON: ${text.slice(0, 200)}`)
   }
   if (!res.ok) throw new Error(`${pathname}: HTTP ${res.status} ${JSON.stringify(json).slice(0, 200)}`)
-  const name = pathname.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '')
-  await mkdir(OUT, { recursive: true })
-  await writeFile(path.join(OUT, `${name}.json`), JSON.stringify(json, null, 2))
+  if (save) {
+    const name = pathname.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '')
+    await mkdir(OUT, { recursive: true })
+    await writeFile(path.join(OUT, `${name}.json`), JSON.stringify(json, null, 2))
+  }
   return Array.isArray(json) ? json : (json.data ?? json)
 }
 
@@ -40,6 +65,15 @@ const line = (s = '') => console.log(s)
 const head = (s) => line(`\n\x1b[1m━━ ${s}\x1b[0m`)
 
 try {
+  head('Ключ API')
+  if (KEY) {
+    // ответ содержит сам ключ — поэтому не сохраняем его в samples/
+    const acc = await get('/Account/Info', {}, { save: false })
+    line(`Ключ принят, аккаунт: ${acc?.userName || '(без имени)'}`)
+  } else {
+    line('SSTATS_API_KEY не задан — работаем без ключа (лимит 30 запросов в минуту с IP)')
+  }
+
   head('Букмекеры (/Odds/bookmakers)')
   const books = await get('/Odds/bookmakers')
   line(books.map((b) => `${b.id}: ${b.bookmakerName}`).join('\n'))
