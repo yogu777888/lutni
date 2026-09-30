@@ -1,0 +1,99 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink: #07090d;
+  --color-panel: #0d1218;
+  --color-panel-2: #131a23;
+  --color-panel-3: #1a2330;
+  --color-edge: #1e2833;
+  --color-edge-2: #2a3644;
+  --color-fg: #e9eef4;
+  --color-dim: #8b98a9;
+  --color-mute: #5d6b7c;
+  --color-acid: #c8ff2e;
+  --color-acid-ink: #0a0d05;
+  --color-live: #ff3d5e;
+  --color-win: #2fd27a;
+  --color-draw: #f2c233;
+  --color-loss: #ff5a5f;
+
+  --font-sans: 'Manrope Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Unbounded Variable', 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --animate-pulse-live: pulse-live 1.6s ease-in-out infinite;
+  @keyframes pulse-live {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: var(--color-ink);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-feature-settings: 'tnum' 1, 'cv11' 1;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: var(--color-acid);
+    color: var(--color-acid-ink);
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-acid);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  details > summary {
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+@layer components {
+  .card {
+    background: var(--color-panel);
+    border: 1px solid var(--color-edge);
+    border-radius: 16px;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  /* мягкая сетка-«поле» на фоне героя */
+  .pitch-bg {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgb(200 255 46 / 0.10), transparent 60%),
+      linear-gradient(to right, rgb(255 255 255 / 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.03) 1px, transparent 1px);
+    background-size:
+      auto,
+      32px 32px,
+      32px 32px;
+  }
+  .prose-ru p {
+    line-height: 1.7;
+    color: color-mix(in oklab, var(--color-fg) 88%, transparent);
+  }
+}

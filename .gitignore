@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+next-env.d.ts
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+# кэш ответов API и лог кликов
+.cache
+.data
+npm-debug.log*
+.DS_Store
+scripts/samples

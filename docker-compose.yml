@@ -1,0 +1,16 @@
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      # кэш ответов API (переживает перезапуски — бережёт лимит запросов)
+      - cache:/app/.cache
+      # журнал переходов к букмекерам
+      - data:/app/.data
+
+volumes:
+  cache:
+  data:
