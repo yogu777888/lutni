@@ -1,4 +1,3 @@
-const PALETTE = ['#2d6cdf', '#e0463e', '#16a34a', '#9333ea', '#ea8a0c', '#0891b2', '#db2777', '#65a30d', '#4f46e5', '#b45309']
 const NOISE = /^(fc|cf|sc|ac|as|afc|fk|sv|vfl|vfb|tsg|ssc|ss|cd|ud|rc|ogc|1\.)$/i
 
 export function initials(name: string): string {
@@ -7,19 +6,27 @@ export function initials(name: string): string {
   return (words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2)).toUpperCase()
 }
 
-export function colorFor(name: string): string {
+function hue(name: string): number {
   let h = 0
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0
-  return PALETTE[h % PALETTE.length]
+  return h % 360
 }
 
-/** Цветная монограмма вместо логотипа. */
+/** Приглушённая монограмма вместо логотипа: разные команды различимы, но не пестрят. */
 export function Monogram({ name, size }: { name: string; size: number }) {
+  const h = hue(name)
   return (
     <span
       aria-hidden
-      className="inline-flex shrink-0 select-none items-center justify-center rounded-full font-bold text-white/95 ring-1 ring-white/10"
-      style={{ width: size, height: size, background: colorFor(name), fontSize: Math.round(size * 0.38) }}
+      className="inline-flex shrink-0 select-none items-center justify-center rounded-full font-bold ring-1 ring-inset ring-white/10"
+      style={{
+        width: size,
+        height: size,
+        background: `hsl(${h} 22% 20%)`,
+        color: `hsl(${h} 45% 80%)`,
+        fontSize: Math.max(8, Math.round(size * 0.36)),
+        letterSpacing: '-0.02em',
+      }}
     >
       {initials(name)}
     </span>

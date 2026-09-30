@@ -1,7 +1,14 @@
 import type { Partner } from '@/config/bookmakers'
 
-/** Маркировка рекламы: «Реклама · рекламодатель · erid». Токен выдаёт партнёрка. */
+/**
+ * Маркировка рекламы: «Реклама · рекламодатель · erid» (токен выдаёт партнёрка).
+ * Пометка должна быть заметной — поэтому не мельче 11px и нормальный контраст.
+ */
 export function AdMark({ partner, className = '' }: { partner: Partner; className?: string }) {
-  const parts = ['Реклама', partner.ad.advertiser, partner.ad.erid ? `erid: ${partner.ad.erid}` : ''].filter(Boolean)
-  return <p className={`text-[10px] leading-tight text-mute ${className}`}>{parts.join(' · ')} · 18+</p>
+  const rest = [partner.ad.advertiser, partner.ad.erid ? `erid: ${partner.ad.erid}` : '', '18+'].filter(Boolean)
+  return (
+    <p className={`text-[11px] leading-snug text-dim ${className}`}>
+      <span className="font-semibold text-fg/80">Реклама</span> · {rest.join(' · ')}
+    </p>
+  )
 }

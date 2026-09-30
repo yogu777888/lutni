@@ -1,29 +1,23 @@
 import Link from 'next/link'
 import { TAG_BY_SLUG } from '@/lib/tags'
+import { TagLabel, tagChipClass } from './TagPill'
 
-export function TagStrip({ counts, title = 'Теги дня' }: { counts: [string, number][]; title?: string }) {
+export function TagStrip({ counts }: { counts: [string, number][] }) {
   if (!counts.length) return null
   return (
-    <div className="mb-5">
-      <div className="mb-2 text-xs font-bold uppercase tracking-wider text-mute">{title}</div>
-      <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-        {counts.map(([slug, n]) => {
-          const t = TAG_BY_SLUG.get(slug)
-          if (!t) return null
-          return (
-            <Link
-              key={slug}
-              href={`/tag/${slug}`}
-              prefetch={false}
-              title={t.hint}
-              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-bold ring-1 ring-inset transition hover:brightness-125 ${t.tone}`}
-            >
-              {t.label}
-              <span className="num rounded-full bg-black/30 px-1.5 text-[11px] font-semibold">{n}</span>
-            </Link>
-          )
-        })}
-      </div>
-    </div>
+    <nav aria-label="Теги дня" className="scrollbar-none -mx-4 mb-5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+      {counts.map(([slug, n]) => {
+        const t = TAG_BY_SLUG.get(slug)
+        if (!t) return null
+        return (
+          <Link key={slug} href={`/tag/${slug}`} prefetch={false} title={t.hint} className={`${tagChipClass(t.kind, 'md')} shrink-0 gap-2 transition hover:brightness-110`}>
+            <span>
+              <TagLabel tag={t} />
+            </span>
+            <span className={`num text-[12px] ${t.kind === 'accent' ? 'text-acid-ink/60' : 'text-dim'}`}>{n}</span>
+          </Link>
+        )
+      })}
+    </nav>
   )
 }

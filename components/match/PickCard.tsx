@@ -40,7 +40,7 @@ export function PickCard({ pick, match }: { pick: Pick; match: Match }) {
         </div>
         <div className="rounded-xl bg-panel-2 px-2 py-2.5">
           <dt className="text-[11px] text-dim">Перевес</dt>
-          <dd className={`num mt-0.5 text-lg font-bold ${ev != null && ev > 0 ? 'text-emerald-300' : 'text-dim'}`}>
+          <dd className={`num mt-0.5 text-lg font-bold ${ev != null && ev > 0 ? 'text-acid' : 'text-dim'}`}>
             {ev != null ? signedPct(ev) : '—'}
           </dd>
         </div>

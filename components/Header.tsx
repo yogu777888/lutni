@@ -15,14 +15,14 @@ const NAV = [
 export function Header() {
   const partner = primaryPartner()
   return (
-    <header className="sticky top-0 z-40 border-b border-edge bg-ink/85 backdrop-blur-md supports-[backdrop-filter]:bg-ink/70">
+    <header className="sticky top-0 z-40 border-b border-edge bg-ink/90 backdrop-blur-md supports-[backdrop-filter]:bg-ink/75">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
-        <Link href="/" className="shrink-0 text-xl" aria-label="tag.bet — на главную">
-          <Logo />
+        <Link href="/" className="shrink-0 text-[21px]" aria-label="tag.bet — на главную">
+          <Logo size={30} />
         </Link>
         <nav aria-label="Основное меню" className="hidden items-center gap-1 md:flex">
           {NAV.map((n) => (
-            <Link key={n.href} href={n.href} className="rounded-lg px-3 py-1.5 text-sm font-semibold text-dim transition hover:bg-panel-2 hover:text-fg">
+            <Link key={n.href} href={n.href} className="rounded-lg px-3 py-1.5 text-[14px] font-medium text-dim transition hover:bg-panel-2 hover:text-fg">
               {n.label}
             </Link>
           ))}
@@ -40,7 +40,7 @@ export function Header() {
       </div>
       <nav aria-label="Основное меню" className="scrollbar-none flex gap-1 overflow-x-auto border-t border-edge/60 px-3 py-1.5 md:hidden">
         {NAV.map((n) => (
-          <Link key={n.href} href={n.href} className="shrink-0 rounded-lg px-3 py-1 text-[13px] font-semibold text-dim hover:text-fg">
+          <Link key={n.href} href={n.href} className="shrink-0 rounded-lg px-3 py-1 text-[13px] font-medium text-dim hover:text-fg">
             {n.label}
           </Link>
         ))}

@@ -1,24 +1,28 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-ink: #07090d;
-  --color-panel: #0d1218;
-  --color-panel-2: #131a23;
-  --color-panel-3: #1a2330;
-  --color-edge: #1e2833;
-  --color-edge-2: #2a3644;
-  --color-fg: #e9eef4;
-  --color-dim: #8b98a9;
-  --color-mute: #5d6b7c;
+  /* фон и поверхности (имя ink, не base: в Tailwind v4 text-base — размер шрифта) */
+  --color-ink: #090c10;
+  --color-panel: #0f1419;
+  --color-panel-2: #151b22;
+  --color-panel-3: #1c242d;
+  --color-edge: #1d2630;
+  --color-edge-2: #2a3541;
+  /* текст */
+  --color-fg: #eef2f5;
+  --color-dim: #97a3b0;
+  --color-mute: #6b7784;
+  /* бренд и смысловые цвета: лайм — деньги и действие, красный — live, оранжевый — движение линии */
   --color-acid: #c8ff2e;
-  --color-acid-ink: #0a0d05;
-  --color-live: #ff3d5e;
+  --color-acid-ink: #0b0e05;
+  --color-live: #ff3b5c;
+  --color-hot: #ff8a3d;
   --color-win: #2fd27a;
   --color-draw: #f2c233;
   --color-loss: #ff5a5f;
 
-  --font-sans: 'Manrope Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Unbounded Variable', 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   --animate-pulse-live: pulse-live 1.6s ease-in-out infinite;
   @keyframes pulse-live {
@@ -42,8 +46,12 @@
     background: var(--color-ink);
     color: var(--color-fg);
     font-family: var(--font-sans);
-    font-feature-settings: 'tnum' 1, 'cv11' 1;
     text-rendering: optimizeLegibility;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.022em;
   }
   ::selection {
     background: var(--color-acid);
@@ -72,6 +80,7 @@
     border: 1px solid var(--color-edge);
     border-radius: 16px;
   }
+  /* моноширинные цифры: коэффициенты и счёт не «прыгают» */
   .num {
     font-variant-numeric: tabular-nums;
   }
@@ -81,16 +90,9 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
-  /* мягкая сетка-«поле» на фоне героя */
+  /* едва заметная подсветка сверху у шапок страниц */
   .pitch-bg {
-    background-image:
-      radial-gradient(ellipse 80% 60% at 50% -10%, rgb(200 255 46 / 0.10), transparent 60%),
-      linear-gradient(to right, rgb(255 255 255 / 0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.03) 1px, transparent 1px);
-    background-size:
-      auto,
-      32px 32px,
-      32px 32px;
+    background-image: linear-gradient(180deg, rgb(200 255 46 / 0.045), transparent 65%);
   }
   .prose-ru p {
     line-height: 1.7;

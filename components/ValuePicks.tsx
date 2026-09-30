@@ -16,7 +16,7 @@ export function ValuePicks({ items, title = 'Value дня' }: { items: FeedItem[
           const p = summary!.pick!
           const partner = p.partnerSlug ? getPartner(p.partnerSlug) : undefined
           return (
-            <div key={m.id} className="flex flex-col rounded-xl bg-panel-2 p-3 ring-1 ring-inset ring-emerald-400/20">
+            <div key={m.id} className="flex flex-col rounded-xl bg-panel-2 p-3 ring-1 ring-inset ring-acid/25">
               <Link href={matchHref(m)} prefetch={false} className="text-[13px] font-semibold hover:text-acid">
                 {m.home.name} — {m.away.name}
               </Link>
@@ -27,7 +27,7 @@ export function ValuePicks({ items, title = 'Value дня' }: { items: FeedItem[
                 <div>
                   <div className="font-display text-lg font-bold leading-none">{p.label}</div>
                   <div className="mt-1 text-[11px] text-dim">
-                    вероятность {pct(p.prob)} · <span className="font-bold text-emerald-300">+{((p.ev ?? 0) * 100).toFixed(1)}%</span>
+                    вероятность {pct(p.prob)} · <span className="font-bold text-acid">+{((p.ev ?? 0) * 100).toFixed(1)}%</span>
                   </div>
                 </div>
                 {partner && p.odd ? (

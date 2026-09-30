@@ -54,13 +54,27 @@ const norm = (s: string) =>
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
 
-/** Позиция лиги в приоритетном списке или -1. */
+const INTERNATIONAL = new Set(['world', 'europe', 'international', ''])
+
+/** «UEFA Champions League» = «Champions League», «UEFA Europa Conference League» = «Conference League». */
+const canon = (name: string) =>
+  norm(name)
+    .replace(/^uefa /, '')
+    .replace(/^fifa /, '')
+    .replace('europa conference', 'conference')
+
+function sameCountry(a: string, b: string) {
+  const x = norm(a)
+  const y = norm(b)
+  return x === y || (INTERNATIONAL.has(x) && INTERNATIONAL.has(y))
+}
+
+/** Позиция лиги в приоритетном списке или -1: по ID, иначе по названию и стране. */
 export function featuredRank(league: { id: number; name: string; country?: string }): number {
   const byId = FEATURED_LEAGUES.findIndex((l) => l.id === league.id)
   if (byId >= 0) return byId
-  const n = norm(league.name)
-  const c = norm(league.country ?? '')
-  return FEATURED_LEAGUES.findIndex((l) => l.name && norm(l.name) === n && norm(l.country) === c)
+  const n = canon(league.name)
+  return FEATURED_LEAGUES.findIndex((l) => l.name && canon(l.name) === n && sameCountry(l.country, league.country ?? ''))
 }
 
 export function isFeatured(league: { id: number; name: string; country?: string }): boolean {
@@ -70,4 +84,17 @@ export function isFeatured(league: { id: number; name: string; country?: string 
 export function featuredInfo(league: { id: number; name: string; country?: string }) {
   const i = featuredRank(league)
   return i >= 0 ? FEATURED_LEAGUES[i] : undefined
+}
+
+/** Порядок стран для «других турниров»: сначала то, что интереснее русскоязычной аудитории. */
+const COUNTRY_ORDER = [
+  'russia', 'england', 'spain', 'italy', 'germany', 'france', 'world', 'europe', 'international', 'netherlands',
+  'portugal', 'turkey', 'belgium', 'scotland', 'ukraine', 'belarus', 'kazakhstan', 'uzbekistan', 'armenia',
+  'azerbaijan', 'georgia', 'brazil', 'argentina', 'usa', 'saudi arabia', 'austria', 'switzerland', 'denmark',
+  'sweden', 'norway', 'poland', 'czech republic', 'greece', 'croatia', 'serbia',
+]
+
+export function countryRank(country: string | undefined): number {
+  const i = COUNTRY_ORDER.indexOf(norm(country ?? ''))
+  return i < 0 ? COUNTRY_ORDER.length : i
 }

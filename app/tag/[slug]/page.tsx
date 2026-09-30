@@ -64,7 +64,7 @@ export default async function TagPage({ params }: Props) {
       </div>
 
       <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="font-display text-base font-semibold">
+        <h2 className="text-base font-bold">
           {hits.length ? pluralN(hits.length, ['матч', 'матча', 'матчей']) : 'Матчей пока нет'}
         </h2>
         <span className="text-xs text-dim">сильные сигналы — выше</span>

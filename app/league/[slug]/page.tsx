@@ -70,7 +70,7 @@ export default async function LeaguePage({ params }: Props) {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-5">
           <section className="card overflow-hidden">
-            <h2 className="border-b border-edge px-4 py-3 font-display text-[15px] font-semibold">Ближайшие матчи</h2>
+            <h2 className="border-b border-edge px-4 py-3 text-[15px] font-bold">Ближайшие матчи</h2>
             {upcoming.length ? (
               <div className="divide-y divide-edge/70">
                 {upcoming.map((m, i) => {
@@ -100,7 +100,7 @@ export default async function LeaguePage({ params }: Props) {
           ) : null}
           {results.length ? (
             <section className="card overflow-hidden">
-              <h2 className="border-b border-edge px-4 py-3 font-display text-[15px] font-semibold">Последние результаты</h2>
+              <h2 className="border-b border-edge px-4 py-3 text-[15px] font-bold">Последние результаты</h2>
               <div className="divide-y divide-edge/70">
                 {results.map((m) => (
                   <MatchRow key={m.id} m={m} tags={[]} />

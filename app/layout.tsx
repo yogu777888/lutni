@@ -1,5 +1,4 @@
-import '@fontsource-variable/manrope'
-import '@fontsource-variable/unbounded'
+import '@fontsource-variable/onest'
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { DemoBanner } from '@/components/DemoBanner'

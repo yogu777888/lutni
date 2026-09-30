@@ -235,7 +235,7 @@ export default async function MatchPage({ params }: Props) {
 
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <section className="card p-4">
-            <h2 className="mb-3 font-display text-[15px] font-semibold">Где поставить</h2>
+            <h2 className="mb-3 text-[15px] font-bold">Где поставить</h2>
             <div className="space-y-2.5">
               {PARTNERS.slice(0, 3).map((p, i) => (
                 <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} />
@@ -244,10 +244,10 @@ export default async function MatchPage({ params }: Props) {
           </section>
           {related.length ? (
             <section className="card overflow-hidden">
-              <h2 className="border-b border-edge px-4 py-3 font-display text-[15px] font-semibold">Другие матчи</h2>
+              <h2 className="border-b border-edge px-4 py-3 text-[15px] font-bold">Другие матчи</h2>
               <div className="divide-y divide-edge/70">
                 {related.map((o) => (
-                  <MatchRow key={o.id} m={o} tags={[]} />
+                  <MatchRow key={o.id} m={o} tags={[]} compact showLeague={o.league.id !== m.league.id} />
                 ))}
               </div>
             </section>

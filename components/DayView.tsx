@@ -1,15 +1,16 @@
 import Link from 'next/link'
-import { featuredRank } from '@/config/leagues'
+import { countryRank, featuredRank } from '@/config/leagues'
 import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { dayLabel, diffDays, formatDayMonth, plural, pluralN, ymdToNoonTs } from '@/lib/format'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
-import { LeagueBlock } from './LeagueBlock'
+import { LeagueBlock, LiveBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
 import { TagStrip } from './TagStrip'
 import { ValuePicks } from './ValuePicks'
 
 const OTHER_LIMIT = 160
+const LIVE_LIMIT = 6
 
 export function dayTitle(ymd: string, today: string) {
   const d = diffDays(ymd, today)
@@ -19,6 +20,8 @@ export function dayTitle(ymd: string, today: string) {
   if (d < 0) return `Футбол ${date}: результаты матчей`
   return `Футбол ${date}: ${dayLabel(ymd, today).split(',')[0]}`
 }
+
+const hasOdds = (items: FeedItem[]) => items.some((i) => i.match.odds)
 
 export async function DayView({ ymd, today }: { ymd: string; today: string }) {
   let matches: Match[] = []
@@ -40,10 +43,11 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
   const featured = [...groups.values()].filter((g) => g.rank >= 0).sort((a, b) => a.rank - b.rank)
   const othersAll = [...groups.values()]
     .filter((g) => g.rank < 0)
-    // сначала турниры с коэффициентами — они интереснее для ставок
+    // сначала страны, интересные аудитории, внутри — турниры с линией
     .sort(
       (a, b) =>
-        Number(b.items.some((i) => i.match.odds)) - Number(a.items.some((i) => i.match.odds)) ||
+        countryRank(a.league.country) - countryRank(b.league.country) ||
+        Number(hasOdds(b.items)) - Number(hasOdds(a.items)) ||
         a.league.name.localeCompare(b.league.name, 'ru'),
     )
   let budget = OTHER_LIMIT
@@ -65,22 +69,34 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
     .filter((i) => i.summary?.pick?.kind === 'value' && i.match.status === 'scheduled')
     .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
     .slice(0, 4)
-  const live = items.filter((i) => i.match.status === 'live').length
+
+  const liveAll = items.filter((i) => i.match.status === 'live' || i.match.status === 'suspended')
+  const rank = (i: FeedItem) => {
+    const r = featuredRank(i.match.league)
+    return r < 0 ? 100 + countryRank(i.match.league.country) : r
+  }
+  const liveTop = [...liveAll].sort((a, b) => rank(a) - rank(b) || Number(Boolean(b.match.odds)) - Number(Boolean(a.match.odds))).slice(0, LIVE_LIMIT)
   const featuredCount = featured.reduce((s, g) => s + g.items.length, 0)
+
+  const summary = matches.length
+    ? [
+        pluralN(matches.length, ['матч', 'матча', 'матчей']),
+        featuredCount ? `${featuredCount} — в топ-турнирах` : null,
+        liveAll.length ? `${liveAll.length} ${plural(liveAll.length, ['идёт', 'идут', 'идут'])} сейчас` : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : 'Коэффициенты, теги ставок и прогнозы на футбол'
 
   return (
     <>
-      <div className="pitch-bg -mx-4 mb-5 border-b border-edge px-4 pb-5 pt-3 sm:mx-0 sm:rounded-3xl sm:border sm:p-6">
-        <h1 className="font-display text-[22px] font-bold leading-tight tracking-tight sm:text-3xl">{dayTitle(ymd, today)}</h1>
-        <p className="mt-2 text-sm text-dim">
-          {matches.length
-            ? `${pluralN(matches.length, ['матч', 'матча', 'матчей'])}, ${featuredCount} — в топ-турнирах${live ? ` · ${live} ${plural(live, ['идёт', 'идут', 'идут'])} сейчас` : ''}. Коэффициенты, теги и прогнозы обновляются автоматически.`
-            : 'Коэффициенты, теги ставок и прогнозы на футбол.'}
-        </p>
+      <header className="mb-5">
+        <h1 className="text-[24px] font-extrabold leading-tight sm:text-[30px]">{dayTitle(ymd, today)}</h1>
+        <p className="mt-1 text-sm text-dim">{summary}</p>
         <div className="mt-4">
           <DateTabs active={ymd} today={today} />
         </div>
-      </div>
+      </header>
 
       <TagStrip counts={tagCounts} />
 
@@ -91,15 +107,16 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
               Не удалось загрузить матчи: источник данных временно недоступен. Обновите страницу через минуту.
             </div>
           ) : null}
+          {liveTop.length ? <LiveBlock items={liveTop} total={liveAll.length} /> : null}
           <ValuePicks items={values} />
           {featured.map((g) => (
             <LeagueBlock key={g.league.id} league={g.league} items={g.items} featured />
           ))}
           {others.length ? (
             <details className="card group overflow-hidden" open={!featured.length}>
-              <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-bold hover:bg-panel-2">
-                <span>Другие турниры</span>
-                <span className="flex items-center gap-2 text-xs font-semibold text-dim">
+              <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-[14px] font-bold hover:bg-panel-2">
+                <span>{featured.length ? 'Другие турниры' : 'Все турниры'}</span>
+                <span className="flex items-center gap-2 text-[12px] font-medium text-dim">
                   {pluralN(totalOthers, ['матч', 'матча', 'матчей'])}
                   <span className="transition group-open:rotate-180">▾</span>
                 </span>

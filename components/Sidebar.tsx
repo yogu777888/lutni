@@ -2,13 +2,14 @@ import Link from 'next/link'
 import { PARTNERS } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { PartnerCard } from './PartnerCard'
+import { TagPill } from './TagPill'
 
 export function Sidebar() {
   return (
     <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
       <section className="card p-4">
         <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="font-display text-[15px] font-semibold">Лучшие букмекеры</h2>
+          <h2 className="text-[15px] font-bold">Лучшие букмекеры</h2>
           <Link href="/bookmakers" className="text-xs text-dim hover:text-acid">
             Рейтинг →
           </Link>
@@ -20,12 +21,24 @@ export function Sidebar() {
         </div>
       </section>
       <section className="card p-4">
-        <h2 className="font-display text-[15px] font-semibold">Как работают теги</h2>
+        <h2 className="text-[15px] font-bold">Как работают теги</h2>
         <p className="mt-2 text-sm leading-relaxed text-dim">
-          Каждый матч получает теги по данным: <span className="font-semibold text-emerald-300">#value</span> — коэффициент выше
-          справедливого, <span className="font-semibold text-rose-300">#прогруз</span> — линия резко сдвинулась,{' '}
-          <span className="font-semibold text-orange-300">#ТБ2.5</span> — ждём голы. Нажмите на тег, чтобы увидеть все такие матчи.
+          Каждый матч получает теги по данным линии, модели голов и статистики. Нажмите на тег — откроются все матчи с ним.
         </p>
+        <ul className="mt-3 space-y-2 text-[13px]">
+          <li className="flex items-center gap-2">
+            <TagPill slug="value" link={false} />
+            <span className="text-dim">коэффициент выше справедливого</span>
+          </li>
+          <li className="flex items-center gap-2">
+            <TagPill slug="progruz" link={false} />
+            <span className="text-dim">линия резко сдвинулась</span>
+          </li>
+          <li className="flex items-center gap-2">
+            <TagPill slug="tb-2-5" link={false} />
+            <span className="text-dim">ждём много голов</span>
+          </li>
+        </ul>
         <Link href="/tags" className="mt-3 inline-block text-sm font-semibold text-acid hover:underline">
           Все теги →
         </Link>

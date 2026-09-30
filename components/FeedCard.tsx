@@ -21,7 +21,7 @@ export function FeedCard({ item, tagSlug }: { item: FeedItem; tagSlug: string })
       </div>
       <Link href={matchHref(m)} prefetch={false} className="mt-2 block after:absolute after:inset-0 after:content-['']">
         {[m.home, m.away].map((t) => (
-          <span key={t.id} className="flex items-center gap-2 py-0.5 text-[15px] font-bold">
+          <span key={t.id} className="flex items-center gap-2 py-0.5 text-[15px] font-semibold">
             <TeamLogo name={t.name} src={t.logo} size={20} />
             <span className="truncate">{t.name}</span>
           </span>
@@ -30,9 +30,9 @@ export function FeedCard({ item, tagSlug }: { item: FeedItem; tagSlug: string })
       {hit ? <p className="mt-2 text-[13px] leading-snug text-fg/85">{hit.reason}</p> : null}
       <div className="relative z-10 mt-auto flex flex-wrap items-center gap-1 pt-3">
         {summary?.pick ? (
-          <span className="rounded-full bg-acid/10 px-2 py-0.5 text-[11px] font-bold text-acid ring-1 ring-inset ring-acid/30">
-            Прогноз: {summary.pick.label}
-            {summary.pick.odd ? ` · ${summary.pick.odd.toFixed(2)}` : ''}
+          <span className="inline-flex h-6 items-center rounded-full bg-acid/10 px-2 text-[12px] font-semibold text-acid ring-1 ring-inset ring-acid/35">
+            Прогноз {summary.pick.label}
+            {summary.pick.odd ? <span className="num ml-1 font-bold">{summary.pick.odd.toFixed(2)}</span> : null}
           </span>
         ) : null}
         {tags
