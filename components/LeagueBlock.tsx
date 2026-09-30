@@ -5,7 +5,10 @@ import { leagueHref } from '@/lib/links'
 import type { League } from '@/lib/types'
 import { MatchRow } from './MatchRow'
 
+const anyOdds = (items: FeedItem[]) => items.some((i) => i.match.odds?.x12)
+
 export function LeagueBlock({ league, items, featured }: { league: League; items: FeedItem[]; featured?: boolean }) {
+  const withOdds = anyOdds(items)
   return (
     <section className="card overflow-hidden">
       <header className="flex items-center justify-between gap-3 border-b border-edge px-3 py-2.5 sm:px-4">
@@ -17,7 +20,7 @@ export function LeagueBlock({ league, items, featured }: { league: League; items
       </header>
       <div className="divide-y divide-edge/70">
         {items.map((it) => (
-          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} />
+          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} noOdds={!withOdds} />
         ))}
       </div>
     </section>
@@ -25,6 +28,7 @@ export function LeagueBlock({ league, items, featured }: { league: League; items
 }
 
 export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }) {
+  const withOdds = anyOdds(items)
   return (
     <section className="card overflow-hidden ring-1 ring-live/20">
       <header className="flex items-center justify-between gap-3 border-b border-edge px-3 py-2.5 sm:px-4">
@@ -38,7 +42,7 @@ export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }
       </header>
       <div className="divide-y divide-edge/70">
         {items.map((it) => (
-          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} showLeague />
+          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} showLeague noOdds={!withOdds} />
         ))}
       </div>
     </section>

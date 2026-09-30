@@ -11,6 +11,7 @@ import { ValuePicks } from './ValuePicks'
 
 const OTHER_LIMIT = 160
 const LIVE_LIMIT = 6
+const MINOR = /\b(women|womens|w|u\d{2}|youth|reserves?|ii|b)\b|\bfem/i
 
 export function dayTitle(ymd: string, today: string) {
   const d = diffDays(ymd, today)
@@ -71,11 +72,15 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
     .slice(0, 4)
 
   const liveAll = items.filter((i) => i.match.status === 'live' || i.match.status === 'suspended')
+  // в «Сейчас в игре» — сначала топ-лиги, потом матчи с линией; женские и молодёжные — в конец
   const rank = (i: FeedItem) => {
-    const r = featuredRank(i.match.league)
-    return r < 0 ? 100 + countryRank(i.match.league.country) : r
+    const m = i.match
+    const r = featuredRank(m.league)
+    if (r >= 0) return r
+    const minor = MINOR.test(m.league.original) || MINOR.test(m.home.original) ? 200 : 0
+    return (m.odds?.x12 ? 100 : 150) + minor + countryRank(m.league.country)
   }
-  const liveTop = [...liveAll].sort((a, b) => rank(a) - rank(b) || Number(Boolean(b.match.odds)) - Number(Boolean(a.match.odds))).slice(0, LIVE_LIMIT)
+  const liveTop = [...liveAll].sort((a, b) => rank(a) - rank(b) || a.match.ts - b.match.ts).slice(0, LIVE_LIMIT)
   const featuredCount = featured.reduce((s, g) => s + g.items.length, 0)
 
   const summary = matches.length

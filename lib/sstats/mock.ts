@@ -158,6 +158,7 @@ const LEAGUES: MockLeague[] = [
 ]
 
 const LEAGUE_BY_ID = new Map(LEAGUES.map((l) => [l.id, l]))
+const NO_ODDS_LEAGUES = new Set([144, 179])
 
 /** ID команды одинаков во всех турнирах (Реал в Ла Лиге и в ЛЧ — одна команда). */
 const TEAM_ID = new Map<string, number>()
@@ -508,7 +509,8 @@ function toRawGame(g: MockGame, now: number, tz: number, withOdds = true): RawGa
       },
     },
     roundName: g.league.id === 2 ? `League Stage - ${g.round + 1}` : `Regular Season - ${g.round + 1}`,
-    odds: withOdds ? listOdds(g) : [],
+    // у второстепенных лиг линии нет — как у низших лиг в реальных данных
+    odds: withOdds && !NO_ODDS_LEAGUES.has(g.league.id) ? listOdds(g) : [],
   }
 }
 

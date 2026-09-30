@@ -67,6 +67,7 @@ export function MatchRow({
   summary,
   showLeague = false,
   compact = false,
+  noOdds = false,
 }: {
   m: Match
   tags: TagHit[]
@@ -75,6 +76,8 @@ export function MatchRow({
   showLeague?: boolean
   /** Без колонки коэффициентов — для узкой боковой колонки. */
   compact?: boolean
+  /** В блоке ни у кого нет линии: колонку кэфов убираем, счёт ставим рядом с командами. */
+  noOdds?: boolean
 }) {
   const x = m.odds?.x12
   const values = [x?.home?.value, x?.draw?.value, x?.away?.value].filter((v): v is number => Boolean(v))
@@ -97,7 +100,11 @@ export function MatchRow({
   return (
     <div
       className={`relative grid items-center gap-x-2.5 px-3 py-2.5 transition-colors hover:bg-panel-2/60 ${
-        compact ? 'grid-cols-[44px_minmax(0,1fr)_auto]' : 'grid-cols-[40px_minmax(0,1fr)_auto_auto] sm:grid-cols-[48px_minmax(0,1fr)_auto_auto] sm:gap-x-3 sm:px-4'
+        compact
+          ? 'grid-cols-[44px_minmax(0,1fr)_auto]'
+          : noOdds
+            ? 'grid-cols-[40px_minmax(0,1fr)_auto] sm:grid-cols-[48px_minmax(0,20rem)_auto] sm:gap-x-3 sm:px-4'
+            : 'grid-cols-[40px_minmax(0,1fr)_auto_auto] sm:grid-cols-[48px_minmax(0,1fr)_auto_auto] sm:gap-x-3 sm:px-4'
       }`}
     >
       <div className="flex justify-center">
@@ -123,7 +130,7 @@ export function MatchRow({
         ) : null}
       </div>
 
-      {compact ? null : (
+      {compact || noOdds ? null : (
         <div className="flex gap-1">
           <OddCell label="П1" q={x?.home} fav={x?.home?.value === min} />
           <OddCell label="Х" q={x?.draw} fav={x?.draw?.value === min} />
