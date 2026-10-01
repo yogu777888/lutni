@@ -2,16 +2,17 @@ import Link from 'next/link'
 import { countryRank, featuredRank } from '@/config/leagues'
 import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { dayLabel, diffDays, formatDayMonth, plural, pluralN, ymdToNoonTs } from '@/lib/format'
+import { isLive, liveRank } from '@/lib/rank'
+import { buildStoryGroups } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { LeagueBlock, LiveBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
-import { TagStrip } from './TagStrip'
+import { StoryCircles } from './story/StoryCircles'
 import { ValuePicks } from './ValuePicks'
 
 const OTHER_LIMIT = 160
 const LIVE_LIMIT = 6
-const MINOR = /\b(women|womens|w|u\d{2}|youth|reserves?|ii|b)\b|\bfem/i
 
 export function dayTitle(ymd: string, today: string) {
   const d = diffDays(ymd, today)
@@ -63,24 +64,15 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
   const totalOthers = othersAll.reduce((s, g) => s + g.items.length, 0)
 
   const open = items.filter((i) => i.match.status === 'scheduled' || i.match.status === 'live')
-  const counts = new Map<string, number>()
-  for (const it of open) for (const t of it.tags) counts.set(t.slug, (counts.get(t.slug) ?? 0) + 1)
-  const tagCounts = [...counts.entries()].sort((a, b) => b[1] - a[1])
+  const storyGroups = buildStoryGroups(items)
   const values = open
     .filter((i) => i.summary?.pick?.kind === 'value' && i.match.status === 'scheduled')
     .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
     .slice(0, 4)
 
-  const liveAll = items.filter((i) => i.match.status === 'live' || i.match.status === 'suspended')
+  const liveAll = items.filter((i) => isLive(i.match))
   // в «Сейчас в игре» — сначала топ-лиги, потом матчи с линией; женские и молодёжные — в конец
-  const rank = (i: FeedItem) => {
-    const m = i.match
-    const r = featuredRank(m.league)
-    if (r >= 0) return r
-    const minor = MINOR.test(m.league.original) || MINOR.test(m.home.original) ? 200 : 0
-    return (m.odds?.x12 ? 100 : 150) + minor + countryRank(m.league.country)
-  }
-  const liveTop = [...liveAll].sort((a, b) => rank(a) - rank(b) || a.match.ts - b.match.ts).slice(0, LIVE_LIMIT)
+  const liveTop = [...liveAll].sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts).slice(0, LIVE_LIMIT)
   const featuredCount = featured.reduce((s, g) => s + g.items.length, 0)
 
   const summary = matches.length
@@ -103,7 +95,7 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
         </div>
       </header>
 
-      <TagStrip counts={tagCounts} />
+      <StoryCircles groups={storyGroups} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-4">

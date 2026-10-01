@@ -822,9 +822,16 @@ function odds(gameId: number): ApiEnvelope<RawBookmakerOdds[]> {
   )
 }
 
+/**
+ * SSTATS_MOCK_NOW=2026-10-02T19:30:00+03:00 — «перевести часы» демо-данных, например чтобы
+ * посмотреть live-матчи ночью. Время идёт дальше от указанного момента.
+ */
+const fixedNow = Date.parse(process.env.SSTATS_MOCK_NOW ?? '')
+const MOCK_SHIFT = Number.isFinite(fixedNow) ? fixedNow - Date.now() : 0
+
 /** Точка входа: имитирует GET {path}?{params} к api.sstats.net. */
 export async function mockFetch(pathname: string, params: URLSearchParams): Promise<unknown> {
-  const now = Date.now()
+  const now = Date.now() + MOCK_SHIFT
   const path = pathname.replace(/\/+$/, '')
   const low = path.toLowerCase()
   let m: RegExpExecArray | null

@@ -5,10 +5,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { SPONSORED_REL } from '@/lib/affiliate'
 import type { StoryData } from '@/lib/story'
 import { TeamLogo } from '../TeamLogo'
-import { OPEN_STORY, openStory, type OpenStoryDetail } from './events'
+import { OPEN_STORY, openStory, type OpenStoryDetail, type StoryQueueItem } from './events'
+import { markSeen } from './seen'
 import { Slide, SLIDE_MS } from './slides'
 
-type Item = { id: number; href: string }
+type Item = StoryQueueItem
+
+/** Как вести себя, если у матча нет сторис: strict — сразу открыть его страницу, иначе пропустить. */
+type ShowOpts = { strict?: boolean; fallbackHref?: string }
 
 /** Матчи на странице по порядку — по ним листаем дальше, как в соцсетях. */
 function collect(d: OpenStoryDetail): Item[] {
@@ -41,6 +45,29 @@ const ICONS = {
   share: 'M12 15V3m0 0L7.5 7.5M12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7',
   prev: 'm15 5-7 7 7 7',
   next: 'm9 5 7 7-7 7',
+}
+
+/** Почему матч в кружке: причину берём из разбора матча (она свежее), иначе — из списка. */
+function focusFor(item: Item | null, story: StoryData | null) {
+  const f = item?.focus
+  if (!f || !story) return null
+  const cover = story.slides[0]
+  const fresh = cover?.kind === 'cover' ? cover.tags.find((t) => t.slug === f.slug)?.reason : undefined
+  return { ...f, reason: fresh ?? f.reason }
+}
+
+/** «#прогруз», «Топ дня», «В игре» — подпись кружка в шапке сторис. */
+function GroupLabel({ label, kind }: { label: string; kind: NonNullable<Item['group']>['kind'] }) {
+  if (kind === 'live') return <span className="font-bold text-live">{label}</span>
+  if (label.startsWith('#')) {
+    return (
+      <span className="font-bold text-fg">
+        <span className={kind === 'hot' ? 'text-hot' : 'text-acid'}>#</span>
+        {label.slice(1)}
+      </span>
+    )
+  }
+  return <span className="font-bold text-acid">{label}</span>
 }
 
 const btn = 'flex h-9 w-9 items-center justify-center rounded-full text-fg/90 transition hover:bg-white/10 active:scale-95'
@@ -130,7 +157,7 @@ export function StoryViewer() {
 
   /** Показать матч list[index]; если у него нет сторис — идём дальше в ту же сторону. */
   const show = useCallback(
-    async (list: Item[], index: number, dir: 1 | -1, first: boolean) => {
+    async (list: Item[], index: number, dir: 1 | -1, opts: ShowOpts = {}) => {
       const token = ++req.current
       setLoading(true)
       for (let i = index; i >= 0 && i < list.length; i += dir) {
@@ -143,18 +170,21 @@ export function StoryViewer() {
           setNonce((n) => n + 1)
           setEnded(false)
           setLoading(false)
+          markSeen(data.id)
           const nx = list[i + dir]
           if (nx) void load(nx.id)
           return
         }
-        if (first) {
-          // у первого же матча сторис нет (мало данных) — открываем обычную страницу
+        if (opts.strict) {
+          // у выбранного матча сторис нет (мало данных) — открываем обычную страницу
           leaveTo(list[i].href)
           return
         }
       }
       setLoading(false)
-      setEnded(true)
+      // во всём кружке не нашлось ни одной сторис — открываем страницу тега
+      if (opts.fallbackHref) leaveTo(opts.fallbackHref)
+      else setEnded(true)
     },
     [load, leaveTo],
   )
@@ -163,7 +193,7 @@ export function StoryViewer() {
   useEffect(() => {
     const onOpen = (e: Event) => {
       const d = (e as CustomEvent<OpenStoryDetail>).detail
-      const list = collect(d)
+      const list = d.queue?.length ? d.queue : collect(d)
       opener.current = d.opener ?? null
       deep.current = Boolean(d.deep)
       setItems(list)
@@ -179,7 +209,7 @@ export function StoryViewer() {
         list,
         Math.max(0, list.findIndex((i) => i.id === d.id)),
         1,
-        true,
+        d.queue?.length ? { fallbackHref: d.href } : { strict: true },
       )
     }
     window.addEventListener(OPEN_STORY, onOpen)
@@ -210,7 +240,7 @@ export function StoryViewer() {
       setSlide(slide + 1)
       return
     }
-    if (pos < items.length - 1) void show(items, pos + 1, 1, false)
+    if (pos < items.length - 1) void show(items, pos + 1, 1)
     else if (ended) close()
     else setEnded(true)
   }, [story, slide, pos, items, ended, show, close])
@@ -219,15 +249,15 @@ export function StoryViewer() {
     if (!story) return
     setEnded(false)
     if (slide > 0) setSlide(slide - 1)
-    else if (pos > 0) void show(items, pos - 1, -1, false)
+    else if (pos > 0) void show(items, pos - 1, -1)
     else setNonce((n) => n + 1)
   }, [story, slide, pos, items, show])
 
   const nextMatch = useCallback(() => {
-    if (pos < items.length - 1) void show(items, pos + 1, 1, false)
+    if (pos < items.length - 1) void show(items, pos + 1, 1)
   }, [pos, items, show])
   const prevMatch = useCallback(() => {
-    if (pos > 0) void show(items, pos - 1, -1, false)
+    if (pos > 0) void show(items, pos - 1, -1)
   }, [pos, items, show])
 
   // клавиатура, блокировка прокрутки страницы, фокус
@@ -273,6 +303,13 @@ export function StoryViewer() {
   const running = !paused && !holding && !hidden && !loading && !ended
   const last = story ? slide === story.slides.length - 1 : false
   const current = story?.slides[slide]
+  const item = story && items[pos]?.id === story.id ? items[pos] : null
+  // открыли из кружка: «#прогруз · 2/5» в шапке и «почему» на обложке
+  const group = item?.group
+  const inGroup = group ? items.filter((i) => i.group?.key === group.key) : []
+  const groupPos = group ? inGroup.findIndex((i) => i.id === item!.id) + 1 : 0
+  const focus = focusFor(item, story)
+  const duration = (k: NonNullable<typeof current>['kind']) => (k === 'cover' && focus ? 6500 : SLIDE_MS[k])
 
   const onPointerDown = (e: React.PointerEvent) => {
     if ((e.target as Element).closest('a,button')) return
@@ -356,7 +393,7 @@ export function StoryViewer() {
                 <div
                   key={`${story.id}-${slide}-${nonce}`}
                   className="st-progress h-full w-full bg-fg"
-                  style={{ animationDuration: `${SLIDE_MS[s.kind]}ms`, animationPlayState: running ? 'running' : 'paused' }}
+                  style={{ animationDuration: `${duration(s.kind)}ms`, animationPlayState: running ? 'running' : 'paused' }}
                   onAnimationEnd={(e) => {
                     if (e.target === e.currentTarget) next()
                   }}
@@ -377,7 +414,15 @@ export function StoryViewer() {
                 <span className="block truncate text-[13px] font-bold">
                   {story.home.name} — {story.away.name}
                 </span>
-                <span className="block truncate text-[11px] text-dim">{story.league}</span>
+                <span className="block truncate text-[11px] text-dim">
+                  {group ? (
+                    <>
+                      <GroupLabel label={group.label} kind={group.kind} />
+                      {inGroup.length > 1 ? ` ${groupPos}/${inGroup.length}` : ''} ·{' '}
+                    </>
+                  ) : null}
+                  {story.league}
+                </span>
               </span>
             </>
           ) : (
@@ -404,7 +449,7 @@ export function StoryViewer() {
         >
           {story && current ? (
             <div key={`${story.id}-${slide}-${nonce}`} className="h-full" aria-live="polite">
-              <Slide slide={current} story={story} />
+              <Slide slide={current} story={story} focus={focus} />
             </div>
           ) : null}
           {loading && !story ? (

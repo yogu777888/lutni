@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useState } from 'react'
 import type { CompareRow, FormSide, Side, StoryData, StorySlide, StoryTeam } from '@/lib/story'
+import type { StoryFocus } from '@/lib/story-groups'
 import type { Res } from '@/lib/stats'
 import { tagChipClass, tagHashClass } from '../tag-chip'
 import { TeamLogo } from '../TeamLogo'
@@ -136,9 +137,10 @@ function TeamBig({ team, cls }: { team: StoryTeam; cls: string }) {
   )
 }
 
-function Cover({ s, story }: { s: S<'cover'>; story: StoryData }) {
+function Cover({ s, story, focus }: { s: S<'cover'>; story: StoryData; focus: StoryFocus | null }) {
   const live = story.status === 'live' || story.status === 'suspended'
   const score = story.score && (live || story.status === 'finished') ? story.score : null
+  const chips = s.tags.filter((t) => t.slug !== focus?.slug).slice(0, focus ? 3 : 4)
   return (
     <div className="flex h-full flex-col items-center px-6 pb-4 pt-6 text-center">
       <div className="st-fade text-[12px] font-bold uppercase tracking-[0.12em] text-dim">{story.league}</div>
@@ -176,10 +178,19 @@ function Cover({ s, story }: { s: S<'cover'>; story: StoryData }) {
             story.when
           )}
         </div>
-        {s.tags.length ? (
-          <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-            {s.tags.map((t, i) => (
-              <span key={t.slug} className={`st-pop ${tagChipClass(t.kind, 'md')}`} style={wait(650 + i * 90)}>
+        {focus ? (
+          <div className="st-rise mx-auto mt-5 max-w-[20rem] rounded-2xl bg-panel/80 p-3 text-left ring-1 ring-inset ring-edge-2" style={wait(650)}>
+            <span className={tagChipClass(focus.kind, 'sm')}>
+              <span className={tagHashClass(focus.kind)}>#</span>
+              {focus.label.replace(/^#/, '')}
+            </span>
+            <p className="mt-2 text-[14px] leading-snug text-fg/90">{focus.reason}</p>
+          </div>
+        ) : null}
+        {chips.length ? (
+          <div className={`flex flex-wrap justify-center gap-1.5 ${focus ? 'mt-3' : 'mt-5'}`}>
+            {chips.map((t, i) => (
+              <span key={t.slug} className={`st-pop ${tagChipClass(t.kind, focus ? 'sm' : 'md')}`} style={wait((focus ? 850 : 650) + i * 90)}>
                 <span className={tagHashClass(t.kind)}>#</span>
                 {t.label.replace(/^#/, '')}
               </span>
@@ -730,10 +741,10 @@ function PickSlide({ s }: { s: S<'pick'> }) {
   )
 }
 
-export function Slide({ slide, story }: { slide: StorySlide; story: StoryData }) {
+export function Slide({ slide, story, focus = null }: { slide: StorySlide; story: StoryData; focus?: StoryFocus | null }) {
   switch (slide.kind) {
     case 'cover':
-      return <Cover s={slide} story={story} />
+      return <Cover s={slide} story={story} focus={focus} />
     case 'odds':
       return <Odds s={slide} story={story} />
     case 'goals':

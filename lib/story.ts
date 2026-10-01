@@ -34,7 +34,7 @@ export type FormSide = {
 }
 
 export type StorySlide =
-  | { kind: 'cover'; tags: { slug: string; label: string; kind: TagDef['kind'] }[]; teaser: string }
+  | { kind: 'cover'; tags: { slug: string; label: string; kind: TagDef['kind']; reason: string }[]; teaser: string }
   | {
       kind: 'odds'
       title: string
@@ -147,9 +147,9 @@ export function buildStory(ins: MatchInsights): StoryData | null {
   const slides: StorySlide[] = []
 
   // ── обложка
-  const coverTags = tags.slice(0, 4).flatMap((t) => {
+  const coverTags = tags.flatMap((t) => {
     const def = TAG_BY_SLUG.get(t.slug)
-    return def ? [{ slug: def.slug, label: def.label, kind: def.kind }] : []
+    return def ? [{ slug: def.slug, label: def.label, kind: def.kind, reason: t.reason }] : []
   })
   slides.push({ kind: 'cover', tags: coverTags, teaser: '' })
 
