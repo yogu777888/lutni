@@ -61,25 +61,25 @@ export default async function LeaguePage({ params }: Props) {
   return (
     <>
       <Breadcrumbs items={[{ href: '/leagues', label: 'Лиги' }, { href: canonical, label: league.name }]} />
-      <div className="pitch-bg card mb-6 p-5 sm:p-7">
-        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">{league.name}</h1>
-        <p className="mt-2 text-sm text-dim">
+      <div className="pitch-bg card mb-6 p-6 sm:p-8">
+        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">{league.name}</h1>
+        <p className="mt-2 text-[15px] text-dim">
           {year ? `Сезон ${year}/${String(year + 1).slice(2)} · ` : ''}таблица, расписание, результаты и прогнозы на матчи
         </p>
       </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-5">
           <section className="card overflow-hidden">
-            <h2 className="border-b border-edge px-4 py-3 text-[15px] font-bold">Ближайшие матчи</h2>
+            <h2 className="border-b border-edge px-4 py-3.5 text-[15px] font-semibold">Ближайшие матчи</h2>
             {upcoming.length ? (
-              <div className="divide-y divide-edge/70">
+              <div className="divide-y divide-edge">
                 {upcoming.map((m, i) => {
                   const day = ymdInTz(m.ts)
                   const showDay = i === 0 || ymdInTz(upcoming[i - 1].ts) !== day
                   return (
                     <div key={m.id}>
                       {showDay ? (
-                        <div className="bg-panel-2/60 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-dim">
+                        <div className="bg-white/[0.02] px-4 py-2 text-[12px] font-medium text-mute">
                           {dayLabel(day, today)}
                           {day !== today ? ` · ${formatDateShort(m.ts)}` : ''}
                         </div>
@@ -100,8 +100,8 @@ export default async function LeaguePage({ params }: Props) {
           ) : null}
           {results.length ? (
             <section className="card overflow-hidden">
-              <h2 className="border-b border-edge px-4 py-3 text-[15px] font-bold">Последние результаты</h2>
-              <div className="divide-y divide-edge/70">
+              <h2 className="border-b border-edge px-4 py-3.5 text-[15px] font-semibold">Последние результаты</h2>
+              <div className="divide-y divide-edge">
                 {results.map((m) => (
                   <MatchRow key={m.id} m={m} tags={[]} />
                 ))}

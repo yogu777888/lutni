@@ -50,12 +50,12 @@ export default async function TagPage({ params }: Props) {
   return (
     <>
       <Breadcrumbs items={[{ href: '/tags', label: 'Теги' }, { href: `/tag/${t.slug}`, label: t.title }]} />
-      <div className="pitch-bg card mb-6 p-5 sm:p-7">
+      <div className="pitch-bg card mb-8 p-6 sm:p-8">
         <TagPill slug={t.slug} size="md" link={false} />
-        <h1 className="mt-3 font-display text-2xl font-bold tracking-tight sm:text-3xl">{t.title}: матчи на сегодня и ближайшие дни</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-fg/80">{t.about}</p>
-        <p className="mt-2 text-sm text-dim">
-          Что обычно ставят: <span className="font-semibold text-fg">{t.bet}</span>
+        <h1 className="mt-4 text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">{t.title}: матчи на сегодня и ближайшие дни</h1>
+        <p className="mt-3 max-w-3xl text-[15px] leading-relaxed text-dim">{t.about}</p>
+        <p className="mt-2 text-[14px] text-mute">
+          Что обычно ставят: <span className="font-medium text-fg">{t.bet}</span>
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <CtaLink href={goHref(partner, 'tag')}>Сделать ставку в БК {partner.name}</CtaLink>
@@ -63,13 +63,13 @@ export default async function TagPage({ params }: Props) {
         </div>
       </div>
 
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-base font-bold">
+      <div className="mb-4 flex items-baseline justify-between">
+        <h2 className="text-[17px] font-semibold">
           {hits.length ? pluralN(hits.length, ['матч', 'матча', 'матчей']) : 'Матчей пока нет'}
         </h2>
-        <span className="text-xs text-dim">сильные сигналы — выше</span>
+        <span className="text-[12px] text-mute">сильные сигналы — выше</span>
       </div>
-      {!ok ? <div className="card mb-4 p-4 text-sm">Источник данных временно недоступен — список может быть неполным.</div> : null}
+      {!ok ? <div className="card mb-4 p-4 text-sm text-dim">Источник данных временно недоступен — список может быть неполным.</div> : null}
       {hits.length ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {hits.slice(0, 60).map((it) => (
@@ -83,14 +83,14 @@ export default async function TagPage({ params }: Props) {
         </div>
       )}
 
-      <div className="mt-8">
-        <div className="mb-2 text-xs font-bold uppercase tracking-wider text-mute">Другие теги</div>
+      <div className="mt-10">
+        <div className="mb-3 text-[13px] font-medium text-mute">Другие теги</div>
         <div className="flex flex-wrap gap-2">
           {TAGS.filter((x) => x.slug !== t.slug).map((x) => (
             <TagPill key={x.slug} slug={x.slug} size="md" />
           ))}
         </div>
-        <Link href="/tags" className="mt-4 inline-block text-sm text-acid hover:underline">
+        <Link href="/tags" className="mt-4 inline-block text-[13px] font-medium text-fg transition-opacity hover:opacity-75">
           Что означают теги →
         </Link>
       </div>

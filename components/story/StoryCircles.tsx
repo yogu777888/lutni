@@ -16,8 +16,8 @@ const C = 2 * Math.PI * R
 function Ring({ kind, seen }: { kind: CircleKind; seen: boolean[] }) {
   const n = seen.length
   const step = C / n
-  const gap = n > 1 ? Math.min(5, step / 3) : 0
-  const color = kind === 'live' ? 'var(--color-live)' : kind === 'hot' ? 'url(#st-ring-hot)' : 'url(#st-ring)'
+  const gap = n > 1 ? Math.min(4, step / 3) : 0
+  const color = kind === 'live' ? 'var(--color-live)' : kind === 'hot' ? 'var(--color-hot)' : 'var(--color-acid)'
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
       {seen.map((s, i) => (
@@ -27,8 +27,8 @@ function Ring({ kind, seen }: { kind: CircleKind; seen: boolean[] }) {
           cy={SIZE / 2}
           r={R}
           fill="none"
-          stroke={s ? 'rgb(255 255 255 / 0.2)' : color}
-          strokeWidth={s ? 2 : 2.75}
+          stroke={s ? 'rgb(255 255 255 / 0.16)' : color}
+          strokeWidth={s ? 1.5 : 2.25}
           strokeDasharray={`${step - gap} ${C - step + gap}`}
           strokeDashoffset={-(i * step + gap / 2)}
         />
@@ -38,11 +38,11 @@ function Ring({ kind, seen }: { kind: CircleKind; seen: boolean[] }) {
 }
 
 function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
-  const text = dim ? 'text-dim' : 'text-fg'
+  const text = dim ? 'text-mute' : 'text-fg/90'
   if (g.label.startsWith('#')) {
     return (
       <span className={`block truncate ${text}`}>
-        <span className={g.kind === 'hot' ? 'text-hot' : 'text-acid'}>#</span>
+        <span className="text-mute">#</span>
         {g.label.slice(1)}
       </span>
     )
@@ -91,21 +91,7 @@ export function StoryCircles({ groups }: { groups: StoryGroup[] }) {
   }
 
   return (
-    <nav aria-label="Истории дня" className="scrollbar-none -mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1 pt-0.5 sm:mx-0 sm:px-0">
-      {/* градиенты колец — один раз на весь ряд */}
-      <svg width="0" height="0" className="absolute" aria-hidden>
-        <defs>
-          <linearGradient id="st-ring" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stopColor="#c8ff2e" />
-            <stop offset="1" stopColor="#25d8a0" />
-          </linearGradient>
-          <linearGradient id="st-ring-hot" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stopColor="#ffb03d" />
-            <stop offset="1" stopColor="#ff3b5c" />
-          </linearGradient>
-        </defs>
-      </svg>
-
+    <nav aria-label="Истории дня" className="scrollbar-none -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 pt-0.5 sm:mx-0 sm:px-0">
       {groups.map((g, gi) => {
         const marks = g.items.map((it) => seen.has(it.id))
         const done = marks.every(Boolean)
@@ -120,21 +106,21 @@ export function StoryCircles({ groups }: { groups: StoryGroup[] }) {
           >
             <span className="relative block transition-transform duration-200 group-hover:scale-[1.04] group-active:scale-95" style={{ width: SIZE, height: SIZE }}>
               <Ring kind={g.kind} seen={marks} />
-              <span className={`absolute inset-[7px] overflow-hidden rounded-full bg-panel-2 ring-1 ring-inset ring-white/5 ${done ? 'opacity-60' : ''}`}>
+              <span className={`absolute inset-[6px] overflow-hidden rounded-full bg-panel ring-1 ring-inset ring-white/[0.06] ${done ? 'opacity-55' : ''}`}>
                 <span className="absolute left-[7px] top-[8px]">
                   <TeamLogo name={g.cover.home.name} src={g.cover.home.logo} size={30} />
                 </span>
-                <span className="absolute bottom-[6px] right-[5px] rounded-full bg-panel-2 p-[2px]">
+                <span className="absolute bottom-[6px] right-[5px] rounded-full bg-panel p-[2px]">
                   <TeamLogo name={g.cover.away.name} src={g.cover.away.logo} size={30} />
                 </span>
               </span>
               {g.kind === 'live' ? (
-                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 rounded-[5px] bg-live px-1.5 text-[9px] font-extrabold leading-[15px] tracking-wide text-white ring-2 ring-ink">
+                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 rounded-[5px] bg-live px-1.5 text-[9px] font-bold leading-[15px] tracking-wide text-white ring-2 ring-ink">
                   LIVE
                 </span>
               ) : null}
             </span>
-            <span className="mt-1 w-full text-center text-[12px] font-semibold leading-tight">
+            <span className="mt-1.5 w-full text-center text-[12px] font-medium leading-tight">
               <Caption g={g} dim={done} />
             </span>
           </a>
@@ -144,13 +130,13 @@ export function StoryCircles({ groups }: { groups: StoryGroup[] }) {
       <Link href="/tags" prefetch={false} className="group flex w-[76px] shrink-0 flex-col items-center rounded-xl" title="Все теги и что они значат">
         <span className="relative block transition-transform duration-200 group-hover:scale-[1.04]" style={{ width: SIZE, height: SIZE }}>
           <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full" aria-hidden>
-            <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="rgb(255 255 255 / 0.22)" strokeWidth="2" strokeDasharray="4 5" />
+            <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="rgb(255 255 255 / 0.16)" strokeWidth="1.5" strokeDasharray="3 4" />
           </svg>
-          <span className="absolute inset-[7px] flex items-center justify-center rounded-full bg-panel-2">
+          <span className="absolute inset-[6px] flex items-center justify-center rounded-full bg-panel">
             <LogoMark size={26} />
           </span>
         </span>
-        <span className="mt-1 w-full truncate text-center text-[12px] font-semibold leading-tight text-dim">Все теги</span>
+        <span className="mt-1.5 w-full truncate text-center text-[12px] font-medium leading-tight text-mute">Все теги</span>
       </Link>
     </nav>
   )

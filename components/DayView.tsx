@@ -87,10 +87,10 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
 
   return (
     <>
-      <header className="mb-5">
-        <h1 className="text-[24px] font-extrabold leading-tight sm:text-[30px]">{dayTitle(ymd, today)}</h1>
-        <p className="mt-1 text-sm text-dim">{summary}</p>
-        <div className="mt-4">
+      <header className="mb-6 pt-2">
+        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">{dayTitle(ymd, today)}</h1>
+        <p className="mt-1.5 text-[14px] text-dim">{summary}</p>
+        <div className="mt-5">
           <DateTabs active={ymd} today={today} />
         </div>
       </header>
@@ -100,7 +100,7 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-4">
           {failed ? (
-            <div className="card border-loss/40 p-4 text-sm">
+            <div className="card p-4 text-sm text-dim">
               Не удалось загрузить матчи: источник данных временно недоступен. Обновите страницу через минуту.
             </div>
           ) : null}
@@ -111,9 +111,9 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
           ))}
           {others.length ? (
             <details className="card group overflow-hidden" open={!featured.length}>
-              <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-[14px] font-bold hover:bg-panel-2">
+              <summary className="flex cursor-pointer items-center justify-between px-4 py-3.5 text-[14px] font-semibold transition-colors hover:bg-white/[0.025]">
                 <span>{featured.length ? 'Другие турниры' : 'Все турниры'}</span>
-                <span className="flex items-center gap-2 text-[12px] font-medium text-dim">
+                <span className="flex items-center gap-2 text-[12px] font-normal text-mute">
                   {pluralN(totalOthers, ['матч', 'матча', 'матчей'])}
                   <span className="transition group-open:rotate-180">▾</span>
                 </span>
@@ -125,7 +125,7 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
                 {shownOthers < totalOthers ? (
                   <p className="px-1 text-xs text-dim">
                     Показаны {shownOthers} из {totalOthers} матчей. Остальные — на страницах{' '}
-                    <Link href="/leagues" className="text-acid hover:underline">
+                    <Link href="/leagues" className="text-fg underline-offset-4 hover:underline">
                       турниров
                     </Link>
                     .
@@ -136,8 +136,8 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
           ) : null}
           {!matches.length && !failed ? (
             <div className="card p-8 text-center">
-              <p className="font-semibold">На этот день матчей не найдено.</p>
-              <Link href="/" className="mt-2 inline-block text-sm text-acid hover:underline">
+              <p className="font-medium">На этот день матчей не найдено.</p>
+              <Link href="/" className="mt-2 inline-block text-sm text-dim underline-offset-4 hover:text-fg hover:underline">
                 Матчи сегодня →
               </Link>
             </div>

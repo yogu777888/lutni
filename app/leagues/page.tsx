@@ -33,36 +33,38 @@ export default async function LeaguesPage() {
 
   return (
     <>
-      <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Лиги и турниры</h1>
-      <p className="mt-2 text-sm text-dim">Таблицы, расписание, результаты и прогнозы на матчи.</p>
-      {failed ? <div className="card mt-4 p-4 text-sm">Список лиг временно недоступен.</div> : null}
+      <h1 className="pt-2 text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">Лиги и турниры</h1>
+      <p className="mt-2 text-[15px] text-dim">Таблицы, расписание, результаты и прогнозы на матчи.</p>
+      {failed ? <div className="card mt-4 p-4 text-sm text-dim">Список лиг временно недоступен.</div> : null}
 
-      <h2 className="mb-3 mt-6 text-xs font-bold uppercase tracking-wider text-mute">Топ-турниры</h2>
+      <h2 className="mb-3 mt-8 text-[13px] font-medium text-mute">Топ-турниры</h2>
       <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
         {(featured.length ? featured : FEATURED_LEAGUES.map((f) => ({ id: f.id, name: f.short, original: f.name, country: f.country }))).map((l) => (
-          <Link key={l.id} href={leagueHref(l)} className="card flex items-center gap-3 p-4 transition hover:ring-1 hover:ring-acid/40">
-            <span className="h-2 w-2 rounded-full bg-acid" aria-hidden />
-            <span className="font-semibold">{l.name}</span>
+          <Link key={l.id} href={leagueHref(l)} className="card flex items-center justify-between gap-3 p-4 transition-colors hover:bg-panel-2">
+            <span className="font-medium">{l.name}</span>
+            <span className="text-mute" aria-hidden>
+              ›
+            </span>
           </Link>
         ))}
       </div>
 
       {countries.length ? (
         <>
-          <h2 className="mb-3 mt-8 text-xs font-bold uppercase tracking-wider text-mute">Все турниры по странам</h2>
+          <h2 className="mb-3 mt-10 text-[13px] font-medium text-mute">Все турниры по странам</h2>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {countries.map(([country, list]) => (
               <details key={country} className="card group">
-                <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-semibold hover:bg-panel-2">
+                <summary className="flex cursor-pointer items-center justify-between rounded-[18px] px-4 py-3.5 text-sm font-medium transition-colors hover:bg-panel-2">
                   {country}
-                  <span className="text-xs text-dim">
+                  <span className="text-[12px] text-mute">
                     {list.length} <span className="inline-block transition group-open:rotate-180">▾</span>
                   </span>
                 </summary>
                 <ul className="border-t border-edge px-4 py-2 text-sm">
                   {list.map((l) => (
                     <li key={l.id}>
-                      <Link href={leagueHref(l)} prefetch={false} className="block py-1 text-dim hover:text-acid">
+                      <Link href={leagueHref(l)} prefetch={false} className="block py-1.5 text-dim transition-colors hover:text-fg">
                         {l.name}
                       </Link>
                     </li>

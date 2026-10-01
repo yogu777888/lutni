@@ -12,11 +12,11 @@ export function StatusCell({ m }: { m: Match }) {
   if (m.status === 'live' || m.status === 'suspended') {
     return (
       <div className="flex flex-col items-center leading-tight">
-        <span className="flex items-center gap-1 text-[10px] font-extrabold tracking-wide text-live">
+        <span className="flex items-center gap-1 text-[10px] font-bold tracking-wide text-live">
           <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" />
           LIVE
         </span>
-        <span className="num text-[13px] font-bold text-live">
+        <span className="num text-[13px] font-semibold text-live">
           {m.statusCode === 4 ? 'Пер.' : m.elapsed ? `${m.elapsed}′` : ''}
         </span>
       </div>
@@ -26,30 +26,30 @@ export function StatusCell({ m }: { m: Match }) {
     return (
       <div className="flex flex-col items-center leading-tight">
         <span className="num text-[12px] text-mute">{formatTime(m.ts)}</span>
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-mute">итог</span>
+        <span className="text-[10px] font-medium uppercase tracking-wide text-mute">итог</span>
       </div>
     )
   }
   if (m.status === 'postponed' || m.status === 'cancelled') {
-    return <span className="text-center text-[10px] font-semibold leading-tight text-loss">{m.statusLabel}</span>
+    return <span className="text-center text-[10px] font-medium leading-tight text-loss">{m.statusLabel}</span>
   }
-  return <span className="num text-[14px] font-bold">{formatTime(m.ts)}</span>
+  return <span className="num text-[14px] font-semibold text-fg/90">{formatTime(m.ts)}</span>
 }
 
 function OddCell({ label, q, fav }: { label: string; q?: Quote; fav: boolean }) {
   if (!q) {
     return (
-      <span className="flex h-[38px] w-[42px] flex-col items-center justify-center sm:w-[48px]" aria-hidden>
-        <span className="text-[9px] font-semibold text-mute/70">{label}</span>
+      <span className="flex h-[38px] w-[42px] flex-col items-center justify-center sm:w-[50px]" aria-hidden>
+        <span className="text-[9px] font-medium text-mute/70">{label}</span>
         <span className="text-[13px] text-mute/60">—</span>
       </span>
     )
   }
   const dropped = q.opening && q.opening / q.value >= 1.07
   return (
-    <span className="flex h-[38px] w-[42px] flex-col items-center justify-center rounded-lg bg-panel-2 ring-1 ring-inset ring-edge sm:w-[48px]">
-      <span className="text-[9px] font-semibold text-mute">{label}</span>
-      <span className={`num text-[13px] leading-tight ${fav ? 'font-bold text-fg' : 'font-semibold text-fg/80'}`}>
+    <span className="flex h-[38px] w-[42px] flex-col items-center justify-center rounded-[10px] bg-white/[0.045] sm:w-[50px]">
+      <span className="text-[9px] font-medium text-mute">{label}</span>
+      <span className={`num text-[13px] leading-tight ${fav ? 'font-semibold text-fg' : 'font-medium text-fg/75'}`}>
         {formatOdd(q.value)}
         {dropped ? (
           <span className="ml-px text-[9px] text-hot" title={`Открытие ${q.opening?.toFixed(2)}`}>
@@ -91,7 +91,7 @@ export function MatchRow({
   const team = (t: Match['home'], won: boolean | null | undefined) => (
     <span className="flex h-[21px] items-center gap-2">
       <TeamLogo name={t.name} src={t.logo} size={18} />
-      <span className={`truncate text-[14px] ${won ? 'font-bold' : 'font-medium'} ${m.status === 'finished' && !won ? 'text-fg/70' : ''}`}>
+      <span className={`truncate text-[14px] ${won ? 'font-semibold' : ''} ${m.status === 'finished' && !won ? 'text-fg/60' : ''}`}>
         {t.name}
       </span>
     </span>
@@ -99,7 +99,7 @@ export function MatchRow({
 
   return (
     <div
-      className={`relative grid items-center gap-x-2.5 px-3 py-2.5 transition-colors hover:bg-panel-2/60 ${
+      className={`relative grid items-center gap-x-2.5 px-3 py-3 transition-colors hover:bg-white/[0.025] ${
         compact
           ? 'grid-cols-[44px_minmax(0,1fr)_auto]'
           : noOdds
@@ -121,11 +121,11 @@ export function MatchRow({
         </span>
       </StoryLink>
 
-      <div className={`num flex w-5 flex-col items-end text-[14px] font-extrabold leading-[21px] ${live ? 'text-live' : ''}`}>
+      <div className={`num flex w-5 flex-col items-end text-[14px] font-semibold leading-[21px] ${live ? 'text-live' : ''}`}>
         {showScore ? (
           <>
-            <span className={m.status === 'finished' && !homeWon ? 'text-fg/60' : ''}>{m.score!.home}</span>
-            <span className={m.status === 'finished' && !awayWon ? 'text-fg/60' : ''}>{m.score!.away}</span>
+            <span className={m.status === 'finished' && !homeWon ? 'text-fg/50' : ''}>{m.score!.home}</span>
+            <span className={m.status === 'finished' && !awayWon ? 'text-fg/50' : ''}>{m.score!.away}</span>
           </>
         ) : null}
       </div>
@@ -139,12 +139,16 @@ export function MatchRow({
       )}
 
       {tags.length || pick || showLeague ? (
-        <div className="relative z-10 mt-1.5 flex flex-wrap items-center gap-1 [grid-column:2/-1]">
+        <div className="relative z-10 mt-2 flex flex-wrap items-center gap-1 [grid-column:2/-1]">
           {showLeague ? <span className="mr-1 truncate text-[11px] text-mute">{m.league.name}</span> : null}
           {pick ? (
-            <span className="inline-flex h-6 items-center rounded-full bg-acid/10 px-2 text-[12px] font-semibold text-acid ring-1 ring-inset ring-acid/35">
+            <span
+              className={`inline-flex h-6 items-center rounded-full px-2 text-[12px] font-medium ${
+                pick.kind === 'value' ? 'bg-acid/[0.12] text-acid' : 'bg-white/[0.06] text-fg/85'
+              }`}
+            >
               Прогноз {pick.label}
-              {pick.odd ? <span className="num ml-1 font-bold">{pick.odd.toFixed(2)}</span> : null}
+              {pick.odd ? <span className="num ml-1 font-semibold">{pick.odd.toFixed(2)}</span> : null}
             </span>
           ) : null}
           {tags.slice(0, 3).map((t) => (

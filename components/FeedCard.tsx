@@ -12,27 +12,31 @@ export function FeedCard({ item, tagSlug }: { item: FeedItem; tagSlug: string })
   const x = m.odds?.x12
   const live = m.status === 'live'
   return (
-    <article className="card relative flex flex-col p-3.5 transition hover:ring-1 hover:ring-edge-2">
-      <div className="flex items-center justify-between gap-2 text-[11px] text-dim">
-        <span className={`shrink-0 font-semibold ${live ? 'text-live' : ''}`}>
+    <article className="card relative flex flex-col p-4 transition-colors hover:bg-panel-2">
+      <div className="flex items-center justify-between gap-2 text-[12px] text-mute">
+        <span className={`shrink-0 font-medium ${live ? 'text-live' : 'text-dim'}`}>
           {live ? `LIVE ${m.elapsed ?? ''}′` : `${dayLabel(ymdInTz(m.ts), todayYmd()).split(',')[0]} · ${formatTime(m.ts)}`}
         </span>
         <span className="truncate">{m.league.name}</span>
       </div>
       <StoryLink id={m.id} href={matchHref(m)} className="mt-2 block after:absolute after:inset-0 after:content-['']">
         {[m.home, m.away].map((t) => (
-          <span key={t.id} className="flex items-center gap-2 py-0.5 text-[15px] font-semibold">
+          <span key={t.id} className="flex items-center gap-2 py-0.5 text-[15px] font-medium">
             <TeamLogo name={t.name} src={t.logo} size={20} />
             <span className="truncate">{t.name}</span>
           </span>
         ))}
       </StoryLink>
-      {hit ? <p className="mt-2 text-[13px] leading-snug text-fg/85">{hit.reason}</p> : null}
+      {hit ? <p className="mt-2.5 text-[13px] leading-snug text-dim">{hit.reason}</p> : null}
       <div className="relative z-10 mt-auto flex flex-wrap items-center gap-1 pt-3">
         {summary?.pick ? (
-          <span className="inline-flex h-6 items-center rounded-full bg-acid/10 px-2 text-[12px] font-semibold text-acid ring-1 ring-inset ring-acid/35">
+          <span
+            className={`inline-flex h-6 items-center rounded-full px-2 text-[12px] font-medium ${
+              summary.pick.kind === 'value' ? 'bg-acid/[0.12] text-acid' : 'bg-white/[0.06] text-fg/85'
+            }`}
+          >
             Прогноз {summary.pick.label}
-            {summary.pick.odd ? <span className="num ml-1 font-bold">{summary.pick.odd.toFixed(2)}</span> : null}
+            {summary.pick.odd ? <span className="num ml-1 font-semibold">{summary.pick.odd.toFixed(2)}</span> : null}
           </span>
         ) : null}
         {tags
@@ -42,7 +46,7 @@ export function FeedCard({ item, tagSlug }: { item: FeedItem; tagSlug: string })
             <TagPill key={t.slug} slug={t.slug} reason={t.reason} />
           ))}
         {x ? (
-          <span className="num ml-auto text-[11px] text-dim">
+          <span className="num ml-auto text-[12px] text-mute">
             {formatOdd(x.home?.value)} · {formatOdd(x.draw?.value)} · {formatOdd(x.away?.value)}
           </span>
         ) : null}

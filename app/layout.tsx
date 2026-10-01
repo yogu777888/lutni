@@ -1,4 +1,4 @@
-import '@fontsource-variable/onest'
+import '@fontsource-variable/inter/opsz.css'
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { DemoBanner } from '@/components/DemoBanner'
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#07090d',
+  themeColor: '#09090b',
   width: 'device-width',
   initialScale: 1,
 }

@@ -21,9 +21,9 @@ export default async function TagsPage() {
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold sm:text-[30px]">Теги ставок</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-dim">
+      <div className="mb-8 pt-2">
+        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">Теги ставок</h1>
+        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-dim">
           Каждый матч автоматически получает теги по данным: линии букмекеров без маржи, модели голов, форме команд, личным встречам и
           травмам. Тег — это готовая идея для ставки с объяснением, почему она появилась.
         </p>
@@ -32,16 +32,16 @@ export default async function TagsPage() {
         {TAGS.map((t) => {
           const n = counts.get(t.slug) ?? 0
           return (
-            <Link key={t.slug} href={`/tag/${t.slug}`} className="card group flex flex-col p-4 transition hover:ring-1 hover:ring-edge-2">
+            <Link key={t.slug} href={`/tag/${t.slug}`} className="card group flex flex-col p-5 transition-colors hover:bg-panel-2">
               <div className="flex items-center justify-between">
                 <span className={tagChipClass(t.kind, 'md')}>
                   <TagLabel tag={t} />
                 </span>
-                <span className="num text-xs font-semibold text-dim">{n ? pluralN(n, ['матч', 'матча', 'матчей']) : 'нет матчей'}</span>
+                <span className="num text-[12px] text-mute">{n ? pluralN(n, ['матч', 'матча', 'матчей']) : 'нет матчей'}</span>
               </div>
-              <h2 className="mt-3 text-base font-bold group-hover:text-acid">{t.title}</h2>
-              <p className="mt-1 text-sm text-dim">{t.hint}</p>
-              <p className="mt-3 text-xs text-mute">Ставка: {t.bet}</p>
+              <h2 className="mt-4 text-[16px] font-semibold">{t.title}</h2>
+              <p className="mt-1 text-[14px] text-dim">{t.hint}</p>
+              <p className="mt-3 text-[12px] text-mute">Ставка: {t.bet}</p>
             </Link>
           )
         })}

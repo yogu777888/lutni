@@ -38,7 +38,7 @@ export function TagPill({
     )
   }
   return (
-    <Link href={`/tag/${t.slug}`} prefetch={false} title={reason ?? t.hint} className={`${cls} transition hover:brightness-110 hover:ring-edge-2`}>
+    <Link href={`/tag/${t.slug}`} prefetch={false} title={reason ?? t.hint} className={`${cls} transition hover:brightness-125`}>
       <TagLabel tag={t} />
     </Link>
   )

@@ -7,18 +7,20 @@ import { MatchRow } from './MatchRow'
 
 const anyOdds = (items: FeedItem[]) => items.some((i) => i.match.odds?.x12)
 
-export function LeagueBlock({ league, items, featured }: { league: League; items: FeedItem[]; featured?: boolean }) {
+export function LeagueBlock({ league, items }: { league: League; items: FeedItem[]; featured?: boolean }) {
   const withOdds = anyOdds(items)
   return (
     <section className="card overflow-hidden">
-      <header className="flex items-center justify-between gap-3 border-b border-edge px-3 py-2.5 sm:px-4">
-        <Link href={leagueHref(league)} prefetch={false} className="flex min-w-0 items-center gap-2 text-[14px] font-bold hover:text-acid">
-          {featured ? <span className="h-2 w-2 shrink-0 rounded-sm bg-acid" aria-hidden /> : null}
+      <header className="flex items-center justify-between gap-3 border-b border-edge px-3 py-3 sm:px-4">
+        <Link href={leagueHref(league)} prefetch={false} className="flex min-w-0 items-center gap-2 text-[14px] font-semibold transition-opacity hover:opacity-75">
           <span className="truncate">{league.name}</span>
+          <span className="text-mute" aria-hidden>
+            ›
+          </span>
         </Link>
         <span className="shrink-0 text-[12px] text-mute">{pluralN(items.length, ['матч', 'матча', 'матчей'])}</span>
       </header>
-      <div className="divide-y divide-edge/70">
+      <div className="divide-y divide-edge">
         {items.map((it) => (
           <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} noOdds={!withOdds} />
         ))}
@@ -30,9 +32,9 @@ export function LeagueBlock({ league, items, featured }: { league: League; items
 export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }) {
   const withOdds = anyOdds(items)
   return (
-    <section className="card overflow-hidden ring-1 ring-live/20">
-      <header className="flex items-center justify-between gap-3 border-b border-edge px-3 py-2.5 sm:px-4">
-        <span className="flex items-center gap-2 text-[14px] font-bold">
+    <section className="card overflow-hidden">
+      <header className="flex items-center justify-between gap-3 border-b border-edge px-3 py-3 sm:px-4">
+        <span className="flex items-center gap-2 text-[14px] font-semibold">
           <span className="h-2 w-2 animate-pulse-live rounded-full bg-live" aria-hidden />
           Сейчас в игре
         </span>
@@ -40,7 +42,7 @@ export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }
           {total > items.length ? `${items.length} из ${total}` : pluralN(total, ['матч', 'матча', 'матчей'])}
         </span>
       </header>
-      <div className="divide-y divide-edge/70">
+      <div className="divide-y divide-edge">
         {items.map((it) => (
           <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} showLeague noOdds={!withOdds} />
         ))}

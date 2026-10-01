@@ -1,10 +1,11 @@
 /** Классы «пилюль» тегов. Отдельный модуль без зависимостей — подключается и в клиентских компонентах. */
 export type TagKind = 'accent' | 'hot' | 'neutral'
 
+// без обводок: цвет только у «денежного» value и у прогрузов, остальные — нейтральные
 const KIND: Record<TagKind, { chip: string; hash: string }> = {
-  accent: { chip: 'bg-acid text-acid-ink ring-acid', hash: 'text-acid-ink/55' },
-  hot: { chip: 'bg-hot/12 text-hot ring-hot/35', hash: 'text-hot/70' },
-  neutral: { chip: 'bg-panel-2 text-fg ring-edge-2', hash: 'text-acid' },
+  accent: { chip: 'bg-acid/[0.12] text-acid', hash: 'text-acid/55' },
+  hot: { chip: 'bg-hot/[0.12] text-hot', hash: 'text-hot/55' },
+  neutral: { chip: 'bg-white/[0.06] text-fg/85', hash: 'text-mute' },
 }
 
 const SIZE = {
@@ -16,7 +17,7 @@ const SIZE = {
 export type TagSize = keyof typeof SIZE
 
 export function tagChipClass(kind: TagKind, size: TagSize = 'sm') {
-  return `inline-flex items-center whitespace-nowrap rounded-full font-semibold ring-1 ring-inset ${KIND[kind].chip} ${SIZE[size]}`
+  return `inline-flex items-center whitespace-nowrap rounded-full font-medium ${KIND[kind].chip} ${SIZE[size]}`
 }
 
 export const tagHashClass = (kind: TagKind) => KIND[kind].hash

@@ -2,11 +2,11 @@ import type { Standings } from '@/lib/types'
 import { TeamLogo } from './TeamLogo'
 
 const ZONE: Record<string, string> = {
-  'Лига чемпионов': 'bg-acid',
-  'Лига Европы': 'bg-sky-400',
-  'Лига конференций': 'bg-teal-400',
-  'Плей-офф': 'bg-violet-400',
-  Повышение: 'bg-acid',
+  'Лига чемпионов': 'bg-[#0a84ff]',
+  'Лига Европы': 'bg-hot',
+  'Лига конференций': 'bg-win',
+  'Плей-офф': 'bg-[#bf5af2]',
+  Повышение: 'bg-win',
   'Зона вылета': 'bg-loss',
 }
 
@@ -33,11 +33,11 @@ export function StandingsTable({
         rows.forEach((r) => r.zone && zones.add(r.zone))
         return (
           <div key={gi}>
-            {g.name && standings.groups.length > 1 ? <h3 className="mb-1.5 text-xs font-bold text-dim">{g.name}</h3> : null}
+            {g.name && standings.groups.length > 1 ? <h3 className="mb-2 text-[12px] font-medium text-dim">{g.name}</h3> : null}
             <div className="scrollbar-none -mx-4 overflow-x-auto sm:mx-0">
               <table className="w-full min-w-[420px] text-[13px]">
                 <thead>
-                  <tr className="text-[11px] font-bold text-mute">
+                  <tr className="text-[11px] font-medium text-mute">
                     <th className="w-8 py-1.5 pl-4 text-left sm:pl-1">#</th>
                     <th className="py-1.5 text-left">Команда</th>
                     <th className="w-8 py-1.5 text-center" title="Игры">И</th>
@@ -52,25 +52,25 @@ export function StandingsTable({
                   {rows.map((r) => {
                     const hl = highlight.includes(r.teamId)
                     return (
-                      <tr key={r.teamId} className={`border-t border-edge/70 ${hl ? 'bg-acid/[0.07]' : ''}`}>
-                        <td className="relative py-1.5 pl-4 sm:pl-1">
+                      <tr key={r.teamId} className={`border-t border-edge ${hl ? 'bg-white/[0.04]' : ''}`}>
+                        <td className="relative py-2 pl-4 sm:pl-1">
                           {r.zone && ZONE[r.zone] ? <span className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${ZONE[r.zone]}`} /> : null}
-                          <span className="num font-semibold text-dim">{r.rank}</span>
+                          <span className="num font-medium text-mute">{r.rank}</span>
                         </td>
-                        <td className="py-1.5">
+                        <td className="py-2">
                           <span className="flex items-center gap-2">
                             <TeamLogo name={r.team} src={r.logo} size={18} />
-                            <span className={`truncate ${hl ? 'font-bold text-fg' : ''}`}>{r.team}</span>
+                            <span className={`truncate ${hl ? 'font-semibold text-fg' : 'text-fg/90'}`}>{r.team}</span>
                           </span>
                         </td>
-                        <td className="num py-1.5 text-center text-dim">{r.played}</td>
-                        <td className="num py-1.5 text-center">{r.wins}</td>
-                        <td className="num py-1.5 text-center">{r.draws}</td>
-                        <td className="num py-1.5 text-center">{r.losses}</td>
-                        <td className="num py-1.5 text-center text-dim">
+                        <td className="num py-2 text-center text-dim">{r.played}</td>
+                        <td className="num py-2 text-center">{r.wins}</td>
+                        <td className="num py-2 text-center">{r.draws}</td>
+                        <td className="num py-2 text-center">{r.losses}</td>
+                        <td className="num py-2 text-center text-dim">
                           {r.goalsFor}:{r.goalsAgainst}
                         </td>
-                        <td className="num py-1.5 pr-4 text-center font-extrabold sm:pr-1">{r.points}</td>
+                        <td className="num py-2 pr-4 text-center font-semibold sm:pr-1">{r.points}</td>
                       </tr>
                     )
                   })}

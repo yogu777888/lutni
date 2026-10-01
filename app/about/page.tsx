@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Как мы считаем</h1>
+      <h1 className="pt-2 text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">Как мы считаем</h1>
       <p className="text-[15px] leading-relaxed text-fg/85">
         tag.bet не «угадывает» исходы — мы собираем данные и показываем, где линия букмекеров расходится со справедливой оценкой. Все
         расчёты автоматические и одинаковые для каждого матча.
@@ -40,7 +40,7 @@ export default function AboutPage() {
         <ul className="space-y-2 text-sm">
           {TAGS.map((t) => (
             <li key={t.slug}>
-              <Link href={`/tag/${t.slug}`} className="font-bold hover:text-acid">
+              <Link href={`/tag/${t.slug}`} className="font-medium transition-opacity hover:opacity-75">
                 {t.label}
               </Link>{' '}
               <span className="text-dim">— {t.hint.toLowerCase()}.</span>

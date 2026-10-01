@@ -93,8 +93,8 @@ function Frame({ children }: { children: React.ReactNode }) {
 function Head({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
     <div className="shrink-0">
-      <div className="st-rise text-[11px] font-extrabold uppercase tracking-[0.14em] text-acid">{eyebrow}</div>
-      <h2 className="st-rise mt-2 text-[23px] font-extrabold leading-[1.15] tracking-tight" style={wait(80)}>
+      <div className="st-rise text-[11px] font-bold uppercase tracking-[0.14em] text-acid">{eyebrow}</div>
+      <h2 className="st-rise mt-2 text-[23px] font-bold leading-[1.15] tracking-tight" style={wait(80)}>
         {title}
       </h2>
       {sub ? (
@@ -132,7 +132,7 @@ function TeamBig({ team, cls }: { team: StoryTeam; cls: string }) {
       <div className="rounded-full bg-panel-2 p-3 ring-1 ring-inset ring-edge-2">
         <TeamLogo name={team.name} src={team.logo} size={64} />
       </div>
-      <span className="line-clamp-2 text-[17px] font-extrabold leading-tight">{team.name}</span>
+      <span className="line-clamp-2 text-[17px] font-bold leading-tight">{team.name}</span>
     </div>
   )
 }
@@ -154,13 +154,13 @@ function Cover({ s, story, focus }: { s: S<'cover'>; story: StoryData; focus: St
           <TeamBig team={story.home} cls="st-slide-l" />
           <div className="st-pop flex h-[90px] items-center px-1" style={wait(350)}>
             {score ? (
-              <span className={`num text-[44px] font-black leading-none ${live ? 'text-live' : ''}`}>
+              <span className={`num text-[44px] font-bold leading-none ${live ? 'text-live' : ''}`}>
                 {score.home}
                 <span className="mx-1 text-dim">:</span>
                 {score.away}
               </span>
             ) : (
-              <span className="text-[22px] font-black italic text-acid">VS</span>
+              <span className="text-[22px] font-bold italic text-acid">VS</span>
             )}
           </div>
           <TeamBig team={story.away} cls="st-slide-r" />
@@ -224,7 +224,7 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
         <div className="grid h-[min(30dvh,230px)] grid-cols-3 items-end gap-3 border-b border-edge-2">
           {items.map((it, i) => (
             <div key={it.key} className="flex h-full flex-col items-center justify-end">
-              <Num value={it.p} format={pctFmt} delay={300 + i * 120} className="mb-1.5 text-[26px] font-extrabold" />
+              <Num value={it.p} format={pctFmt} delay={300 + i * 120} className="mb-1.5 text-[26px] font-bold" />
               <div
                 className={`st-grow-y w-full rounded-t-[6px] ${it.bar}`}
                 style={{ height: `${Math.max(3, (it.p / max) * 80)}%`, ...wait(300 + i * 120) }}
@@ -236,7 +236,7 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
         <div className="mt-3 grid grid-cols-3 gap-3 text-center">
           {items.map((it) => (
             <div key={it.key} className="min-w-0">
-              <div className="flex items-center justify-center gap-1.5 text-[15px] font-extrabold">
+              <div className="flex items-center justify-center gap-1.5 text-[15px] font-bold">
                 {it.team ? <TeamLogo name={it.team.name} src={it.team.logo} size={18} /> : null}
                 {it.label}
               </div>
@@ -279,7 +279,7 @@ function Meter({ p, label, alt, delay }: { p: number; label: string; alt: string
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <Num value={p} format={pctFmt} delay={delay + 100} className="text-[26px] font-extrabold" />
+          <Num value={p} format={pctFmt} delay={delay + 100} className="text-[26px] font-bold" />
         </div>
       </div>
       <div className="mt-2 text-[14px] font-bold">{label}</div>
@@ -305,9 +305,9 @@ function Goals({ s, story }: { s: S<'goals'>; story: StoryData }) {
             </div>
           </div>
           <div className="mt-1.5 flex items-baseline justify-between">
-            <Num value={s.xg.home} format={(v) => dec(v, 2)} delay={250} className="text-[32px] font-extrabold" />
+            <Num value={s.xg.home} format={(v) => dec(v, 2)} delay={250} className="text-[32px] font-bold" />
             <span className="text-[12px] font-semibold text-dim">ожидаемые голы (xG)</span>
-            <Num value={s.xg.away} format={(v) => dec(v, 2)} delay={250} className="text-[32px] font-extrabold" />
+            <Num value={s.xg.away} format={(v) => dec(v, 2)} delay={250} className="text-[32px] font-bold" />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -352,7 +352,7 @@ function Scores({ s, story }: { s: S<'scores'>; story: StoryData }) {
                     style={{ background: `rgb(200 255 46 / ${a})`, color: a > 0.5 ? 'var(--color-acid-ink)' : 'var(--color-fg)', ...wait(200 + (i + j) * 70) }}
                     title={`${story.home.name} ${i}:${j} ${story.away.name} — ${(p * 100).toFixed(1)}%`}
                   >
-                    <span className="num text-[13px] font-extrabold leading-none">
+                    <span className="num text-[13px] font-bold leading-none">
                       {i}:{j}
                     </span>
                     {p >= 0.015 ? <span className="num mt-0.5 text-[10px] font-semibold opacity-80">{Math.round(p * 100)}%</span> : null}
@@ -379,9 +379,9 @@ function Scores({ s, story }: { s: S<'scores'>; story: StoryData }) {
 // ─── Форма ───────────────────────────────────────────────────────────────────
 
 const RES: Record<Res, { letter: string; cls: string; title: string }> = {
-  W: { letter: 'В', cls: 'bg-win', title: 'победа' },
-  D: { letter: 'Н', cls: 'bg-draw', title: 'ничья' },
-  L: { letter: 'П', cls: 'bg-loss', title: 'поражение' },
+  W: { letter: 'В', cls: 'bg-win/[0.16] text-win', title: 'победа' },
+  D: { letter: 'Н', cls: 'bg-draw/[0.14] text-draw', title: 'ничья' },
+  L: { letter: 'П', cls: 'bg-loss/[0.16] text-loss', title: 'поражение' },
 }
 
 function FormTeam({ team, side, f, base }: { team: StoryTeam; side: Side; f: FormSide | null; base: number }) {
@@ -402,7 +402,7 @@ function FormTeam({ team, side, f, base }: { team: StoryTeam; side: Side; f: For
       <div className="mt-3 grid grid-cols-5 gap-1.5">
         {last.map((r, i) => (
           <div key={i} className="st-pop flex flex-col items-center" style={wait(base + 150 + i * 90)}>
-            <span className={`flex h-10 w-full items-center justify-center rounded-lg text-[15px] font-extrabold text-black ${RES[r].cls}`} title={RES[r].title}>
+            <span className={`flex h-10 w-full items-center justify-center rounded-lg text-[15px] font-semibold ${RES[r].cls}`} title={RES[r].title}>
               {RES[r].letter}
             </span>
             <span className="num mt-1 text-[11px] text-dim">{scores[i]}</span>
@@ -456,7 +456,7 @@ function Butterfly({ rows }: { rows: CompareRow[] }) {
         const max = Math.max(r.home, r.away) || 1
         const d = 250 + i * 110
         const valCls = (side: Side) =>
-          r.better === side ? 'font-extrabold text-fg' : r.better ? 'font-semibold text-dim' : 'font-bold text-fg'
+          r.better === side ? 'font-bold text-fg' : r.better ? 'font-semibold text-dim' : 'font-bold text-fg'
         return (
           <div key={r.label} className="st-rise" style={wait(d)}>
             <div className="mb-1 grid grid-cols-[1fr_auto_1fr] items-baseline gap-2">
@@ -528,7 +528,7 @@ function H2H({ s, story }: { s: S<'h2h'>; story: StoryData }) {
             <div key={x.key} className="min-w-0">
               <div className="flex items-center justify-center gap-1.5">
                 <span className={`h-2.5 w-2.5 rounded-[3px] ${x.cls}`} aria-hidden />
-                <Num value={x.v} format={intFmt} delay={300} className="text-[24px] font-extrabold" />
+                <Num value={x.v} format={intFmt} delay={300} className="text-[24px] font-bold" />
               </div>
               <div className="truncate text-[12px] text-dim">{x.key === 'draw' ? 'ничьи' : `победы: ${x.name}`}</div>
             </div>
@@ -545,7 +545,7 @@ function H2H({ s, story }: { s: S<'h2h'>; story: StoryData }) {
               >
                 <span className="num text-[11px] text-mute">{g.date}</span>
                 <span className={`truncate text-right ${a > b ? 'font-bold' : 'text-fg/70'}`}>{g.home}</span>
-                <span className="num rounded-md bg-panel-3 px-1.5 py-0.5 text-[13px] font-extrabold">{g.score}</span>
+                <span className="num rounded-md bg-panel-3 px-1.5 py-0.5 text-[13px] font-bold">{g.score}</span>
                 <span className={`truncate ${b > a ? 'font-bold' : 'text-fg/70'}`}>{g.away}</span>
               </li>
             )
@@ -655,7 +655,7 @@ function GoalsTimeline({ s, story }: { s: S<'goalsTimeline'>; story: StoryData }
                 <span className="flex min-w-0 justify-end">{g.side === 'home' ? label(g) : null}</span>
                 <span className="num flex h-10 w-14 flex-col items-center justify-center rounded-lg bg-panel-2 ring-1 ring-inset ring-edge-2">
                   <span className="text-[11px] text-dim">{g.label}</span>
-                  <span className="text-[14px] font-extrabold leading-none">{g.score}</span>
+                  <span className="text-[14px] font-bold leading-none">{g.score}</span>
                 </span>
                 <span className="flex min-w-0">{g.side === 'away' ? label(g) : null}</span>
               </li>
@@ -690,12 +690,12 @@ function PickSlide({ s }: { s: S<'pick'> }) {
   ]
   return (
     <Frame>
-      <div className="st-rise flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-acid">
+      <div className="st-rise flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-acid">
         Прогноз tag.bet
         {s.value ? <span className="rounded-full bg-acid px-2 py-0.5 text-[10px] tracking-normal text-acid-ink">value</span> : null}
       </div>
       <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <div className="st-pop text-[68px] font-black leading-none tracking-tight text-acid" style={wait(150)}>
+        <div className="st-pop text-[68px] font-bold leading-none tracking-tight text-acid" style={wait(150)}>
           {s.label}
         </div>
         <p className="st-rise mt-2 max-w-[19rem] text-[17px] font-semibold leading-snug first-letter:uppercase" style={wait(300)}>
@@ -710,7 +710,7 @@ function PickSlide({ s }: { s: S<'pick'> }) {
             <div key={b.key} className="st-rise" style={wait(500 + i * 150)}>
               <div className="mb-1 flex items-baseline justify-between gap-2 text-[13px]">
                 <span className="font-semibold text-fg/90">{b.label}</span>
-                <Num value={b.p} format={(v) => `${dec(v * 100)}%`} delay={500 + i * 150} className="text-[16px] font-extrabold" />
+                <Num value={b.p} format={(v) => `${dec(v * 100)}%`} delay={500 + i * 150} className="text-[16px] font-bold" />
               </div>
               <div className="h-2.5 overflow-hidden rounded-full bg-panel-3">
                 <div className={`st-grow-x h-full rounded-full ${b.cls}`} style={{ width: `${b.p * 100}%`, ...wait(500 + i * 150) }} />

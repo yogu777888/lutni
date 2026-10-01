@@ -48,10 +48,10 @@ export function OddsTable({
     <div className="scrollbar-none -mx-4 overflow-x-auto sm:mx-0">
       <table className="w-full min-w-[560px] border-separate border-spacing-0 text-sm">
         <thead>
-          <tr className="text-[11px] font-bold uppercase tracking-wide text-mute">
-            <th className="sticky left-0 z-10 bg-panel py-2 pl-4 pr-2 text-left sm:pl-0">Букмекер</th>
+          <tr className="text-[11px] font-medium text-mute">
+            <th className="sticky left-0 z-10 bg-panel py-2 pl-4 pr-2 text-left font-medium sm:pl-0">Букмекер</th>
             {cols.map((c) => (
-              <th key={c.key} className="px-1 py-2 text-center">
+              <th key={c.key} className="px-1 py-2 text-center font-medium">
                 {c.label}
               </th>
             ))}
@@ -62,11 +62,11 @@ export function OddsTable({
           {rows.map((b) => {
             const partner = partnerForApiBookmaker(b.bookmakerId, b.bookmakerName)
             return (
-              <tr key={`${b.bookmakerId}-${b.bookmakerName}`} className={partner ? 'bg-acid/[0.03]' : ''}>
-                <td className="sticky left-0 z-10 border-t border-edge bg-panel py-2 pl-4 pr-2 sm:pl-0">
-                  <span className="flex items-center gap-2">
-                    {partner ? <PartnerBadge partner={partner} size={22} /> : <span className="h-[22px] w-[22px] rounded-md bg-panel-3" />}
-                    <span className={`whitespace-nowrap ${partner ? 'font-bold' : 'text-dim'}`}>{partner?.name ?? b.bookmakerName}</span>
+              <tr key={`${b.bookmakerId}-${b.bookmakerName}`}>
+                <td className="sticky left-0 z-10 border-t border-edge bg-panel py-2.5 pl-4 pr-2 sm:pl-0">
+                  <span className="flex items-center gap-2.5">
+                    {partner ? <PartnerBadge partner={partner} size={22} /> : <span className="h-[22px] w-[22px] rounded-[6px] bg-white/[0.06]" />}
+                    <span className={`whitespace-nowrap ${partner ? 'font-medium' : 'text-dim'}`}>{partner?.name ?? b.bookmakerName}</span>
                   </span>
                 </td>
                 {cols.map((c) => {
@@ -77,20 +77,20 @@ export function OddsTable({
                   const moved = q?.opening ? q.value / q.opening - 1 : 0
                   const cell = (
                     <span
-                      className={`num relative inline-flex min-w-[52px] items-center justify-center rounded-md px-1.5 py-1 font-bold ${
-                        isBest ? 'bg-acid/15 text-acid ring-1 ring-inset ring-acid/40' : 'bg-panel-2'
+                      className={`num relative inline-flex min-w-[54px] items-center justify-center rounded-full px-2 py-1 ${
+                        isBest ? 'bg-acid/[0.12] font-semibold text-acid' : 'font-medium text-fg/85'
                       }`}
                       title={q?.opening ? `Открытие: ${q.opening.toFixed(2)}` : undefined}
                     >
                       {formatOdd(q?.value)}
-                      {moved <= -0.05 ? <span className="ml-0.5 text-[9px] text-loss">▼</span> : moved >= 0.05 ? <span className="ml-0.5 text-[9px] text-win">▲</span> : null}
-                      {val ? <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-acid ring-2 ring-panel" title="Value" /> : null}
+                      {moved <= -0.05 ? <span className="ml-0.5 text-[9px] text-hot">▼</span> : moved >= 0.05 ? <span className="ml-0.5 text-[9px] text-mute">▲</span> : null}
+                      {val ? <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-acid" title="Value" /> : null}
                     </span>
                   )
                   return (
-                    <td key={c.key} className="border-t border-edge px-1 py-2 text-center">
+                    <td key={c.key} className="border-t border-edge px-1 py-2.5 text-center">
                       {q && partner && open ? (
-                        <a href={goHref(partner, 'odds-table', match.id)} target="_blank" rel={SPONSORED_REL} className="inline-block transition hover:brightness-125">
+                        <a href={goHref(partner, 'odds-table', match.id)} target="_blank" rel={SPONSORED_REL} className="inline-block rounded-full transition-colors hover:bg-white/[0.06]">
                           {cell}
                         </a>
                       ) : q ? (
@@ -101,13 +101,13 @@ export function OddsTable({
                     </td>
                   )
                 })}
-                <td className="border-t border-edge py-2 pl-1 pr-4 text-right sm:pr-0">
+                <td className="border-t border-edge py-2.5 pl-1 pr-4 text-right sm:pr-0">
                   {partner && open ? (
                     <a
                       href={goHref(partner, 'odds-table', match.id)}
                       target="_blank"
                       rel={SPONSORED_REL}
-                      className="inline-flex rounded-lg bg-acid px-3 py-1.5 text-xs font-extrabold text-acid-ink hover:brightness-110"
+                      className="inline-flex rounded-full bg-white/[0.08] px-3 py-1.5 text-[12px] font-medium text-fg transition-colors hover:bg-acid hover:text-acid-ink"
                     >
                       Ставка
                     </a>
@@ -117,14 +117,14 @@ export function OddsTable({
             )
           })}
           {model ? (
-            <tr className="text-dim">
-              <td className="sticky left-0 z-10 border-t border-edge-2 bg-panel py-2 pl-4 pr-2 text-xs font-semibold sm:pl-0">
+            <tr className="text-mute">
+              <td className="sticky left-0 z-10 border-t border-edge-2 bg-panel py-2.5 pl-4 pr-2 text-[12px] font-medium sm:pl-0">
                 Справедливый (tag.bet)
               </td>
               {cols.map((c) => {
                 const p = prob.get(c.key)
                 return (
-                  <td key={c.key} className="num border-t border-edge-2 px-1 py-2 text-center text-xs">
+                  <td key={c.key} className="num border-t border-edge-2 px-1 py-2.5 text-center text-[12px]">
                     {p ? (1 / p).toFixed(2) : '—'}
                   </td>
                 )

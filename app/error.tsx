@@ -5,14 +5,14 @@ import Link from 'next/link'
 export default function Error({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <div className="mx-auto max-w-md py-16 text-center">
-      <p className="font-display text-4xl font-bold text-acid">Упс</p>
-      <h1 className="mt-4 font-display text-xl font-bold">Данные временно недоступны</h1>
+      <p className="text-[44px] font-semibold leading-none tracking-[-0.04em] text-mute">Упс</p>
+      <h1 className="mt-5 text-[22px] font-semibold tracking-tight">Данные временно недоступны</h1>
       <p className="mt-2 text-sm text-dim">Источник данных не ответил. Обычно это проходит за минуту.</p>
       <div className="mt-6 flex justify-center gap-2">
-        <button onClick={reset} className="rounded-xl bg-acid px-5 py-2.5 text-sm font-bold text-acid-ink">
+        <button onClick={reset} className="rounded-full bg-fg px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-white">
           Повторить
         </button>
-        <Link href="/" className="rounded-xl bg-panel-3 px-5 py-2.5 text-sm font-bold ring-1 ring-inset ring-edge-2">
+        <Link href="/" className="rounded-full bg-white/[0.08] px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-white/[0.13]">
           На главную
         </Link>
       </div>

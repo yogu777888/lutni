@@ -1,10 +1,15 @@
 import { SPONSORED_REL } from '@/lib/affiliate'
 
-type Variant = 'primary' | 'secondary' | 'ghost'
+/**
+ * primary — лайм, главное действие экрана (одно на экран); light — белая кнопка для
+ * остальных переходов к партнёрам; secondary — тихая серая; ghost — ссылка.
+ */
+type Variant = 'primary' | 'light' | 'secondary' | 'ghost'
 
 const STYLES: Record<Variant, string> = {
-  primary: 'bg-acid text-acid-ink hover:brightness-110 shadow-[0_0_0_1px_rgb(200_255_46/0.4),0_8px_24px_-8px_rgb(200_255_46/0.5)]',
-  secondary: 'bg-panel-3 text-fg ring-1 ring-inset ring-edge-2 hover:bg-edge-2',
+  primary: 'bg-acid text-acid-ink hover:bg-[#d6ff5c]',
+  light: 'bg-fg text-ink hover:bg-white',
+  secondary: 'bg-white/[0.08] text-fg hover:bg-white/[0.13]',
   ghost: 'text-acid hover:underline underline-offset-4',
 }
 
@@ -25,7 +30,7 @@ export function CtaLink({
       href={href}
       target="_blank"
       rel={SPONSORED_REL}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-[0.98] ${STYLES[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition active:scale-[0.98] ${STYLES[variant]} ${className}`}
     >
       {children}
     </a>

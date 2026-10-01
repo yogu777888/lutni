@@ -4,15 +4,15 @@ import type { Team } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
 
 const RES: Record<Res, { label: string; cls: string }> = {
-  W: { label: 'В', cls: 'bg-win text-black' },
-  D: { label: 'Н', cls: 'bg-draw text-black' },
-  L: { label: 'П', cls: 'bg-loss text-black' },
+  W: { label: 'В', cls: 'bg-win/[0.16] text-win' },
+  D: { label: 'Н', cls: 'bg-draw/[0.14] text-draw' },
+  L: { label: 'П', cls: 'bg-loss/[0.16] text-loss' },
 }
 
 export function ResBadge({ r, size = 'sm' }: { r: Res; size?: 'sm' | 'xs' }) {
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-md font-extrabold ${RES[r].cls} ${
+      className={`inline-flex items-center justify-center rounded-[6px] font-semibold ${RES[r].cls} ${
         size === 'sm' ? 'h-6 w-6 text-[11px]' : 'h-5 w-5 text-[10px]'
       }`}
       title={r === 'W' ? 'Победа' : r === 'D' ? 'Ничья' : 'Поражение'}
@@ -24,10 +24,10 @@ export function ResBadge({ r, size = 'sm' }: { r: Res; size?: 'sm' | 'xs' }) {
 
 function TeamFormCard({ team, form }: { team: Team; form: TeamForm }) {
   return (
-    <div className="rounded-xl bg-panel-2 p-3 ring-1 ring-inset ring-edge">
+    <div className="rounded-2xl bg-panel-2 p-4">
       <div className="flex items-center gap-2">
         <TeamLogo name={team.name} src={team.logo} size={22} />
-        <span className="truncate font-bold">{team.name}</span>
+        <span className="truncate font-semibold">{team.name}</span>
         <span className="ml-auto flex gap-1">
           {[...form.last5].reverse().map((r, i) => (
             <ResBadge key={i} r={r} size="xs" />
@@ -37,19 +37,19 @@ function TeamFormCard({ team, form }: { team: Team; form: TeamForm }) {
       <dl className="mt-3 grid grid-cols-4 gap-1 text-center text-[11px]">
         <div>
           <dt className="text-mute">Забивает</dt>
-          <dd className="num text-sm font-bold">{form.gfAvg.toFixed(1)}</dd>
+          <dd className="num mt-0.5 text-[15px] font-semibold">{form.gfAvg.toFixed(1)}</dd>
         </div>
         <div>
           <dt className="text-mute">Пропускает</dt>
-          <dd className="num text-sm font-bold">{form.gaAvg.toFixed(1)}</dd>
+          <dd className="num mt-0.5 text-[15px] font-semibold">{form.gaAvg.toFixed(1)}</dd>
         </div>
         <div>
           <dt className="text-mute">ТБ 2.5</dt>
-          <dd className="num text-sm font-bold">{Math.round(form.over25Rate * 100)}%</dd>
+          <dd className="num mt-0.5 text-[15px] font-semibold">{Math.round(form.over25Rate * 100)}%</dd>
         </div>
         <div>
           <dt className="text-mute">Обе заб.</dt>
-          <dd className="num text-sm font-bold">{Math.round(form.bttsRate * 100)}%</dd>
+          <dd className="num mt-0.5 text-[15px] font-semibold">{Math.round(form.bttsRate * 100)}%</dd>
         </div>
       </dl>
       <ul className="mt-3 space-y-1">
@@ -58,7 +58,7 @@ function TeamFormCard({ team, form }: { team: Team; form: TeamForm }) {
             <span className="num w-10 shrink-0 text-[11px] text-mute">{formatDayShort(g.ts)}</span>
             <span className="w-4 shrink-0 text-[11px] text-mute">{g.isHome ? 'Д' : 'Г'}</span>
             <span className="min-w-0 flex-1 truncate">{g.opponent.name}</span>
-            <span className="num shrink-0 font-bold">
+            <span className="num shrink-0 font-medium">
               {g.gf}:{g.ga}
             </span>
             <ResBadge r={g.result} size="xs" />

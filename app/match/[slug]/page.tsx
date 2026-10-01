@@ -99,11 +99,11 @@ export default async function MatchPage({ params }: Props) {
           { href: canonical, label: pair },
         ]}
       />
-      <h1 className="mb-3 font-display text-xl font-bold leading-tight tracking-tight sm:text-2xl">{h1}</h1>
+      <h1 className="mb-4 text-[22px] font-bold leading-tight tracking-[-0.025em] sm:text-[28px]">{h1}</h1>
 
       <MatchHero full={full}>
         {hasStory ? (
-          <div className="mt-4 flex justify-center">
+          <div className="mt-5 flex justify-center">
             <StoryButton id={m.id} href={canonical} />
           </div>
         ) : null}
@@ -131,11 +131,11 @@ export default async function MatchPage({ params }: Props) {
 
           {tags.length ? (
             <Section title="Теги матча" aside="почему они здесь">
-              <ul className="space-y-2.5">
+              <ul className="space-y-3">
                 {tags.map((t) => (
                   <li key={t.slug} className="flex items-start gap-3">
-                    <TagPill slug={t.slug} size="md" className="mt-0.5 shrink-0" />
-                    <p className="text-sm leading-relaxed text-fg/85">{t.reason}</p>
+                    <TagPill slug={t.slug} size="md" className="shrink-0" />
+                    <p className="pt-1 text-[14px] leading-relaxed text-dim">{t.reason}</p>
                   </li>
                 ))}
               </ul>
@@ -147,31 +147,24 @@ export default async function MatchPage({ params }: Props) {
               title="Вероятности"
               aside={model ? (model.source === 'xg' ? 'модель по xG' : `рынок ${cons.books > 1 ? `(${cons.books} БК)` : ''} + модель`) : 'рынок'}
             >
-              <div className="space-y-4">
-                <div>
-                  <div className="mb-1.5 flex justify-between text-xs text-dim">
-                    <span className="truncate">{m.home.name}</span>
-                    <span>ничья</span>
-                    <span className="truncate">{m.away.name}</span>
-                  </div>
-                  <X12Bar home={x.home} draw={x.draw} away={x.away} />
-                </div>
+              <div className="space-y-5">
+                <X12Bar home={x.home} draw={x.draw} away={x.away} names={[m.home.name, m.away.name]} />
                 {over25 != null ? <SplitBar left={over25} leftLabel="ТБ 2.5" rightLabel="ТМ 2.5" /> : null}
                 {btts != null ? <SplitBar left={btts} leftLabel="Обе забьют" rightLabel="Нет" /> : null}
                 {model ? (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl bg-panel-2 p-3">
-                      <div className="text-[11px] text-dim">Ожидаемые голы (xG)</div>
-                      <div className="num mt-1 font-display text-xl font-bold">
-                        {model.lambdas.home.toFixed(2)} <span className="text-dim">:</span> {model.lambdas.away.toFixed(2)}
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="rounded-2xl bg-panel-2 p-4">
+                      <div className="text-[11px] text-mute">Ожидаемые голы (xG)</div>
+                      <div className="num mt-1.5 text-[22px] font-semibold tracking-tight">
+                        {model.lambdas.home.toFixed(2)} <span className="text-mute">:</span> {model.lambdas.away.toFixed(2)}
                       </div>
                     </div>
-                    <div className="rounded-xl bg-panel-2 p-3">
-                      <div className="text-[11px] text-dim">Вероятный счёт</div>
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    <div className="rounded-2xl bg-panel-2 p-4">
+                      <div className="text-[11px] text-mute">Вероятный счёт</div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
                         {model.topScores.slice(0, 4).map((s) => (
-                          <span key={`${s.home}-${s.away}`} className="num rounded-md bg-panel-3 px-2 py-0.5 text-[13px] font-bold">
-                            {s.home}:{s.away} <span className="text-[11px] font-semibold text-dim">{pct(s.p)}</span>
+                          <span key={`${s.home}-${s.away}`} className="num rounded-full bg-white/[0.06] px-2.5 py-1 text-[13px] font-semibold">
+                            {s.home}:{s.away} <span className="text-[11px] font-normal text-dim">{pct(s.p)}</span>
                           </span>
                         ))}
                       </div>
@@ -179,9 +172,9 @@ export default async function MatchPage({ params }: Props) {
                   </div>
                 ) : null}
                 {ins.glicko ? (
-                  <p className="text-xs text-dim">
-                    Рейтинг Glicko-2: {m.home.name} — <span className="num font-semibold text-fg">{Math.round(ins.glicko.homeRating)}</span>, {m.away.name} —{' '}
-                    <span className="num font-semibold text-fg">{Math.round(ins.glicko.awayRating)}</span>
+                  <p className="text-[12px] text-mute">
+                    Рейтинг Glicko-2: {m.home.name} — <span className="num font-medium text-dim">{Math.round(ins.glicko.homeRating)}</span>, {m.away.name} —{' '}
+                    <span className="num font-medium text-dim">{Math.round(ins.glicko.awayRating)}</span>
                   </p>
                 ) : null}
               </div>
@@ -191,8 +184,8 @@ export default async function MatchPage({ params }: Props) {
           {books.length ? (
             <Section title="Коэффициенты букмекеров" aside={`${books.length} БК · ▼▲ движение от открытия`}>
               <OddsTable match={m} books={books} model={model} candidates={candidates} />
-              <p className="mt-3 text-[11px] text-mute">
-                Лучший коэффициент в колонке подсвечен, зелёная точка — value (выше справедливого). Коэффициенты меняются — проверяйте
+              <p className="mt-4 text-[11px] text-mute">
+                Лучший коэффициент в колонке подсвечен, точка — value (выше справедливого). Коэффициенты меняются — проверяйте
                 актуальную линию у букмекера.
               </p>
             </Section>
@@ -203,7 +196,7 @@ export default async function MatchPage({ params }: Props) {
               <div className="prose-ru space-y-4">
                 {ins.preview.map((p) => (
                   <div key={p.title}>
-                    <h3 className="mb-1 text-sm font-bold">{p.title}</h3>
+                    <h3 className="mb-1 text-[14px] font-semibold">{p.title}</h3>
                     <p className="text-[15px]">{p.text}</p>
                   </div>
                 ))}
@@ -230,7 +223,7 @@ export default async function MatchPage({ params }: Props) {
           ) : null}
 
           {ins.standings ? (
-            <Section title="Турнирная таблица" aside={<Link href={leagueHref(m.league)} className="hover:text-acid">полностью →</Link>}>
+            <Section title="Турнирная таблица" aside={<Link href={leagueHref(m.league)} className="transition-colors hover:text-fg">полностью →</Link>}>
               <StandingsTable standings={ins.standings} highlight={[m.home.id, m.away.id]} compact />
             </Section>
           ) : null}
@@ -242,9 +235,9 @@ export default async function MatchPage({ params }: Props) {
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-          <section className="card p-4">
-            <h2 className="mb-3 text-[15px] font-bold">Где поставить</h2>
-            <div className="space-y-2.5">
+          <section className="card p-5">
+            <h2 className="mb-4 text-[15px] font-semibold">Где поставить</h2>
+            <div className="divide-y divide-edge">
               {PARTNERS.slice(0, 3).map((p, i) => (
                 <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} />
               ))}
@@ -252,8 +245,8 @@ export default async function MatchPage({ params }: Props) {
           </section>
           {related.length ? (
             <section className="card overflow-hidden">
-              <h2 className="border-b border-edge px-4 py-3 text-[15px] font-bold">Другие матчи</h2>
-              <div className="divide-y divide-edge/70">
+              <h2 className="border-b border-edge px-4 py-3.5 text-[15px] font-semibold">Другие матчи</h2>
+              <div className="divide-y divide-edge">
                 {related.map((o) => (
                   <MatchRow key={o.id} m={o} tags={[]} compact showLeague={o.league.id !== m.league.id} />
                 ))}
