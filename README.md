@@ -71,6 +71,9 @@ SSTATS_MOCK=1 npm run dev        # http://localhost:3000
 
 В демо-режиме сверху висит жёлтая плашка, а `robots.txt` закрывает сайт от индексации.
 
+Обновление: `git pull`, затем `npm run dev`. Если в обновлении поменялись зависимости,
+`npm run dev` сам выполнит `npm install` (скрипт `scripts/ensure-deps.mjs`).
+
 ## Подключение реального SStats API
 
 ```bash
