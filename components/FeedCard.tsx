@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import type { FeedItem } from '@/lib/data'
 import { dayLabel, formatOdd, formatTime, todayYmd, ymdInTz } from '@/lib/format'
 import { matchHref } from '@/lib/links'
+import { StoryLink } from './story/StoryLink'
 import { TagPill } from './TagPill'
 import { TeamLogo } from './TeamLogo'
 
@@ -19,14 +19,14 @@ export function FeedCard({ item, tagSlug }: { item: FeedItem; tagSlug: string })
         </span>
         <span className="truncate">{m.league.name}</span>
       </div>
-      <Link href={matchHref(m)} prefetch={false} className="mt-2 block after:absolute after:inset-0 after:content-['']">
+      <StoryLink id={m.id} href={matchHref(m)} className="mt-2 block after:absolute after:inset-0 after:content-['']">
         {[m.home, m.away].map((t) => (
           <span key={t.id} className="flex items-center gap-2 py-0.5 text-[15px] font-semibold">
             <TeamLogo name={t.name} src={t.logo} size={20} />
             <span className="truncate">{t.name}</span>
           </span>
         ))}
-      </Link>
+      </StoryLink>
       {hit ? <p className="mt-2 text-[13px] leading-snug text-fg/85">{hit.reason}</p> : null}
       <div className="relative z-10 mt-auto flex flex-wrap items-center gap-1 pt-3">
         {summary?.pick ? (

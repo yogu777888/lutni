@@ -1,0 +1,21 @@
+'use client'
+
+import { openStory } from './events'
+
+/** Кнопка «Сторис матча» на странице матча. */
+export function StoryButton({ id, href, className = '' }: { id: number; href: string; className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => openStory({ id, href, opener: e.currentTarget })}
+      className={`inline-flex items-center gap-2 rounded-full bg-panel-2 py-1.5 pl-1.5 pr-3.5 text-[13px] font-bold ring-1 ring-inset ring-edge-2 transition hover:bg-panel-3 ${className}`}
+    >
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-acid text-acid-ink" aria-hidden>
+        <svg viewBox="0 0 12 12" className="ml-0.5 h-2.5 w-2.5 fill-current">
+          <path d="M2 1.2v9.6a.6.6 0 0 0 .9.5l7.6-4.8a.6.6 0 0 0 0-1L2.9.7a.6.6 0 0 0-.9.5Z" />
+        </svg>
+      </span>
+      Матч в слайдах
+    </button>
+  )
+}

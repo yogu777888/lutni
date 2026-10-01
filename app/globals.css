@@ -20,6 +20,11 @@
   --color-win: #2fd27a;
   --color-draw: #f2c233;
   --color-loss: #ff5a5f;
+  /* графики «хозяева — гости»: шаги проверены валидатором палитры на тёмном фоне
+     (яркость, различимость при дальтонизме); ничья — нейтральная середина */
+  --color-home: #7ba300;
+  --color-away: #3987e5;
+  --color-tie: #5a6572;
 
   --font-sans: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -97,5 +102,122 @@
   .prose-ru p {
     line-height: 1.7;
     color: color-mix(in oklab, var(--color-fg) 88%, transparent);
+  }
+}
+
+/* ─── Сторис матча ─────────────────────────────────────────────────────────
+   Анимации запускаются при монтировании слайда; задержки — через style. */
+@layer components {
+  .st-rise {
+    animation: st-rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .st-fade {
+    animation: st-fade 0.6s ease-out both;
+  }
+  .st-pop {
+    animation: st-pop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+  }
+  .st-grow-x {
+    transform-origin: left center;
+    animation: st-grow-x 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .st-grow-x-rev {
+    transform-origin: right center;
+    animation: st-grow-x 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .st-grow-y {
+    transform-origin: center bottom;
+    animation: st-grow-y 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .st-slide-l {
+    animation: st-slide-l 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .st-slide-r {
+    animation: st-slide-r 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .st-ring {
+    animation: st-ring 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .st-move {
+    animation: st-move 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .st-progress {
+    transform-origin: left center;
+    animation-name: st-grow-x;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+  }
+  .st-glow {
+    background:
+      radial-gradient(120% 60% at 50% -10%, rgb(200 255 46 / 0.13), transparent 60%),
+      radial-gradient(80% 50% at 50% 110%, rgb(57 135 229 / 0.1), transparent 60%),
+      var(--color-ink);
+  }
+}
+
+@keyframes st-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes st-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes st-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes st-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes st-grow-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes st-slide-l {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+}
+@keyframes st-slide-r {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+/* точка на шкале едет от значения открытия (--from) к текущему */
+@keyframes st-move {
+  from {
+    left: var(--from);
+  }
+}
+/* кольцо: stroke-dashoffset от полной длины (--len) до значения из style */
+@keyframes st-ring {
+  from {
+    stroke-dashoffset: var(--len);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .st-rise,
+  .st-fade,
+  .st-pop,
+  .st-grow-x,
+  .st-grow-x-rev,
+  .st-grow-y,
+  .st-slide-l,
+  .st-slide-r,
+  .st-ring,
+  .st-move {
+    animation: none;
   }
 }

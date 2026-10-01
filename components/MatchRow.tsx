@@ -1,10 +1,10 @@
-import Link from 'next/link'
 import type { MatchSummary } from '@/lib/data'
 import { formatOdd, formatTime } from '@/lib/format'
 import { matchHref } from '@/lib/links'
 import type { Quote } from '@/lib/odds'
 import type { TagHit } from '@/lib/tags'
 import type { Match } from '@/lib/types'
+import { StoryLink } from './story/StoryLink'
 import { TagPill } from './TagPill'
 import { TeamLogo } from './TeamLogo'
 
@@ -111,7 +111,7 @@ export function MatchRow({
         <StatusCell m={m} />
       </div>
 
-      <Link href={matchHref(m)} prefetch={false} className="min-w-0 after:absolute after:inset-0 after:content-['']">
+      <StoryLink id={m.id} href={matchHref(m)} className="min-w-0 after:absolute after:inset-0 after:content-['']">
         <span className="sr-only">
           {m.home.name} — {m.away.name}
         </span>
@@ -119,7 +119,7 @@ export function MatchRow({
           {team(m.home, homeWon)}
           {team(m.away, awayWon)}
         </span>
-      </Link>
+      </StoryLink>
 
       <div className={`num flex w-5 flex-col items-end text-[14px] font-extrabold leading-[21px] ${live ? 'text-live' : ''}`}>
         {showScore ? (

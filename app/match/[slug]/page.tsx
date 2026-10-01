@@ -17,6 +17,7 @@ import { PartnerCard } from '@/components/PartnerCard'
 import { Section } from '@/components/Section'
 import { StandingsTable } from '@/components/StandingsTable'
 import { StickyCta } from '@/components/StickyCta'
+import { StoryButton } from '@/components/story/StoryButton'
 import { TagPill } from '@/components/TagPill'
 import { PARTNERS, primaryPartner } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
@@ -24,6 +25,7 @@ import { goHref } from '@/lib/affiliate'
 import { getMatchInsights, getMatchesByDate, settle } from '@/lib/data'
 import { formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
 import { leagueHref, matchHref } from '@/lib/links'
+import { buildStory } from '@/lib/story'
 import type { Match } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -82,6 +84,7 @@ export default async function MatchPage({ params }: Props) {
     .sort((a, b) => Number(b.league.id === m.league.id) - Number(a.league.id === m.league.id) || a.ts - b.ts)
     .slice(0, 6)
 
+  const hasStory = buildStory(ins) !== null
   const partner = pick?.candidate.bestPartner?.partner ?? primaryPartner()
   const pickOffer = pick?.candidate.bestPartner
 
@@ -99,6 +102,11 @@ export default async function MatchPage({ params }: Props) {
       <h1 className="mb-3 font-display text-xl font-bold leading-tight tracking-tight sm:text-2xl">{h1}</h1>
 
       <MatchHero full={full}>
+        {hasStory ? (
+          <div className="mt-4 flex justify-center">
+            <StoryButton id={m.id} href={canonical} />
+          </div>
+        ) : null}
         {tags.length ? (
           <div className="mt-4 flex flex-wrap justify-center gap-1.5">
             {tags.map((t) => (

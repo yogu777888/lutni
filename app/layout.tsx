@@ -5,6 +5,7 @@ import { DemoBanner } from '@/components/DemoBanner'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { Metrika } from '@/components/Metrika'
+import { StoryViewer } from '@/components/story/StoryViewer'
 import { SITE } from '@/config/site'
 import { IS_MOCK } from '@/lib/sstats/client'
 
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6">{children}</main>
         <Footer />
+        <StoryViewer />
         {SITE.metrikaId ? <Metrika id={SITE.metrikaId} /> : null}
       </body>
     </html>
