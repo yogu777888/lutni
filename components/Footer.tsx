@@ -7,7 +7,7 @@ export function Footer() {
     <footer className="mt-16 border-t border-edge bg-panel/40">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <Logo className="text-lg" size={26} />
+          <Logo size={26} />
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-dim">
             Теги ставок на футбол: сравнение коэффициентов, вероятности без маржи, форма команд и прогнозы на основе данных.
           </p>

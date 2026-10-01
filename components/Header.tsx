@@ -17,8 +17,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-edge bg-ink/90 backdrop-blur-md supports-[backdrop-filter]:bg-ink/75">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
-        <Link href="/" className="shrink-0 text-[21px]" aria-label="tag.bet — на главную">
-          <Logo size={30} />
+        <Link href="/" className="shrink-0 text-fg" aria-label="tag.bet — на главную">
+          <Logo size={29} />
         </Link>
         <nav aria-label="Основное меню" className="hidden items-center gap-1 md:flex">
           {NAV.map((n) => (
