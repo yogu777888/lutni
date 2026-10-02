@@ -17,12 +17,15 @@ const names = (m: Match) => `${m.home.name} — ${m.away.name}`
 /** Ссылка-накладка: вся карточка кликабельна, а текст ссылки — понятное название. */
 const COVER = "after:absolute after:inset-0 after:rounded-[24px] after:content-['']"
 
-/** Вид сводки: «спокойный» — тёмные плитки и одна лаймовая; «цветной» — ещё янтарная и светлая. */
+/**
+ * Вид сводки: «спокойный» — тёмные плитки и одна лаймовая; «цветной» — ещё янтарная.
+ * Цвет плитки — только со смыслом (лайм — value, янтарь — прогруз): белых плиток на тёмной теме нет.
+ */
 export type SummaryLook = 'calm' | 'blocks'
 
 // ─── Тон плитки: цвета текста и графиков задаются переменными ────────────────
 
-type Tone = 'plain' | 'lime' | 'amber' | 'cream'
+type Tone = 'plain' | 'lime' | 'amber'
 
 const TONES: Record<Tone, { cls: string; vars: Record<string, string> }> = {
   plain: {
@@ -37,16 +40,12 @@ const TONES: Record<Tone, { cls: string; vars: Record<string, string> }> = {
     cls: 'border-hot bg-hot hover:brightness-[1.04]',
     vars: { '--t-fg': '#1d1300', '--t-label': 'rgb(29 19 0 / 0.75)', '--t-sub': 'rgb(29 19 0 / 0.62)', '--t-mut': 'rgb(29 19 0 / 0.15)', '--t-chip': 'rgb(29 19 0 / 0.09)' },
   },
-  cream: {
-    cls: 'border-fg bg-fg hover:brightness-[1.02]',
-    vars: { '--t-fg': '#0b0b09', '--t-label': 'rgb(11 11 9 / 0.7)', '--t-sub': 'rgb(11 11 9 / 0.56)', '--t-mut': 'rgb(11 11 9 / 0.1)', '--t-chip': 'rgb(11 11 9 / 0.06)' },
-  },
 }
 
 /** Какие плитки цветные в каждом виде. */
 const LOOK_TONES: Record<SummaryLook, Partial<Record<CardKind, Tone>>> = {
   calm: { value: 'lime' },
-  blocks: { value: 'lime', progruz: 'amber', next: 'cream' },
+  blocks: { value: 'lime', progruz: 'amber' },
 }
 
 // ─── Иконки (как в системных виджетах: тонкая линия, 16px) ──────────────────
