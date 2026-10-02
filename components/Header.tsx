@@ -3,25 +3,33 @@ import { primaryPartner } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
 import { CtaLink } from './CtaLink'
 import { HeaderShell } from './HeaderShell'
-import { Logo } from './Logo'
+import { LogoMark } from './Logo'
 import { NavCapsule } from './NavCapsule'
 
-/** Три островка: логотип без подложки, меню-капсула по центру, справа 18+ и «Бонус». */
+/** Островки: знак в кружке, меню-капсула строго по центру, справа 18+ и «Бонус». */
 export function Header() {
   const partner = primaryPartner()
   return (
     <HeaderShell>
       <div className="relative mx-auto flex h-16 max-w-6xl items-center gap-4 px-5">
-        <Link href="/" className="shrink-0 text-fg" aria-label="tag.bet — на главную">
-          <Logo size={26} />
+        <Link
+          href="/"
+          title="tag.bet"
+          aria-label="tag.bet — на главную"
+          className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full border border-edge bg-panel/80 backdrop-blur-md transition-[border-color,transform] duration-300 hover:border-edge-2 active:scale-95"
+        >
+          <LogoMark size={18} />
         </Link>
-        <NavCapsule className="absolute left-1/2 hidden -translate-x-1/2 md:flex" />
+        {/* капсула — строго по центру страницы, независимо от ширины краёв */}
+        <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:block">
+          <NavCapsule />
+        </div>
         <div className="ml-auto flex items-center gap-3">
           <span className="rounded-[4px] border-[1.5px] border-dim/70 px-1 text-[11px] font-bold leading-[16px] text-dim" title="Только для совершеннолетних">
             18+
           </span>
           {partner ? (
-            <CtaLink href={goHref(partner, 'header')} size="sm" className="px-4">
+            <CtaLink href={goHref(partner, 'header')} size="nav" className="px-5">
               Бонус
             </CtaLink>
           ) : null}

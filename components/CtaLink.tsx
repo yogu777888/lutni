@@ -25,10 +25,10 @@ export function CtaLink({
   href: string
   children: React.ReactNode
   variant?: Variant
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'nav' | 'md' | 'lg'
   className?: string
 }) {
-  const sizes = { sm: 'h-[34px] text-[13px]', md: 'h-11 text-[15px]', lg: 'h-12 text-[16px]' }
+  const sizes = { sm: 'h-[34px] text-[13px]', nav: 'h-[42px] text-[14px]', md: 'h-11 text-[15px]', lg: 'h-12 text-[16px]' }
   const box = variant === 'link' ? '' : sizes[size]
   return (
     <a
