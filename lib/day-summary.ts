@@ -26,6 +26,8 @@ export type DaySummary = {
   favorite: FavoriteInfo | null
   total: number
   leagues: number
+  /** Главные турниры дня: топ-лиги первыми, потом по числу матчей. */
+  topLeagues: { id: number; name: string; count: number }[]
 }
 
 export type CardKind = 'value' | 'progruz' | 'live' | 'next' | 'goals' | 'favorite' | 'count'
@@ -69,6 +71,19 @@ const max = <T>(xs: T[], score: (x: T) => number): T | null => {
     if (s > bs) [best, bs] = [x, s]
   }
   return best
+}
+
+function topLeagues(items: FeedItem[]) {
+  const by = new Map<number, { id: number; name: string; count: number; rank: number }>()
+  for (const { match: m } of items) {
+    const g = by.get(m.league.id) ?? { id: m.league.id, name: m.league.name, count: 0, rank: featuredRank(m.league) }
+    g.count++
+    by.set(m.league.id, g)
+  }
+  return [...by.values()]
+    .sort((a, b) => (a.rank < 0 ? 1e3 : a.rank) - (b.rank < 0 ? 1e3 : b.rank) || b.count - a.count)
+    .slice(0, 4)
+    .map(({ id, name, count }) => ({ id, name, count }))
 }
 
 export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary {
@@ -125,6 +140,7 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
     favorite,
     total: items.length,
     leagues: new Set(items.map((it) => it.match.league.id)).size,
+    topLeagues: topLeagues(items),
   }
 }
 

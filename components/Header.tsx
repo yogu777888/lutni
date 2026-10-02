@@ -3,22 +3,17 @@ import { primaryPartner } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
 import { CtaLink } from './CtaLink'
 import { HeaderShell } from './HeaderShell'
-import { LogoMark } from './Logo'
+import { Logo } from './Logo'
 import { NavCapsule } from './NavCapsule'
 
-/** Островки: знак в кружке, меню-капсула строго по центру, справа 18+ и «Бонус». */
+/** Логотип без подложки, меню-капсула строго по центру, справа 18+ и «Бонус». */
 export function Header() {
   const partner = primaryPartner()
   return (
     <HeaderShell>
       <div className="relative mx-auto flex h-16 max-w-6xl items-center gap-4 px-5">
-        <Link
-          href="/"
-          title="tag.bet"
-          aria-label="tag.bet — на главную"
-          className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full border border-edge bg-panel/80 backdrop-blur-md transition-[border-color,transform] duration-300 hover:border-edge-2 active:scale-95"
-        >
-          <LogoMark size={18} />
+        <Link href="/" aria-label="tag.bet — на главную" className="shrink-0 translate-y-0.5 text-fg transition-opacity hover:opacity-85">
+          <Logo size={30} />
         </Link>
         {/* капсула — строго по центру страницы, независимо от ширины краёв */}
         <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:block">

@@ -48,7 +48,7 @@ function MatchLink({ it }: { it: FeedItem }) {
   )
 }
 
-function Card({ kind, s }: { kind: CardKind; s: Summary }) {
+function Card({ kind, s, wide = false }: { kind: CardKind; s: Summary; wide?: boolean }) {
   switch (kind) {
     case 'value': {
       const it = s.value!
@@ -156,11 +156,26 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
     case 'count':
       return (
         <Tile label="Всего за день">
-          <a href="#matches" className={`flex items-baseline gap-2 ${COVER}`}>
-            <Big>{s.total}</Big>
-            <span className="text-[13px] text-dim">{plural(s.total, ['матч', 'матча', 'матчей'])}</span>
-          </a>
-          <p className="mt-2 truncate text-[12.5px] text-dim">в {pluralN(s.leagues, ['турнире', 'турнирах', 'турнирах'])}</p>
+          <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+            <div>
+              <a href="#matches" className={`flex items-baseline gap-2 ${COVER}`}>
+                <Big>{s.total}</Big>
+                <span className="text-[13px] text-dim">{plural(s.total, ['матч', 'матча', 'матчей'])}</span>
+              </a>
+              <p className="mt-2 truncate text-[12.5px] text-dim">в {pluralN(s.leagues, ['турнире', 'турнирах', 'турнирах'])}</p>
+            </div>
+            {wide && s.topLeagues.length ? (
+              <ul className="hidden min-w-0 flex-1 space-y-1.5 text-[12.5px] sm:block sm:max-w-[60%]">
+                {s.topLeagues.map((l) => (
+                  <li key={l.id} className="flex items-baseline gap-2">
+                    <span className="min-w-0 truncate text-chalk">{l.name}</span>
+                    <span className="flex-1 border-b border-dotted border-edge-2" />
+                    <span className="num shrink-0 font-semibold text-fg">{l.count}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         </Tile>
       )
   }
@@ -270,7 +285,7 @@ export function DaySummary({ s, className = '' }: { s: Summary; className?: stri
         const wide = cards.length <= 2 || (cards.length === 3 && i === 2)
         return (
           <div key={k} className={`min-w-0 ${wide ? 'col-span-2' : ''} ${cards.length === 2 ? 'lg:col-span-2' : ''}`}>
-            <Card kind={k} s={s} />
+            <Card kind={k} s={s} wide={wide} />
           </div>
         )
       })}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
-import { todayYmd } from '@/lib/format'
+import { addDays, todayYmd } from '@/lib/format'
 import { buildStoryGroups, statFor } from '@/lib/story-groups'
 import type { Match } from '@/lib/types'
 
@@ -74,7 +74,8 @@ describe('кружки историй', () => {
   })
 
   it('демо-день: кружки собираются, в теге не больше 10 матчей', async () => {
-    const list = await getMatchesByDate(todayYmd())
+    // завтрашний день: все матчи впереди, и тест не зависит от того, во сколько его запустили
+    const list = await getMatchesByDate(addDays(todayYmd(), 1))
     const groups = buildStoryGroups(list.map((m) => ({ match: m, ...tagsFor(m) })))
     expect(groups.length).toBeGreaterThan(3)
     for (const g of groups) {
