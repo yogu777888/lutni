@@ -52,7 +52,7 @@ export default async function TagPage({ params }: Props) {
       <Breadcrumbs items={[{ href: '/tags', label: 'Теги' }, { href: `/tag/${t.slug}`, label: t.title }]} />
       <div className="pitch-bg card mb-8 p-6 sm:p-8">
         <TagPill slug={t.slug} size="md" link={false} />
-        <h1 className="mt-4 text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">{t.title}: матчи на сегодня и ближайшие дни</h1>
+        <h1 className="mt-4 display text-[36px] sm:text-[56px]">{t.title}: матчи на сегодня и ближайшие дни</h1>
         <p className="mt-3 max-w-3xl text-[15px] leading-relaxed text-dim">{t.about}</p>
         <p className="mt-2 text-[14px] text-mute">
           Что обычно ставят: <span className="font-medium text-fg">{t.bet}</span>

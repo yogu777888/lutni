@@ -17,7 +17,7 @@ const SIGNS = [
 export default function ResponsibleGamingPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <h1 className="pt-2 text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">Ответственная игра</h1>
+      <h1 className="pt-2 display text-[36px] sm:text-[56px]">Ответственная игра</h1>
       <p className="text-[15px] leading-relaxed text-fg/85">
         Ставки на спорт — развлечение для взрослых (18+), а не способ заработка. Даже лучшая модель ошибается, и на дистанции
         большинство игроков проигрывает из-за маржи букмекера.

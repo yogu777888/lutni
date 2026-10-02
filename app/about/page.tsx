@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <h1 className="pt-2 text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">Как мы считаем</h1>
+      <h1 className="pt-2 display text-[36px] sm:text-[56px]">Как мы считаем</h1>
       <p className="text-[15px] leading-relaxed text-fg/85">
         tag.bet не «угадывает» исходы — мы собираем данные и показываем, где линия букмекеров расходится со справедливой оценкой. Все
         расчёты автоматические и одинаковые для каждого матча.

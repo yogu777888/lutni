@@ -1,63 +1,114 @@
+import Link from 'next/link'
 import type { MatchSummary } from '@/lib/data'
 import { formatOdd, formatTime } from '@/lib/format'
 import { matchHref } from '@/lib/links'
-import type { Quote } from '@/lib/odds'
-import type { TagHit } from '@/lib/tags'
+import { fair1x2 } from '@/lib/odds'
+import { TAG_BY_SLUG, type TagHit } from '@/lib/tags'
 import type { Match } from '@/lib/types'
 import { StoryLink } from './story/StoryLink'
-import { TagPill } from './TagPill'
-import { TeamLogo } from './TeamLogo'
+
+/** Колонки строки матча: время · матч · шансы · коэффициенты (на телефоне — время и матч, кэфы ниже). */
+export const ROW_COLS = 'grid-cols-[3.25rem_minmax(0,1fr)] sm:grid-cols-[3.75rem_minmax(0,1fr)_7.5rem_11.25rem]'
+
+const isLive = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
 export function StatusCell({ m }: { m: Match }) {
-  if (m.status === 'live' || m.status === 'suspended') {
+  if (isLive(m)) {
     return (
-      <div className="flex flex-col items-center leading-tight">
+      <span className="flex flex-col leading-tight">
         <span className="flex items-center gap-1 text-[10px] font-bold tracking-wide text-live">
           <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" />
           LIVE
         </span>
-        <span className="num text-[13px] font-semibold text-live">
-          {m.statusCode === 4 ? 'Пер.' : m.elapsed ? `${m.elapsed}′` : ''}
-        </span>
-      </div>
+        <span className="num text-[17px] font-semibold text-live">{m.statusCode === 4 ? 'Пер.' : m.elapsed ? `${m.elapsed}′` : ''}</span>
+      </span>
     )
   }
   if (m.status === 'finished') {
     return (
-      <div className="flex flex-col items-center leading-tight">
-        <span className="num text-[12px] text-mute">{formatTime(m.ts)}</span>
-        <span className="text-[10px] font-medium uppercase tracking-wide text-mute">итог</span>
-      </div>
+      <span className="flex flex-col leading-tight">
+        <span className="num text-[16px] font-semibold text-mute">{formatTime(m.ts)}</span>
+        <span className="text-[10px] uppercase tracking-wide text-mute">итог</span>
+      </span>
     )
   }
   if (m.status === 'postponed' || m.status === 'cancelled') {
-    return <span className="text-center text-[10px] font-medium leading-tight text-loss">{m.statusLabel}</span>
+    return <span className="text-[11px] font-medium leading-tight text-loss">{m.statusLabel}</span>
   }
-  return <span className="num text-[14px] font-semibold text-fg/90">{formatTime(m.ts)}</span>
+  return <span className="num text-[18px] font-semibold tracking-tight text-chalk">{formatTime(m.ts)}</span>
 }
 
-function OddCell({ label, q, fav }: { label: string; q?: Quote; fav: boolean }) {
-  if (!q) {
-    return (
-      <span className="flex h-[38px] w-[42px] flex-col items-center justify-center sm:w-[50px]" aria-hidden>
-        <span className="text-[9px] font-medium text-mute/70">{label}</span>
-        <span className="text-[13px] text-mute/60">—</span>
-      </span>
-    )
-  }
-  const dropped = q.opening && q.opening / q.value >= 1.07
+/** Шансы без маржи по коротким кэфам: фаворит — ярче. */
+function Chances({ m }: { m: Match }) {
+  const f = fair1x2(m.odds?.x12)
+  if (!f) return <span className="text-center text-[13px] text-mute">—</span>
+  const vals = [f.home, f.draw, f.away]
+  const max = Math.max(...vals)
   return (
-    <span className="flex h-[38px] w-[42px] flex-col items-center justify-center rounded-[10px] bg-white/[0.045] sm:w-[50px]">
-      <span className="text-[9px] font-medium text-mute">{label}</span>
-      <span className={`num text-[13px] leading-tight ${fav ? 'font-semibold text-fg' : 'font-medium text-fg/75'}`}>
-        {formatOdd(q.value)}
-        {dropped ? (
-          <span className="ml-px text-[9px] text-hot" title={`Открытие ${q.opening?.toFixed(2)}`}>
-            ▼
-          </span>
-        ) : null}
-      </span>
+    <span className="num grid grid-cols-3 text-center text-[16px] font-semibold">
+      {vals.map((v, i) => (
+        <span key={i} className={v === max ? 'text-fg' : 'text-mute'}>
+          {Math.round(v * 100)}
+        </span>
+      ))}
     </span>
+  )
+}
+
+function Odds({ m, hotKey }: { m: Match; hotKey: string | null }) {
+  const x = m.odds?.x12
+  const done = m.status === 'finished'
+  return (
+    <span className="grid grid-cols-3 gap-1.5">
+      {(['home', 'draw', 'away'] as const).map((k) => {
+        const q = x?.[k]
+        const hot = hotKey === k && !done
+        const dropped = q?.opening && q.opening / q.value >= 1.07
+        return (
+          <span
+            key={k}
+            className={`num rounded-[9px] border py-1.5 text-center text-[15px] font-semibold ${
+              hot ? 'border-acid bg-acid text-acid-ink' : `border-edge bg-panel-2 ${done ? 'text-mute' : 'text-fg/90'}`
+            }`}
+            title={q?.opening ? `Открытие ${q.opening.toFixed(2)}` : undefined}
+          >
+            {q ? formatOdd(q.value) : '—'}
+            {dropped && !hot ? <span className="ml-0.5 text-[9px] text-hot">▼</span> : null}
+          </span>
+        )
+      })}
+    </span>
+  )
+}
+
+function Score({ m, big = false }: { m: Match; big?: boolean }) {
+  if (!m.score) return null
+  return (
+    <span className={`num text-center font-bold ${big ? 'text-[20px]' : 'text-[16px]'} ${isLive(m) ? 'text-live' : 'text-fg'}`}>
+      {m.score.home}
+      <span className="mx-1 text-mute">:</span>
+      {m.score.away}
+    </span>
+  )
+}
+
+/** Теги строкой, как хэштеги: решётка value — лаймовая, прогруза — янтарная. */
+function Hashtags({ tags }: { tags: TagHit[] }) {
+  return (
+    <>
+      {tags.slice(0, 3).map((t) => {
+        const def = TAG_BY_SLUG.get(t.slug)
+        if (!def) return null
+        const hash = def.kind === 'accent' ? 'text-acid' : def.kind === 'hot' ? 'text-hot' : 'text-mute'
+        return (
+          <Link key={t.slug} href={`/tag/${t.slug}`} prefetch={false} title={t.reason} className="text-dim transition-colors hover:text-fg">
+            <span className={hash}>#</span>
+            {def.label.replace(/^#/, '')}
+          </Link>
+        )
+      })}
+      {tags.length > 3 ? <span className="text-mute">+{tags.length - 3}</span> : null}
+    </>
   )
 }
 
@@ -72,91 +123,91 @@ export function MatchRow({
   m: Match
   tags: TagHit[]
   summary?: MatchSummary | null
-  /** Подпись турнира под командами — для смешанных списков (live, «другие матчи»). */
+  /** Подпись турнира — для смешанных списков (live, «другие матчи»). */
   showLeague?: boolean
-  /** Без колонки коэффициентов — для узкой боковой колонки. */
+  /** Узкая боковая колонка: время, команды, счёт. */
   compact?: boolean
-  /** В блоке ни у кого нет линии: колонку кэфов убираем, счёт ставим рядом с командами. */
+  /** В блоке ни у кого нет линии: без шансов и кэфов. */
   noOdds?: boolean
 }) {
-  const x = m.odds?.x12
-  const values = [x?.home?.value, x?.draw?.value, x?.away?.value].filter((v): v is number => Boolean(v))
-  const min = values.length === 3 ? Math.min(...values) : 0
-  const live = m.status === 'live' || m.status === 'suspended'
-  const showScore = Boolean(m.score) && (live || m.status === 'finished')
+  const live = isLive(m)
+  const played = Boolean(m.score) && (live || m.status === 'finished')
   const homeWon = m.status === 'finished' && m.score && m.score.home > m.score.away
   const awayWon = m.status === 'finished' && m.score && m.score.away > m.score.home
   const pick = m.status === 'scheduled' ? summary?.pick : null
+  const hotKey = pick?.kind === 'value' && ['home', 'draw', 'away'].includes(pick.key) ? pick.key : null
+  const name = (t: Match['home'], lost: boolean) => <span className={lost ? 'text-fg/55' : ''}>{t.name}</span>
 
-  const team = (t: Match['home'], won: boolean | null | undefined) => (
-    <span className="flex h-[21px] items-center gap-2">
-      <TeamLogo name={t.name} src={t.logo} size={18} />
-      <span className={`truncate text-[14px] ${won ? 'font-semibold' : ''} ${m.status === 'finished' && !won ? 'text-fg/60' : ''}`}>
-        {t.name}
-      </span>
-    </span>
-  )
+  if (compact) {
+    return (
+      <div className="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-3 px-4 py-3 transition-colors hover:bg-white/[0.02]">
+        <StatusCell m={m} />
+        <StoryLink id={m.id} href={matchHref(m)} className="min-w-0 after:absolute after:inset-0 after:content-['']">
+          <span className="block truncate text-[14px] font-semibold">{m.home.name}</span>
+          <span className="block truncate text-[14px] font-semibold">{m.away.name}</span>
+          {showLeague ? <span className="block truncate text-[11px] text-mute">{m.league.name}</span> : null}
+        </StoryLink>
+        {played ? <Score m={m} /> : null}
+      </div>
+    )
+  }
 
+  const meta = showLeague || tags.length || pick
   return (
     <div
-      className={`relative grid items-center gap-x-2.5 px-3 py-3 transition-colors hover:bg-white/[0.025] ${
-        compact
-          ? 'grid-cols-[44px_minmax(0,1fr)_auto]'
-          : noOdds
-            ? 'grid-cols-[40px_minmax(0,1fr)_auto] sm:grid-cols-[48px_minmax(0,20rem)_auto] sm:gap-x-3 sm:px-4'
-            : 'grid-cols-[40px_minmax(0,1fr)_auto_auto] sm:grid-cols-[48px_minmax(0,1fr)_auto_auto] sm:gap-x-3 sm:px-4'
+      className={`relative grid items-center gap-x-4 gap-y-2.5 px-4 py-3.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${
+        noOdds ? 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_auto]' : ROW_COLS
       }`}
     >
-      <div className="flex justify-center">
+      <div className="self-start pt-0.5 sm:self-center sm:pt-0">
         <StatusCell m={m} />
       </div>
 
-      <StoryLink id={m.id} href={matchHref(m)} className="min-w-0 after:absolute after:inset-0 after:content-['']">
-        <span className="sr-only">
-          {m.home.name} — {m.away.name}
-        </span>
-        <span aria-hidden>
-          {team(m.home, homeWon)}
-          {team(m.away, awayWon)}
-        </span>
-      </StoryLink>
-
-      <div className={`num flex w-5 flex-col items-end text-[14px] font-semibold leading-[21px] ${live ? 'text-live' : ''}`}>
-        {showScore ? (
-          <>
-            <span className={m.status === 'finished' && !homeWon ? 'text-fg/50' : ''}>{m.score!.home}</span>
-            <span className={m.status === 'finished' && !awayWon ? 'text-fg/50' : ''}>{m.score!.away}</span>
-          </>
+      <div className="min-w-0">
+        <StoryLink
+          id={m.id}
+          href={matchHref(m)}
+          className="block truncate text-[15px] font-semibold after:absolute after:inset-0 after:content-[''] sm:text-[16px]"
+        >
+          {name(m.home, Boolean(awayWon))}
+          <span className="mx-1.5 font-normal text-mute">—</span>
+          {name(m.away, Boolean(homeWon))}
+        </StoryLink>
+        {meta ? (
+          <div className="relative z-10 mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12.5px]">
+            {showLeague ? <span className="text-mute">{m.league.name}</span> : null}
+            <Hashtags tags={tags} />
+            {pick ? (
+              <span className={pick.kind === 'value' ? 'text-acid' : 'text-dim'}>
+                Прогноз {pick.label}
+                {pick.odd ? <span className="num ml-1 font-semibold">{pick.odd.toFixed(2)}</span> : null}
+              </span>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
-      {compact || noOdds ? null : (
-        <div className="flex gap-1">
-          <OddCell label="П1" q={x?.home} fav={x?.home?.value === min} />
-          <OddCell label="Х" q={x?.draw} fav={x?.draw?.value === min} />
-          <OddCell label="П2" q={x?.away} fav={x?.away?.value === min} />
-        </div>
+      {noOdds ? (
+        played ? <Score m={m} big /> : <span />
+      ) : (
+        <>
+          <div className="hidden sm:block">{played ? <Score m={m} big /> : <Chances m={m} />}</div>
+          <div className="col-start-2 sm:col-start-auto">
+            {played ? (
+              <div className="flex items-center justify-between gap-3 sm:block">
+                <span className="sm:hidden">
+                  <Score m={m} big />
+                </span>
+                <span className="block w-[10.5rem] opacity-70 sm:w-auto">
+                  <Odds m={m} hotKey={null} />
+                </span>
+              </div>
+            ) : (
+              <Odds m={m} hotKey={hotKey} />
+            )}
+          </div>
+        </>
       )}
-
-      {tags.length || pick || showLeague ? (
-        <div className="relative z-10 mt-2 flex flex-wrap items-center gap-1 [grid-column:2/-1]">
-          {showLeague ? <span className="mr-1 truncate text-[11px] text-mute">{m.league.name}</span> : null}
-          {pick ? (
-            <span
-              className={`inline-flex h-6 items-center rounded-full px-2 text-[12px] font-medium ${
-                pick.kind === 'value' ? 'bg-acid/[0.12] text-acid' : 'bg-white/[0.06] text-fg/85'
-              }`}
-            >
-              Прогноз {pick.label}
-              {pick.odd ? <span className="num ml-1 font-semibold">{pick.odd.toFixed(2)}</span> : null}
-            </span>
-          ) : null}
-          {tags.slice(0, 3).map((t) => (
-            <TagPill key={t.slug} slug={t.slug} reason={t.reason} />
-          ))}
-          {tags.length > 3 ? <span className="text-[11px] text-mute">+{tags.length - 3}</span> : null}
-        </div>
-      ) : null}
     </div>
   )
 }

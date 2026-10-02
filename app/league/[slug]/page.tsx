@@ -62,7 +62,7 @@ export default async function LeaguePage({ params }: Props) {
     <>
       <Breadcrumbs items={[{ href: '/leagues', label: 'Лиги' }, { href: canonical, label: league.name }]} />
       <div className="pitch-bg card mb-6 p-6 sm:p-8">
-        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">{league.name}</h1>
+        <h1 className="display text-[36px] sm:text-[56px]">{league.name}</h1>
         <p className="mt-2 text-[15px] text-dim">
           {year ? `Сезон ${year}/${String(year + 1).slice(2)} · ` : ''}таблица, расписание, результаты и прогнозы на матчи
         </p>

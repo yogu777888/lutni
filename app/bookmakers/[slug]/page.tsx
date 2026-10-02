@@ -40,7 +40,7 @@ export default async function BookmakerPage({ params }: Props) {
         <div className="flex flex-wrap items-center gap-4">
           <PartnerBadge partner={p} size={60} />
           <div className="flex-1">
-            <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">Букмекер {p.name}</h1>
+            <h1 className="display text-[36px] sm:text-[56px]">Букмекер {p.name}</h1>
             <div className="mt-1.5 flex items-center gap-2">
               <Stars value={p.rating} />
               <span className="num text-[13px] font-medium text-dim">{p.rating.toFixed(1)} / 5</span>

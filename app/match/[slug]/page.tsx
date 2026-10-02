@@ -8,10 +8,10 @@ import { EventsBlock, StatsBars } from '@/components/match/EventsBlock'
 import { FormBlock } from '@/components/match/FormBlock'
 import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
-import { MatchHero } from '@/components/match/MatchHero'
+import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { OddsTable } from '@/components/match/OddsTable'
 import { PickCard } from '@/components/match/PickCard'
-import { SplitBar, X12Bar } from '@/components/match/ProbBars'
+import { SplitBar } from '@/components/match/ProbBars'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerCard } from '@/components/PartnerCard'
 import { Section } from '@/components/Section'
@@ -24,6 +24,7 @@ import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
 import { getMatchInsights, getMatchesByDate, settle } from '@/lib/data'
 import { formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
+import { isValue } from '@/lib/model'
 import { leagueHref, matchHref } from '@/lib/links'
 import { buildStory } from '@/lib/story'
 import type { Match } from '@/lib/types'
@@ -84,6 +85,22 @@ export default async function MatchPage({ params }: Props) {
     .sort((a, b) => Number(b.league.id === m.league.id) - Number(a.league.id === m.league.id) || a.ts - b.ts)
     .slice(0, 6)
 
+  // табло матча: шанс, лучший кэф, честная цена; «горит», если букмекер платит больше честного
+  const cells: BoardCell[] | null = x
+    ? (['home', 'draw', 'away'] as const).map((k) => {
+        const c = candidates.find((cand) => cand.key === k)
+        const offer = c ? (c.bestPartner ?? c.best) : null
+        return {
+          key: k,
+          label: k === 'home' ? `победа ${m.home.name}` : k === 'away' ? `победа ${m.away.name}` : 'ничья',
+          p: x[k],
+          odd: offer?.value ?? null,
+          fair: 1 / x[k],
+          hot: scheduled && Boolean(c && isValue(c)),
+        }
+      })
+    : null
+
   const hasStory = buildStory(ins) !== null
   const partner = pick?.candidate.bestPartner?.partner ?? primaryPartner()
   const pickOffer = pick?.candidate.bestPartner
@@ -99,16 +116,12 @@ export default async function MatchPage({ params }: Props) {
           { href: canonical, label: pair },
         ]}
       />
-      <h1 className="mb-4 text-[22px] font-bold leading-tight tracking-[-0.025em] sm:text-[28px]">{h1}</h1>
+      <h1 className="display mb-6 mt-2 text-[32px] sm:text-[48px]">{h1}</h1>
 
-      <MatchHero full={full}>
-        {hasStory ? (
-          <div className="mt-5 flex justify-center">
-            <StoryButton id={m.id} href={canonical} />
-          </div>
-        ) : null}
-        {tags.length ? (
-          <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+      <MatchHero full={full} cells={cells} books={cons.books}>
+        {hasStory || tags.length ? (
+          <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-edge pt-5">
+            {hasStory ? <StoryButton id={m.id} href={canonical} className="mr-2" /> : null}
             {tags.map((t) => (
               <TagPill key={t.slug} slug={t.slug} reason={t.reason} size="md" />
             ))}
@@ -116,8 +129,8 @@ export default async function MatchPage({ params }: Props) {
         ) : null}
       </MatchHero>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="min-w-0 space-y-5">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-6">
           {!scheduled && (full.events.length || full.stats.length) ? (
             <Section title="Ход матча">
               <div className="grid gap-6 md:grid-cols-2">
@@ -144,11 +157,10 @@ export default async function MatchPage({ params }: Props) {
 
           {x ? (
             <Section
-              title="Вероятности"
+              title="Голы и счёт"
               aside={model ? (model.source === 'xg' ? 'модель по xG' : `рынок ${cons.books > 1 ? `(${cons.books} БК)` : ''} + модель`) : 'рынок'}
             >
               <div className="space-y-5">
-                <X12Bar home={x.home} draw={x.draw} away={x.away} names={[m.home.name, m.away.name]} />
                 {over25 != null ? <SplitBar left={over25} leftLabel="ТБ 2.5" rightLabel="ТМ 2.5" /> : null}
                 {btts != null ? <SplitBar left={btts} leftLabel="Обе забьют" rightLabel="Нет" /> : null}
                 {model ? (
@@ -234,10 +246,10 @@ export default async function MatchPage({ params }: Props) {
           </p>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-          <section className="card p-5">
-            <h2 className="mb-4 text-[15px] font-semibold">Где поставить</h2>
-            <div className="divide-y divide-edge">
+        <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+          <section className="card p-6">
+            <p className="eyebrow">Где поставить</p>
+            <div className="mt-4 divide-y divide-edge">
               {PARTNERS.slice(0, 3).map((p, i) => (
                 <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} />
               ))}
@@ -245,7 +257,7 @@ export default async function MatchPage({ params }: Props) {
           </section>
           {related.length ? (
             <section className="card overflow-hidden">
-              <h2 className="border-b border-edge px-4 py-3.5 text-[15px] font-semibold">Другие матчи</h2>
+              <p className="eyebrow border-b border-edge px-5 py-4">Другие матчи</p>
               <div className="divide-y divide-edge">
                 {related.map((o) => (
                   <MatchRow key={o.id} m={o} tags={[]} compact showLeague={o.league.id !== m.league.id} />

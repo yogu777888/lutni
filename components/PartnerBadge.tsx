@@ -5,11 +5,11 @@ export function PartnerBadge({ partner, size = 36 }: { partner: Partner; size?: 
   return (
     <span
       aria-hidden
-      className="inline-flex shrink-0 items-center justify-center font-semibold"
+      className="inline-flex shrink-0 items-center justify-center font-extrabold"
       style={{
         width: size,
         height: size,
-        borderRadius: Math.round(size * 0.28),
+        borderRadius: Math.round(size * 0.25),
         background: partner.color,
         color: partner.textColor,
         fontSize: Math.round(size * (partner.short.length > 1 ? 0.34 : 0.44)),

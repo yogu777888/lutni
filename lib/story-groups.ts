@@ -8,7 +8,6 @@ import { pluralN } from './format'
 import { matchHref } from './links'
 import { bestTag, interest, isLive, liveRank } from './rank'
 import { TAG_BY_SLUG, TAGS, type TagDef, type TagHit } from './tags'
-import type { Team } from './types'
 
 export type CircleKind = 'live' | 'top' | TagDef['kind']
 
@@ -26,8 +25,8 @@ export type StoryGroup = {
   hint: string
   /** Ссылка без JS и для поисковиков: страница тега или первого матча. */
   href: string
-  /** Чьи логотипы на кружке. */
-  cover: { home: Pick<Team, 'name' | 'logo'>; away: Pick<Team, 'name' | 'logo'> }
+  /** Цифра на «табло» кружка: самый сильный сигнал группы (−18%, +11%, 71%…). */
+  stat: string
   items: StoryGroupItem[]
 }
 
@@ -42,53 +41,81 @@ function focusOf(t: TagHit | null): StoryFocus | null {
   return t && def ? { slug: def.slug, label: def.label, kind: def.kind, reason: t.reason } : null
 }
 
-type Entry = { it: FeedItem; tag: TagHit | null }
-type Draft = Omit<StoryGroup, 'cover' | 'items' | 'href'> & { href?: string; list: Entry[] }
-
-/**
- * Логотипы на кружках стараемся не повторять: топовый матч часто попадает сразу в
- * несколько тегов. Обложки раздаём сначала маленьким кружкам (у них меньше выбора).
- * Матч с обложки идёт в кружке первым — тап начинается с того, что нарисовано.
- */
-function assignCovers(drafts: Draft[]): StoryGroup[] {
-  const used = new Set<number>()
-  const cover = new Map<Draft, number>()
-  // «В игре» и «Топ дня» показывают свой главный матч, остальные — по возрастанию размера
-  const first = (d: Draft) => (d.kind === 'live' || d.kind === 'top' ? 0 : 1)
-  const bySize = drafts
-    .map((d, i) => ({ d, i }))
-    .sort((a, b) => first(a.d) - first(b.d) || a.d.list.length - b.d.list.length || a.i - b.i)
-  for (const { d } of bySize) {
-    const ci = Math.max(0, d.list.findIndex((x) => !used.has(x.it.match.id)))
-    used.add(d.list[ci].it.match.id)
-    cover.set(d, ci)
-  }
-  return drafts.map((d) => {
-    const { list, href, ...rest } = d
-    const ci = cover.get(d)!
-    const ordered = ci > 0 ? [list[ci], ...list.slice(0, ci), ...list.slice(ci + 1)] : list
-    const first = ordered[0].it.match
-    return {
-      ...rest,
-      href: href ?? matchHref(first),
-      cover: { home: { name: first.home.name, logo: first.home.logo }, away: { name: first.away.name, logo: first.away.logo } },
-      items: ordered.map(({ it, tag }) => ({ id: it.match.id, href: matchHref(it.match), focus: focusOf(tag) })),
-    }
-  })
+/** Короткая подпись на случай, если число из объяснения тега не достать. */
+const SHORT: Record<string, string> = {
+  value: '+EV',
+  progruz: '↓',
+  'tb-2-5': 'ТБ',
+  'tm-2-5': 'ТМ',
+  'obe-zabyut': 'ОЗ',
+  favorit: 'П1',
+  ravnye: '≈',
+  andedog: '↑',
+  seriya: '×',
+  krepost: 'Д',
+  kadry: '+',
+  h2h: 'H2H',
+  'top-match': '1·2',
 }
+
+/** «Табло» кружка: главная цифра из объяснения самого сильного матча группы. */
+export function statFor(slug: string, reason: string): string {
+  const num = (re: RegExp) => re.exec(reason)
+  let m: RegExpExecArray | null
+  switch (slug) {
+    case 'value':
+      m = num(/перевес \+([\d.,]+)%/)
+      return m ? `+${Math.round(Number(m[1].replace(',', '.')))}%` : SHORT.value
+    case 'progruz':
+      m = num(/[−-](\d+)%/)
+      return m ? `−${m[1]}%` : SHORT.progruz
+    case 'tb-2-5':
+    case 'tm-2-5':
+    case 'obe-zabyut':
+    case 'favorit':
+      m = num(/(\d+)%/)
+      return m ? `${m[1]}%` : SHORT[slug]
+    case 'seriya':
+    case 'krepost':
+      m = num(/(\d+) матч/)
+      return m ? m[1] : SHORT[slug]
+    case 'kadry':
+      m = num(/(\d+) игрок/)
+      return m ? `−${m[1]}` : SHORT.kadry
+    case 'andedog':
+      m = num(/(\d+) очк\S* против (\d+)/)
+      return m ? `+${Number(m[1]) - Number(m[2])}` : SHORT.andedog
+    case 'h2h':
+      m = num(/(\d+) из (\d+)/)
+      return m ? `${m[1]}/${m[2]}` : SHORT.h2h
+    case 'top-match':
+      m = num(/с (\d+)-го и (\d+)-го/)
+      return m ? `${m[1]}·${m[2]}` : SHORT['top-match']
+  }
+  return SHORT[slug] ?? '#'
+}
+
+type Entry = { it: FeedItem; tag: TagHit | null }
 
 export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
   const open = items.filter((i) => i.match.status === 'scheduled' || isLive(i.match))
-  const drafts: Draft[] = []
-  const add = (g: Omit<Draft, 'list'>, list: Entry[]) => {
-    if (list.length) drafts.push({ ...g, list })
+  const groups: StoryGroup[] = []
+  const add = (g: Omit<StoryGroup, 'items' | 'href' | 'stat'> & { href?: string; stat?: string }, list: Entry[]) => {
+    if (!list.length) return
+    const first = list[0]
+    groups.push({
+      ...g,
+      href: g.href ?? matchHref(first.it.match),
+      stat: g.stat ?? (first.tag ? statFor(first.tag.slug, first.tag.reason) : '#'),
+      items: list.map(({ it, tag }) => ({ id: it.match.id, href: matchHref(it.match), focus: focusOf(tag) })),
+    })
   }
 
   const live = open
     .filter((i) => isLive(i.match))
     .sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts)
   add(
-    { key: 'live', label: 'В игре', kind: 'live', hint: `Сейчас идут: ${pluralN(live.length, MATCHES)}` },
+    { key: 'live', label: 'В игре', kind: 'live', hint: `Сейчас идут: ${pluralN(live.length, MATCHES)}`, stat: String(live.length) },
     live.slice(0, LIVE_LIMIT).map((it) => ({ it, tag: null })),
   )
 
@@ -98,7 +125,7 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
     .sort((a, b) => b.score - a.score || a.it.match.ts - b.it.match.ts)
     .slice(0, TOP_LIMIT)
   add(
-    { key: 'top', label: 'Топ дня', kind: 'top', hint: 'Самые интересные матчи дня' },
+    { key: 'top', label: 'Топ дня', kind: 'top', hint: 'Самые интересные матчи дня', stat: '#' },
     top.map(({ it }) => ({ it, tag: bestTag(it.tags) })),
   )
 
@@ -127,5 +154,5 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
       sorted.map(({ it, tag }) => ({ it, tag })),
     )
   }
-  return assignCovers(drafts)
+  return groups
 }

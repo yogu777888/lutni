@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { todayYmd } from '@/lib/format'
-import { buildStoryGroups } from '@/lib/story-groups'
+import { buildStoryGroups, statFor } from '@/lib/story-groups'
 import type { Match } from '@/lib/types'
 
 const team = (id: number, name: string) => ({ id, name, original: name, logo: null, country: 'England' })
@@ -48,16 +48,29 @@ describe('кружки историй', () => {
     expect(top.items.find((i) => i.id === 3)?.focus?.slug).toBe('progruz')
   })
 
-  it('логотипы на кружках не повторяются, если есть из чего выбрать', () => {
+  it('на «табло» кружка — главная цифра самого сильного матча', () => {
     const groups = buildStoryGroups([
-      item(1, 'scheduled', [{ slug: 'value', score: 1, reason: 'a' }, { slug: 'progruz', score: 1, reason: 'b' }]),
-      item(2, 'scheduled', [{ slug: 'value', score: 0.5, reason: 'c' }]),
-      item(3, 'scheduled', [{ slug: 'progruz', score: 0.5, reason: 'd' }]),
+      item(1, 'scheduled', [{ slug: 'progruz', score: 0.9, reason: 'Коэффициент на победу «A» упал с 2.40 до 1.97 (−18%)' }]),
+      item(2, 'scheduled', [{ slug: 'progruz', score: 0.4, reason: 'Коэффициент на победу «B» упал с 2.00 до 1.80 (−10%)' }]),
+      item(3, 'scheduled', [{ slug: 'value', score: 0.8, reason: 'П2 за 3.15 (Марафон) при справедливом 2.84: перевес +10.8%' }]),
+      item(4, 'live'),
     ])
-    const covers = groups.map((g) => g.cover.home.name)
-    expect(new Set(covers).size).toBe(covers.length)
-    // матч с обложки — первый в кружке
-    for (const g of groups) expect(g.cover.home.name).toBe(`Home ${g.items[0].id}`)
+    expect(groups.find((g) => g.key === 'progruz')?.stat).toBe('−18%')
+    expect(groups.find((g) => g.key === 'value')?.stat).toBe('+11%')
+    expect(groups.find((g) => g.key === 'live')?.stat).toBe('1')
+    expect(groups.find((g) => g.key === 'top')?.stat).toBe('#')
+    // сильнейший матч — первым в кружке
+    expect(groups.find((g) => g.key === 'progruz')?.items[0].id).toBe(1)
+  })
+
+  it('цифры для остальных тегов достаются из объяснений', () => {
+    expect(statFor('tb-2-5', 'Вероятность тотала больше 2.5 — 61%')).toBe('61%')
+    expect(statFor('favorit', 'Шансы «Наполи» на победу — 78%')).toBe('78%')
+    expect(statFor('seriya', 'Команда «X» выиграла 5 матчей подряд')).toBe('5')
+    expect(statFor('kadry', 'Команда «X» не досчитается 4 игроков')).toBe('−4')
+    expect(statFor('h2h', 'В 6 из 8 последних очных встреч было больше 2.5 голов')).toBe('6/8')
+    expect(statFor('top-match', 'Встреча команд с 1-го и 3-го места')).toBe('1·3')
+    expect(statFor('ravnye', 'Шансы почти равны')).toBe('≈')
   })
 
   it('демо-день: кружки собираются, в теге не больше 10 матчей', async () => {

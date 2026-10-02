@@ -22,7 +22,7 @@ export default async function TagsPage() {
   return (
     <>
       <div className="mb-8 pt-2">
-        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">Теги ставок</h1>
+        <h1 className="display text-[36px] sm:text-[56px]">Теги ставок</h1>
         <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-dim">
           Каждый матч автоматически получает теги по данным: линии букмекеров без маржи, модели голов, форме команд, личным встречам и
           травмам. Тег — это готовая идея для ставки с объяснением, почему она появилась.

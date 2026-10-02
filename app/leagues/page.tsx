@@ -33,7 +33,7 @@ export default async function LeaguesPage() {
 
   return (
     <>
-      <h1 className="pt-2 text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">Лиги и турниры</h1>
+      <h1 className="pt-2 display text-[36px] sm:text-[56px]">Лиги и турниры</h1>
       <p className="mt-2 text-[15px] text-dim">Таблицы, расписание, результаты и прогнозы на матчи.</p>
       {failed ? <div className="card mt-4 p-4 text-sm text-dim">Список лиг временно недоступен.</div> : null}
 

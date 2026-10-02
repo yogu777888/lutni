@@ -18,7 +18,7 @@ export default function BookmakersPage() {
   return (
     <>
       <div className="mb-8 pt-2">
-        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[34px]">Рейтинг букмекеров</h1>
+        <h1 className="display text-[36px] sm:text-[56px]">Рейтинг букмекеров</h1>
         <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-dim">
           Только легальные букмекеры с лицензией. Оцениваем уровень коэффициентов на футбол (маржу считаем по реальным линиям), ширину
           росписи, скорость выплат и удобство приложения.
