@@ -96,7 +96,7 @@ export function StoryCircles({ groups }: { groups: StoryGroup[] }) {
   }
 
   return (
-    <nav aria-label="Истории дня" className="scrollbar-none -mx-5 flex gap-3 overflow-x-auto px-5 pb-1 pt-0.5 sm:mx-0 sm:px-0">
+    <nav aria-label="Истории дня" className="scrollbar-none -mx-5 flex gap-3 overflow-x-auto px-5 pb-1 pt-0.5 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:px-0">
       {groups.map((g, gi) => {
         const marks = g.items.map((it) => seen.has(it.id))
         const done = marks.every(Boolean)

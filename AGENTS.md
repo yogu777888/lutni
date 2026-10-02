@@ -20,3 +20,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Демо без сети: `SSTATS_MOCK=1`. Проверки: `npm run typecheck`, `npm test`, `npm run build`.
 - «Матч в слайдах» (сторис): данные — `lib/story.ts` → `/api/story/[id]`, просмотр и графики — `components/story/`. Ссылки на матч в списках — через `StoryLink` (обычная ссылка для SEO, клик открывает сторис).
 - Кружки историй на главной: группы — `lib/story-groups.ts` (порядок по `lib/rank.ts`), ряд — `components/story/StoryCircles.tsx`, очередь передаётся в просмотрщик через `openStory({ queue })`. Просмотренные матчи — в `localStorage` (`components/story/seen.ts`), только для колец.
+- «Сводка дня» (виджеты первого экрана главной): данные — `lib/day-summary.ts` (`buildDaySummary`, `summaryCards` — какие 4 маленьких виджета показать), вид — `components/DaySummary.tsx`. На прошедших днях сводки нет.
+- Шапка: `components/Header.tsx` + `HeaderShell.tsx` (стекло после прокрутки) + `NavCapsule.tsx` (меню-капсула; раздел по адресу — `activeNav`).
+- Цвета по смыслу: лайм — «цена выше честной» (сила перевеса — яркостью лайма, `edgeTone` в `components/Flaps.tsx`), янтарь — прогруз, красный — live. Светофор не используем.

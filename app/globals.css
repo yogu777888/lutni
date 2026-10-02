@@ -175,6 +175,25 @@
     background: none;
     color: var(--color-acid);
   }
+  /* перевес поменьше — тот же лайм, но тише: подкрашенная плашка и лаймовая цифра */
+  .flaps.lime .flap {
+    background: linear-gradient(
+      color-mix(in oklab, var(--color-acid) 24%, var(--color-panel-3)) 0 50%,
+      color-mix(in oklab, var(--color-acid) 17%, var(--color-panel-2)) 50% 100%
+    );
+    color: var(--color-acid);
+  }
+  .flaps.soft .flap {
+    color: var(--color-acid);
+  }
+  .flaps.lime .flap.p,
+  .flaps.soft .flap.p {
+    background: none;
+    color: var(--color-acid);
+  }
+  .flaps.dim .flap {
+    color: var(--color-dim);
+  }
   .flaps.amber .flap {
     background: linear-gradient(#ffc457 0 50%, var(--color-hot) 50% 100%);
     color: #1d1300;

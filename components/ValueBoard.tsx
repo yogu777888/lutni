@@ -3,7 +3,7 @@ import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import type { FeedItem } from '@/lib/data'
 import { formatTime } from '@/lib/format'
 import { matchHref } from '@/lib/links'
-import { Flaps } from './Flaps'
+import { edgeTone, Flaps } from './Flaps'
 import { StoryLink } from './story/StoryLink'
 
 const edge = (ev: number) => `${ev >= 0 ? '+' : '−'}${Math.abs(ev * 100).toFixed(1).replace('.', ',')}%`
@@ -69,12 +69,12 @@ export function ValueBoard({ items }: { items: FeedItem[] }) {
                 ),
               )}
               {cell('Честный', <Flaps text={(1 / p.prob).toFixed(2)} className="text-[17px] sm:text-[19px]" start={i * 3 + 2} />)}
-              {cell('Перевес', <Flaps text={edge(p.ev ?? 0)} hot={(p.ev ?? 0) > 0} className="text-[17px] sm:text-[19px]" start={i * 3 + 4} />)}
+              {cell('Перевес', <Flaps text={edge(p.ev ?? 0)} tone={edgeTone(p.ev ?? 0)} className="text-[17px] sm:text-[19px]" start={i * 3 + 4} />)}
             </div>
           )
         })}
         <div className="flex flex-wrap justify-between gap-2 border-t border-edge bg-[#0e0e0c] px-4 py-3 text-[12px] text-mute sm:px-6">
-          <span>Перевес = кэф × честный шанс − 1. Не гарантия, а цена.</span>
+          <span>Перевес = кэф × честный шанс − 1: чем он больше, тем ярче. Не гарантия, а цена.</span>
           <span>Ссылки на букмекеров — реклама · 18+</span>
         </div>
       </div>

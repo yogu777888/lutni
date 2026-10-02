@@ -93,10 +93,10 @@ function Score({ m, big = false }: { m: Match; big?: boolean }) {
 }
 
 /** Теги строкой, как хэштеги: решётка value — лаймовая, прогруза — янтарная. */
-function Hashtags({ tags }: { tags: TagHit[] }) {
+export function Hashtags({ tags, max = 3 }: { tags: TagHit[]; max?: number }) {
   return (
     <>
-      {tags.slice(0, 3).map((t) => {
+      {tags.slice(0, max).map((t) => {
         const def = TAG_BY_SLUG.get(t.slug)
         if (!def) return null
         const hash = def.kind === 'accent' ? 'text-acid' : def.kind === 'hot' ? 'text-hot' : 'text-mute'
@@ -107,7 +107,7 @@ function Hashtags({ tags }: { tags: TagHit[] }) {
           </Link>
         )
       })}
-      {tags.length > 3 ? <span className="text-mute">+{tags.length - 3}</span> : null}
+      {tags.length > max ? <span className="text-mute">+{tags.length - max}</span> : null}
     </>
   )
 }

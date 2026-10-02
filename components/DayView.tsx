@@ -3,9 +3,11 @@ import { countryRank, featuredRank } from '@/config/leagues'
 import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { diffDays, formatDayMonth, formatWeekdayLong, plural, pluralN, ymdToNoonTs } from '@/lib/format'
 import { isLive, liveRank } from '@/lib/rank'
+import { buildDaySummary } from '@/lib/day-summary'
 import { buildStoryGroups } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
+import { DaySummary } from './DaySummary'
 import { LeagueBlock, LiveBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
 import { StoryCircles } from './story/StoryCircles'
@@ -71,6 +73,7 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
 
   const open = items.filter((i) => i.match.status === 'scheduled' || i.match.status === 'live')
   const storyGroups = buildStoryGroups(items)
+  const daySummary = buildDaySummary(items)
   const values = open
     .filter((i) => i.summary?.pick?.kind === 'value' && i.match.status === 'scheduled')
     .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
@@ -96,7 +99,7 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
 
   return (
     <>
-      <section className="pb-12 pt-8 sm:pb-16 sm:pt-16">
+      <section className="pt-5 sm:pt-7">
         <a
           href={liveAll.length ? '#live' : undefined}
           className="fade-up inline-flex max-w-full items-center gap-2 rounded-full border border-edge py-1 pl-1.5 pr-3.5 text-[13px] text-dim transition-colors hover:border-edge-2"
@@ -114,37 +117,36 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
           )}
           <span className="truncate">{summary}</span>
         </a>
-        <h1 className="display mt-6 text-[46px] sm:text-[72px] lg:text-[84px]">
-          <span className="rise">
-            <span>{line1}</span>
-          </span>
-          <span className="rise">
-            <span className="text-chalk" style={{ animationDelay: '120ms' }}>
-              {line2}
+        <div className="mt-5 flex flex-wrap items-end justify-between gap-x-10 gap-y-3">
+          <h1 className="display text-[34px] sm:text-[46px] lg:text-[52px]">
+            <span className="rise">
+              <span>
+                {line1} <span className="text-chalk">{line2}</span>
+              </span>
             </span>
-          </span>
-        </h1>
-        <p className="fade-up mt-6 max-w-[34em] text-[17px] leading-relaxed text-dim sm:text-[19px]" style={{ animationDelay: '300ms' }}>
-          Честные шансы, теги ставок и перевес по каждому матчу. Без «экспертов» — только цифры рынка и статистика.
-        </p>
-        <div className="fade-up mt-9" style={{ animationDelay: '420ms' }}>
+          </h1>
+          {past ? null : (
+            <p className="fade-up hidden max-w-[34ch] text-[15px] leading-snug text-dim sm:block lg:pb-1.5" style={{ animationDelay: '200ms' }}>
+              Честные шансы, теги ставок и перевес по каждому матчу. Без «экспертов» — только цифры.
+            </p>
+          )}
+        </div>
+        <div className="fade-up mt-6" style={{ animationDelay: '300ms' }}>
           <DateTabs active={ymd} today={today} />
         </div>
       </section>
 
       {storyGroups.length ? (
-        <section className="border-y border-edge py-7">
-          <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-            <p className="eyebrow">Истории дня</p>
-            <span className="text-[13px] text-mute">нажмите на кружок — пролистайте лучшие матчи тега</span>
-          </div>
+        <section aria-label="Истории дня" className="mt-7">
           <StoryCircles groups={storyGroups} />
         </section>
       ) : null}
 
+      <DaySummary s={daySummary} className="mt-7" />
+
       <ValueBoard items={values} />
 
-      <section className="mt-16 sm:mt-20">
+      <section id="matches" className="mt-16 scroll-mt-24 sm:mt-20">
         <p className="eyebrow">{past ? 'Результаты' : 'Матчи'}</p>
         <h2 className="h2 mt-3 text-[30px] sm:text-[44px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
         <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
