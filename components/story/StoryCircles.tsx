@@ -37,7 +37,7 @@ function Ring({ kind, seen }: { kind: CircleKind; seen: boolean[] }) {
 }
 
 function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
-  const text = dim ? 'text-mute' : 'text-fg'
+  const text = dim ? 'text-dim' : 'text-fg'
   if (g.label.startsWith('#')) {
     return (
       <span className={`block truncate ${text}`}>
@@ -112,7 +112,7 @@ export function StoryCircles({ groups }: { groups: StoryGroup[] }) {
             <span className="relative block transition-transform duration-300 group-hover:-translate-y-0.5 group-active:scale-95" style={{ width: SIZE, height: SIZE }}>
               <Ring kind={g.kind} seen={marks} />
               <span
-                className={`absolute inset-[6px] flex items-center justify-center rounded-full bg-panel ring-1 ring-inset ring-edge ${done ? 'opacity-50' : ''}`}
+                className="absolute inset-[6px] flex items-center justify-center rounded-full bg-panel ring-1 ring-inset ring-edge"
               >
                 <span className={`num font-extrabold tracking-[-0.04em] ${statSize(g.stat)} ${statColor(g.kind)}`}>{g.stat}</span>
               </span>
@@ -132,7 +132,7 @@ export function StoryCircles({ groups }: { groups: StoryGroup[] }) {
       <Link href="/tags" prefetch={false} className="group flex w-[80px] shrink-0 flex-col items-center rounded-xl" title="Все теги и что они значат">
         <span className="relative block transition-transform duration-300 group-hover:-translate-y-0.5" style={{ width: SIZE, height: SIZE }}>
           <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full" aria-hidden>
-            <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="rgb(255 255 255 / 0.16)" strokeWidth="1.5" strokeDasharray="3 4" />
+            <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="rgb(255 255 255 / 0.16)" strokeWidth="1.5" />
           </svg>
           <span className="absolute inset-[6px] flex items-center justify-center rounded-full bg-panel ring-1 ring-inset ring-edge">
             <LogoMark size={24} />

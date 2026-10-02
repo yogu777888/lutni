@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { countryRank, featuredRank } from '@/config/leagues'
 import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
-import { diffDays, formatDayMonth, formatWeekdayLong, plural, pluralN, ymdToNoonTs } from '@/lib/format'
+import { diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { isLive, liveRank } from '@/lib/rank'
 import { buildDaySummary } from '@/lib/day-summary'
 import { buildStoryGroups } from '@/lib/story-groups'
@@ -25,6 +25,20 @@ export function dayTitleLines(ymd: string, today: string): [string, string] {
   if (d === 1) return ['Футбол завтра,', date]
   if (d < 0) return [`Футбол ${date}:`, 'результаты матчей']
   return [`Футбол ${date},`, formatWeekdayLong(ts)]
+}
+
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
+
+/** Заголовок дня на странице: короткий h1 одним цветом и надпись с датой над ним. */
+export function dayHeading(ymd: string, today: string): { title: string; date: string } {
+  const d = diffDays(ymd, today)
+  const ts = ymdToNoonTs(ymd)
+  const date = `${cap(formatWeekdayLong(ts))}, ${formatDayMonth(ts)}`
+  if (d === 0) return { title: 'Футбол сегодня', date }
+  if (d === 1) return { title: 'Футбол завтра', date }
+  if (d === -1) return { title: 'Как сыграли вчера', date }
+  if (d < 0) return { title: 'Результаты матчей', date }
+  return { title: `Футбол ${weekdayWhen(ts)}`, date }
 }
 
 export function dayTitle(ymd: string, today: string) {
@@ -82,44 +96,33 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
   const liveAll = items.filter((i) => isLive(i.match))
   // в «Сейчас в игре» — сначала топ-лиги, потом матчи с линией; женские и молодёжные — в конец
   const liveTop = [...liveAll].sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts).slice(0, LIVE_LIMIT)
-  const featuredCount = featured.reduce((s, g) => s + g.items.length, 0)
 
-  const summary = matches.length
-    ? [pluralN(matches.length, ['матч', 'матча', 'матчей']), featuredCount ? `${featuredCount} — в топ-турнирах` : null].filter(Boolean).join(' · ')
-    : 'Коэффициенты, теги ставок и прогнозы на футбол'
-
-  const [line1, line2] = dayTitleLines(ymd, today)
+  const heading = dayHeading(ymd, today)
   const past = diffDays(ymd, today) < 0
 
   return (
     <>
-      <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5 pt-6 sm:pt-8">
+      <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5 pt-6 sm:pt-9">
         <div className="min-w-0">
-          <h1 className="display text-[30px] sm:text-[40px]">
+          <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
+          <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px]">
             <span className="rise">
               <span>
-                {line1} <span className="text-chalk">{line2}</span>
+                {heading.title}
+                {/* дата — и в заголовке для поисковиков */}
+                <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
               </span>
             </span>
           </h1>
-          <p className="fade-up mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[14px] text-dim" style={{ animationDelay: '150ms' }}>
-            {liveAll.length ? (
-              <a href="#live" className="inline-flex items-center gap-1.5 font-medium text-live">
-                <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" />
-                {liveAll.length} {plural(liveAll.length, ['идёт', 'идут', 'идут'])} сейчас
-              </a>
-            ) : null}
-            {liveAll.length && summary ? <span className="text-mute">·</span> : null}
-            <span>{summary}</span>
-          </p>
         </div>
-        <div className="fade-up -mb-px w-full min-w-0 lg:w-auto" style={{ animationDelay: '250ms' }}>
+        <div className="fade-up w-full min-w-0 sm:w-auto" style={{ animationDelay: '150ms' }}>
           <DateTabs active={ymd} today={today} />
         </div>
       </section>
 
       {storyGroups.length ? (
-        <section aria-label="Истории дня" className="mt-7 sm:mt-8">
+        <section aria-label="Истории дня" className="mt-8 sm:mt-10">
+          <p className="mb-3 text-[13px] font-medium text-dim">Истории дня</p>
           <StoryCircles groups={storyGroups} />
         </section>
       ) : null}
