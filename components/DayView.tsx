@@ -12,7 +12,6 @@ import { DaySummary } from './DaySummary'
 import { LeagueBlock, LiveBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
 import { StoryCircles } from './story/StoryCircles'
-import { ValueBoard } from './ValueBoard'
 
 const OTHER_LIMIT = 160
 const LIVE_LIMIT = 6
@@ -86,13 +85,8 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
   const shownOthers = others.reduce((s, g) => s + g.items.length, 0)
   const totalOthers = othersAll.reduce((s, g) => s + g.items.length, 0)
 
-  const open = items.filter((i) => i.match.status === 'scheduled' || i.match.status === 'live')
   const storyGroups = buildStoryGroups(items)
   const daySummary = buildDaySummary(items)
-  const values = open
-    .filter((i) => i.summary?.pick?.kind === 'value' && i.match.status === 'scheduled')
-    .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
-    .slice(0, 5)
 
   const liveAll = items.filter((i) => isLive(i.match))
   // в «Сейчас в игре» — сначала топ-лиги, потом матчи с линией; женские и молодёжные — в конец
@@ -103,20 +97,19 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
 
   return (
     <>
-      <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5 pt-4 sm:pt-5">
-        <div className="min-w-0">
-          <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
-          <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px]">
-            <span className="rise">
-              <span>
-                {heading.title}
-                {/* дата — и в заголовке для поисковиков */}
-                <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
-              </span>
+      <section className="pt-4 sm:pt-5">
+        <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
+        <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px]">
+          <span className="rise">
+            <span>
+              {heading.title}
+              {/* дата — и в заголовке для поисковиков */}
+              <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
             </span>
-          </h1>
-        </div>
-        <div className="fade-up w-full min-w-0 sm:w-auto" style={{ animationDelay: '150ms' }}>
+          </span>
+        </h1>
+        {/* выбор дня — календарём прямо под заголовком: меняет всю страницу */}
+        <div className="fade-up mt-5" style={{ animationDelay: '150ms' }}>
           <DateTabs active={ymd} today={today} />
         </div>
       </section>
@@ -128,14 +121,19 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
         </section>
       ) : null}
 
-      <DaySummary s={daySummary} look="blocks" className="mt-5" />
+      <DaySummary s={daySummary} className="mt-6" />
 
-      <ValueBoard items={values} />
-
-      <section id="matches" className="mt-16 scroll-mt-24 sm:mt-20">
-        <p className="eyebrow">{past ? 'Результаты' : 'Матчи'}</p>
-        <h2 className="h2 mt-3 text-[30px] sm:text-[44px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
-        <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <section id="matches" className={`scroll-mt-24 ${past ? 'mt-8' : 'mt-16 sm:mt-20'}`}>
+        {/* у прошедшего дня заголовок страницы уже «Как сыграли» — второй не нужен */}
+        {past ? (
+          <h2 className="sr-only">Результаты матчей</h2>
+        ) : (
+          <>
+            <p className="eyebrow">Матчи</p>
+            <h2 className="h2 mt-3 text-[30px] sm:text-[44px]">Все матчи дня</h2>
+          </>
+        )}
+        <div className={`grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] ${past ? '' : 'mt-8'}`}>
           <div className="min-w-0 space-y-5">
             {failed ? (
               <div className="card p-5 text-[15px] text-dim">

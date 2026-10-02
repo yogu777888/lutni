@@ -1,53 +1,50 @@
 /**
- * «Сводка дня» — виджеты первого экрана главной: матч дня, value дня,
- * прогруз дня, live (или ближайший матч), голы, фаворит. Все цифры — из тех же
- * тегов и кэфов, что и в списке матчей, чтобы виджет и строка не расходились.
+ * «Главное за день» — виджеты первого экрана главной. Каждый отвечает на один
+ * вопрос посетителя: что поставить (ставки дня), что идёт сейчас (live или
+ * ближайшие матчи), куда идут деньги (прогрузы). Цифры — из тех же тегов и
+ * прогнозов, что и в списке матчей, чтобы виджет и строка не расходились.
  */
 import { featuredRank } from '@/config/leagues'
 import type { FeedItem } from './data'
-import { formatTime } from './format'
 import { fair1x2 } from './odds'
-import { interest, isLive, isMinor, liveRank } from './rank'
+import { bestTag, interest, isLive, isMinor, liveRank } from './rank'
+import type { TagHit } from './tags'
 
 export type ProgruzInfo = { item: FeedItem; side: 'home' | 'away'; from: number; to: number; drop: number }
-export type GoalsInfo = {
-  count: number
+
+/**
+ * Ставка дня. kind: value — кэф выше честного, probability — уверенный исход по модели,
+ * favorite — запасной вариант по коротким кэфам, пока матчи не разобраны.
+ */
+export type DayPick = {
   item: FeedItem
-  p: number
-  /** матчи с ТБ 2.5 — самые голевые первыми */
-  list: { id: number; p: number; title: string }[]
+  label: string
+  prob: number
+  odd: number | null
+  fair: number
+  ev: number | null
+  kind: 'value' | 'probability' | 'favorite'
+  partnerSlug: string | null
+  bookmaker: string | null
+  /** почему этот матч — самый весомый тег и его объяснение */
+  why: TagHit | null
 }
-/** Состояние матча дня для «точек»: сыгран, идёт, впереди. */
-export type DayState = 'done' | 'live' | 'next'
-export type FavoriteInfo = { item: FeedItem; side: 'home' | 'away'; p: number }
 
 export type DaySummary = {
-  /** Главный матч дня: топ-турнир + сильные теги. */
-  top: FeedItem | null
-  /** Самый большой перевес среди предстоящих матчей. */
-  value: FeedItem | null
-  progruz: ProgruzInfo | null
+  picks: DayPick[]
   live: FeedItem[]
   liveCount: number
-  /** Ближайший матч — когда ничего не идёт. */
-  next: FeedItem | null
-  goals: GoalsInfo | null
-  favorite: FavoriteInfo | null
+  /** ближайшие матчи — когда ничего не идёт */
+  upcoming: FeedItem[]
+  drops: ProgruzInfo[]
   total: number
-  leagues: number
-  /** Главные турниры дня: топ-лиги первыми, потом по числу матчей. */
-  topLeagues: { id: number; name: string; count: number }[]
-  /** Матчи дня по времени начала: сыгран / идёт / впереди (перенесённые и отменённые — мимо). */
-  timeline: DayState[]
-  /** Те же матчи по часам начала (по времени сайта) — для «точек по часам»; пустые часы внутри дня тоже есть. */
-  hours: { hour: number; states: DayState[] }[]
 }
 
-export type CardKind = 'value' | 'progruz' | 'live' | 'next' | 'goals' | 'favorite' | 'count'
-
-const LIVE_SHOWN = 3
-const CARDS = 4
-const GOALS_SHOWN = 3
+const PICKS = 5
+const ROWS = 4
+const DROPS = 3
+/** Короче этого кэфа «ставка» неинтересна: риск есть, выигрыша почти нет. */
+const MIN_ODD = 1.4
 
 const isOpen = (it: FeedItem) => it.match.status === 'scheduled' || isLive(it.match)
 const tag = (it: FeedItem, slug: string) => it.tags.find((t) => t.slug === slug)
@@ -64,165 +61,102 @@ export function parseProgruz(it: FeedItem): ProgruzInfo | null {
   return { item: it, side: m[1] === it.match.away.name ? 'away' : 'home', from, to, drop: 1 - to / from }
 }
 
-/** Вероятность ТБ 2.5 из объяснения тега («… — 72%»). */
-function overPct(it: FeedItem): number | null {
-  const t = tag(it, 'tb-2-5')
-  const m = t ? /(\d+)%/.exec(t.reason) : null
-  return m ? Number(m[1]) / 100 : null
-}
-
-/** Вес матча для «Матча дня»: громкость турнира важнее тегов. */
+/** Вес матча: громкость турнира важнее тегов. */
 export function prestige(it: FeedItem): number {
   const r = featuredRank(it.match.league)
   return interest(it) + (r >= 0 ? Math.max(0, 12 - r) * 0.35 : 0)
 }
 
-const max = <T>(xs: T[], score: (x: T) => number): T | null => {
-  let best: T | null = null
-  let bs = -Infinity
-  for (const x of xs) {
-    const s = score(x)
-    if (s > bs) [best, bs] = [x, s]
-  }
-  return best
-}
+const SIDE = { home: 'П1', draw: 'Х', away: 'П2' } as const
 
-function topLeagues(items: FeedItem[]) {
-  const by = new Map<number, { id: number; name: string; count: number; rank: number }>()
-  for (const { match: m } of items) {
-    const g = by.get(m.league.id) ?? { id: m.league.id, name: m.league.name, count: 0, rank: featuredRank(m.league) }
-    g.count++
-    by.set(m.league.id, g)
-  }
-  return [...by.values()]
-    .sort((a, b) => (a.rank < 0 ? 1e3 : a.rank) - (b.rank < 0 ? 1e3 : b.rank) || b.count - a.count)
-    .slice(0, 4)
-    .map(({ id, name, count }) => ({ id, name, count }))
+/** Ставки дня: сначала value по размеру перевеса, потом уверенные исходы модели; без разбора — фавориты громких матчей. */
+export function buildPicks(scheduled: FeedItem[]): DayPick[] {
+  const fromModel: DayPick[] = scheduled.flatMap((it) => {
+    const p = it.summary?.pick
+    if (!p || (p.odd !== null && p.odd < MIN_ODD)) return []
+    return [
+      {
+        item: it,
+        label: p.label,
+        prob: p.prob,
+        odd: p.odd,
+        fair: 1 / p.prob,
+        ev: p.ev,
+        kind: p.kind,
+        partnerSlug: p.partnerSlug,
+        bookmaker: p.bookmaker,
+        // у value-ставки перевес уже на кнопке — «почему» берём из другого тега
+        why: bestTag(p.kind === 'value' ? it.tags.filter((t) => t.slug !== 'value') : it.tags),
+      },
+    ]
+  })
+  const value = fromModel.filter((p) => p.kind === 'value').sort((a, b) => (b.ev ?? 0) - (a.ev ?? 0))
+  const sure = fromModel.filter((p) => p.kind !== 'value').sort((a, b) => b.prob - a.prob)
+  const picks = [...value, ...sure].slice(0, PICKS)
+  if (picks.length >= 3) return picks
+
+  // матчи ещё не разобраны — показываем фаворитов громких матчей по коротким кэфам
+  const used = new Set(picks.map((p) => p.item.match.id))
+  const favs = scheduled
+    .filter((it) => !used.has(it.match.id) && !isMinor(it.match))
+    .flatMap((it): DayPick[] => {
+      const f = fair1x2(it.match.odds?.x12)
+      const x = it.match.odds?.x12
+      if (!f || !x) return []
+      const side = f.home >= f.away ? ('home' as const) : ('away' as const)
+      const odd = x[side]?.value ?? null
+      if (!odd || odd < MIN_ODD - 0.1 || f[side] < 0.45) return []
+      return [
+        {
+          item: it,
+          label: SIDE[side],
+          prob: f[side],
+          odd,
+          fair: 1 / f[side],
+          ev: odd * f[side] - 1,
+          kind: 'favorite',
+          partnerSlug: null,
+          bookmaker: null,
+          why: bestTag(it.tags),
+        },
+      ]
+    })
+    .sort((a, b) => prestige(b.item) - prestige(a.item))
+  return [...picks, ...favs].slice(0, PICKS)
 }
 
 export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary {
   const open = items.filter(isOpen)
   const scheduled = open.filter((it) => it.match.status === 'scheduled')
-  const dated = [...items]
-    .sort((a, b) => a.match.ts - b.match.ts)
-    .flatMap(({ match: m }) => {
-      const state: DayState | null = isLive(m) ? 'live' : m.status === 'finished' ? 'done' : m.status === 'scheduled' ? 'next' : null
-      return state ? [{ state, hour: Number(formatTime(m.ts).slice(0, 2)) }] : []
-    })
 
-  const value = max(
-    scheduled.filter((it) => it.summary?.pick?.kind === 'value'),
-    (it) => it.summary!.pick!.ev ?? 0,
-  )
-  const progruz = max(
-    open.map(parseProgruz).filter((p): p is ProgruzInfo => p !== null),
-    (p) => p.drop,
-  )
+  const live = open.filter((it) => isLive(it.match)).sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts)
 
-  // матч дня — самый громкий: сначала турнир (ЛЧ, АПЛ, Ла Лига…), потом теги;
-  // и другой, чем в value и прогрузе, если есть из чего выбрать
-  const used = new Set([value?.match.id, progruz?.item.match.id])
-  const pool = open.filter((it) => !isMinor(it.match))
-  const top = max(pool.filter((it) => !used.has(it.match.id)), prestige) ?? max(pool, prestige) ?? max(open, prestige)
+  // ближайшие: что начнётся первым; среди одновременных — громкие турниры раньше
+  const upcoming = scheduled
+    .filter((it) => it.match.ts >= now)
+    .sort((a, b) => a.match.ts - b.match.ts || prestige(b) - prestige(a))
+    .slice(0, ROWS)
 
-  const liveAll = open.filter((it) => isLive(it.match)).sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts)
-
-  const upcoming = scheduled.filter((it) => it.match.ts >= now)
-  const firstTs = Math.min(...upcoming.map((it) => it.match.ts))
-  const next = max(
-    upcoming.filter((it) => it.match.ts === firstTs),
-    interest,
-  )
-
-  const tb = open.filter((it) => overPct(it) !== null)
-  const goalsBest = max(tb, (it) => overPct(it)! + (featuredRank(it.match.league) >= 0 ? 0.001 : 0))
-  const goals = goalsBest
-    ? {
-        count: tb.length,
-        item: goalsBest,
-        p: overPct(goalsBest)!,
-        list: [...tb]
-          .sort((a, b) => overPct(b)! - overPct(a)! || a.match.ts - b.match.ts)
-          .slice(0, GOALS_SHOWN)
-          .map((it) => ({ id: it.match.id, p: overPct(it)!, title: `${it.match.home.name} — ${it.match.away.name}` })),
-      }
-    : null
-
-  // фаворит дня — самый уверенный исход в «взрослом» матче; топ-турниры важнее
-  const favs = scheduled
-    .filter((it) => !isMinor(it.match))
-    .flatMap((it) => {
-      const f = fair1x2(it.match.odds?.x12)
-      if (!f) return []
-      const side = f.home >= f.away ? ('home' as const) : ('away' as const)
-      return [{ item: it, side, p: f[side] }]
-    })
-  const favorite = max(favs, (f) => f.p + (featuredRank(f.item.match.league) >= 0 ? 1 : 0))
+  const drops = open
+    .map(parseProgruz)
+    .filter((p): p is ProgruzInfo => p !== null)
+    .sort((a, b) => b.drop - a.drop)
+    .slice(0, DROPS)
 
   return {
-    top,
-    value,
-    progruz,
-    live: liveAll.slice(0, LIVE_SHOWN),
-    liveCount: liveAll.length,
-    next,
-    goals,
-    favorite,
+    picks: buildPicks(scheduled),
+    live: live.slice(0, ROWS),
+    liveCount: live.length,
+    upcoming,
+    drops,
     total: items.length,
-    leagues: new Set(items.map((it) => it.match.league.id)).size,
-    topLeagues: topLeagues(items),
-    timeline: dated.map((d) => d.state),
-    hours: byHour(dated),
   }
 }
 
-function byHour(dated: { hour: number; state: DayState }[]) {
-  if (!dated.length) return []
-  const first = dated[0].hour
-  const last = dated[dated.length - 1].hour
-  const out = Array.from({ length: last - first + 1 }, (_, i) => ({ hour: first + i, states: [] as DayState[] }))
-  for (const d of dated) out[d.hour - first].states.push(d.state)
-  return out
-}
-
-/** Фаворит дня — только по-настоящему уверенный исход. */
-const FAVORITE_MIN = 0.6
-
-/**
- * Какие маленькие виджеты показать (до 4): value и прогруз — первыми, дальше — что есть.
- * Ближайший матч и фаворит не повторяют матч, который уже стоит в другом виджете.
- */
-export function summaryCards(s: DaySummary): CardKind[] {
-  const has: Record<CardKind, boolean> = {
-    value: Boolean(s.value),
-    progruz: Boolean(s.progruz),
-    live: s.liveCount > 0,
-    next: Boolean(s.next),
-    // один матч с ТБ — не повод для виджета
-    goals: (s.goals?.count ?? 0) >= 2,
-    favorite: (s.favorite?.p ?? 0) >= FAVORITE_MIN,
-    count: s.total > 0,
-  }
-  const matchOf: Partial<Record<CardKind, number>> = {
-    value: s.value?.match.id,
-    progruz: s.progruz?.item.match.id,
-    next: s.next?.match.id,
-    favorite: s.favorite?.item.match.id,
-  }
-  // когда матчи идут, «ближайший» — запасной виджет; когда нет — он вместо live
-  const order: readonly CardKind[] =
-    s.liveCount > 0
-      ? ['value', 'progruz', 'live', 'goals', 'favorite', 'next', 'count']
-      : ['value', 'progruz', 'next', 'goals', 'favorite', 'count']
-  const shown = new Set<number>()
-  if (s.top) shown.add(s.top.match.id)
-  const out: CardKind[] = []
-  for (const k of order) {
-    if (!has[k] || out.length >= CARDS) continue
-    const id = matchOf[k]
-    if (id !== undefined && (k === 'next' || k === 'favorite') && shown.has(id)) continue
-    out.push(k)
-    if (id !== undefined) shown.add(id)
-  }
-  return out
+/** Сила перевеса — яркостью лайма: ≥8% — полный, ≥5,5% — приглушённый, меньше — только цифра. */
+export function edgeTone(ev: number | null): 'hot' | 'lime' | 'soft' | 'none' {
+  if (ev === null || ev <= 0) return 'none'
+  if (ev >= 0.08) return 'hot'
+  if (ev >= 0.055) return 'lime'
+  return 'soft'
 }
