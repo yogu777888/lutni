@@ -4,6 +4,7 @@ import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { isLive, liveRank } from '@/lib/rank'
 import { buildDaySummary } from '@/lib/day-summary'
+import { storyCovers } from '@/lib/story-covers'
 import { buildStoryGroups } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
@@ -123,7 +124,7 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
       {storyGroups.length ? (
         <section aria-label="Истории дня" className="mt-6 sm:mt-7">
           <p className="mb-3 text-[13px] font-medium text-dim">Истории дня</p>
-          <StoryCircles groups={storyGroups} />
+          <StoryCircles groups={storyGroups} covers={storyCovers()} />
         </section>
       ) : null}
 

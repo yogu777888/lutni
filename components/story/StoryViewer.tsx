@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SPONSORED_REL } from '@/lib/affiliate'
 import type { StoryData } from '@/lib/story'
+import { artFor, artGlow } from '@/lib/story-art'
 import { TeamLogo } from '../TeamLogo'
 import { OPEN_STORY, openStory, type OpenStoryDetail, type StoryQueueItem } from './events'
 import { markSeen } from './seen'
@@ -309,6 +310,9 @@ export function StoryViewer() {
   const inGroup = group ? items.filter((i) => i.group?.key === group.key) : []
   const groupPos = group ? inGroup.findIndex((i) => i.id === item!.id) + 1 : 0
   const focus = focusFor(item, story)
+  // фон — цвета кружка, из которого открыли (или тега матча); своя картинка кружка — сверху
+  const artKey = group?.key ?? focus?.slug ?? null
+  const panelBg = artKey ? artGlow(artFor(artKey)) : undefined
   const duration = (k: NonNullable<typeof current>['kind']) => (k === 'cover' && focus ? 6500 : SLIDE_MS[k])
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -382,7 +386,20 @@ export function StoryViewer() {
         <Icon d={ICONS.prev} />
       </button>
 
-      <div className="st-glow relative flex h-dvh w-full select-none flex-col overflow-hidden sm:h-[min(92dvh,860px)] sm:w-auto sm:aspect-[9/16] sm:rounded-[22px] sm:shadow-2xl sm:ring-1 sm:ring-edge-2">
+      <div
+        className="st-glow relative isolate flex h-dvh w-full select-none flex-col overflow-hidden transition-[background] duration-500 sm:h-[min(92dvh,860px)] sm:w-auto sm:aspect-[9/16] sm:rounded-[22px] sm:shadow-2xl sm:ring-1 sm:ring-edge-2"
+        style={panelBg ? { background: panelBg } : undefined}
+      >
+        {group?.cover ? (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[62%] opacity-50"
+            style={{
+              // сверху и снизу — затемнение: подписи читаются даже на светлом фото
+              background: `linear-gradient(to bottom, rgb(11 11 9 / 0.6) 0%, rgb(11 11 9 / 0.2) 35%, var(--color-ink) 100%), center / cover no-repeat url("${group.cover}")`,
+            }}
+          />
+        ) : null}
         {/* прогресс по слайдам */}
         <div className="flex gap-1 px-3 pt-[max(10px,env(safe-area-inset-top))]">
           {(story?.slides ?? [null]).map((s, i) => (

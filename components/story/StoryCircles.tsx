@@ -2,8 +2,10 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { artBackground, artFor } from '@/lib/story-art'
 import type { CircleKind, StoryGroup } from '@/lib/story-groups'
 import { LogoMark } from '../Logo'
+import { ArtIcon } from './ArtIcon'
 import { openStory, type StoryQueueItem } from './events'
 import { readSeen, SEEN_EVENT } from './seen'
 
@@ -49,18 +51,28 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
   return <span className={`block truncate ${text}`}>{g.label}</span>
 }
 
-/** Размер цифры в кружке — чем длиннее подпись, тем мельче. */
-const statSize = (t: string) => (t.length <= 2 ? 'text-[26px]' : t.length === 3 ? 'text-[21px]' : t.length === 4 ? 'text-[18px]' : 'text-[15px]')
-
-/** Цвет цифры: деньги (value, топ) — лайм, движение линии — янтарь, live — красный. */
-const statColor = (k: CircleKind) => (k === 'accent' || k === 'top' ? 'text-acid' : k === 'hot' ? 'text-hot' : k === 'live' ? 'text-live' : 'text-fg')
+/**
+ * Обложка кружка: своя картинка из public/stories/<ключ>.* или арт тега —
+ * свечение на тёмной основе, зерно и белая иконка (lib/story-art.ts).
+ */
+function CoverArt({ k, cover, children }: { k: string; cover?: string; children?: React.ReactNode }) {
+  const art = artFor(k)
+  return (
+    <span
+      className="art-grain absolute inset-[6px] grid place-items-center overflow-hidden rounded-full ring-1 ring-inset ring-white/10"
+      style={{ background: cover ? `center / cover no-repeat url("${cover}")` : artBackground(art) }}
+    >
+      {cover ? null : (children ?? <ArtIcon name={art.icon} className="relative z-[1] h-[30px] w-[30px] text-white [filter:drop-shadow(0_2px_6px_rgb(0_0_0/0.4))]" />)}
+    </span>
+  )
+}
 
 /**
  * Кружки историй дня вместо полосы тегов: «В игре», «Топ дня» и по кружку на тег.
  * Это обычные ссылки (на страницу тега / матча) — для поисковиков и без JS;
  * клик открывает сторис матчей кружка, затем следующих кружков.
  */
-export function StoryCircles({ groups }: { groups: StoryGroup[] }) {
+export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; covers?: Record<string, string> }) {
   const [seen, setSeen] = useState<Set<number>>(() => new Set())
 
   useEffect(() => {
@@ -86,7 +98,7 @@ export function StoryCircles({ groups }: { groups: StoryGroup[] }) {
       for (const it of g.items) {
         if (ids.has(it.id)) continue
         ids.add(it.id)
-        queue.push({ id: it.id, href: it.href, group: { key: g.key, label: g.label, kind: g.kind }, focus: it.focus })
+        queue.push({ id: it.id, href: it.href, group: { key: g.key, label: g.label, kind: g.kind, cover: covers[g.key] }, focus: it.focus })
       }
     }
     const g = groups[gi]
@@ -111,11 +123,7 @@ export function StoryCircles({ groups }: { groups: StoryGroup[] }) {
           >
             <span className="relative block transition-transform duration-300 group-hover:-translate-y-0.5 group-active:scale-95" style={{ width: SIZE, height: SIZE }}>
               <Ring kind={g.kind} seen={marks} />
-              <span
-                className="absolute inset-[6px] flex items-center justify-center rounded-full bg-panel ring-1 ring-inset ring-edge"
-              >
-                <span className={`num font-extrabold tracking-[-0.04em] ${statSize(g.stat)} ${statColor(g.kind)}`}>{g.stat}</span>
-              </span>
+              <CoverArt k={g.key} cover={covers[g.key]} />
               {g.kind === 'live' ? (
                 <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 rounded-[5px] bg-live px-1.5 text-[9px] font-bold leading-[15px] tracking-wide text-white ring-2 ring-ink">
                   LIVE
@@ -134,9 +142,9 @@ export function StoryCircles({ groups }: { groups: StoryGroup[] }) {
           <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full" aria-hidden>
             <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="rgb(255 255 255 / 0.16)" strokeWidth="1.5" />
           </svg>
-          <span className="absolute inset-[6px] flex items-center justify-center rounded-full bg-panel ring-1 ring-inset ring-edge">
-            <LogoMark size={24} />
-          </span>
+          <CoverArt k="all" cover={covers.all}>
+            <LogoMark size={24} className="relative z-[1]" />
+          </CoverArt>
         </span>
         <span className="mt-2 w-full truncate text-center text-[13px] font-medium leading-tight text-dim">Все теги</span>
       </Link>

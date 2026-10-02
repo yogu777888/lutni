@@ -143,9 +143,9 @@ function Cover({ s, story, focus }: { s: S<'cover'>; story: StoryData; focus: St
   const chips = s.tags.filter((t) => t.slug !== focus?.slug).slice(0, focus ? 3 : 4)
   return (
     <div className="flex h-full flex-col items-center px-6 pb-4 pt-6 text-center">
-      <div className="st-fade text-[12px] font-bold uppercase tracking-[0.12em] text-dim">{story.league}</div>
+      <div className="st-fade text-[12px] font-bold uppercase tracking-[0.12em] text-dim [text-shadow:0_1px_10px_rgb(0_0_0/0.7)]">{story.league}</div>
       {story.round ? (
-        <div className="st-fade mt-1 text-[12px] text-mute" style={wait(60)}>
+        <div className="st-fade mt-1 text-[12px] text-dim [text-shadow:0_1px_10px_rgb(0_0_0/0.7)]" style={wait(60)}>
           {story.round}
         </div>
       ) : null}

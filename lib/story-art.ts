@@ -1,0 +1,70 @@
+/**
+ * Обложки историй — «арт» вместо цифр: тёмная основа, два цветных свечения,
+ * зерно и белая иконка, как обложки «Актуального» в соцсетях. Цвет — по смыслу
+ * тега. Свою картинку можно подложить файлом public/stories/<ключ>.(webp|jpg|png):
+ * ключ — slug тега, «live», «top» или «all» (см. lib/story-covers.ts).
+ */
+export type ArtIcon =
+  | 'live'
+  | 'flame'
+  | 'percent'
+  | 'down'
+  | 'ball'
+  | 'shield'
+  | 'swap'
+  | 'crown'
+  | 'scale'
+  | 'up'
+  | 'zap'
+  | 'home'
+  | 'cross'
+  | 'swords'
+  | 'trophy'
+  | 'hash'
+
+/** a — свечение сверху слева, b — снизу справа, base — тёмная основа. */
+export type Art = { a: string; b: string; base: string; icon: ArtIcon }
+
+const ART: Record<string, Art> = {
+  live: { a: '#ff5c5c', b: '#ff2d75', base: '#1c0709', icon: 'live' },
+  top: { a: '#c8ff2e', b: '#f4f1e6', base: '#121604', icon: 'flame' },
+  all: { a: '#c8ff2e', b: '#34332b', base: '#121210', icon: 'hash' },
+  value: { a: '#c8ff2e', b: '#3fd17a', base: '#0f1702', icon: 'percent' },
+  progruz: { a: '#ffb020', b: '#ff6a3d', base: '#1c1000', icon: 'down' },
+  'tb-2-5': { a: '#2ee6c9', b: '#3987e5', base: '#04161a', icon: 'ball' },
+  'tm-2-5': { a: '#5b7bff', b: '#2ee6c9', base: '#070c1e', icon: 'shield' },
+  'obe-zabyut': { a: '#2ee6a6', b: '#c8ff2e', base: '#031612', icon: 'swap' },
+  favorit: { a: '#ffd84d', b: '#ff9f1c', base: '#1c1500', icon: 'crown' },
+  ravnye: { a: '#9b7bff', b: '#4cc9f0', base: '#0f0b1e', icon: 'scale' },
+  andedog: { a: '#ff4fd8', b: '#9b7bff', base: '#190a1c', icon: 'up' },
+  seriya: { a: '#ff7a1a', b: '#ff3d6e', base: '#1c0b03', icon: 'zap' },
+  krepost: { a: '#4c8dff', b: '#9bd0ff', base: '#06111e', icon: 'home' },
+  kadry: { a: '#ff4d6d', b: '#ffb3c1', base: '#1c060d', icon: 'cross' },
+  h2h: { a: '#4cc9f0', b: '#c8ff2e', base: '#061417', icon: 'swords' },
+  'top-match': { a: '#ffd84d', b: '#c8ff2e', base: '#161203', icon: 'trophy' },
+}
+
+const DEFAULT: Art = { a: '#c8ff2e', b: '#3987e5', base: '#121210', icon: 'hash' }
+
+export const artFor = (key: string | null | undefined): Art => (key ? ART[key] : undefined) ?? DEFAULT
+
+export const hasArt = (key: string) => key in ART
+
+/** Фон кружка: два свечения на тёмной основе. */
+export function artBackground(art: Art): string {
+  return [
+    `radial-gradient(90% 90% at 18% 14%, ${art.a} 0%, transparent 62%)`,
+    `radial-gradient(95% 95% at 88% 92%, ${art.b} 0%, transparent 64%)`,
+    `linear-gradient(145deg, ${art.base} 0%, #0b0b09 100%)`,
+  ].join(', ')
+}
+
+/** Фон просмотрщика историй: то же свечение, но мягко и сверху — текст остаётся читаемым. */
+export function artGlow(art: Art): string {
+  const mix = (c: string, p: number) => `color-mix(in oklab, ${c} ${p}%, transparent)`
+  return [
+    `radial-gradient(120% 60% at 30% -10%, ${mix(art.a, 30)}, transparent 62%)`,
+    `radial-gradient(90% 50% at 90% 110%, ${mix(art.b, 18)}, transparent 62%)`,
+    'var(--color-ink)',
+  ].join(', ')
+}

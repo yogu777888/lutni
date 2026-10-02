@@ -85,3 +85,16 @@ describe('кружки историй', () => {
     }
   })
 })
+
+describe('обложки историй', () => {
+  it('у каждого тега, «В игре», «Топ дня» и «Все теги» — свой арт с иконкой', async () => {
+    const { artFor, hasArt } = await import('@/lib/story-art')
+    const { TAGS } = await import('@/lib/tags')
+    for (const key of [...TAGS.map((t) => t.slug), 'live', 'top', 'all']) {
+      expect(hasArt(key), key).toBe(true)
+      expect(artFor(key).icon).toBeTruthy()
+    }
+    // неизвестный ключ — запасной арт, а не ошибка
+    expect(artFor('нет-такого').icon).toBe('hash')
+  })
+})

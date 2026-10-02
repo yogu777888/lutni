@@ -7,7 +7,8 @@ export const OPEN_STORY = 'tagbet:story'
 export type StoryQueueItem = {
   id: number
   href: string
-  group?: { key: string; label: string; kind: CircleKind }
+  /** cover — своя картинка кружка (public/stories), если есть: фон сторис */
+  group?: { key: string; label: string; kind: CircleKind; cover?: string }
   focus?: StoryFocus | null
 }
 
