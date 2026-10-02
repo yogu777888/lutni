@@ -55,6 +55,12 @@ function overPct(it: FeedItem): number | null {
   return m ? Number(m[1]) / 100 : null
 }
 
+/** Вес матча для «Матча дня»: громкость турнира важнее тегов. */
+export function prestige(it: FeedItem): number {
+  const r = featuredRank(it.match.league)
+  return interest(it) + (r >= 0 ? Math.max(0, 12 - r) * 0.35 : 0)
+}
+
 const max = <T>(xs: T[], score: (x: T) => number): T | null => {
   let best: T | null = null
   let bs = -Infinity
@@ -78,10 +84,11 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
     (p) => p.drop,
   )
 
-  // матч дня — другой, чем в value и прогрузе, если есть из чего выбрать
+  // матч дня — самый громкий: сначала турнир (ЛЧ, АПЛ, Ла Лига…), потом теги;
+  // и другой, чем в value и прогрузе, если есть из чего выбрать
   const used = new Set([value?.match.id, progruz?.item.match.id])
   const pool = open.filter((it) => !isMinor(it.match))
-  const top = max(pool.filter((it) => !used.has(it.match.id)), interest) ?? max(pool, interest) ?? max(open, interest)
+  const top = max(pool.filter((it) => !used.has(it.match.id)), prestige) ?? max(pool, prestige) ?? max(open, prestige)
 
   const liveAll = open.filter((it) => isLive(it.match)).sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts)
 
@@ -121,18 +128,22 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
   }
 }
 
+/** Фаворит дня — только по-настоящему уверенный исход. */
+const FAVORITE_MIN = 0.6
+
 /**
- * Какие маленькие виджеты показать (4 штуки): value и прогруз — первыми, дальше — что есть.
- * Фаворит и ближайший матч не повторяют матч, который уже стоит в другом виджете.
+ * Какие маленькие виджеты показать (до 4): value и прогруз — первыми, дальше — что есть.
+ * Ближайший матч и фаворит не повторяют матч, который уже стоит в другом виджете.
  */
 export function summaryCards(s: DaySummary): CardKind[] {
   const has: Record<CardKind, boolean> = {
     value: Boolean(s.value),
     progruz: Boolean(s.progruz),
     live: s.liveCount > 0,
-    next: s.liveCount === 0 && Boolean(s.next),
-    goals: Boolean(s.goals),
-    favorite: Boolean(s.favorite),
+    next: Boolean(s.next),
+    // один матч с ТБ — не повод для виджета
+    goals: (s.goals?.count ?? 0) >= 2,
+    favorite: (s.favorite?.p ?? 0) >= FAVORITE_MIN,
     count: s.total > 0,
   }
   const matchOf: Partial<Record<CardKind, number>> = {
@@ -141,10 +152,15 @@ export function summaryCards(s: DaySummary): CardKind[] {
     next: s.next?.match.id,
     favorite: s.favorite?.item.match.id,
   }
+  // когда матчи идут, «ближайший» — запасной виджет; когда нет — он вместо live
+  const order: readonly CardKind[] =
+    s.liveCount > 0
+      ? ['value', 'progruz', 'live', 'goals', 'favorite', 'next', 'count']
+      : ['value', 'progruz', 'next', 'goals', 'favorite', 'count']
   const shown = new Set<number>()
   if (s.top) shown.add(s.top.match.id)
   const out: CardKind[] = []
-  for (const k of ['value', 'progruz', 'live', 'next', 'goals', 'favorite', 'count'] as const) {
+  for (const k of order) {
     if (!has[k] || out.length >= CARDS) continue
     const id = matchOf[k]
     if (id !== undefined && (k === 'next' || k === 'favorite') && shown.has(id)) continue

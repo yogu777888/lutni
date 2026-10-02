@@ -85,13 +85,7 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
   const featuredCount = featured.reduce((s, g) => s + g.items.length, 0)
 
   const summary = matches.length
-    ? [
-        pluralN(matches.length, ['матч', 'матча', 'матчей']),
-        featuredCount ? `${featuredCount} — в топ-турнирах` : null,
-        liveAll.length ? `${liveAll.length} ${plural(liveAll.length, ['идёт', 'идут', 'идут'])} сейчас` : null,
-      ]
-        .filter(Boolean)
-        .join(' · ')
+    ? [pluralN(matches.length, ['матч', 'матча', 'матчей']), featuredCount ? `${featuredCount} — в топ-турнирах` : null].filter(Boolean).join(' · ')
     : 'Коэффициенты, теги ставок и прогнозы на футбол'
 
   const [line1, line2] = dayTitleLines(ymd, today)
@@ -99,50 +93,38 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
 
   return (
     <>
-      <section className="pt-5 sm:pt-7">
-        <a
-          href={liveAll.length ? '#live' : undefined}
-          className="fade-up inline-flex max-w-full items-center gap-2 rounded-full border border-edge py-1 pl-1.5 pr-3.5 text-[13px] text-dim transition-colors hover:border-edge-2"
-        >
-          {liveAll.length ? (
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-live/10 px-2 py-0.5 text-[12px] font-semibold text-live">
-              <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" />
-              LIVE
-            </span>
-          ) : (
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-acid/10 px-2 py-0.5 text-[12px] font-semibold text-acid">
-              <span className="h-1.5 w-1.5 rounded-full bg-acid" />
-              {past ? 'итоги' : 'линия'}
-            </span>
-          )}
-          <span className="truncate">{summary}</span>
-        </a>
-        <div className="mt-5 flex flex-wrap items-end justify-between gap-x-10 gap-y-3">
-          <h1 className="display text-[34px] sm:text-[46px] lg:text-[52px]">
+      <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5 pt-6 sm:pt-8">
+        <div className="min-w-0">
+          <h1 className="display text-[30px] sm:text-[40px]">
             <span className="rise">
               <span>
                 {line1} <span className="text-chalk">{line2}</span>
               </span>
             </span>
           </h1>
-          {past ? null : (
-            <p className="fade-up hidden max-w-[34ch] text-[15px] leading-snug text-dim sm:block lg:pb-1.5" style={{ animationDelay: '200ms' }}>
-              Честные шансы, теги ставок и перевес по каждому матчу. Без «экспертов» — только цифры.
-            </p>
-          )}
+          <p className="fade-up mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[14px] text-dim" style={{ animationDelay: '150ms' }}>
+            {liveAll.length ? (
+              <a href="#live" className="inline-flex items-center gap-1.5 font-medium text-live">
+                <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" />
+                {liveAll.length} {plural(liveAll.length, ['идёт', 'идут', 'идут'])} сейчас
+              </a>
+            ) : null}
+            {liveAll.length && summary ? <span className="text-mute">·</span> : null}
+            <span>{summary}</span>
+          </p>
         </div>
-        <div className="fade-up mt-6" style={{ animationDelay: '300ms' }}>
+        <div className="fade-up -mb-px w-full min-w-0 lg:w-auto" style={{ animationDelay: '250ms' }}>
           <DateTabs active={ymd} today={today} />
         </div>
       </section>
 
       {storyGroups.length ? (
-        <section aria-label="Истории дня" className="mt-7">
+        <section aria-label="Истории дня" className="mt-7 sm:mt-8">
           <StoryCircles groups={storyGroups} />
         </section>
       ) : null}
 
-      <DaySummary s={daySummary} className="mt-7" />
+      <DaySummary s={daySummary} className="mt-6 sm:mt-7" />
 
       <ValueBoard items={values} />
 

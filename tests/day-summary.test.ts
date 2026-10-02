@@ -72,12 +72,13 @@ describe('сводка дня', () => {
   it('live: число идущих матчей; без live — ближайший матч', () => {
     const live = buildDaySummary([item(1, 'live'), item(2, 'live'), item(3, 'scheduled')], NOW)
     expect(live.liveCount).toBe(2)
-    expect(summaryCards(live)).toContain('live')
-    expect(summaryCards(live)).not.toContain('next')
+    // матчи идут — live первым, ближайший матч — запасной виджет
+    expect(summaryCards(live)).toEqual(['live', 'next', 'count'])
 
     const calm = buildDaySummary([item(1, 'scheduled', { at: 5 }), item(2, 'scheduled', { at: 2 }), item(3, 'scheduled', { at: -1 })], NOW)
     // матч, который по времени уже должен был начаться, — не «ближайший»
     expect(calm.next?.match.id).toBe(2)
+    expect(summaryCards(calm)[0]).toBe('next')
   })
 
   it('голы и фаворит: максимум по тегу ТБ 2.5 и по честному шансу', () => {
@@ -109,6 +110,12 @@ describe('сводка дня', () => {
     expect(s.top?.match.id).toBe(3)
     expect(s.favorite?.item.match.id).toBe(3)
     expect(summaryCards(s)).toEqual(['value', 'progruz', 'live', 'count'])
+  })
+
+  it('фаворит с шансом ниже 60% — не виджет', () => {
+    const s = buildDaySummary([item(1, 'scheduled', { x12: [2.6, 3.2, 2.8] }), item(2, 'scheduled', { x12: [1.9, 3.4, 4.2] })], NOW)
+    expect(s.favorite?.p).toBeLessThan(0.6)
+    expect(summaryCards(s)).not.toContain('favorite')
   })
 
   it('прошедший день: нет открытых матчей — нет и сводки', () => {
