@@ -5,11 +5,18 @@
  */
 import { featuredRank } from '@/config/leagues'
 import type { FeedItem } from './data'
+import { formatTime } from './format'
 import { fair1x2 } from './odds'
 import { interest, isLive, isMinor, liveRank } from './rank'
 
 export type ProgruzInfo = { item: FeedItem; side: 'home' | 'away'; from: number; to: number; drop: number }
-export type GoalsInfo = { count: number; item: FeedItem; p: number; /** шансы ТБ 2.5 по матчам — по времени начала */ list: { id: number; p: number }[] }
+export type GoalsInfo = {
+  count: number
+  item: FeedItem
+  p: number
+  /** матчи с ТБ 2.5 — самые голевые первыми */
+  list: { id: number; p: number; title: string }[]
+}
 /** Состояние матча дня для «точек»: сыгран, идёт, впереди. */
 export type DayState = 'done' | 'live' | 'next'
 export type FavoriteInfo = { item: FeedItem; side: 'home' | 'away'; p: number }
@@ -32,13 +39,15 @@ export type DaySummary = {
   topLeagues: { id: number; name: string; count: number }[]
   /** Матчи дня по времени начала: сыгран / идёт / впереди (перенесённые и отменённые — мимо). */
   timeline: DayState[]
+  /** Те же матчи по часам начала (по времени сайта) — для «точек по часам»; пустые часы внутри дня тоже есть. */
+  hours: { hour: number; states: DayState[] }[]
 }
 
 export type CardKind = 'value' | 'progruz' | 'live' | 'next' | 'goals' | 'favorite' | 'count'
 
 const LIVE_SHOWN = 3
 const CARDS = 4
-const GOALS_SHOWN = 8
+const GOALS_SHOWN = 3
 
 const isOpen = (it: FeedItem) => it.match.status === 'scheduled' || isLive(it.match)
 const tag = (it: FeedItem, slug: string) => it.tags.find((t) => t.slug === slug)
@@ -94,6 +103,12 @@ function topLeagues(items: FeedItem[]) {
 export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary {
   const open = items.filter(isOpen)
   const scheduled = open.filter((it) => it.match.status === 'scheduled')
+  const dated = [...items]
+    .sort((a, b) => a.match.ts - b.match.ts)
+    .flatMap(({ match: m }) => {
+      const state: DayState | null = isLive(m) ? 'live' : m.status === 'finished' ? 'done' : m.status === 'scheduled' ? 'next' : null
+      return state ? [{ state, hour: Number(formatTime(m.ts).slice(0, 2)) }] : []
+    })
 
   const value = max(
     scheduled.filter((it) => it.summary?.pick?.kind === 'value'),
@@ -126,7 +141,10 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
         count: tb.length,
         item: goalsBest,
         p: overPct(goalsBest)!,
-        list: [...tb].sort((a, b) => a.match.ts - b.match.ts).slice(0, GOALS_SHOWN).map((it) => ({ id: it.match.id, p: overPct(it)! })),
+        list: [...tb]
+          .sort((a, b) => overPct(b)! - overPct(a)! || a.match.ts - b.match.ts)
+          .slice(0, GOALS_SHOWN)
+          .map((it) => ({ id: it.match.id, p: overPct(it)!, title: `${it.match.home.name} — ${it.match.away.name}` })),
       }
     : null
 
@@ -153,10 +171,18 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
     total: items.length,
     leagues: new Set(items.map((it) => it.match.league.id)).size,
     topLeagues: topLeagues(items),
-    timeline: [...items]
-      .sort((a, b) => a.match.ts - b.match.ts)
-      .flatMap(({ match: m }): DayState[] => (isLive(m) ? ['live'] : m.status === 'finished' ? ['done'] : m.status === 'scheduled' ? ['next'] : [])),
+    timeline: dated.map((d) => d.state),
+    hours: byHour(dated),
   }
+}
+
+function byHour(dated: { hour: number; state: DayState }[]) {
+  if (!dated.length) return []
+  const first = dated[0].hour
+  const last = dated[dated.length - 1].hour
+  const out = Array.from({ length: last - first + 1 }, (_, i) => ({ hour: first + i, states: [] as DayState[] }))
+  for (const d of dated) out[d.hour - first].states.push(d.state)
+  return out
 }
 
 /** Фаворит дня — только по-настоящему уверенный исход. */

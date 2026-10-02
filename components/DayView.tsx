@@ -121,13 +121,13 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
       </section>
 
       {storyGroups.length ? (
-        <section aria-label="Истории дня" className="mt-7 sm:mt-8">
+        <section aria-label="Истории дня" className="mt-6 sm:mt-7">
           <p className="mb-3 text-[13px] font-medium text-dim">Истории дня</p>
           <StoryCircles groups={storyGroups} />
         </section>
       ) : null}
 
-      <DaySummary s={daySummary} className="mt-6" />
+      <DaySummary s={daySummary} look="blocks" className="mt-5" />
 
       <ValueBoard items={values} />
 

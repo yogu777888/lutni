@@ -91,8 +91,9 @@ describe('сводка дня', () => {
       NOW,
     )
     expect(s.goals).toMatchObject({ count: 2, p: 0.72 })
-    // для мини-графика — все матчи с ТБ по времени начала
-    expect(s.goals?.list.map((g) => g.p)).toEqual([0.61, 0.72])
+    // для мини-графика — матчи с ТБ, самые голевые первыми
+    expect(s.goals?.list.map((g) => g.p)).toEqual([0.72, 0.61])
+    expect(s.goals?.list[0].title).toBe('Home 2 — Away 2')
     expect(s.goals?.item.match.id).toBe(2)
     expect(s.favorite?.item.match.id).toBe(2)
     expect(s.favorite?.side).toBe('home')
@@ -126,6 +127,9 @@ describe('сводка дня', () => {
       NOW,
     )
     expect(s.timeline).toEqual(['done', 'live', 'next'])
+    // по часам: от первого матча до последнего, пустые часы внутри дня — тоже колонки
+    expect(s.hours.map((h) => h.states.length)).toEqual([1, 0, 1, 0, 0, 0, 1])
+    expect(s.hours[1].states).toEqual([])
   })
 
   it('прошедший день: нет открытых матчей — нет и сводки', () => {
