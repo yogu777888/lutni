@@ -1,6 +1,6 @@
-import { LOGO_ASPECT, LOGO_VIEWBOX, MARK_ASPECT, MARK_D, MARK_VIEWBOX, TEXT_D, TEXT_TRANSFORM } from './logo-paths'
+import { LOGO_ASPECT, LOGO_VIEWBOX, MARK_ASPECT, MARK_D, MARK_VIEWBOX, TEXT_D } from './logo-paths'
 
-/** Знак tag.bet: переплетённая решётка (каждая перекладина проходит «под» второй вертикалью). */
+/** Знак tag.bet: прямая лаймовая решётка. size — высота в px. */
 export function LogoMark({ size = 28, className = '' }: { size?: number; className?: string }) {
   return (
     <svg viewBox={MARK_VIEWBOX} height={size} width={Math.round(size * MARK_ASPECT)} className={`shrink-0 ${className}`} aria-hidden>
@@ -9,7 +9,10 @@ export function LogoMark({ size = 28, className = '' }: { size?: number; classNa
   )
 }
 
-/** Логотип целиком, в кривых. size — высота в px; надпись берёт цвет текста (currentColor). */
+/**
+ * Логотип целиком, в кривых: решётка + «tag.bet». size — высота в px вместе
+ * с хвостом «g»; надпись берёт цвет текста (currentColor).
+ */
 export function Logo({ size = 28, className = '' }: { size?: number; className?: string }) {
   return (
     <svg
@@ -21,7 +24,7 @@ export function Logo({ size = 28, className = '' }: { size?: number; className?:
       aria-label="tag.bet"
     >
       <path className="fill-acid" d={MARK_D} />
-      <path fill="currentColor" transform={TEXT_TRANSFORM} d={TEXT_D} />
+      <path fill="currentColor" d={TEXT_D} />
     </svg>
   )
 }
