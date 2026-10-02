@@ -11,7 +11,7 @@ export function Monogram({ name, size }: { name: string; size: number }) {
   return (
     <span
       aria-hidden
-      className="inline-flex shrink-0 select-none items-center justify-center rounded-full bg-[#2a2a2f] font-semibold text-[#c7c7cc] ring-1 ring-inset ring-white/[0.06]"
+      className="inline-flex shrink-0 select-none items-center justify-center rounded-full bg-panel-3 font-semibold text-chalk ring-1 ring-inset ring-white/[0.06]"
       style={{
         width: size,
         height: size,

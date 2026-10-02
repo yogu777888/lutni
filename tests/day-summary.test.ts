@@ -91,6 +91,8 @@ describe('сводка дня', () => {
       NOW,
     )
     expect(s.goals).toMatchObject({ count: 2, p: 0.72 })
+    // для мини-графика — все матчи с ТБ по времени начала
+    expect(s.goals?.list.map((g) => g.p)).toEqual([0.61, 0.72])
     expect(s.goals?.item.match.id).toBe(2)
     expect(s.favorite?.item.match.id).toBe(2)
     expect(s.favorite?.side).toBe('home')
@@ -116,6 +118,14 @@ describe('сводка дня', () => {
     const s = buildDaySummary([item(1, 'scheduled', { x12: [2.6, 3.2, 2.8] }), item(2, 'scheduled', { x12: [1.9, 3.4, 4.2] })], NOW)
     expect(s.favorite?.p).toBeLessThan(0.6)
     expect(summaryCards(s)).not.toContain('favorite')
+  })
+
+  it('точки дня: матчи по времени — сыгран, идёт, впереди; перенесённые не считаем', () => {
+    const s = buildDaySummary(
+      [item(3, 'scheduled', { at: 3 }), item(1, 'finished', { at: -3 }), item(2, 'live', { at: -1 }), item(4, 'postponed', { at: 4 })],
+      NOW,
+    )
+    expect(s.timeline).toEqual(['done', 'live', 'next'])
   })
 
   it('прошедший день: нет открытых матчей — нет и сводки', () => {

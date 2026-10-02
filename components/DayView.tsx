@@ -102,7 +102,7 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
 
   return (
     <>
-      <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5 pt-6 sm:pt-9">
+      <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5 pt-4 sm:pt-5">
         <div className="min-w-0">
           <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
           <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px]">
@@ -121,13 +121,13 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
       </section>
 
       {storyGroups.length ? (
-        <section aria-label="Истории дня" className="mt-8 sm:mt-10">
+        <section aria-label="Истории дня" className="mt-7 sm:mt-8">
           <p className="mb-3 text-[13px] font-medium text-dim">Истории дня</p>
           <StoryCircles groups={storyGroups} />
         </section>
       ) : null}
 
-      <DaySummary s={daySummary} className="mt-6 sm:mt-7" />
+      <DaySummary s={daySummary} className="mt-6" />
 
       <ValueBoard items={values} />
 

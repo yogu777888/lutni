@@ -9,7 +9,9 @@ import { fair1x2 } from './odds'
 import { interest, isLive, isMinor, liveRank } from './rank'
 
 export type ProgruzInfo = { item: FeedItem; side: 'home' | 'away'; from: number; to: number; drop: number }
-export type GoalsInfo = { count: number; item: FeedItem; p: number }
+export type GoalsInfo = { count: number; item: FeedItem; p: number; /** шансы ТБ 2.5 по матчам — по времени начала */ list: { id: number; p: number }[] }
+/** Состояние матча дня для «точек»: сыгран, идёт, впереди. */
+export type DayState = 'done' | 'live' | 'next'
 export type FavoriteInfo = { item: FeedItem; side: 'home' | 'away'; p: number }
 
 export type DaySummary = {
@@ -28,12 +30,15 @@ export type DaySummary = {
   leagues: number
   /** Главные турниры дня: топ-лиги первыми, потом по числу матчей. */
   topLeagues: { id: number; name: string; count: number }[]
+  /** Матчи дня по времени начала: сыгран / идёт / впереди (перенесённые и отменённые — мимо). */
+  timeline: DayState[]
 }
 
 export type CardKind = 'value' | 'progruz' | 'live' | 'next' | 'goals' | 'favorite' | 'count'
 
 const LIVE_SHOWN = 3
 const CARDS = 4
+const GOALS_SHOWN = 8
 
 const isOpen = (it: FeedItem) => it.match.status === 'scheduled' || isLive(it.match)
 const tag = (it: FeedItem, slug: string) => it.tags.find((t) => t.slug === slug)
@@ -116,7 +121,14 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
 
   const tb = open.filter((it) => overPct(it) !== null)
   const goalsBest = max(tb, (it) => overPct(it)! + (featuredRank(it.match.league) >= 0 ? 0.001 : 0))
-  const goals = goalsBest ? { count: tb.length, item: goalsBest, p: overPct(goalsBest)! } : null
+  const goals = goalsBest
+    ? {
+        count: tb.length,
+        item: goalsBest,
+        p: overPct(goalsBest)!,
+        list: [...tb].sort((a, b) => a.match.ts - b.match.ts).slice(0, GOALS_SHOWN).map((it) => ({ id: it.match.id, p: overPct(it)! })),
+      }
+    : null
 
   // фаворит дня — самый уверенный исход в «взрослом» матче; топ-турниры важнее
   const favs = scheduled
@@ -141,6 +153,9 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
     total: items.length,
     leagues: new Set(items.map((it) => it.match.league.id)).size,
     topLeagues: topLeagues(items),
+    timeline: [...items]
+      .sort((a, b) => a.match.ts - b.match.ts)
+      .flatMap(({ match: m }): DayState[] => (isLive(m) ? ['live'] : m.status === 'finished' ? ['done'] : m.status === 'scheduled' ? ['next'] : [])),
   }
 }
 
