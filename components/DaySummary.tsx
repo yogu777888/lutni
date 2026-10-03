@@ -1,16 +1,16 @@
 import Link from 'next/link'
 import { featuredInfo } from '@/config/leagues'
 import type { FeedItem } from '@/lib/data'
-import type { Bank } from '@/lib/bank'
+import type { ChanceCheck } from '@/lib/chance-check'
 import { summaryCards, type CardKind, type DaySummary as Summary } from '@/lib/day-summary'
-import { formatDayMonth, formatTime, formatWeekday, pct, pluralN, todayYmd, ymdInTz } from '@/lib/format'
+import { formatDayMonth, formatTime, pct, plural, pluralN, todayYmd, ymdInTz } from '@/lib/format'
 import { leagueHref, matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
 import { isLive } from '@/lib/rank'
 import { artFor, type ArtIcon as IconName } from '@/lib/story-art'
 import type { League, Match } from '@/lib/types'
-import { buildVerdict, outcomeText, split100, type Verdict } from '@/lib/verdict'
-import { BankChart, type BankDay } from './BankChart'
+import { buildVerdict, split100, type Verdict } from '@/lib/verdict'
+import { ChanceChart } from './ChanceChart'
 import { ArtIcon } from './story/ArtIcon'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
@@ -386,68 +386,41 @@ function TopSlide({ it }: { it: FeedItem }) {
   )
 }
 
-// ─── Выгодные ставки рублями ─────────────────────────────────────────────────
+// ─── Проверка шансов ─────────────────────────────────────────────────────────
 
-const rub = (v: number, sign = false) =>
-  `${v < 0 ? '−' : sign && v > 0 ? '+' : ''}${new Intl.NumberFormat('ru-RU').format(Math.abs(v))} ₽`
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const B = ({ children }: { children: React.ReactNode }) => <b className="font-semibold text-fg">{children}</b>
 
 /**
- * Аналитика в деньгах: сколько дали бы наши «выгодные» ставки, если ставить по 1000 ₽ на каждую.
- * Крупно — итог, ниже — фраза с главным жирным и график банка по ставкам (lib/bank.ts, журнал
- * подсказок — lib/value-log.ts). Без обещаний: только прошедшие ставки и кэфы на момент подсказки.
+ * Аналитика: сбываются ли проценты, которые показывает сайт. Крупно — пример по корзине «около 60%»
+ * (порог тега #фаворит): «58% сбылось там, где давали 60%», ниже — средняя разница по всем шансам
+ * и график «давали — сбылось» (lib/chance-check.ts). Без денег и обещаний.
  */
-function BankTile({ b }: { b: Bank }) {
-  const n = b.bets.length
-  const odd = b.avgOdd.toFixed(2)
-  const days: BankDay[] = []
-  b.bets.forEach((x, i) => {
-    const label = cap(formatWeekday(x.match.ts))
-    const last = days[days.length - 1]
-    if (last && ymdInTz(b.bets[last.from - 1].match.ts) === ymdInTz(x.match.ts)) last.to = i + 1
-    else days.push({ label, from: i + 1, to: i + 1 })
-  })
+function ChanceTile({ c }: { c: ChanceCheck }) {
   return (
     <article className={`flex h-full min-w-0 flex-col p-[18px] ${CARD}`}>
-      <Link href="/tag/value" prefetch={false} className="group -mx-1 flex items-center justify-between gap-2 rounded-lg px-1">
+      <Link href="/about#proverka" prefetch={false} className="group -mx-1 flex items-center justify-between gap-2 rounded-lg px-1">
         <span className="min-w-0 truncate text-[13px] font-medium text-chalk">
-          Выгодные ставки <span className="text-mute">· {b.days >= 7 ? 'за неделю' : `за ${pluralN(b.days, ['день', 'дня', 'дней'])}`}</span>
+          Проверка шансов <span className="text-mute">· {c.days >= 28 ? 'за месяц' : `за ${pluralN(c.days, ['день', 'дня', 'дней'])}`}</span>
         </span>
         <Go />
       </Link>
-      <p className={`mt-4 text-[44px] font-semibold leading-none tracking-[-0.04em] lg:text-[clamp(40px,6.4vh,54px)] ${b.profit >= 0 ? 'text-acid' : 'text-fg'}`}>
-        {rub(b.profit, true)}
-      </p>
-      <p className="mt-2 text-[13px] text-dim">если ставить по {rub(b.stake)} на каждую</p>
+      <div className="mt-4 flex items-end gap-3">
+        <p className="text-[44px] font-semibold leading-none tracking-[-0.04em] lg:text-[clamp(40px,6.4vh,54px)]">{pct(c.lead.hit)}</p>
+        <p className="pb-0.5 text-[13px] leading-snug text-dim">
+          сбылось там,
+          <br />
+          где давали {pct(c.lead.p)}
+        </p>
+      </div>
       <p className="mt-3 text-[15px] leading-snug text-chalk">
-        Сыграли <B>{b.won} из {n}</B>
-        {b.profit < 0 ? (
-          <>
-            , средний кэф <B>{odd}</B> — проигрыши перевесили.
-          </>
-        ) : b.won * 2 < n ? (
-          <>
-            , но средний кэф <B>{odd}</B> окупил проигрыши.
-          </>
-        ) : (
-          <>
-            {' '}— {b.won * 2 === n ? 'ровно половина' : 'больше половины'}, средний кэф <B>{odd}</B>.
-          </>
-        )}
+        В среднем шансы и итог расходятся на <B>{c.gap.toFixed(1).replace('.', ',')} пункта</B>: проверили{' '}
+        <B>
+          {new Intl.NumberFormat('ru-RU').format(c.outcomes)} {plural(c.outcomes, ['исход', 'исхода', 'исходов'])}
+        </B>
+        .
       </p>
-      <BankChart
-        className="mt-4 h-[180px] lg:h-auto lg:min-h-[120px] lg:flex-1"
-        days={days}
-        points={b.bets.map((x) => ({
-          cum: x.cum,
-          delta: x.delta,
-          when: `${formatWeekday(x.match.ts)} ${formatTime(x.match.ts)}`,
-          teams: `${x.match.home.name} — ${x.match.away.name}`,
-          bet: `${outcomeText(x.pick.key, x.match)} за ${x.pick.odd.toFixed(2)}`,
-        }))}
-      />
-      <p className="mt-3 text-[13px] text-mute">по кэфам подсказок · не гарантия</p>
+      <ChanceChart className="mt-4 h-[180px] lg:h-auto lg:min-h-[120px] lg:flex-1" bins={c.bins} />
+      <p className="mt-3 text-[13px] text-mute">по кэфам перед матчем, без маржи</p>
     </article>
   )
 }
@@ -457,14 +430,14 @@ function BankTile({ b }: { b: Bank }) {
  * На телефоне — всё столбиком, на планшете — подборки по две в ряд. Сводка тянется до низа окна
  * (см. DayView): строки подборок делят высоту поровну, пустых мест в плитках нет.
  */
-export function DaySummary({ s, bank = null, className = '' }: { s: Summary; bank?: Bank | null; className?: string }) {
+export function DaySummary({ s, check = null, className = '' }: { s: Summary; check?: ChanceCheck | null; className?: string }) {
   if (!s.top) return null
-  // с банком «Выгодных ставок» — он на месте двух плиток: справа остаются две подборки
-  const cards = summaryCards(s).slice(0, bank ? 2 : 4)
+  // с «Проверкой шансов» — она на месте двух плиток: справа остаются две подборки
+  const cards = summaryCards(s).slice(0, check ? 2 : 4)
   const n = cards.length
   // плиток меньше, чем мест, — растягиваем последние, чтобы в сетке не было дыр
   const span = (i: number) =>
-    bank
+    check
       ? n === 1
         ? 'lg:row-span-2'
         : ''
@@ -477,15 +450,15 @@ export function DaySummary({ s, bank = null, className = '' }: { s: Summary; ban
     <section aria-label="Сводка дня" className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-4 ${className}`}>
       <TopCarousel
         heads={s.tops.map((t) => ({ league: leagueShort(t.match.league), live: isLive(t.match) }))}
-        className={`sm:col-span-2 lg:row-span-2 ${n === 0 && !bank ? 'lg:col-span-4' : ''} ${CARD}`}
+        className={`sm:col-span-2 lg:row-span-2 ${n === 0 && !check ? 'lg:col-span-4' : ''} ${CARD}`}
       >
         {s.tops.map((t) => (
           <TopSlide key={t.match.id} it={t} />
         ))}
       </TopCarousel>
-      {bank ? (
+      {check ? (
         <div className={`min-w-0 lg:row-span-2 ${n === 0 ? 'sm:col-span-2' : ''}`}>
-          <BankTile b={bank} />
+          <ChanceTile c={check} />
         </div>
       ) : null}
       {cards.map((k, i) => (

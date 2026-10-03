@@ -3,16 +3,15 @@
  * через кэш (SWR + диск) и лимитер запросов. TTL зависит от статуса матча:
  * live обновляем раз в минуту, завершённые храним сутками.
  */
-import { featuredRank, isFeatured } from '@/config/leagues'
-import { BANK_DAYS, buildBank, type Bank } from './bank'
+import { featuredRank } from '@/config/leagues'
 import { cache, type CacheOptions } from './cache'
+import { CHANCE_DAYS, chanceCheck, mergeTallies, tallyChances, type ChanceCheck, type ChanceTally } from './chance-check'
 import { addDays, diffDays, todayYmd, tzOffsetHours, ymdInTz, ymdToNoonTs } from './format'
 import { buildCandidates, buildConsensus, buildModel, choosePick, type Candidate, type Consensus, type ModelOutput, type Pick } from './model'
 import type { BookOdds } from './odds'
 import { buildPreview, type Paragraph } from './preview'
 import type { Priority } from './rate-limit'
-import { singleton } from './runtime'
-import { ApiError, apiGet, IS_MOCK } from './sstats/client'
+import { ApiError, apiGet } from './sstats/client'
 import * as N from './sstats/normalize'
 import type {
   RawBookmakerOdds,
@@ -26,7 +25,6 @@ import type {
 import { buildForm, buildH2H, type H2H, type TeamForm } from './stats'
 import { computeTags, type TagHit } from './tags'
 import type { Glicko, Injury, LeagueInfo, Match, MatchFull, Standings, Team } from './types'
-import { backfillValuePick, logValuePick, valuePicksFor, type LoggedPick } from './value-log'
 
 export type Opts = { priority?: Priority }
 
@@ -333,9 +331,6 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
 
   const summary: MatchSummary = { id, tags, pick: summaryPick(pick), at: Date.now() }
   cache.set(`summary:${id}`, summary, { ttl: 3 * H, stale: 9 * H, persist: false })
-  // журнал «Выгодно»: подсказка есть только до начала матча — запоминаем последнюю
-  const sp = summary.pick
-  if (sp?.kind === 'value' && sp.odd) logValuePick({ id, ts: m.ts, key: sp.key, label: sp.label, odd: sp.odd })
 
   return { full, match: m, books, cons, glicko, model, candidates, pick, homeForm, awayForm, h2h, injuries, standings, tags, preview }
 }
@@ -377,47 +372,35 @@ export function featuredFirst(a: Match, b: Match) {
   return fa - fb || a.ts - b.ts
 }
 
-// ─── «Выгодные ставки» рублями ───────────────────────────────────────────────
+// ─── «Проверка шансов» ───────────────────────────────────────────────────────
 
-/** Банк «по 1000 ₽ на каждую выгодную ставку» за сегодня и 6 прошлых дней — по журналу подсказок (lib/bank.ts). */
-export async function getValueBank(opts: Opts = {}): Promise<Bank | null> {
-  const today = todayYmd()
-  const lists = await Promise.all(
-    Array.from({ length: BANK_DAYS }, (_, i) => settle(getMatchesByDate(addDays(today, i - BANK_DAYS + 1), opts), [] as Match[])),
-  )
-  const matches = new Map(lists.flat().map((m) => [m.id, m]))
-  if (IS_MOCK) await backfillDemoPicks([...matches.values()], opts)
-  return buildBank(await valuePicksFor(matches.keys()), matches)
+/** Итоги одного прошедшего дня для «Проверки шансов» — маленькие, хранятся долго: прошлое не меняется. */
+function chanceDay(ymd: string, opts: Opts): Promise<ChanceTally> {
+  const recent = diffDays(ymd, todayYmd()) >= -2
+  return cache.get(`chance-day:${ymd}`, async () => tallyChances(await getMatchesByDate(ymd, opts)), recent ? { ttl: 6 * H, stale: 24 * H } : { ttl: 7 * 24 * H })
 }
 
-const demo = singleton('value-demo', () => ({ done: new Set<number>(), running: null as Promise<void> | null }))
+/** Сбываются ли шансы на сайте: 30 дней до сегодняшнего, по корзинам «около 10% … 90%» (lib/chance-check.ts). */
+export async function getChanceCheck(opts: Opts = {}): Promise<ChanceCheck | null> {
+  const today = todayYmd()
+  return cache.get(
+    `chance-check:${today}`,
+    async () => {
+      const days = await Promise.all(
+        Array.from({ length: CHANCE_DAYS }, (_, i) => settle(chanceDay(addDays(today, -1 - i), opts), null)),
+      )
+      const ok = days.filter((d): d is ChanceTally => d !== null)
+      return chanceCheck(mergeTallies(ok), ok.length)
+    },
+    { ttl: 3 * H, stale: 24 * H },
+  )
+}
 
 /**
- * Демо: сервер не работал, пока шли прошедшие матчи, — их подсказки досчитываем задним числом,
- * той же моделью по той же линии, как их показал бы сайт до начала. На реальных данных журнал
- * пишется только до начала матча (computeMatchInsights), задним числом — никогда.
- * Модель — ~80 мс на матч, поэтому досчёт идёт в фоне (его запускает и прогрев), подсказки
- * хранятся в кэше на диске, а страница ждёт его не дольше пары секунд.
+ * Для главной: на холодном старте 30 дней матчей — десятки запросов к API, поэтому страница ждёт
+ * не дольше полутора секунд, а расчёт доходит в фоне (его же запускает прогрев) — к следующему открытию.
  */
-async function backfillDemoPicks(matches: Match[], opts: Opts) {
-  const todo = matches.filter((m) => m.status !== 'scheduled' && isFeatured(m.league) && !demo.done.has(m.id))
-  if (!todo.length) return
-  demo.running ??= (async () => {
-    try {
-      for (const m of todo) {
-        const p = await cache.get(`demo-pick:${m.id}`, () => demoPick(m, opts), { ttl: 7 * 24 * H })
-        if (p) await backfillValuePick(p)
-        demo.done.add(m.id)
-      }
-    } finally {
-      demo.running = null
-    }
-  })()
-  await Promise.race([demo.running, new Promise((r) => setTimeout(r, 2000).unref?.())])
-}
-
-async function demoPick(m: Match, opts: Opts): Promise<LoggedPick | null> {
-  const [books, glicko] = await Promise.all([settle(getOdds(m, opts), [] as BookOdds[]), settle(getGlicko(m, opts), null)])
-  const p = summaryPick(choosePick(modelFor(m, books, glicko).candidates))
-  return p?.kind === 'value' && p.odd ? { id: m.id, ts: m.ts, key: p.key, label: p.label, odd: p.odd, at: m.ts - 3 * H * 1000 } : null
+export async function peekChanceCheck(): Promise<ChanceCheck | null> {
+  const run = settle(getChanceCheck({ priority: 'low' }), null)
+  return Promise.race([run, new Promise<null>((r) => setTimeout(() => r(null), 1500).unref?.())])
 }

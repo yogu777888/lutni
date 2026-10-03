@@ -7,10 +7,9 @@
  * Env: WARMER=0 — выключить; WARMER_INTERVAL_MIN (15); WARMER_MAX_MATCHES (60).
  */
 import { isFeatured } from '@/config/leagues'
-import { featuredFirst, getMatchInsights, getMatchesByDate, getValueBank, settle } from './data'
+import { featuredFirst, getChanceCheck, getMatchInsights, getMatchesByDate, settle } from './data'
 import { addDays, todayYmd } from './format'
 import { singleton } from './runtime'
-import { IS_MOCK } from './sstats/client'
 
 type State = {
   started: boolean
@@ -66,8 +65,8 @@ export async function warmOnce() {
   warmerState.running = true
   const started = Date.now()
   try {
-    // демо: досчитать подсказки прошедших дней для виджета «Выгодные ставки» (см. getValueBank)
-    if (IS_MOCK) await settle(getValueBank({ priority: 'low' }), null)
+    // «Проверка шансов» на главной: 30 прошедших дней считаются один раз и дальше берутся из кэша
+    await settle(getChanceCheck({ priority: 'low' }), null)
     const max = Number(process.env.WARMER_MAX_MATCHES || 60)
     const today = todayYmd()
     const now = Date.now()
