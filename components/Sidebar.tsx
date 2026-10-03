@@ -28,7 +28,7 @@ export function Sidebar() {
           </li>
           <li className="flex items-center gap-2.5">
             <TagPill slug="progruz" link={false} />
-            <span className="text-dim">на исход массово ставят</span>
+            <span className="text-dim">кэф резко снизился</span>
           </li>
           <li className="flex items-center gap-2.5">
             <TagPill slug="tb-2-5" link={false} />

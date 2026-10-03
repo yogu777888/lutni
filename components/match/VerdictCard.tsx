@@ -1,4 +1,5 @@
-import { outOf10, type Verdict } from '@/lib/verdict'
+import { pct } from '@/lib/format'
+import type { Verdict } from '@/lib/verdict'
 
 /** Иконки строк: тонкая линия, как в виджетах сводки. */
 const ICON = {
@@ -44,7 +45,7 @@ function Row({ icon, tone = 'text-dim', children }: { icon: keyof typeof ICON; t
 
 /**
  * «Коротко о матче» — первым на странице: кто скорее выиграет, шансы «из 10»,
- * голы, куда идут деньги и выгодная ставка словами. Цифры и таблицы — ниже,
+ * голы, падение кэфа и выгодная ставка словами. Цифры и таблицы — ниже,
  * для тех, кто любит разбираться.
  */
 export function VerdictCard({ v, pickAnchor }: { v: Verdict; pickAnchor?: string }) {
@@ -55,9 +56,9 @@ export function VerdictCard({ v, pickAnchor }: { v: Verdict; pickAnchor?: string
       <ul className="mt-5 space-y-3 text-[15px] leading-snug text-chalk">
         <Row icon="chances">Шансы: {v.chances}</Row>
         {v.goals ? <Row icon="goals">{v.goals}</Row> : null}
-        {v.money ? (
+        {v.drop ? (
           <Row icon="money" tone="text-hot">
-            {v.money}
+            {v.drop}
           </Row>
         ) : null}
         {v.bet ? (
@@ -69,7 +70,7 @@ export function VerdictCard({ v, pickAnchor }: { v: Verdict; pickAnchor?: string
             {v.bet.value ? (
               <span className="text-dim"> — букмекер платит больше, чем она стоит.</span>
             ) : v.bet.prob ? (
-              <span className="text-dim"> — самый вероятный исход с нормальным кэфом, шанс {outOf10(v.bet.prob)}.</span>
+              <span className="text-dim"> — самый вероятный исход с нормальным кэфом, шанс {pct(v.bet.prob)}.</span>
             ) : null}
             {pickAnchor ? (
               <a href={pickAnchor} className="ml-1.5 whitespace-nowrap text-dim underline decoration-edge-2 underline-offset-4 transition-colors hover:text-fg">

@@ -4,7 +4,7 @@ import { formatOdd, formatTime } from '@/lib/format'
 import { matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
 import { TAG_BY_SLUG, type TagHit } from '@/lib/tags'
-import { buildVerdict, outOf10 } from '@/lib/verdict'
+import { buildVerdict, split100 } from '@/lib/verdict'
 import type { Match } from '@/lib/types'
 import { StoryLink } from './story/StoryLink'
 
@@ -46,13 +46,16 @@ export function StatusCell({ m }: { m: Match }) {
 function Chances({ m }: { m: Match }) {
   const f = fair1x2(m.odds?.x12)
   if (!f) return <span className="block text-center text-[13px] text-mute">—</span>
+  // проценты в подсказке — в сумме ровно 100
+  const n = split100(f)
   const seg = [
-    { k: 'home', p: f.home, cls: 'bg-home', name: `«${m.home.name}»` },
-    { k: 'draw', p: f.draw, cls: 'bg-tie', name: 'ничья' },
-    { k: 'away', p: f.away, cls: 'bg-away', name: `«${m.away.name}»` },
+    { k: 'home', p: f.home, n: n.home, cls: 'bg-home', name: `«${m.home.name}»` },
+    { k: 'draw', p: f.draw, n: n.draw, cls: 'bg-tie', name: 'ничья' },
+    { k: 'away', p: f.away, n: n.away, cls: 'bg-away', name: `«${m.away.name}»` },
   ]
+  const text = seg.map((x) => `${x.name} — ${x.n}%`).join(', ')
   return (
-    <span className="flex h-2 gap-0.5" title={seg.map((x) => `${x.name} — ${outOf10(x.p)}`).join(', ')} role="img" aria-label={`Шансы: ${seg.map((x) => `${x.name} — ${outOf10(x.p)}`).join(', ')}`}>
+    <span className="flex h-2 gap-0.5" title={text} role="img" aria-label={`Шансы: ${text}`}>
       {seg.map((x) => (
         <span key={x.k} className={`rounded-[3px] ${x.cls}`} style={{ width: `${x.p * 100}%` }} />
       ))}

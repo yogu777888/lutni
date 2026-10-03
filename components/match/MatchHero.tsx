@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { SITE } from '@/config/site'
 import { formatDateLong, formatTime, formatWeekdayLong } from '@/lib/format'
 import { leagueHref } from '@/lib/links'
+import { split100 } from '@/lib/verdict'
 import type { MatchFull } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
 
@@ -33,6 +34,8 @@ export function MatchHero({
   children?: React.ReactNode
 }) {
   const m = full.match
+  // проценты трёх исходов — целые и в сумме ровно 100
+  const n = cells ? split100({ home: cells[0].p, draw: cells[1].p, away: cells[2].p }) : null
   const live = m.status === 'live' || m.status === 'suspended'
   const played = Boolean(m.score) && (live || m.status === 'finished')
   const team = (t: typeof m.home, right = false) => (
@@ -61,7 +64,7 @@ export function MatchHero({
 
       <div className="mt-7 grid grid-cols-2 items-center gap-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-6">
         {team(m.home)}
-        <span className="hidden text-center text-[13px] text-mute sm:block">{played ? (live ? 'идёт матч' : 'итог') : 'шансы из 10'}</span>
+        <span className="hidden text-center text-[13px] text-mute sm:block">{played ? (live ? 'идёт матч' : 'итог') : 'шанс на исход'}</span>
         {team(m.away, true)}
       </div>
 
@@ -93,9 +96,9 @@ export function MatchHero({
                     c.key === 'draw' ? 'text-chalk' : 'text-fg'
                   }`}
                 >
-                  {/* шанс «из 10»: так понятнее, чем проценты; точная цифра — в подсказке */}
-                  <span title={`${Math.round(c.p * 100)}%`}>{Math.min(9, Math.max(1, Math.round(c.p * 10)))}</span>
-                  <span className="ml-1 text-[0.32em] font-bold tracking-normal text-dim">из 10</span>
+                  {/* проценты трёх исходов в сумме — ровно 100 */}
+                  {n?.[c.key]}
+                  <span className="ml-0.5 text-[0.42em] tracking-normal">%</span>
                 </div>
                 <div className="mt-1.5 truncate text-[12px] text-dim">
                   <span className="sm:hidden">{c.key === 'home' ? 'хозяева' : c.key === 'away' ? 'гости' : 'ничья'}</span>

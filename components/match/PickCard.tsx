@@ -1,9 +1,9 @@
 import { primaryPartner } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
-import { signedPct } from '@/lib/format'
+import { pct, signedPct } from '@/lib/format'
 import type { Pick } from '@/lib/model'
 import type { Match } from '@/lib/types'
-import { outcomeText, outOf10 } from '@/lib/verdict'
+import { outcomeText } from '@/lib/verdict'
 import { AdMark } from '../AdMark'
 import { CtaLink } from '../CtaLink'
 import { Stars } from '../Stars'
@@ -35,10 +35,7 @@ export function PickCard({ pick, match }: { pick: Pick; match: Match }) {
       <dl className="mt-5 grid grid-cols-3 gap-2">
         <div className="rounded-xl border border-edge bg-panel-2 px-3 py-3.5">
           <dt className="text-[12px] text-dim">Шанс</dt>
-          <dd className="num mt-1 whitespace-nowrap text-[24px] font-extrabold tracking-[-0.03em] sm:text-[30px]">
-            {outOf10(c.prob).split(' ')[0]}
-            <span className="ml-1 text-[0.5em] font-semibold tracking-normal text-dim">из 10</span>
-          </dd>
+          <dd className="num mt-1 whitespace-nowrap text-[24px] font-extrabold tracking-[-0.03em] sm:text-[30px]">{pct(c.prob)}</dd>
         </div>
         <div className="rounded-xl border border-edge bg-panel-2 px-3 py-3.5">
           <dt className="text-[12px] text-dim">Честная цена</dt>

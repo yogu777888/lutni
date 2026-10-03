@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { computeTags, TAGS } from '@/lib/tags'
 import type { Match } from '@/lib/types'
-import { buildVerdict, chanceWord, headlineFor, outcomeText, outOf10 } from '@/lib/verdict'
+import { buildVerdict, headlineFor, outcomeShort, outcomeText, split100 } from '@/lib/verdict'
 
 const team = (id: number, name: string) => ({ id, name, original: name, logo: null, country: 'England' })
 const q = (value: number) => ({ value, opening: null })
@@ -27,18 +27,26 @@ function match(x12: [number, number, number] | null): Match {
 }
 
 describe('шансы словами', () => {
-  it('«из 10» — от 1 до 9: без «гарантий» и «невозможно»', () => {
-    expect(outOf10(0.51)).toBe('5 из 10')
-    expect(outOf10(0.97)).toBe('9 из 10')
-    expect(outOf10(0.01)).toBe('1 из 10')
+  it('шансы трёх исходов — целые проценты, в сумме ровно 100', () => {
+    expect(split100({ home: 0.51, draw: 0.255, away: 0.235 })).toEqual({ home: 51, draw: 26, away: 23 })
+    expect(split100({ home: 0.334, draw: 0.333, away: 0.333 })).toEqual({ home: 34, draw: 33, away: 33 })
+    // «из 10» по отдельности давало 5 + 3 + 3 = 11 — так больше не бывает
+    let seed = 7
+    const rnd = () => ((seed = (seed * 48271) % 2147483647) / 2147483647)
+    for (let i = 0; i < 500; i++) {
+      const [a, b, c] = [rnd(), rnd(), rnd()]
+      const t = a + b + c
+      const s = split100({ home: a / t, draw: b / t, away: c / t })
+      expect(s.home + s.draw + s.away).toBe(100)
+    }
   })
 
-  it('событие — одним-двумя словами', () => {
-    expect(chanceWord(0.8)).toBe('очень вероятно')
-    expect(chanceWord(0.62)).toBe('скорее да')
-    expect(chanceWord(0.5)).toBe('50 на 50')
-    expect(chanceWord(0.3)).toBe('скорее нет')
-    expect(chanceWord(0.1)).toBe('маловероятно')
+  it('исход коротко, без названий команд — для узких плиток', () => {
+    expect(outcomeShort('home')).toBe('победа хозяев')
+    expect(outcomeShort('away')).toBe('победа гостей')
+    expect(outcomeShort('da')).toBe('гости не проиграют')
+    expect(outcomeShort('over2.5')).toBe('3 гола и больше')
+    expect(outcomeShort('draw')).toBe('ничья')
   })
 
   it('исход ставки — словами, команды в именительном падеже', () => {
@@ -63,26 +71,28 @@ describe('вывод по матчу', () => {
     expect(headlineFor({ home: 0.38, draw: 0.28, away: 0.34 }, m)).toMatchObject({ level: 'even', side: null, text: 'Силы равны — 50 на 50' })
   })
 
-  it('из коротких кэфов: шансы, голы, деньги и ставка словами', () => {
+  it('из коротких кэфов: шансы, голы, падение кэфа и ставка словами', () => {
     const m = match([1.5, 4.2, 6.5])
     const v = buildVerdict({
       match: m,
       tags: [
         { slug: 'tb-2-5', score: 0.5, reason: '…', p: 0.66 },
-        { slug: 'progruz', score: 0.8, reason: 'Коэффициент на победу «Арсенал» упал с 1.80 до 1.50 (−17%): на этот исход массово ставят' },
+        { slug: 'progruz', score: 0.8, reason: 'Коэффициент на победу «Арсенал» упал с 1.80 до 1.50 (−17%)' },
       ],
       pick: { key: 'home', odd: 1.55, kind: 'value' },
     })!
     expect(v.headline).toBe('Явный фаворит — «Арсенал»')
-    expect(v.chances).toBe('«Арсенал» — 6 из 10, ничья — 2 из 10, «Челси» — 1 из 10')
-    expect(v.goals).toBe('Скорее будет 3 гола и больше (7 из 10)')
-    expect(v.money).toBe('На «Арсенал» массово ставят: кэф упал с 1.80 до 1.50')
+    const m3 = /^«Арсенал» — (\d+)%, ничья — (\d+)%, «Челси» — (\d+)%$/.exec(v.chances)!
+    expect(Number(m3[1]) + Number(m3[2]) + Number(m3[3])).toBe(100)
+    expect(v.goals).toBe('Скорее будет 3 гола и больше — шанс 66%')
+    // только факт по линии — без «массово ставят»: сколько ставят, мы не знаем
+    expect(v.drop).toBe('Кэф на «Арсенал» снизился: 1.80 → 1.50')
     expect(v.bet).toEqual({ text: 'победа «Арсенал»', odd: 1.55, value: true, bookmaker: null, prob: null })
   })
 
   it('старые объяснения тегов с процентами тоже читаются; без линии вывода нет', () => {
     const v = buildVerdict({ match: match([2.6, 3.3, 2.7]), tags: [{ slug: 'tm-2-5', score: 0.5, reason: 'Вероятность тотала меньше 2.5 — 63%' }] })!
-    expect(v.goals).toBe('Скорее будет не больше 2 голов (6 из 10)')
+    expect(v.goals).toBe('Скорее будет не больше 2 голов — шанс 63%')
     expect(buildVerdict({ match: match(null), tags: [] })).toBeNull()
   })
 })
@@ -91,12 +101,12 @@ describe('теги простыми словами', () => {
   it('подписи без жаргона, адреса страниц прежние', () => {
     const label = Object.fromEntries(TAGS.map((t) => [t.slug, t.label]))
     expect(label.value).toBe('#выгодно')
-    expect(label.progruz).toBe('#идут деньги')
+    expect(label.progruz).toBe('#кэф упал')
     expect(label['tb-2-5']).toBe('#много голов')
     expect(label.andedog).toBe('#может удивить')
   })
 
-  it('объяснения — «из 10», а не проценты; цифра лежит в p', () => {
+  it('объяснения — простыми словами и в процентах; цифра лежит в p', () => {
     const tags = computeTags({
       match: match([1.45, 4.5, 7.5]),
       cons: {
@@ -108,9 +118,9 @@ describe('теги простыми словами', () => {
       } as never,
     })
     const tb = tags.find((t) => t.slug === 'tb-2-5')!
-    expect(tb.reason).toBe('Скорее будет 3 гола и больше: шанс 6 из 10')
+    expect(tb.reason).toBe('Скорее будет 3 гола и больше: шанс 64%')
     expect(tb.p).toBeCloseTo(0.64)
-    expect(tags.find((t) => t.slug === 'favorit')?.reason).toBe('Шансы «Арсенал» на победу — 7 из 10')
-    for (const t of tags) expect(t.reason).not.toMatch(/\d%/)
+    expect(tags.find((t) => t.slug === 'favorit')?.reason).toBe('Шансы «Арсенал» на победу — 66%')
+    for (const t of tags) expect(t.reason).not.toMatch(/из 10|массово/)
   })
 })

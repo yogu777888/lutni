@@ -1,12 +1,12 @@
 import { featuredInfo } from '@/config/leagues'
 import type { FeedItem } from '@/lib/data'
 import { summaryCards, type CardKind, type DaySummary as Summary } from '@/lib/day-summary'
-import { formatTime, plural } from '@/lib/format'
+import { formatDayMonth, formatTime, pct, plural, todayYmd, ymdInTz } from '@/lib/format'
 import { matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
 import { bestTag, isLive } from '@/lib/rank'
 import type { Match } from '@/lib/types'
-import { buildVerdict, outcomeText, outOf10 } from '@/lib/verdict'
+import { buildVerdict, outcomeShort, split100 } from '@/lib/verdict'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
 
@@ -101,7 +101,7 @@ function Big({ children, unit, className = '' }: { children: React.ReactNode; un
 /** Матч плитки: вся плитка — ссылка (открывает сторис). */
 function MatchLink({ it, children }: { it: FeedItem; children?: React.ReactNode }) {
   return (
-    <StoryLink id={it.match.id} href={matchHref(it.match)} className={`mt-2.5 block truncate text-[14px] font-semibold ${COVER}`}>
+    <StoryLink id={it.match.id} href={matchHref(it.match)} className={`mt-2.5 line-clamp-2 text-[14px] font-semibold leading-snug ${COVER}`}>
       {children ?? names(it.match)}
     </StoryLink>
   )
@@ -132,13 +132,18 @@ function Ring({ p, size = 40 }: { p: number; size?: number }) {
   )
 }
 
-/** «через 40 мин», «через 3 ч» — коротко, чтобы влезало в плитку на телефоне. */
+/** Когда начнётся: сегодня — «через 40 мин», «через 3 ч»; в другой день — дата («6 октября»), а не «через 66 ч». */
 const until = (ts: number) => {
+  if (ymdInTz(ts) !== todayYmd()) return formatDayMonth(ts)
   const min = Math.round((ts - Date.now()) / 60_000)
   if (min <= 0) return 'вот-вот начнётся'
   if (min < 60) return `через ${min} мин`
   return `через ${Math.round(min / 60)} ч`
 }
+
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
+/** Порог тега «много голов»: в подборку попадают матчи, где шанс 3+ голов не ниже этого. */
+const GOALS_FROM = '57%'
 
 const sideName = (m: Match, side: 'home' | 'away') => (side === 'home' ? m.home.name : m.away.name)
 
@@ -156,23 +161,24 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
           </Big>
           <MatchLink it={it} />
           {/* что ставить и откуда процент: платят столько-то, а исход стоит столько-то */}
-          <Note className="first-letter:uppercase">
-            {outcomeText(p.key, it.match)}
-            {p.odd ? `: ${p.odd.toFixed(2)} вместо ${(1 / p.prob).toFixed(2)}` : ''}
+          <Note>
+            {cap(outcomeShort(p.key))}
+            {p.odd ? ` · ${p.odd.toFixed(2)} вместо ${(1 / p.prob).toFixed(2)}` : ''}
           </Note>
         </Tile>
       )
     }
     case 'progruz': {
+      // только то, что видно по линии: кэф снизился. Сколько на исход ставят — мы не знаем
       const g = s.progruz!
       return (
-        <Tile accent="hot" label={<Short phone="Сюда ставят" full="Куда идут деньги" />} icon="down">
-          <Big className="text-hot" unit={<span className="hidden sm:inline">кэф с открытия</span>}>
+        <Tile accent="hot" label={<Short phone="Кэф упал" full="Падение кэфа" />} icon="down">
+          <Big className="text-hot" unit={<span className="hidden sm:inline">с открытия линии</span>}>
             −{Math.round(g.drop * 100)}%
           </Big>
           <MatchLink it={g.item} />
           <Note>
-            Ставят на «{sideName(g.item.match, g.side)}»: {g.from.toFixed(2)} → {g.to.toFixed(2)}
+            Кэф на {g.side === 'home' ? 'хозяев' : 'гостей'}: {g.from.toFixed(2)} → {g.to.toFixed(2)}
           </Note>
         </Tile>
       )
@@ -211,28 +217,23 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
       const it = s.next!
       return (
         <Tile label={s.liveCount ? 'Следующий матч' : 'Первый матч'} icon="clock">
-          <Big unit={<span className="hidden sm:inline">{until(it.match.ts)}</span>}>{formatTime(it.match.ts)}</Big>
+          <Big unit={until(it.match.ts)}>{formatTime(it.match.ts)}</Big>
           <MatchLink it={it} />
           <Note>{featuredInfo(it.match.league)?.short || it.match.league.name}</Note>
         </Tile>
       )
     }
     case 'goals': {
+      // это прогноз на будущие матчи: крупно — шанс 3+ голов у самого голевого, ниже — по какому порогу отбор
       const g = s.goals!
+      const more = g.count - 1
       return (
         <Tile label="Ждём голов" icon="ball">
-          <Big
-            unit={
-              <>
-                {plural(g.count, ['матч', 'матча', 'матчей'])}
-                <span className="hidden sm:inline"> с 3+ голами</span>
-              </>
-            }
-          >
-            {g.count}
-          </Big>
+          <Big unit={<Short phone="3+ гола" full="шанс 3+ голов" />}>{pct(g.p)}</Big>
           <MatchLink it={g.item} />
-          <Note>Шанс на 3+ гола — {outOf10(g.p)}</Note>
+          <Note>
+            {more > 0 ? `Ещё ${more} ${plural(more, ['матч', 'матча', 'матчей'])} с шансом от ${GOALS_FROM}` : `В подборке — шанс от ${GOALS_FROM}`}
+          </Note>
         </Tile>
       )
     }
@@ -241,12 +242,11 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
       return (
         <Tile label="Фаворит дня" icon="star">
           <div className="flex items-end justify-between gap-3">
-            <Big unit="из 10">{outOf10(f.p).split(' ')[0]}</Big>
+            <Big unit={<Short phone="победа" full="шанс победы" />}>{pct(f.p)}</Big>
             <Ring p={f.p} />
           </div>
           <MatchLink it={f.item} />
-          {/* «7 из 10» — шанс победы по коэффициентам, а не прошлые матчи */}
-          <Note>Шанс победы «{sideName(f.item.match, f.side)}» по кэфам</Note>
+          <Note>Фаворит по кэфам — «{sideName(f.item.match, f.side)}»</Note>
         </Tile>
       )
     }
@@ -256,7 +256,7 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
           <a href="#matches" className={`block ${COVER}`}>
             <Big unit={plural(s.total, ['матч', 'матча', 'матчей'])}>{s.total}</Big>
           </a>
-          <p className="mt-2.5 truncate text-[14px] font-semibold">{s.topLeagues.map((l) => featuredInfo(l)?.short || l.name).join(', ')}</p>
+          <p className="mt-2.5 line-clamp-2 text-[14px] font-semibold leading-snug">{s.topLeagues.map((l) => featuredInfo(l)?.short || l.name).join(', ')}</p>
           <Note>
             {s.leagues} {plural(s.leagues, ['турнир', 'турнира', 'турниров'])}
           </Note>
@@ -266,31 +266,50 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
 }
 
 /**
- * Шансы одной полосой: хозяева · ничья · гости — доли ширины, «из 10» прямо в полосе.
- * Без своих цветов, чтобы не спорить с лаймом: светлая — фаворит, остальные — тёмные.
- * Слева первая команда, справа вторая — как в названии матча.
+ * Шансы одной полосой: хозяева · ничья · гости — доли ширины, проценты (в сумме 100) в полосе,
+ * под ней — чей это шанс: команда, «ничья», команда. Без своих цветов, чтобы не спорить с лаймом:
+ * светлая часть — фаворит, остальные — тёмные.
  */
 function ChanceBar({ m }: { m: Match }) {
   const f = fair1x2(m.odds?.x12)
   if (!f) return null
-  const cells = (['home', 'draw', 'away'] as const).map((k) => ({ k, p: f[k], n: outOf10(f[k]) }))
+  const n = split100(f)
   const fav = f.home >= f.away ? 'home' : 'away'
+  const cells = (['home', 'draw', 'away'] as const).map((k) => ({
+    k,
+    p: f[k],
+    n: n[k],
+    name: k === 'draw' ? 'ничья' : k === 'home' ? m.home.name : m.away.name,
+  }))
   const tone = (k: (typeof cells)[number]['k']) => (k === fav ? 'bg-chalk text-ink' : k === 'draw' ? 'bg-[#26251f] text-dim' : 'bg-[#3a3931] text-chalk')
-  const label = `Шансы по коэффициентам букмекеров: «${m.home.name}» — ${cells[0].n}, ничья — ${cells[1].n}, «${m.away.name}» — ${cells[2].n}`
+  const label = `Шансы по коэффициентам букмекеров: ${cells.map((c) => `${c.k === 'draw' ? c.name : `«${c.name}»`} — ${c.n}%`).join(', ')}`
   return (
-    <div className="flex h-7 gap-0.5 overflow-hidden rounded-full" role="img" aria-label={label} title={label}>
-      {cells.map((c) => (
-        <span key={c.k} className={`num grid min-w-0 place-items-center text-[12.5px] font-semibold ${tone(c.k)}`} style={{ width: `${c.p * 100}%` }}>
-          <span className="truncate px-1.5">{c.p >= 0.17 ? c.n : c.n.split(' ')[0]}</span>
-        </span>
-      ))}
+    <div role="img" aria-label={label} title={label}>
+      <div className="flex h-7 gap-0.5 overflow-hidden rounded-full">
+        {cells.map((c) => (
+          <span key={c.k} className={`num grid min-w-0 place-items-center text-[13px] font-semibold ${tone(c.k)}`} style={{ width: `${c.p * 100}%` }}>
+            <span className="truncate px-1">{c.n}%</span>
+          </span>
+        ))}
+      </div>
+      <div className="mt-1.5 flex gap-0.5 text-[12.5px]" aria-hidden>
+        {cells.map((c, i) => (
+          <span
+            key={c.k}
+            className={`min-w-0 truncate px-1 ${i === 0 ? 'text-left' : i === 2 ? 'text-right' : 'text-center'} ${c.k === fav ? 'text-chalk' : 'text-mute'}`}
+            style={{ width: `${c.p * 100}%` }}
+          >
+            {c.k === 'draw' ? 'Ничья' : c.name}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
 
-/** Почему этот матч стоит смотреть: деньги, самый весомый тег или голы — одной фразой. */
+/** Почему этот матч стоит смотреть: падение кэфа, самый весомый тег или голы — одной фразой. */
 function whyTop(it: FeedItem, v: ReturnType<typeof buildVerdict>): { text: string; icon: keyof typeof ICONS; accent: 'hot' | 'none' } | null {
-  if (v?.money) return { text: v.money, icon: 'down', accent: 'hot' }
+  if (v?.drop) return { text: v.drop, icon: 'down', accent: 'hot' }
   // «выгодно» уже на кнопке, «фаворит» и «50 на 50» — в главной фразе
   const t = bestTag(it.tags.filter((x) => !['value', 'favorit', 'ravnye', 'progruz'].includes(x.slug)))
   if (t) return { text: t.reason, icon: t.slug === 'tb-2-5' || t.slug === 'obe-zabyut' ? 'ball' : 'star', accent: 'none' }

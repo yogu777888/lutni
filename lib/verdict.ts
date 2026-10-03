@@ -2,12 +2,15 @@
  * «Коротко о матче» простыми словами — для тех, кому цифры ни о чём не говорят.
  *
  * Вместо «П1 51% · ТБ2.5 64% · EV +5,9%» — «Скорее выиграет «Ноттингем»,
- * голов будет много, ставка выгодная». Шансы — словами и «N из 10»: так
- * вероятность понимают все, а проценты — нет. Обещаний нет: только «скорее»,
- * «вероятно» — это оценка, а не гарантия.
+ * голов будет много, ставка выгодная». Главное — словами, цифры — процентами
+ * с подписью, что это за шанс. Шансы трёх исходов всегда дают в сумме 100%.
+ * Обещаний нет: только «скорее», «вероятно» — это оценка, а не гарантия.
+ * И только то, что видно по данным: про падение кэфа — «снизился», а не
+ * «на исход несут деньги» — сколько ставят, мы не знаем.
  *
  * Названия команд — только в именительном падеже, в кавычках.
  */
+import { pct } from './format'
 import type { Probs1x2 } from './model'
 import { fair1x2 } from './odds'
 import type { TagHit } from './tags'
@@ -15,18 +18,33 @@ import type { Match } from './types'
 
 const q = (s: string) => `«${s}»`
 
-/** «6 из 10»: от 1 до 9 — «10 из 10» звучало бы как гарантия, «0 из 10» — как невозможность. */
-export function outOf10(p: number): string {
-  return `${Math.min(9, Math.max(1, Math.round(p * 10)))} из 10`
+/**
+ * Шансы трёх исходов в целых процентах, которые в сумме дают ровно 100
+ * (метод наибольших остатков): «51% + 26% + 23%», а не «51% + 26% + 24%».
+ */
+export function split100(p: Probs1x2): Probs1x2 {
+  const keys = ['home', 'draw', 'away'] as const
+  const sum = p.home + p.draw + p.away || 1
+  const raw = keys.map((k) => (p[k] / sum) * 100)
+  const out = raw.map(Math.floor)
+  const order = raw.map((r, i) => [r - Math.floor(r), i] as const).sort((a, b) => b[0] - a[0])
+  for (let left = 100 - out.reduce((a, b) => a + b, 0), j = 0; left > 0; left--, j++) out[order[j % 3][1]]++
+  return { home: out[0], draw: out[1], away: out[2] }
 }
 
-/** Насколько вероятно событие — одним-двумя словами. */
-export function chanceWord(p: number): string {
-  if (p >= 0.75) return 'очень вероятно'
-  if (p >= 0.58) return 'скорее да'
-  if (p > 0.42) return '50 на 50'
-  if (p > 0.25) return 'скорее нет'
-  return 'маловероятно'
+/** Исход коротко и без названий команд — для узких плиток: «победа гостей», «3 гола и больше». */
+export function outcomeShort(key: string): string {
+  switch (key) {
+    case 'home':
+      return 'победа хозяев'
+    case 'away':
+      return 'победа гостей'
+    case 'hd':
+      return 'хозяева не проиграют'
+    case 'da':
+      return 'гости не проиграют'
+  }
+  return outcomeText(key, { home: { name: '' }, away: { name: '' } } as Pick<Match, 'home' | 'away'>)
 }
 
 /** Исход ставки словами: «победа «Арсенал»», «3 гола и больше», «обе забьют». */
@@ -73,13 +91,13 @@ export type Verdict = {
   side: 'home' | 'away' | null
   /** главная фраза: «Скорее выиграет «X»» */
   headline: string
-  /** шансы всех исходов: «Ноттингем» — 5 из 10, ничья — 3 из 10, «Борнмут» — 2 из 10 */
+  /** шансы всех исходов, в сумме 100%: «Ноттингем» — 51%, ничья — 26%, «Борнмут» — 23% */
   chances: string
   probs: Probs1x2
-  /** голы: «Скорее будет 3 гола и больше» */
+  /** голы: «Скорее будет 3 гола и больше — шанс 64%» */
   goals: string | null
-  /** деньги: «На «X» массово ставят: кэф упал с 2.40 до 1.97» */
-  money: string | null
+  /** падение кэфа — только факт: «Кэф на «X» снизился: 2.40 → 1.97» */
+  drop: string | null
   /** ставка: что, за сколько и выгодно ли */
   bet: { text: string; odd: number | null; value: boolean; bookmaker: string | null; prob: number | null } | null
 }
@@ -121,24 +139,25 @@ export function buildVerdict({ match: m, tags, probs, over25, btts, pick }: Verd
   const head = headlineFor(p, m)
   const tag = (slug: string) => tags.find((t) => t.slug === slug)
 
-  const chances = `${q(m.home.name)} — ${outOf10(p.home)}, ничья — ${outOf10(p.draw)}, ${q(m.away.name)} — ${outOf10(p.away)}`
+  const s = split100(p)
+  const chances = `${q(m.home.name)} — ${s.home}%, ничья — ${s.draw}%, ${q(m.away.name)} — ${s.away}%`
 
   // голы: своя вероятность, иначе — из тегов
   const over = over25 ?? pctIn(tag('tb-2-5')) ?? (tag('tm-2-5') ? 1 - (pctIn(tag('tm-2-5')) ?? 0.6) : null)
   let goals: string | null = null
-  if (over != null && over >= 0.58) goals = `Скорее будет 3 гола и больше (${outOf10(over)})`
-  else if (over != null && over <= 0.42) goals = `Скорее будет не больше 2 голов (${outOf10(1 - over)})`
+  if (over != null && over >= 0.58) goals = `Скорее будет 3 гола и больше — шанс ${pct(over)}`
+  else if (over != null && over <= 0.42) goals = `Скорее будет не больше 2 голов — шанс ${pct(1 - over)}`
   const both = btts ?? pctIn(tag('obe-zabyut'))
-  if (both != null && both >= 0.58) goals = goals ? `${goals}, забьют обе команды` : `Скорее забьют обе команды (${outOf10(both)})`
+  if (both != null && both >= 0.58) goals = goals ? `${goals}, забьют обе команды` : `Скорее забьют обе команды — шанс ${pct(both)}`
 
-  // деньги: падение кэфа из объяснения прогруза
+  // падение кэфа из объяснения прогруза — только факт, без догадок о деньгах
   const pr = tag('progruz')
   const mv = pr ? /«(.+?)».*?с (\d+(?:\.\d+)?) до (\d+(?:\.\d+)?)/.exec(pr.reason) : null
-  const money = mv ? `На ${q(mv[1])} массово ставят: кэф упал с ${mv[2]} до ${mv[3]}` : null
+  const drop = mv ? `Кэф на ${q(mv[1])} снизился: ${mv[2]} → ${mv[3]}` : null
 
   const bet = pick
     ? { text: outcomeText(pick.key, m), odd: pick.odd, value: pick.kind === 'value', bookmaker: pick.bookmaker ?? null, prob: pick.prob ?? null }
     : null
 
-  return { level: head.level, side: head.side, headline: head.text, chances, probs: p, goals, money, bet }
+  return { level: head.level, side: head.side, headline: head.text, chances, probs: p, goals, drop, bet }
 }

@@ -4,7 +4,7 @@ import { Fragment, useEffect, useState } from 'react'
 import type { CompareRow, FormSide, Side, StoryData, StorySlide, StoryTeam } from '@/lib/story'
 import type { StoryFocus } from '@/lib/story-groups'
 import type { Res } from '@/lib/stats'
-import { outOf10 } from '@/lib/verdict'
+import { split100 } from '@/lib/verdict'
 import { tagChipClass, tagHashClass } from '../tag-chip'
 import { TeamLogo } from '../TeamLogo'
 
@@ -217,10 +217,12 @@ function Cover({ s, story, focus }: { s: S<'cover'>; story: StoryData; focus: St
 // ─── Кто фаворит: 1X2 ────────────────────────────────────────────────────────
 
 function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
+  // проценты исходов — в сумме ровно 100
+  const n = split100(s.probs)
   const items = [
-    { key: 'home', label: 'Хозяева', name: story.home.name, team: story.home, p: s.probs.home, best: s.best.home, fair: s.fair.home, bar: 'bg-home' },
-    { key: 'draw', label: 'Ничья', name: 'без победителя', team: null, p: s.probs.draw, best: s.best.draw, fair: s.fair.draw, bar: 'bg-tie' },
-    { key: 'away', label: 'Гости', name: story.away.name, team: story.away, p: s.probs.away, best: s.best.away, fair: s.fair.away, bar: 'bg-away' },
+    { key: 'home', label: 'Хозяева', name: story.home.name, team: story.home, p: s.probs.home, n: n.home, best: s.best.home, fair: s.fair.home, bar: 'bg-home' },
+    { key: 'draw', label: 'Ничья', name: 'без победителя', team: null, p: s.probs.draw, n: n.draw, best: s.best.draw, fair: s.fair.draw, bar: 'bg-tie' },
+    { key: 'away', label: 'Гости', name: story.away.name, team: story.away, p: s.probs.away, n: n.away, best: s.best.away, fair: s.fair.away, bar: 'bg-away' },
   ]
   const max = Math.max(...items.map((i) => i.p))
   return (
@@ -230,8 +232,7 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
         <div className="grid h-[min(30dvh,230px)] grid-cols-3 items-end gap-3 border-b border-edge-2">
           {items.map((it, i) => (
             <div key={it.key} className="flex h-full flex-col items-center justify-end">
-              {/* шанс — «из 10»: так понятнее, чем проценты */}
-              <Num value={it.p} format={outOf10} delay={300 + i * 120} className="mb-1.5 whitespace-nowrap text-[19px] font-bold" />
+              <Num value={it.n / 100} format={pctFmt} delay={300 + i * 120} className="mb-1.5 text-[26px] font-bold" />
               <div
                 className={`st-grow-y w-full rounded-t-[6px] ${it.bar}`}
                 style={{ height: `${Math.max(3, (it.p / max) * 80)}%`, ...wait(300 + i * 120) }}
@@ -574,7 +575,7 @@ function Movement({ s, story }: { s: S<'movement'>; story: StoryData }) {
   const names = { home: story.home.name, draw: 'ничья', away: story.away.name }
   return (
     <Frame>
-      <Head eyebrow="Куда идут деньги" title={s.title} sub={s.sub} />
+      <Head eyebrow="Движение коэффициентов" title={s.title} sub={s.sub} />
       <div className="my-auto space-y-5 py-4">
         {s.rows.map((r, i) => {
           const d = 300 + i * 150

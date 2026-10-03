@@ -2,6 +2,10 @@ import Link from 'next/link'
 import { SITE } from '@/config/site'
 import { addDays, diffDays, formatWeekday, ymdToNoonTs } from '@/lib/format'
 import { dayHref } from '@/lib/links'
+import { DatePicker } from './DatePicker'
+
+/** «28 сент» — день вне полосы вкладок (выбран через календарь). */
+const dayMonthFmt = new Intl.DateTimeFormat('ru-RU', { timeZone: SITE.timeZone, day: 'numeric', month: 'short' })
 
 /** Короткая подпись дня: «Вчера», «Сегодня», «Завтра», дальше — «Вс 4». */
 function shortDay(ymd: string, today: string): string {
@@ -18,7 +22,10 @@ function shortDay(ymd: string, today: string): string {
  * Не капсула: иначе их путают с меню в шапке.
  */
 export function DateTabs({ active, today }: { active: string; today: string }) {
-  const days = Array.from({ length: SITE.daysAhead + 2 }, (_, i) => addDays(today, i - 1))
+  const strip = Array.from({ length: SITE.daysAhead + 2 }, (_, i) => addDays(today, i - 1))
+  // день, выбранный через календарь, — отдельной вкладкой с датой: раньше полосы или после неё
+  const days = strip.includes(active) ? strip : active < strip[0] ? [active, ...strip] : [...strip, active]
+  const label = (d: string) => (strip.includes(d) ? shortDay(d, today) : dayMonthFmt.format(ymdToNoonTs(d)).replace('.', ''))
   return (
     <nav aria-label="Выбор дня" className="scrollbar-none -mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
       <div className="flex w-max items-center gap-5">
@@ -34,10 +41,11 @@ export function DateTabs({ active, today }: { active: string; today: string }) {
                 on ? 'border-acid text-fg' : 'border-transparent text-dim hover:text-fg'
               }`}
             >
-              {shortDay(d, today)}
+              {label(d)}
             </Link>
           )
         })}
+        <DatePicker active={active} today={today} min={addDays(today, -365)} max={addDays(today, 60)} />
       </div>
     </nav>
   )

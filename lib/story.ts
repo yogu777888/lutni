@@ -252,8 +252,9 @@ export function buildStory(ins: MatchInsights): StoryData | null {
       const who = top.outcome === 'home' ? `победу команды ${q(H)}` : top.outcome === 'away' ? `победу команды ${q(A)}` : 'ничью'
       slides.push({
         kind: 'movement',
-        title: top.outcome === 'draw' ? 'Деньги идут на ничью' : `Деньги идут на ${q(top.outcome === 'home' ? H : A)}`,
-        sub: `Коэффициент на ${who} упал с ${top.opening.toFixed(2)} до ${top.current.toFixed(2)}: на этот исход идут деньги`,
+        // только факт: кэф снизился. Почему — догадка (ставки, новости о составах), поэтому — «часто так бывает»
+        title: top.outcome === 'draw' ? 'Кэф на ничью снизился' : `Кэф на ${q(top.outcome === 'home' ? H : A)} снизился`,
+        sub: `Коэффициент на ${who} упал с ${top.opening.toFixed(2)} до ${top.current.toFixed(2)}. Так часто бывает, когда на исход много ставят или выходят новости о составах`,
         rows,
       })
     }
