@@ -42,6 +42,8 @@ export type DayLists = {
 export type DaySummary = {
   /** Главный матч дня: топ-турнир + сильные теги. */
   top: FeedItem | null
+  /** Карусель «Матча дня»: первым — матч дня, дальше — главный матч каждой другой топ-лиги (до 5). */
+  tops: FeedItem[]
   /** Самый большой перевес среди предстоящих матчей. */
   value: FeedItem | null
   progruz: ProgruzInfo | null
@@ -69,6 +71,8 @@ const CARDS = 4
 const GOALS_SHOWN = 3
 /** Строк в плитке-подборке: на телефоне и невысоком экране видно три, на высоком — четыре. */
 const LIST_SHOWN = 4
+/** Слайдов в карусели «Матча дня». */
+const TOPS_SHOWN = 5
 
 const isOpen = (it: FeedItem) => it.match.status === 'scheduled' || isLive(it.match)
 const tag = (it: FeedItem, slug: string) => it.tags.find((t) => t.slug === slug)
@@ -149,6 +153,14 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
   const used = new Set([value?.match.id, progruz?.item.match.id])
   const pool = open.filter((it) => !isMinor(it.match))
   const top = max(pool.filter((it) => !used.has(it.match.id)), prestige) ?? max(pool, prestige) ?? max(open, prestige)
+  // по одному матчу дня на каждую топ-лигу — самый громкий в ней; лига матча дня — уже первая
+  const byLeague = new Map<number, FeedItem>()
+  for (const it of pool) {
+    if (featuredRank(it.match.league) < 0 || it.match.league.id === top?.match.league.id) continue
+    const cur = byLeague.get(it.match.league.id)
+    if (!cur || prestige(it) > prestige(cur)) byLeague.set(it.match.league.id, it)
+  }
+  const tops = top ? [top, ...[...byLeague.values()].sort((a, b) => prestige(b) - prestige(a))].slice(0, TOPS_SHOWN) : []
 
   const liveAll = open.filter((it) => isLive(it.match)).sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts)
 
@@ -216,6 +228,7 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
 
   return {
     top,
+    tops,
     value,
     progruz,
     live: liveAll.slice(0, LIVE_SHOWN),

@@ -168,6 +168,24 @@ describe('сводка дня', () => {
     expect(cards.length).toBeLessThanOrEqual(4)
   })
 
+  it('карусель матча дня: матч дня первым, дальше — по одному из каждой другой топ-лиги', () => {
+    const inLeague = (it: FeedItem, id: number, name: string): FeedItem => ({ ...it, match: { ...it.match, league: { ...it.match.league, id, name } } })
+    const s = buildDaySummary(
+      [
+        item(1, 'scheduled', { ev: 0.05 }),
+        inLeague(item(2, 'scheduled'), 140, 'Испания. Ла Лига'),
+        inLeague(item(3, 'scheduled'), 140, 'Испания. Ла Лига'),
+        inLeague(item(4, 'scheduled'), 78, 'Германия. Бундеслига'),
+        item(5, 'scheduled'),
+      ],
+      NOW,
+    )
+    expect(s.tops[0]).toBe(s.top)
+    const leagues = s.tops.map((t) => t.match.league.id)
+    expect(new Set(leagues).size).toBe(leagues.length)
+    expect(leagues.sort()).toEqual([140, 39, 78].sort())
+  })
+
   it('фаворит с шансом ниже 60% — не виджет', () => {
     const s = buildDaySummary([item(1, 'scheduled', { x12: [2.6, 3.2, 2.8] }), item(2, 'scheduled', { x12: [1.9, 3.4, 4.2] })], NOW)
     expect(s.favorite?.p).toBeLessThan(0.6)

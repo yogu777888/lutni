@@ -12,6 +12,7 @@ import { buildVerdict, split100, type Verdict } from '@/lib/verdict'
 import { ArtIcon } from './story/ArtIcon'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
+import { TopCarousel } from './TopCarousel'
 
 /** Ссылка-накладка: вся карточка кликабельна, а текст ссылки — понятное название. */
 const COVER = "after:absolute after:inset-0 after:rounded-[22px] after:content-['']"
@@ -306,10 +307,10 @@ function reasonsFor(it: FeedItem, v: Verdict | null): Reason[] {
 }
 
 /**
- * Матч дня: команды и время → вывод словами и полоса шансов → почему (до трёх фактов) → разбор.
- * На компьютере — высокая карточка слева, лишняя высота делится поровну между блоками.
+ * Слайд «Матча дня»: команды и время → вывод словами и полоса шансов → почему (до трёх фактов) → разбор.
+ * Шапка с лигой и точками — у карусели (TopCarousel); лишняя высота делится поровну между блоками.
  */
-function TopCard({ it, full }: { it: FeedItem; full: boolean }) {
+function TopSlide({ it }: { it: FeedItem }) {
   const m = it.match
   const live = isLive(m)
   const played = Boolean(m.score) && (live || m.status === 'finished')
@@ -328,20 +329,10 @@ function TopCard({ it, full }: { it: FeedItem; full: boolean }) {
     </span>
   )
   return (
-    <article
-      className={`group relative flex min-w-0 flex-col justify-between gap-4 p-5 transition-colors duration-300 hover:border-edge-2 sm:col-span-2 sm:px-6 lg:row-span-2 ${full ? 'lg:col-span-4' : ''} ${CARD}`}
-    >
+    <div className="relative flex min-w-0 flex-1 flex-col justify-between gap-4">
       <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="min-w-0 truncate text-[13px] font-medium text-chalk">
-            {live ? <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse-live rounded-full bg-live align-middle" /> : null}
-            Матч дня <span className="text-mute">· {leagueShort(m.league)}</span>
-          </p>
-          <Go />
-        </div>
-
         {/* команды, справа — время начала, как на табло; после стартового свистка на этом месте счёт */}
-        <div className="mt-3.5 flex items-center gap-3 text-[21px] font-semibold leading-tight tracking-[-0.025em] sm:text-[23px] lg:gap-5 lg:text-[clamp(23px,3.6vh,32px)]">
+        <div className="flex items-center gap-3 text-[21px] font-semibold leading-tight tracking-[-0.025em] sm:text-[23px] lg:gap-5 lg:text-[clamp(23px,3.6vh,32px)]">
           <StoryLink id={m.id} href={matchHref(m)} className={`block min-w-0 flex-1 space-y-1.5 ${COVER}`}>
             {team(m.home, m.score?.home)}
             {team(m.away, m.score?.away, true)}
@@ -405,12 +396,12 @@ function TopCard({ it, full }: { it: FeedItem; full: boolean }) {
           </span>
         ) : null}
       </div>
-    </article>
+    </div>
   )
 }
 
 /**
- * «Сводка дня» — первый экран главной: слева высокий «Матч дня», справа до четырёх плиток-подборок (2×2).
+ * «Сводка дня» — первый экран главной: слева высокий «Матч дня» (карусель по топ-лигам), справа до четырёх плиток-подборок (2×2).
  * На телефоне — всё столбиком, на планшете — подборки по две в ряд. Сводка тянется до низа окна
  * (см. DayView): строки подборок делят высоту поровну, пустых мест в плитках нет.
  */
@@ -422,7 +413,14 @@ export function DaySummary({ s, className = '' }: { s: Summary; className?: stri
   const span = (i: number) => (n === 1 ? 'sm:col-span-2 lg:row-span-2' : n === 2 || (n === 3 && i === 2) ? 'sm:col-span-2' : '')
   return (
     <section aria-label="Сводка дня" className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-4 ${className}`}>
-      <TopCard it={s.top} full={n === 0} />
+      <TopCarousel
+        heads={s.tops.map((t) => ({ league: leagueShort(t.match.league), live: isLive(t.match) }))}
+        className={`sm:col-span-2 lg:row-span-2 ${n === 0 ? 'lg:col-span-4' : ''} ${CARD}`}
+      >
+        {s.tops.map((t) => (
+          <TopSlide key={t.match.id} it={t} />
+        ))}
+      </TopCarousel>
       {cards.map((k, i) => (
         <div key={k} className={`min-w-0 ${span(i)}`}>
           <ListTile {...cardFor(k, s)} />
