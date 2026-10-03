@@ -2,9 +2,9 @@ import Link from 'next/link'
 import { countryRank, featuredRank } from '@/config/leagues'
 import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { dayHref } from '@/lib/links'
-import { diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
+import { addDays, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { isLive, liveRank } from '@/lib/rank'
-import { buildDaySummary } from '@/lib/day-summary'
+import { buildDaySummary, favoritesRecap, type FavRecap } from '@/lib/day-summary'
 import { storyCovers } from '@/lib/story-covers'
 import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
@@ -100,6 +100,15 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
   // на первом экране — только главные кружки, остальные теги — по «Все теги»
   const storyGroups = mainCircles(buildStoryGroups(items))
   const daySummary = buildDaySummary(items)
+  // аналитика «как сыграли фавориты вчера» — только на «Сегодня»: на других днях «вчера» ещё не сыграно или уже давно
+  let recap: FavRecap | null = null
+  if (ymd === today && daySummary.top) {
+    try {
+      recap = favoritesRecap(await getMatchesByDate(addDays(today, -1)))
+    } catch {
+      recap = null
+    }
+  }
   const values = open
     .filter((i) => i.summary?.pick?.kind === 'value' && i.match.status === 'scheduled')
     .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
@@ -160,7 +169,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
           </section>
         ) : null}
 
-        <DaySummary s={daySummary} className="mt-5 lg:flex-1" />
+        <DaySummary s={daySummary} recap={recap} recapHref={dayHref(addDays(today, -1), today)} className="mt-5 lg:flex-1" />
       </div>
 
       <ValueBoard items={values} />

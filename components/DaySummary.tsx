@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { featuredInfo } from '@/config/leagues'
 import type { FeedItem } from '@/lib/data'
-import { summaryCards, type CardKind, type DaySummary as Summary } from '@/lib/day-summary'
+import { summaryCards, type CardKind, type DaySummary as Summary, type FavRecap, type RecapGame } from '@/lib/day-summary'
 import { formatDayMonth, formatTime, pct, pluralN, todayYmd, ymdInTz } from '@/lib/format'
 import { leagueHref, matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
@@ -400,27 +400,120 @@ function TopSlide({ it }: { it: FeedItem }) {
   )
 }
 
+// ─── Как сыграли фавориты вчера ──────────────────────────────────────────────
+
+const RESULT = {
+  won: { label: 'выиграл', bar: 'bg-chalk' },
+  draw: { label: 'ничья', bar: 'bg-[#5a5950]' },
+  // сенсация — штриховкой: не новый цвет (лайм, янтарь и красный заняты), а другая фактура
+  lost: { label: 'сенсация', bar: 'bg-[repeating-linear-gradient(135deg,var(--color-chalk)_0_2px,transparent_2px_6px)] ring-1 ring-inset ring-chalk/70' },
+} as const
+
+const q = (name: string) => `«${name}»`
+const score = (g: RecapGame) => (g.match.score ? `${g.match.score.home}:${g.match.score.away}` : '')
+
+/**
+ * Аналитика дня: насколько вчера можно было полагаться на фаворитов. Крупно — «7 из 10»,
+ * фраза словами с главной сенсацией, ниже — столбик на матч: высота — шанс фаворита до матча
+ * (пунктир — 50%), заливка — чем кончилось. Честно и понятно без цифр.
+ */
+function RecapTile({ r, href }: { r: FavRecap; href: string }) {
+  const n = r.games.length
+  const u = r.upset
+  return (
+    <article className={`flex h-full min-w-0 flex-col px-4 pb-4 pt-3.5 sm:px-5 ${CARD}`}>
+      <Link href={href} prefetch={false} className="group -mx-1 flex items-center justify-between gap-2 rounded-lg px-1">
+        <span className="min-w-0 truncate text-[13px] font-medium text-chalk">
+          Как сыграли фавориты <span className="text-mute">· вчера</span>
+        </span>
+        <Go />
+      </Link>
+      <p className="num mt-3 text-[34px] font-semibold leading-none tracking-[-0.04em] lg:text-[clamp(34px,5vh,46px)]">
+        {r.won} <span className="text-dim">из {n}</span>
+      </p>
+      <p className="mt-2.5 text-[14px] leading-snug text-dim">
+        Фавориты по кэфам выиграли <b className="font-semibold text-fg">{r.won} из {n}</b> матчей
+        {r.draw ? <>, {pluralN(r.draw, ['ничья', 'ничьи', 'ничьих'])}</> : null}.{' '}
+        {u ? (
+          <>
+            Главная сенсация: <b className="font-semibold text-fg">{q(u.match.home.name)} — {q(u.match.away.name)} {score(u)}</b>, у проигравшего
+            фаворита шанс был {pct(u.p)}.
+          </>
+        ) : (
+          'Сенсаций не было.'
+        )}
+      </p>
+      <div className="mt-4 flex flex-wrap gap-x-3.5 gap-y-1 text-[13px] text-dim" aria-hidden>
+        {(['won', 'draw', 'lost'] as const).map((k) => (
+          <span key={k} className="inline-flex items-center gap-1.5">
+            <span className={`h-2.5 w-2.5 rounded-[3px] ${RESULT[k].bar}`} />
+            {RESULT[k].label}
+          </span>
+        ))}
+      </div>
+      {/* столбики: высота — шанс фаворита до матча, пунктир — 50% */}
+      <div className="relative mt-3 flex min-h-[96px] flex-1 items-end gap-1.5 pr-8" role="list" aria-label="Матчи фаворитов вчера">
+        <span className="pointer-events-none absolute inset-x-0 bottom-1/2 border-t border-dashed border-white/15" aria-hidden />
+        <span className="pointer-events-none absolute bottom-1/2 right-0 translate-y-1/2 text-[11px] leading-none text-mute" aria-hidden>
+          50%
+        </span>
+        {r.games.map((g) => {
+          const fav = g.side === 'home' ? g.match.home.name : g.match.away.name
+          const t = `${q(g.match.home.name)} — ${q(g.match.away.name)} ${score(g)}: фаворит ${q(fav)} (${pct(g.p)}) — ${RESULT[g.result].label}`
+          return (
+            <Link
+              key={g.match.id}
+              href={matchHref(g.match)}
+              prefetch={false}
+              role="listitem"
+              title={t}
+              aria-label={t}
+              className={`min-w-0 flex-1 rounded-t-[4px] transition-opacity hover:opacity-80 ${RESULT[g.result].bar}`}
+              style={{ height: `${Math.round(g.p * 100)}%` }}
+            />
+          )
+        })}
+      </div>
+    </article>
+  )
+}
+
 /**
  * «Сводка дня» — первый экран главной: слева высокий «Матч дня» (карусель по топ-лигам), справа до четырёх плиток-подборок (2×2).
  * На телефоне — всё столбиком, на планшете — подборки по две в ряд. Сводка тянется до низа окна
  * (см. DayView): строки подборок делят высоту поровну, пустых мест в плитках нет.
  */
-export function DaySummary({ s, className = '' }: { s: Summary; className?: string }) {
+export function DaySummary({ s, recap = null, recapHref = '#matches', className = '' }: { s: Summary; recap?: FavRecap | null; recapHref?: string; className?: string }) {
   if (!s.top) return null
-  const cards = summaryCards(s)
+  // с аналитикой — она на месте двух плиток: справа остаются две подборки
+  const cards = summaryCards(s).slice(0, recap ? 2 : 4)
   const n = cards.length
-  // плиток меньше четырёх — растягиваем последние, чтобы в сетке не было дыр
-  const span = (i: number) => (n === 1 ? 'sm:col-span-2 lg:row-span-2' : n === 2 || (n === 3 && i === 2) ? 'sm:col-span-2' : '')
+  // плиток меньше, чем мест, — растягиваем последние, чтобы в сетке не было дыр
+  const span = (i: number) =>
+    recap
+      ? n === 1
+        ? 'lg:row-span-2'
+        : ''
+      : n === 1
+        ? 'sm:col-span-2 lg:row-span-2'
+        : n === 2 || (n === 3 && i === 2)
+          ? 'sm:col-span-2'
+          : ''
   return (
     <section aria-label="Сводка дня" className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-4 ${className}`}>
       <TopCarousel
         heads={s.tops.map((t) => ({ league: leagueShort(t.match.league), live: isLive(t.match) }))}
-        className={`sm:col-span-2 lg:row-span-2 ${n === 0 ? 'lg:col-span-4' : ''} ${CARD}`}
+        className={`sm:col-span-2 lg:row-span-2 ${n === 0 && !recap ? 'lg:col-span-4' : ''} ${CARD}`}
       >
         {s.tops.map((t) => (
           <TopSlide key={t.match.id} it={t} />
         ))}
       </TopCarousel>
+      {recap ? (
+        <div className={`min-w-0 lg:row-span-2 ${n === 0 ? 'sm:col-span-2' : ''}`}>
+          <RecapTile r={recap} href={recapHref} />
+        </div>
+      ) : null}
       {cards.map((k, i) => (
         <div key={k} className={`min-w-0 ${span(i)}`}>
           <ListTile {...cardFor(k, s)} />
