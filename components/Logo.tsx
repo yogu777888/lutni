@@ -1,6 +1,6 @@
-import { LOGO_ASPECT, LOGO_VIEWBOX, MARK_ASPECT, MARK_D, MARK_VIEWBOX, TEXT_D } from './logo-paths'
+import { MARK_ASPECT, MARK_D, MARK_VIEWBOX } from './logo-paths'
 
-/** Знак tag.bet: прямая лаймовая решётка. size — высота в px. */
+/** Знак tag.bet: наклонная лаймовая решётка. size — высота в px. */
 export function LogoMark({ size = 28, className = '' }: { size?: number; className?: string }) {
   return (
     <svg viewBox={MARK_VIEWBOX} height={size} width={Math.round(size * MARK_ASPECT)} className={`shrink-0 ${className}`} aria-hidden>
@@ -10,28 +10,9 @@ export function LogoMark({ size = 28, className = '' }: { size?: number; classNa
 }
 
 /**
- * Логотип целиком, в кривых: решётка + «tag.bet». size — высота в px вместе
- * с хвостом «g»; надпись берёт цвет текста (currentColor).
- */
-export function Logo({ size = 28, className = '' }: { size?: number; className?: string }) {
-  return (
-    <svg
-      viewBox={LOGO_VIEWBOX}
-      height={size}
-      width={Math.round(size * LOGO_ASPECT)}
-      className={`shrink-0 ${className}`}
-      role="img"
-      aria-label="tag.bet"
-    >
-      <path className="fill-acid" d={MARK_D} />
-      <path fill="currentColor" d={TEXT_D} />
-    </svg>
-  )
-}
-
-/**
  * Логотип шапки и подвала: главная — лаймовая решётка, «tag.bet» рядом шрифтом сайта
  * и тише («.bet» приглушён). Название нужно рядом, пока решётку не узнают сами по себе.
+ * Тот же логотип в кривых — public/brand/logo.svg.
  */
 export function Brand({ size = 30, className = '' }: { size?: number; className?: string }) {
   return (
