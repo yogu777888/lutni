@@ -1,7 +1,7 @@
 /**
- * Обложки историй — «арт» вместо цифр: тёмная основа, два цветных свечения,
- * зерно и белая иконка, как обложки «Актуального» в соцсетях. Цвет — по смыслу
- * тега. Свою картинку можно подложить файлом public/stories/<ключ>.(webp|jpg|png):
+ * Обложки историй: в кружках на главной — одна тёмная основа и белая иконка тега
+ * (цвет — только в кольце), а цвета тегов подсвечивают фон просмотрщика историй.
+ * Свою картинку можно подложить файлом public/stories/<ключ>.(webp|jpg|png):
  * ключ — slug тега, «live», «top» или «all» (см. lib/story-covers.ts).
  */
 export type ArtIcon =
@@ -50,14 +50,11 @@ export const artFor = (key: string | null | undefined): Art => (key ? ART[key] :
 
 export const hasArt = (key: string) => key in ART
 
-/** Фон кружка: два свечения на тёмной основе. */
-export function artBackground(art: Art): string {
-  return [
-    `radial-gradient(90% 90% at 18% 14%, ${art.a} 0%, transparent 62%)`,
-    `radial-gradient(95% 95% at 88% 92%, ${art.b} 0%, transparent 64%)`,
-    `linear-gradient(145deg, ${art.base} 0%, #0b0b09 100%)`,
-  ].join(', ')
-}
+/**
+ * Фон кружка на главной: одна спокойная тёмная основа для всех — без радуги.
+ * Различаются кружки иконкой, а цвет — только в кольце (не смотрели / LIVE / просмотрено).
+ */
+export const CIRCLE_BG = 'radial-gradient(85% 85% at 30% 18%, rgb(255 255 255 / 0.09), transparent 62%), linear-gradient(160deg, #24231d 0%, #121210 100%)'
 
 /** Фон просмотрщика историй: то же свечение, но мягко и сверху — текст остаётся читаемым. */
 export function artGlow(art: Art): string {

@@ -156,3 +156,23 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
   }
   return groups
 }
+
+/** Какие теги идут в кружки на главной — по пользе для посетителя; остальные — в «Все теги». */
+const MAIN_TAGS = ['value', 'progruz', 'tb-2-5', 'favorit', 'obe-zabyut', 'ravnye', 'andedog', 'top-match', 'tm-2-5', 'seriya', 'krepost', 'kadry', 'h2h']
+
+/**
+ * Кружки для первого экрана: «В игре», «Топ дня» и не больше max тегов — самых полезных.
+ * Ряд из 13 разноцветных кружков читается как шум; остальные теги — по кнопке «Все теги».
+ */
+export function mainCircles(groups: StoryGroup[], max = 5): StoryGroup[] {
+  const rank = (k: string) => {
+    const i = MAIN_TAGS.indexOf(k)
+    return i < 0 ? MAIN_TAGS.length : i
+  }
+  const fixed = groups.filter((g) => g.kind === 'live' || g.kind === 'top')
+  const tags = groups
+    .filter((g) => g.kind !== 'live' && g.kind !== 'top')
+    .sort((a, b) => rank(a.key) - rank(b.key))
+    .slice(0, max)
+  return [...fixed, ...tags]
+}

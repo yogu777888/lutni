@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { artBackground, artFor } from '@/lib/story-art'
+import { artFor, CIRCLE_BG } from '@/lib/story-art'
 import type { CircleKind, StoryGroup } from '@/lib/story-groups'
 import { LogoMark } from '../Logo'
 import { ArtIcon } from './ArtIcon'
@@ -18,7 +18,8 @@ function Ring({ kind, seen }: { kind: CircleKind; seen: boolean[] }) {
   const n = seen.length
   const step = C / n
   const gap = n > 1 ? Math.min(4, step / 3) : 0
-  const color = kind === 'live' ? 'var(--color-live)' : kind === 'hot' ? 'var(--color-hot)' : 'var(--color-acid)'
+  // цвет кольца — только «не смотрели» (лайм) и LIVE (красный); просмотренное — серое
+  const color = kind === 'live' ? 'var(--color-live)' : 'var(--color-acid)'
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
       {seen.map((s, i) => (
@@ -40,10 +41,10 @@ function Ring({ kind, seen }: { kind: CircleKind; seen: boolean[] }) {
 
 function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
   const text = dim ? 'text-dim' : 'text-fg'
-  // теги словами бывают в два слова («#идут деньги») — подпись в две строки, без обрезки
+  // подпись в одну строку: кружок шире подписи «#идут деньги», ряд ровный
   if (g.label.startsWith('#')) {
     return (
-      <span className={`line-clamp-2 break-words ${text}`}>
+      <span className={`block truncate ${text}`}>
         <span className="text-mute">#</span>
         {g.label.slice(1)}
       </span>
@@ -61,7 +62,7 @@ function CoverArt({ k, cover, children }: { k: string; cover?: string; children?
   return (
     <span
       className="art-grain absolute inset-[5px] grid place-items-center overflow-hidden rounded-full ring-1 ring-inset ring-white/10"
-      style={{ background: cover ? `center / cover no-repeat url("${cover}")` : artBackground(art) }}
+      style={{ background: cover ? `center / cover no-repeat url("${cover}")` : CIRCLE_BG }}
     >
       {cover ? null : (children ?? <ArtIcon name={art.icon} className="relative z-[1] h-[26px] w-[26px] text-white [filter:drop-shadow(0_2px_6px_rgb(0_0_0/0.4))]" />)}
     </span>
@@ -109,7 +110,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
   }
 
   return (
-    <nav aria-label="Истории дня" className="scrollbar-none -mx-5 flex gap-3 overflow-x-auto px-5 pb-1 pt-0.5 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:px-0">
+    <nav aria-label="Истории дня" className="scrollbar-none -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 pt-0.5 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
       {groups.map((g, gi) => {
         const marks = g.items.map((it) => seen.has(it.id))
         const done = marks.every(Boolean)
@@ -120,7 +121,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             onClick={(e) => open(gi, e)}
             title={g.hint}
             aria-label={`${g.label}. ${g.hint}. Смотреть истории`}
-            className="group flex w-[76px] shrink-0 flex-col items-center rounded-xl outline-offset-2"
+            className="group flex w-[92px] shrink-0 flex-col items-center rounded-xl outline-offset-2"
           >
             <span className="relative block transition-transform duration-300 group-hover:-translate-y-0.5 group-active:scale-95" style={{ width: SIZE, height: SIZE }}>
               <Ring kind={g.kind} seen={marks} />
@@ -138,7 +139,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
         )
       })}
 
-      <Link href="/tags" prefetch={false} className="group flex w-[76px] shrink-0 flex-col items-center rounded-xl" title="Все теги и что они значат">
+      <Link href="/tags" prefetch={false} className="group flex w-[92px] shrink-0 flex-col items-center rounded-xl" title="Все теги и что они значат">
         <span className="relative block transition-transform duration-300 group-hover:-translate-y-0.5" style={{ width: SIZE, height: SIZE }}>
           <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full" aria-hidden>
             <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="rgb(255 255 255 / 0.16)" strokeWidth="1.5" />

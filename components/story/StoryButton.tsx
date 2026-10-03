@@ -2,7 +2,7 @@
 
 import { openStory } from './events'
 
-/** Кнопка «Сторис матча» на странице матча. */
+/** Кнопка «Разбор за минуту» на странице матча — открывает сторис. */
 export function StoryButton({ id, href, className = '' }: { id: number; href: string; className?: string }) {
   return (
     <button
@@ -15,7 +15,7 @@ export function StoryButton({ id, href, className = '' }: { id: number; href: st
           <path d="M2 1.2v9.6a.6.6 0 0 0 .9.5l7.6-4.8a.6.6 0 0 0 0-1L2.9.7a.6.6 0 0 0-.9.5Z" />
         </svg>
       </span>
-      Матч в слайдах
+      Разбор за минуту
     </button>
   )
 }

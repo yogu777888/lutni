@@ -5,7 +5,7 @@ import { diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdT
 import { isLive, liveRank } from '@/lib/rank'
 import { buildDaySummary } from '@/lib/day-summary'
 import { storyCovers } from '@/lib/story-covers'
-import { buildStoryGroups } from '@/lib/story-groups'
+import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { DaySummary } from './DaySummary'
@@ -87,7 +87,8 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
   const totalOthers = othersAll.reduce((s, g) => s + g.items.length, 0)
 
   const open = items.filter((i) => i.match.status === 'scheduled' || i.match.status === 'live')
-  const storyGroups = buildStoryGroups(items)
+  // на первом экране — только главные кружки, остальные теги — по «Все теги»
+  const storyGroups = mainCircles(buildStoryGroups(items))
   const daySummary = buildDaySummary(items)
   const values = open
     .filter((i) => i.summary?.pick?.kind === 'value' && i.match.status === 'scheduled')
@@ -103,7 +104,7 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
 
   return (
     <>
-      <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 pt-3 sm:pt-4">
+      <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3 pt-1 sm:pt-0">
         <div className="min-w-0">
           <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
           <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px]">
@@ -128,7 +129,7 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
         </section>
       ) : null}
 
-      <DaySummary s={daySummary} look="blocks" className="mt-5" />
+      <DaySummary s={daySummary} className="mt-5" />
 
       <ValueBoard items={values} />
 

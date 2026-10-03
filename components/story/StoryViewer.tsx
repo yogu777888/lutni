@@ -375,7 +375,7 @@ export function StoryViewer() {
       ref={dialog}
       role="dialog"
       aria-modal="true"
-      aria-label={story ? `Матч в слайдах: ${story.home.name} — ${story.away.name}` : 'Матч в слайдах'}
+      aria-label={story ? `Разбор матча: ${story.home.name} — ${story.away.name}` : 'Разбор матча'}
       tabIndex={-1}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 outline-none backdrop-blur-md"
       onClick={(e) => {

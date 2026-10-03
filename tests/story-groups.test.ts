@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { addDays, todayYmd } from '@/lib/format'
-import { buildStoryGroups, statFor } from '@/lib/story-groups'
+import { buildStoryGroups, mainCircles, statFor, type StoryGroup } from '@/lib/story-groups'
 import type { Match } from '@/lib/types'
 
 const team = (id: number, name: string) => ({ id, name, original: name, logo: null, country: 'England' })
@@ -96,5 +96,25 @@ describe('обложки историй', () => {
     }
     // неизвестный ключ — запасной арт, а не ошибка
     expect(artFor('нет-такого').icon).toBe('hash')
+  })
+})
+
+describe('кружки на главной', () => {
+  it('«В игре», «Топ дня» и до пяти самых полезных тегов — остальные по «Все теги»', () => {
+    const g = (key: string, kind: StoryGroup['kind']): StoryGroup => ({ key, label: key, kind, hint: '', href: '', stat: '', items: [] })
+    const groups = [
+      g('live', 'live'),
+      g('top', 'top'),
+      g('kadry', 'neutral'),
+      g('h2h', 'neutral'),
+      g('value', 'accent'),
+      g('progruz', 'hot'),
+      g('tb-2-5', 'neutral'),
+      g('seriya', 'neutral'),
+      g('favorit', 'neutral'),
+      g('obe-zabyut', 'neutral'),
+    ]
+    expect(mainCircles(groups).map((x) => x.key)).toEqual(['live', 'top', 'value', 'progruz', 'tb-2-5', 'favorit', 'obe-zabyut'])
+    expect(mainCircles(groups.slice(4, 6)).map((x) => x.key)).toEqual(['value', 'progruz'])
   })
 })
