@@ -88,12 +88,13 @@ function Tile({ accent = 'none', label, icon, children }: { accent?: keyof typeo
   )
 }
 
-/** Крупная цифра; подпись к ней — обычным размером, на телефоне её можно спрятать. */
+/** Крупная цифра и подпись к ней обычным размером: в узкой плитке подпись встаёт под цифру. */
 function Big({ children, unit, className = '' }: { children: React.ReactNode; unit?: React.ReactNode; className?: string }) {
   return (
-    <div className="flex min-w-0 items-baseline gap-1.5">
-      <span className={`num whitespace-nowrap text-[30px] font-semibold leading-none tracking-[-0.045em] sm:text-[34px] ${className}`}>{children}</span>
-      {unit ? <span className="truncate text-[14px] font-medium text-dim">{unit}</span> : null}
+    // подпись встаёт рядом с цифрой, а если места нет — переносится под неё целиком, не обрезаясь
+    <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-1">
+      <span className={`num whitespace-nowrap text-[30px] font-semibold leading-none tracking-[-0.045em] sm:text-[34px] lg:text-[clamp(34px,5.6vh,52px)] ${className}`}>{children}</span>
+      {unit ? <span className="whitespace-nowrap text-[14px] font-medium text-dim">{unit}</span> : null}
     </div>
   )
 }
@@ -156,7 +157,7 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
       const p = it.summary!.pick!
       return (
         <Tile accent="acid" label={<Short phone="Выгодно" full="Выгодная ставка" />} icon="percent">
-          <Big className="text-acid" unit={<span className="hidden sm:inline">к честной цене</span>}>
+          <Big className="text-acid" unit="к честной цене">
             {edge(p.ev ?? 0)}
           </Big>
           <MatchLink it={it} />
@@ -173,7 +174,7 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
       const g = s.progruz!
       return (
         <Tile accent="hot" label={<Short phone="Кэф упал" full="Падение кэфа" />} icon="down">
-          <Big className="text-hot" unit={<span className="hidden sm:inline">с открытия линии</span>}>
+          <Big className="text-hot" unit="с открытия линии">
             −{Math.round(g.drop * 100)}%
           </Big>
           <MatchLink it={g.item} />
@@ -281,6 +282,11 @@ function ChanceBar({ m }: { m: Match }) {
     n: n[k],
     name: k === 'draw' ? 'ничья' : k === 'home' ? m.home.name : m.away.name,
   }))
+  // «Ничья» под серединой — только если по обе стороны хватает места подписям команд
+  const BAR = 560
+  const est = (t: string) => t.length * 7 + 10
+  const mid = f.home + f.draw / 2
+  const drawAt = f.draw >= 0.1 && mid * BAR >= est(m.home.name) + 30 && (1 - mid) * BAR >= est(m.away.name) + 30 ? mid * 100 : null
   const tone = (k: (typeof cells)[number]['k']) => (k === fav ? 'bg-chalk text-ink' : k === 'draw' ? 'bg-[#26251f] text-dim' : 'bg-[#3a3931] text-chalk')
   const label = `Шансы по коэффициентам букмекеров: ${cells.map((c) => `${c.k === 'draw' ? c.name : `«${c.name}»`} — ${c.n}%`).join(', ')}`
   return (
@@ -292,16 +298,26 @@ function ChanceBar({ m }: { m: Match }) {
           </span>
         ))}
       </div>
-      <div className="mt-1.5 flex gap-0.5 text-[12.5px]" aria-hidden>
-        {cells.map((c, i) => (
-          <span
-            key={c.k}
-            className={`min-w-0 truncate px-1 ${i === 0 ? 'text-left' : i === 2 ? 'text-right' : 'text-center'} ${c.k === fav ? 'text-chalk' : 'text-mute'}`}
-            style={{ width: `${c.p * 100}%` }}
-          >
-            {c.k === 'draw' ? 'Ничья' : c.name}
+      {/* команды — по краям полосы, не обрезаются узким сегментом; «Ничья» — под серединой,
+          если ей хватает места (оценка по ширине полосы ~560 px), на телефоне — только команды */}
+      <div className="relative mt-1.5 h-[18px] text-[12.5px] leading-[18px]" aria-hidden>
+        <span
+          className={`absolute left-0 top-0 max-w-[55%] truncate pl-1 sm:max-w-[var(--hm)] ${fav === 'home' ? 'text-chalk' : 'text-mute'}`}
+          style={{ '--hm': drawAt ? `${drawAt - 6}%` : '55%' } as React.CSSProperties}
+        >
+          {m.home.name}
+        </span>
+        {drawAt ? (
+          <span className="absolute top-0 hidden -translate-x-1/2 text-mute sm:block" style={{ left: `${drawAt}%` }}>
+            Ничья
           </span>
-        ))}
+        ) : null}
+        <span
+          className={`absolute right-0 top-0 max-w-[45%] truncate pr-1 text-right sm:max-w-[var(--am)] ${fav === 'away' ? 'text-chalk' : 'text-mute'}`}
+          style={{ '--am': drawAt ? `${100 - drawAt - 6}%` : '45%' } as React.CSSProperties}
+        >
+          {m.away.name}
+        </span>
       </div>
     </div>
   )
@@ -339,27 +355,35 @@ function TopCard({ it }: { it: FeedItem }) {
     </span>
   )
   return (
-    <article className="relative col-span-2 flex min-w-0 flex-col rounded-[22px] border border-edge bg-panel p-5 shadow-[inset_0_1px_0_rgb(255_255_255/0.035)] transition-colors duration-300 hover:border-edge-2 sm:px-6 sm:py-5 lg:row-span-2">
-      <div className="flex items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-[13px] font-medium text-chalk">
-          Матч дня <span className="text-mute">· {featuredInfo(m.league)?.short || m.league.name}</span>
-        </p>
-        <span
-          className={`num inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold ${
-            live ? 'bg-live/10 text-live' : 'bg-white/[0.06] text-chalk'
-          }`}
+    // три группы: команды сверху, вывод посередине, кнопки снизу — свободное место делится между ними,
+    // а не собирается одной дырой, когда карточка тянется на высоту экрана
+    <article className="relative col-span-2 flex min-w-0 flex-col justify-between gap-5 rounded-[22px] border border-edge bg-panel p-5 shadow-[inset_0_1px_0_rgb(255_255_255/0.035)] transition-colors duration-300 hover:border-edge-2 sm:px-6 sm:py-5 lg:row-span-2">
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="min-w-0 truncate text-[13px] font-medium text-chalk">
+            Матч дня <span className="text-mute">· {featuredInfo(m.league)?.short || m.league.name}</span>
+          </p>
+          <span
+            className={`num inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold ${
+              live ? 'bg-live/10 text-live' : 'bg-white/[0.06] text-chalk'
+            }`}
+          >
+            {live ? <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" /> : null}
+            {live ? (m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}′` : 'идёт') : m.status === 'finished' ? 'итог' : formatTime(m.ts)}
+          </span>
+        </div>
+
+        <StoryLink
+          id={m.id}
+          href={matchHref(m)}
+          className={`mt-3.5 block space-y-1.5 text-[21px] font-semibold leading-tight tracking-[-0.025em] sm:text-[23px] lg:text-[clamp(23px,3.8vh,34px)] ${COVER}`}
         >
-          {live ? <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" /> : null}
-          {live ? (m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}′` : 'идёт') : m.status === 'finished' ? 'итог' : formatTime(m.ts)}
-        </span>
+          {team(m.home, m.score?.home)}
+          {team(m.away, m.score?.away, true)}
+        </StoryLink>
       </div>
 
-      <StoryLink id={m.id} href={matchHref(m)} className={`mt-3.5 block space-y-1.5 text-[21px] font-semibold leading-tight tracking-[-0.025em] sm:text-[23px] ${COVER}`}>
-        {team(m.home, m.score?.home)}
-        {team(m.away, m.score?.away, true)}
-      </StoryLink>
-
-      <div className="mt-auto pt-4">
+      <div>
         {played ? (
           <>
             <p className="mb-3 text-[17px] font-semibold leading-snug tracking-[-0.01em]">
@@ -386,7 +410,10 @@ function TopCard({ it }: { it: FeedItem }) {
             ) : null}
           </>
         )}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[13px]">
+      </div>
+      {/* кнопки — внизу карточки */}
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[13px]">
           <span aria-hidden className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-white/[0.06] py-1.5 pl-1.5 pr-3.5 font-medium text-fg">
             <span className="grid h-6 w-6 place-items-center rounded-full bg-acid text-acid-ink">
               <svg viewBox="0 0 12 12" className="ml-px h-2.5 w-2.5" fill="currentColor">

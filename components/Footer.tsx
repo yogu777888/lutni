@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { SITE } from '@/config/site'
+import { IS_MOCK } from '@/lib/sstats/client'
 import { LogoMark } from './Logo'
 
 export function Footer() {
@@ -7,7 +8,7 @@ export function Footer() {
     <footer className="mt-20 border-t border-edge">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <LogoMark size={32} />
+          <LogoMark size={28} />
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-dim">
             Теги ставок на футбол: сравнение коэффициентов, вероятности без маржи, форма команд и прогнозы на основе данных.
           </p>
@@ -41,11 +42,15 @@ export function Footer() {
         </nav>
       </div>
       <div className="border-t border-edge">
-        <p className="mx-auto max-w-6xl px-4 py-5 text-[11px] leading-relaxed text-mute">
-          Материалы сайта носят информационно-аналитический характер и не являются призывом делать ставки. Прогнозы основаны на
-          статистике и не гарантируют результат. На сайте размещены партнёрские ссылки на легальных букмекеров: при регистрации по
-          ним сайт может получать вознаграждение. Данные о матчах и коэффициентах — SStats.net. © {new Date().getFullYear()} {SITE.name}
-        </p>
+        <div className="mx-auto max-w-6xl space-y-2 px-4 py-5 text-[11px] leading-relaxed text-mute">
+          <p>
+            Материалы сайта носят информационно-аналитический характер и не являются призывом делать ставки. Прогнозы основаны на
+            статистике и не гарантируют результат. На сайте размещены партнёрские ссылки на легальных букмекеров: при регистрации по
+            ним сайт может получать вознаграждение. Данные о матчах и коэффициентах — SStats.net. © {new Date().getFullYear()} {SITE.name}
+          </p>
+          {/* демо-режим: вместо полосы над шапкой — тихая строка здесь, чтобы синтетические данные не выдавали за настоящие */}
+          {IS_MOCK ? <p>Сейчас включён демо-режим: матчи и коэффициенты сгенерированы для проверки сайта.</p> : null}
+        </div>
       </div>
     </footer>
   )

@@ -27,7 +27,7 @@ export function DateTabs({ active, today }: { active: string; today: string }) {
   const days = strip.includes(active) ? strip : active < strip[0] ? [active, ...strip] : [...strip, active]
   const label = (d: string) => (strip.includes(d) ? shortDay(d, today) : dayMonthFmt.format(ymdToNoonTs(d)).replace('.', ''))
   return (
-    <nav aria-label="Выбор дня" className="scrollbar-none -mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
+    <nav aria-label="Выбор дня" className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       <div className="flex w-max items-center gap-5">
         {days.map((d) => {
           const on = d === active

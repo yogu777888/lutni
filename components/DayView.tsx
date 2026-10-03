@@ -104,32 +104,37 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
 
   return (
     <>
-      <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3 pt-1 sm:pt-0">
-        <div className="min-w-0">
-          <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
-          <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px]">
-            <span className="rise">
-              <span>
-                {heading.title}
-                {/* дата — и в заголовке для поисковиков */}
-                <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
+      {/* первый экран: заголовок, кружки и сводка. На компьютере сводка тянется до низа окна —
+          заходишь и сразу видишь всё нужное, а «Все матчи дня» начинаются ниже, по прокрутке.
+          На очень высоких мониторах — не выше 50rem (хватает на обычное окно браузера на экране 1080p), чтобы плитки не раздувались. */}
+      <div className={daySummary.top ? 'flex flex-col lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
+        <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3 pt-1 sm:pt-0">
+          <div className="min-w-0">
+            <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
+            <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px]">
+              <span className="rise">
+                <span>
+                  {heading.title}
+                  {/* дата — и в заголовке для поисковиков */}
+                  <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
+                </span>
               </span>
-            </span>
-          </h1>
-        </div>
-        <div className="fade-up w-full min-w-0 sm:w-auto" style={{ animationDelay: '150ms' }}>
-          <DateTabs active={ymd} today={today} />
-        </div>
-      </section>
-
-      {storyGroups.length ? (
-        // кружки понятны и без подписи «Истории дня» — так первый экран влезает целиком
-        <section aria-label="Истории дня" className="mt-5 sm:mt-6">
-          <StoryCircles groups={storyGroups} covers={storyCovers()} />
+            </h1>
+          </div>
+          <div className="fade-up w-full min-w-0 sm:w-auto" style={{ animationDelay: '150ms' }}>
+            <DateTabs active={ymd} today={today} />
+          </div>
         </section>
-      ) : null}
 
-      <DaySummary s={daySummary} className="mt-5" />
+        {storyGroups.length ? (
+          // кружки понятны и без подписи «Истории дня» — так первый экран влезает целиком
+          <section aria-label="Истории дня" className="mt-5 sm:mt-6">
+            <StoryCircles groups={storyGroups} covers={storyCovers()} />
+          </section>
+        ) : null}
+
+        <DaySummary s={daySummary} className="mt-5 lg:flex-1" />
+      </div>
 
       <ValueBoard items={values} />
 

@@ -1,7 +1,6 @@
 import '@fontsource-variable/onest'
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
-import { DemoBanner } from '@/components/DemoBanner'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { Metrika } from '@/components/Metrika'
@@ -43,7 +42,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ru">
       <body className="min-h-dvh antialiased">
-        <DemoBanner />
         <Header />
         <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6">{children}</main>
         <Footer />
