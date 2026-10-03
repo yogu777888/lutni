@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { countryRank, featuredRank } from '@/config/leagues'
 import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
+import { dayHref } from '@/lib/links'
 import { diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { isLive, liveRank } from '@/lib/rank'
 import { buildDaySummary } from '@/lib/day-summary'
@@ -9,12 +10,16 @@ import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { DaySummary } from './DaySummary'
-import { LeagueBlock, LiveBlock } from './LeagueBlock'
+import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
 import { StoryCircles } from './story/StoryCircles'
 import { ValueBoard } from './ValueBoard'
 
 const OTHER_LIMIT = 160
+/** В списке «по времени» — не больше стольких матчей: сначала топ-лиги, потом остальные с линией. */
+const TIME_LIMIT = 200
+
+export type DaySort = 'league' | 'time'
 const LIVE_LIMIT = 6
 
 /** Заголовок дня в две строки: вторая — светлее, как на афише. */
@@ -47,8 +52,13 @@ export function dayTitle(ymd: string, today: string) {
 }
 
 const hasOdds = (items: FeedItem[]) => items.some((i) => i.match.odds)
+/** Топ-лиги — раньше, остальные — после (featuredRank: 0 — главная, −1 — не из списка). */
+const leagueOrder = (it: FeedItem) => {
+  const r = featuredRank(it.match.league)
+  return r < 0 ? 1e3 : r
+}
 
-export async function DayView({ ymd, today }: { ymd: string; today: string }) {
+export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; today: string; sort?: DaySort }) {
   let matches: Match[] = []
   let failed = false
   try {
@@ -101,6 +111,23 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
 
   const heading = dayHeading(ymd, today)
   const past = diffDays(ymd, today) < 0
+  // красная точка у «Сегодня»: на главной знаем сами, на других днях — из того же кэша матчей
+  let liveToday = ymd === today && liveAll.length > 0
+  if (ymd !== today) {
+    try {
+      liveToday = (await getMatchesByDate(today)).some(isLive)
+    } catch {
+      liveToday = false
+    }
+  }
+  // по времени — только для дней, где матчи ещё впереди; у прошедших порядок по турнирам = главные результаты первыми
+  const byTime = sort === 'time' && !past
+  const timeList = byTime
+    ? [...featured.flatMap((g) => g.items), ...othersAll.flatMap((g) => g.items)]
+        .slice(0, TIME_LIMIT)
+        .sort((a, b) => a.match.ts - b.match.ts || leagueOrder(a) - leagueOrder(b))
+    : []
+  const base = dayHref(ymd, today)
 
   return (
     <>
@@ -122,7 +149,7 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
             </h1>
           </div>
           <div className="fade-up w-full min-w-0 sm:w-auto" style={{ animationDelay: '150ms' }}>
-            <DateTabs active={ymd} today={today} />
+            <DateTabs active={ymd} today={today} liveToday={liveToday} />
           </div>
         </section>
 
@@ -140,7 +167,31 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
 
       <section id="matches" className="mt-16 scroll-mt-24 sm:mt-20">
         <p className="eyebrow">{past ? 'Результаты' : 'Матчи'}</p>
-        <h2 className="h2 mt-3 text-[30px] sm:text-[44px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+          <h2 className="h2 text-[30px] sm:text-[44px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
+          {past || !matches.length ? null : (
+            // порядок списка — обычными ссылками (?sort=time): работает без JS, у страницы один canonical
+            <nav aria-label="Порядок матчей" className="flex items-center gap-1 rounded-full border border-edge p-1 text-[14px] font-medium">
+              {(
+                [
+                  ['league', 'По турнирам', `${base}#matches`],
+                  ['time', 'По времени', `${base}?sort=time#matches`],
+                ] as const
+              ).map(([k, label, href]) => (
+                <Link
+                  key={k}
+                  href={href}
+                  prefetch={false}
+                  scroll={false}
+                  aria-current={(k === 'time') === byTime ? 'true' : undefined}
+                  className={`rounded-full px-3.5 py-1.5 transition-colors ${(k === 'time') === byTime ? 'bg-white/[0.08] text-fg' : 'text-dim hover:text-fg'}`}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          )}
+        </div>
         <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="min-w-0 space-y-5">
             {failed ? (
@@ -149,10 +200,11 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
               </div>
             ) : null}
             {liveTop.length ? <LiveBlock items={liveTop} total={liveAll.length} /> : null}
-            {featured.map((g) => (
+            {byTime && timeList.length ? <TimeBlock items={timeList} /> : null}
+            {byTime ? null : featured.map((g) => (
               <LeagueBlock key={g.league.id} league={g.league} items={g.items} featured />
             ))}
-            {others.length ? (
+            {!byTime && others.length ? (
               <details className="card group overflow-hidden" open={!featured.length}>
                 <summary className="flex cursor-pointer items-center justify-between px-5 py-4 transition-colors hover:bg-white/[0.02]">
                   <span className="text-[17px] font-bold tracking-tight">{featured.length ? 'Другие турниры' : 'Все турниры'}</span>

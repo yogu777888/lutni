@@ -5,7 +5,7 @@ import { diffDays, isYmd, todayYmd } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 
-type Props = { params: Promise<{ date: string }> }
+type Props = { params: Promise<{ date: string }>; searchParams: Promise<{ sort?: string }> }
 
 function valid(date: string) {
   return isYmd(date) && Math.abs(diffDays(date, todayYmd())) <= 365
@@ -25,10 +25,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function DayPage({ params }: Props) {
+export default async function DayPage({ params, searchParams }: Props) {
   const { date } = await params
+  const { sort } = await searchParams
   if (!valid(date)) notFound()
   const today = todayYmd()
-  if (date === today) redirect('/')
-  return <DayView ymd={date} today={today} />
+  if (date === today) redirect(sort === 'time' ? '/?sort=time' : '/')
+  return <DayView ymd={date} today={today} sort={sort === 'time' ? 'time' : 'league'} />
 }

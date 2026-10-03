@@ -7,21 +7,21 @@ import { DatePicker } from './DatePicker'
 /** «28 сент» — день вне полосы вкладок (выбран через календарь). */
 const dayMonthFmt = new Intl.DateTimeFormat('ru-RU', { timeZone: SITE.timeZone, day: 'numeric', month: 'short' })
 
-/** Короткая подпись дня: «Вчера», «Сегодня», «Завтра», дальше — «Вс 4». */
+/** Короткая подпись дня: «Вчера», «Сегодня», «Завтра», дальше — день недели («Вт»): дни идут подряд, число лишнее. */
 function shortDay(ymd: string, today: string): string {
   const d = diffDays(ymd, today)
   if (d === 0) return 'Сегодня'
   if (d === 1) return 'Завтра'
   if (d === -1) return 'Вчера'
   const wd = formatWeekday(ymdToNoonTs(ymd)).replace('.', '')
-  return `${wd.charAt(0).toUpperCase()}${wd.slice(1)} ${Number(ymd.slice(8))}`
+  return `${wd.charAt(0).toUpperCase()}${wd.slice(1)}`
 }
 
 /**
  * Выбор дня — простые текстовые вкладки с лаймовой чертой под выбранным днём.
- * Не капсула: иначе их путают с меню в шапке.
+ * Не капсула: иначе их путают с меню в шапке. Пока матчи идут — красная точка у «Сегодня».
  */
-export function DateTabs({ active, today }: { active: string; today: string }) {
+export function DateTabs({ active, today, liveToday = false }: { active: string; today: string; liveToday?: boolean }) {
   const strip = Array.from({ length: SITE.daysAhead + 2 }, (_, i) => addDays(today, i - 1))
   // день, выбранный через календарь, — отдельной вкладкой с датой: раньше полосы или после неё
   const days = strip.includes(active) ? strip : active < strip[0] ? [active, ...strip] : [...strip, active]
@@ -42,6 +42,9 @@ export function DateTabs({ active, today }: { active: string; today: string }) {
               }`}
             >
               {label(d)}
+              {d === today && liveToday ? (
+                <span className="ml-1.5 h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" title="Сейчас идут матчи" aria-label="идут матчи" />
+              ) : null}
             </Link>
           )
         })}
