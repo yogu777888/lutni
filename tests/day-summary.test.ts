@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { activeNav } from '@/components/NavCapsule'
 import type { FeedItem, MatchSummary } from '@/lib/data'
-import { buildDaySummary, favoritesRecap, parseProgruz, summaryCards } from '@/lib/day-summary'
+import { buildDaySummary, parseProgruz, summaryCards } from '@/lib/day-summary'
 import type { Match } from '@/lib/types'
 
 const NOW = Date.UTC(2026, 9, 2, 12)
@@ -184,24 +184,6 @@ describe('сводка дня', () => {
     const leagues = s.tops.map((t) => t.match.league.id)
     expect(new Set(leagues).size).toBe(leagues.length)
     expect(leagues.sort()).toEqual([140, 39, 78].sort())
-  })
-
-  it('как сыграли фавориты: выиграл / ничья / проиграл, сенсация — проигрыш самого уверенного', () => {
-    const fin = (id: number, x12: [number, number, number], h: number, a: number) => {
-      const m = item(id, 'finished', { x12 }).match
-      return { ...m, score: { home: h, away: a } }
-    }
-    const r = favoritesRecap([
-      fin(1, [1.3, 5.5, 9], 2, 0), // фаворит хозяева — выиграли
-      fin(2, [1.5, 4.2, 6.5], 1, 1), // ничья
-      fin(3, [8, 5, 1.33], 1, 0), // фаворит гости (75%) — проиграли: сенсация
-      fin(4, [1.8, 3.6, 4.4], 0, 1), // фаворит хозяева проиграли, но шанс ниже
-      fin(5, [2.6, 3.2, 2.8], 3, 0), // равные — не считаем
-    ])!
-    expect(r.games.map((g) => g.match.id)).toEqual([1, 2, 3, 4])
-    expect([r.won, r.draw, r.lost]).toEqual([1, 1, 2])
-    expect(r.upset?.match.id).toBe(3)
-    expect(favoritesRecap([fin(1, [1.3, 5.5, 9], 2, 0)])).toBeNull()
   })
 
   it('фаворит с шансом ниже 60% — не виджет', () => {

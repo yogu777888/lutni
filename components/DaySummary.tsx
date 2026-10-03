@@ -1,14 +1,16 @@
 import Link from 'next/link'
 import { featuredInfo } from '@/config/leagues'
 import type { FeedItem } from '@/lib/data'
-import { summaryCards, type CardKind, type DaySummary as Summary, type FavRecap, type RecapGame } from '@/lib/day-summary'
-import { formatDayMonth, formatTime, pct, pluralN, todayYmd, ymdInTz } from '@/lib/format'
+import type { Bank } from '@/lib/bank'
+import { summaryCards, type CardKind, type DaySummary as Summary } from '@/lib/day-summary'
+import { formatDayMonth, formatTime, formatWeekday, pct, pluralN, todayYmd, ymdInTz } from '@/lib/format'
 import { leagueHref, matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
 import { isLive } from '@/lib/rank'
 import { artFor, type ArtIcon as IconName } from '@/lib/story-art'
 import type { League, Match } from '@/lib/types'
-import { buildVerdict, split100, type Verdict } from '@/lib/verdict'
+import { buildVerdict, outcomeText, split100, type Verdict } from '@/lib/verdict'
+import { BankChart, type BankDay } from './BankChart'
 import { ArtIcon } from './story/ArtIcon'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
@@ -384,83 +386,68 @@ function TopSlide({ it }: { it: FeedItem }) {
   )
 }
 
-// ─── Как сыграли фавориты вчера ──────────────────────────────────────────────
+// ─── Выгодные ставки рублями ─────────────────────────────────────────────────
 
-const q = (name: string) => `«${name}»`
+const rub = (v: number, sign = false) =>
+  `${v < 0 ? '−' : sign && v > 0 ? '+' : ''}${new Intl.NumberFormat('ru-RU').format(Math.abs(v))} ₽`
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+const B = ({ children }: { children: React.ReactNode }) => <b className="font-semibold text-fg">{children}</b>
 
 /**
- * Аналитика дня: насколько вчера можно было полагаться на фаворитов. Крупно — «7 из 12»,
- * одна полоса «выиграли · ничьи · сенсации» с подписью словами и строки сенсаций — матч со счётом
- * и каким был шанс фаворита. Та же схема строк, что у плиток-подборок: строка открывает матч.
+ * Аналитика в деньгах: сколько дали бы наши «выгодные» ставки, если ставить по 1000 ₽ на каждую.
+ * Крупно — итог, ниже — фраза с главным жирным и график банка по ставкам (lib/bank.ts, журнал
+ * подсказок — lib/value-log.ts). Без обещаний: только прошедшие ставки и кэфы на момент подсказки.
  */
-function RecapTile({ r, href }: { r: FavRecap; href: string }) {
-  const n = r.games.length
-  // сенсации — проигрыши фаворитов, самые неожиданные первыми; не хватает — добираем ничьими
-  const odd = [...r.games.filter((g) => g.result === 'lost'), ...r.games.filter((g) => g.result === 'draw')].sort(
-    (a, b) => Number(a.result === 'draw') - Number(b.result === 'draw') || b.p - a.p,
-  )
-  const seg = (k: RecapGame['result']) => r.games.filter((g) => g.result === k).length
+function BankTile({ b }: { b: Bank }) {
+  const n = b.bets.length
+  const odd = b.avgOdd.toFixed(2)
+  const days: BankDay[] = []
+  b.bets.forEach((x, i) => {
+    const label = cap(formatWeekday(x.match.ts))
+    const last = days[days.length - 1]
+    if (last && ymdInTz(b.bets[last.from - 1].match.ts) === ymdInTz(x.match.ts)) last.to = i + 1
+    else days.push({ label, from: i + 1, to: i + 1 })
+  })
   return (
-    <article className={`flex h-full min-w-0 flex-col px-[18px] pb-2 pt-[18px] ${CARD}`}>
-      <Link href={href} prefetch={false} className="group -mx-1 flex items-center justify-between gap-2 rounded-lg px-1">
+    <article className={`flex h-full min-w-0 flex-col p-[18px] ${CARD}`}>
+      <Link href="/tag/value" prefetch={false} className="group -mx-1 flex items-center justify-between gap-2 rounded-lg px-1">
         <span className="min-w-0 truncate text-[13px] font-medium text-chalk">
-          Фавориты вчера <span className="text-mute">· как сыграли</span>
+          Выгодные ставки <span className="text-mute">· {b.days >= 7 ? 'за неделю' : `за ${pluralN(b.days, ['день', 'дня', 'дней'])}`}</span>
         </span>
         <Go />
       </Link>
-      <p className="mt-3 flex items-baseline gap-2">
-        <span className="num text-[34px] font-semibold leading-none tracking-[-0.04em] lg:text-[clamp(32px,4.6vh,42px)]">
-          {r.won} из {n}
-        </span>
-        <span className="text-[14px] text-dim">выиграли</span>
+      <p className={`mt-4 text-[44px] font-semibold leading-none tracking-[-0.04em] lg:text-[clamp(40px,6.4vh,54px)] ${b.profit >= 0 ? 'text-acid' : 'text-fg'}`}>
+        {rub(b.profit, true)}
       </p>
-      {/* одна полоса: доли исходов, подпись — словами под ней */}
-      <div className="mt-3 flex h-2.5 gap-0.5 overflow-hidden rounded-full" aria-hidden>
-        {(
-          [
-            ['won', 'bg-chalk'],
-            ['draw', 'bg-[#5a5950]'],
-            ['lost', 'bg-[repeating-linear-gradient(135deg,var(--color-chalk)_0_2px,#2a2924_2px_5px)]'],
-          ] as const
-        ).map(([k, cls]) => (seg(k) ? <span key={k} className={cls} style={{ flex: seg(k) }} /> : null))}
-      </div>
-      <p className="mt-2 text-[13px] text-dim">
-        {pluralN(r.won, ['победа', 'победы', 'побед'])}
-        {r.draw ? ` · ${pluralN(r.draw, ['ничья', 'ничьи', 'ничьих'])}` : ''}
-        {r.lost ? ` · ${pluralN(r.lost, ['сенсация', 'сенсации', 'сенсаций'])}` : ''}
+      <p className="mt-2 text-[13px] text-dim">если ставить по {rub(b.stake)} на каждую</p>
+      <p className="mt-3 text-[15px] leading-snug text-chalk">
+        Сыграли <B>{b.won} из {n}</B>
+        {b.profit < 0 ? (
+          <>
+            , средний кэф <B>{odd}</B> — проигрыши перевесили.
+          </>
+        ) : b.won * 2 < n ? (
+          <>
+            , но средний кэф <B>{odd}</B> окупил проигрыши.
+          </>
+        ) : (
+          <>
+            {' '}— {b.won * 2 === n ? 'ровно половина' : 'больше половины'}, средний кэф <B>{odd}</B>.
+          </>
+        )}
       </p>
-      <p className="mt-4 text-[13px] font-medium text-chalk">
-        {r.lost ? 'Сенсации' : r.draw ? 'Фавориты не дожали' : 'Все фавориты выиграли'}
-        {odd.length ? <span className="text-mute"> · шанс фаворита</span> : null}
-      </p>
-      <ol className="mt-1 flex flex-1 flex-col">
-        {odd.slice(0, 4).map((g, i) => {
-          const m = g.match
-          const fav = (side: 'home' | 'away') => (side === g.side ? 'font-semibold text-fg' : '')
-          return (
-            <li key={m.id} className={`flex min-h-[50px] flex-1 border-t border-edge first:border-t-0 ${i >= 3 ? 'hidden lg:flex lg:[@media(max-height:759px)]:hidden' : ''}`}>
-              <Link
-                href={matchHref(m)}
-                prefetch={false}
-                title={`Фаворит ${q(g.side === 'home' ? m.home.name : m.away.name)}: шанс ${pct(g.p)}, итог ${m.score?.home}:${m.score?.away}`}
-                className={ROW}
-              >
-                <span className="min-w-0">
-                  <span className="block truncate">
-                    <span className={fav('home')}>{m.home.name}</span>
-                    <span className="text-mute"> — </span>
-                    <span className={fav('away')}>{m.away.name}</span>
-                  </span>
-                  <span className="block text-[13px] text-dim">
-                    счёт <span className="num font-semibold text-chalk">{m.score ? `${m.score.home}:${m.score.away}` : ''}</span>
-                  </span>
-                </span>
-                <span className="num shrink-0 text-[15px] font-semibold text-fg">{pct(g.p)}</span>
-              </Link>
-            </li>
-          )
-        })}
-      </ol>
+      <BankChart
+        className="mt-4 h-[180px] lg:h-auto lg:min-h-[120px] lg:flex-1"
+        days={days}
+        points={b.bets.map((x) => ({
+          cum: x.cum,
+          delta: x.delta,
+          when: `${formatWeekday(x.match.ts)} ${formatTime(x.match.ts)}`,
+          teams: `${x.match.home.name} — ${x.match.away.name}`,
+          bet: `${outcomeText(x.pick.key, x.match)} за ${x.pick.odd.toFixed(2)}`,
+        }))}
+      />
+      <p className="mt-3 text-[13px] text-mute">по кэфам подсказок · не гарантия</p>
     </article>
   )
 }
@@ -470,14 +457,14 @@ function RecapTile({ r, href }: { r: FavRecap; href: string }) {
  * На телефоне — всё столбиком, на планшете — подборки по две в ряд. Сводка тянется до низа окна
  * (см. DayView): строки подборок делят высоту поровну, пустых мест в плитках нет.
  */
-export function DaySummary({ s, recap = null, recapHref = '#matches', className = '' }: { s: Summary; recap?: FavRecap | null; recapHref?: string; className?: string }) {
+export function DaySummary({ s, bank = null, className = '' }: { s: Summary; bank?: Bank | null; className?: string }) {
   if (!s.top) return null
-  // с аналитикой — она на месте двух плиток: справа остаются две подборки
-  const cards = summaryCards(s).slice(0, recap ? 2 : 4)
+  // с банком «Выгодных ставок» — он на месте двух плиток: справа остаются две подборки
+  const cards = summaryCards(s).slice(0, bank ? 2 : 4)
   const n = cards.length
   // плиток меньше, чем мест, — растягиваем последние, чтобы в сетке не было дыр
   const span = (i: number) =>
-    recap
+    bank
       ? n === 1
         ? 'lg:row-span-2'
         : ''
@@ -490,15 +477,15 @@ export function DaySummary({ s, recap = null, recapHref = '#matches', className 
     <section aria-label="Сводка дня" className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-4 ${className}`}>
       <TopCarousel
         heads={s.tops.map((t) => ({ league: leagueShort(t.match.league), live: isLive(t.match) }))}
-        className={`sm:col-span-2 lg:row-span-2 ${n === 0 && !recap ? 'lg:col-span-4' : ''} ${CARD}`}
+        className={`sm:col-span-2 lg:row-span-2 ${n === 0 && !bank ? 'lg:col-span-4' : ''} ${CARD}`}
       >
         {s.tops.map((t) => (
           <TopSlide key={t.match.id} it={t} />
         ))}
       </TopCarousel>
-      {recap ? (
+      {bank ? (
         <div className={`min-w-0 lg:row-span-2 ${n === 0 ? 'sm:col-span-2' : ''}`}>
-          <RecapTile r={recap} href={recapHref} />
+          <BankTile b={bank} />
         </div>
       ) : null}
       {cards.map((k, i) => (

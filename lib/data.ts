@@ -3,14 +3,16 @@
  * через кэш (SWR + диск) и лимитер запросов. TTL зависит от статуса матча:
  * live обновляем раз в минуту, завершённые храним сутками.
  */
-import { featuredRank } from '@/config/leagues'
+import { featuredRank, isFeatured } from '@/config/leagues'
+import { BANK_DAYS, buildBank, type Bank } from './bank'
 import { cache, type CacheOptions } from './cache'
 import { addDays, diffDays, todayYmd, tzOffsetHours, ymdInTz, ymdToNoonTs } from './format'
 import { buildCandidates, buildConsensus, buildModel, choosePick, type Candidate, type Consensus, type ModelOutput, type Pick } from './model'
 import type { BookOdds } from './odds'
 import { buildPreview, type Paragraph } from './preview'
 import type { Priority } from './rate-limit'
-import { ApiError, apiGet } from './sstats/client'
+import { singleton } from './runtime'
+import { ApiError, apiGet, IS_MOCK } from './sstats/client'
 import * as N from './sstats/normalize'
 import type {
   RawBookmakerOdds,
@@ -24,6 +26,7 @@ import type {
 import { buildForm, buildH2H, type H2H, type TeamForm } from './stats'
 import { computeTags, type TagHit } from './tags'
 import type { Glicko, Injury, LeagueInfo, Match, MatchFull, Standings, Team } from './types'
+import { backfillValuePick, logValuePick, valuePicksFor, type LoggedPick } from './value-log'
 
 export type Opts = { priority?: Priority }
 
@@ -264,6 +267,32 @@ export type MatchInsights = {
 
 const MARKET_BOOK = 'Среднее по рынку'
 
+/** Модель по линии — одна и та же для страницы матча и досчёта журнала «Выгодно». */
+function modelFor(m: Match, books: BookOdds[], glicko: Glicko | null) {
+  // если полной линии нет — используем короткие кэфы из списка матчей
+  const consensusBooks = books.length ? books : m.odds ? [{ bookmakerId: 0, bookmakerName: MARKET_BOOK, ...m.odds }] : []
+  const cons = buildConsensus(consensusBooks)
+  const model = buildModel(cons, glicko)
+  return { cons, model, candidates: buildCandidates(books, model) }
+}
+
+/** Подсказка для лент и плиток: кэф — лучший партнёрский, если он есть. */
+function summaryPick(pick: Pick | null): MatchSummary['pick'] {
+  if (!pick) return null
+  const c = pick.candidate
+  const o = c.bestPartner ?? c.best
+  return {
+    key: c.key,
+    label: c.label,
+    prob: c.prob,
+    odd: o?.value ?? null,
+    bookmaker: o ? (o.partner?.name ?? o.bookmakerName) : null,
+    partnerSlug: o?.partner?.slug ?? null,
+    ev: c.ev,
+    kind: pick.kind,
+  }
+}
+
 /** Готовые инсайты держим в памяти 30 с: страница матча не пересчитывает модель на каждый запрос. */
 export function getMatchInsights(id: number, opts: Opts = {}): Promise<MatchInsights | null> {
   return cache.get(`insights:${id}`, () => computeMatchInsights(id, opts), { ttl: 30, stale: 60 }, false)
@@ -283,11 +312,7 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
     m.season?.year ? settle(getStandings(m.league.id, m.season.year, opts), null) : null,
   ])
 
-  // если полной линии нет — используем короткие кэфы из списка матчей
-  const consensusBooks = books.length ? books : m.odds ? [{ bookmakerId: 0, bookmakerName: MARKET_BOOK, ...m.odds }] : []
-  const cons = buildConsensus(consensusBooks)
-  const model = buildModel(cons, glicko)
-  const candidates = buildCandidates(books, model)
+  const { cons, model, candidates } = modelFor(m, books, glicko)
   const pick = m.status === 'scheduled' ? choosePick(candidates) : null
   const homeForm = buildForm(m.home.id, teamGames)
   const awayForm = buildForm(m.away.id, teamGames)
@@ -306,27 +331,11 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
   })
   const preview = buildPreview({ full, cons, model, pick, glicko, homeForm, awayForm, h2h, injuries, standings, tags })
 
-  const summary: MatchSummary = {
-    id,
-    tags,
-    pick: pick
-      ? {
-          key: pick.candidate.key,
-          label: pick.candidate.label,
-          prob: pick.candidate.prob,
-          odd: (pick.candidate.bestPartner ?? pick.candidate.best)?.value ?? null,
-          bookmaker: (() => {
-            const o = pick.candidate.bestPartner ?? pick.candidate.best
-            return o ? (o.partner?.name ?? o.bookmakerName) : null
-          })(),
-          partnerSlug: (pick.candidate.bestPartner ?? pick.candidate.best)?.partner?.slug ?? null,
-          ev: pick.candidate.ev,
-          kind: pick.kind,
-        }
-      : null,
-    at: Date.now(),
-  }
+  const summary: MatchSummary = { id, tags, pick: summaryPick(pick), at: Date.now() }
   cache.set(`summary:${id}`, summary, { ttl: 3 * H, stale: 9 * H, persist: false })
+  // журнал «Выгодно»: подсказка есть только до начала матча — запоминаем последнюю
+  const sp = summary.pick
+  if (sp?.kind === 'value' && sp.odd) logValuePick({ id, ts: m.ts, key: sp.key, label: sp.label, odd: sp.odd })
 
   return { full, match: m, books, cons, glicko, model, candidates, pick, homeForm, awayForm, h2h, injuries, standings, tags, preview }
 }
@@ -366,4 +375,49 @@ export function featuredFirst(a: Match, b: Match) {
   const fa = ra < 0 ? 999 : ra
   const fb = rb < 0 ? 999 : rb
   return fa - fb || a.ts - b.ts
+}
+
+// ─── «Выгодные ставки» рублями ───────────────────────────────────────────────
+
+/** Банк «по 1000 ₽ на каждую выгодную ставку» за сегодня и 6 прошлых дней — по журналу подсказок (lib/bank.ts). */
+export async function getValueBank(opts: Opts = {}): Promise<Bank | null> {
+  const today = todayYmd()
+  const lists = await Promise.all(
+    Array.from({ length: BANK_DAYS }, (_, i) => settle(getMatchesByDate(addDays(today, i - BANK_DAYS + 1), opts), [] as Match[])),
+  )
+  const matches = new Map(lists.flat().map((m) => [m.id, m]))
+  if (IS_MOCK) await backfillDemoPicks([...matches.values()], opts)
+  return buildBank(await valuePicksFor(matches.keys()), matches)
+}
+
+const demo = singleton('value-demo', () => ({ done: new Set<number>(), running: null as Promise<void> | null }))
+
+/**
+ * Демо: сервер не работал, пока шли прошедшие матчи, — их подсказки досчитываем задним числом,
+ * той же моделью по той же линии, как их показал бы сайт до начала. На реальных данных журнал
+ * пишется только до начала матча (computeMatchInsights), задним числом — никогда.
+ * Модель — ~80 мс на матч, поэтому досчёт идёт в фоне (его запускает и прогрев), подсказки
+ * хранятся в кэше на диске, а страница ждёт его не дольше пары секунд.
+ */
+async function backfillDemoPicks(matches: Match[], opts: Opts) {
+  const todo = matches.filter((m) => m.status !== 'scheduled' && isFeatured(m.league) && !demo.done.has(m.id))
+  if (!todo.length) return
+  demo.running ??= (async () => {
+    try {
+      for (const m of todo) {
+        const p = await cache.get(`demo-pick:${m.id}`, () => demoPick(m, opts), { ttl: 7 * 24 * H })
+        if (p) await backfillValuePick(p)
+        demo.done.add(m.id)
+      }
+    } finally {
+      demo.running = null
+    }
+  })()
+  await Promise.race([demo.running, new Promise((r) => setTimeout(r, 2000).unref?.())])
+}
+
+async function demoPick(m: Match, opts: Opts): Promise<LoggedPick | null> {
+  const [books, glicko] = await Promise.all([settle(getOdds(m, opts), [] as BookOdds[]), settle(getGlicko(m, opts), null)])
+  const p = summaryPick(choosePick(modelFor(m, books, glicko).candidates))
+  return p?.kind === 'value' && p.odd ? { id: m.id, ts: m.ts, key: p.key, label: p.label, odd: p.odd, at: m.ts - 3 * H * 1000 } : null
 }
