@@ -6,35 +6,42 @@ import { artFor, CIRCLE_BG } from '@/lib/story-art'
 import type { CircleKind, StoryGroup } from '@/lib/story-groups'
 import { LogoMark } from '../Logo'
 import { ArtIcon } from './ArtIcon'
-import { openStory, type StoryQueueItem } from './events'
+import { openStory } from './events'
+import { circleQueue, seenCount } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
 
 const SIZE = 68
 const R = 31.5
 const C = 2 * Math.PI * R
 
-/** Кольцо из сегментов — по одному на матч; просмотренные — серые (как статусы в мессенджерах). */
-function Ring({ kind, seen }: { kind: CircleKind; seen: boolean[] }) {
-  const n = seen.length
+/**
+ * Кольцо из сегментов — по одному на матч кружка. Просмотренные гаснут по порядку, от верха
+ * по часовой стрелке (как статусы в мессенджерах), а не вразброс: кольцо показывает, сколько
+ * из кружка уже посмотрели, а следующий тап продолжит с первого непросмотренного.
+ */
+function Ring({ kind, n, seen }: { kind: CircleKind; n: number; seen: number }) {
   const step = C / n
   const gap = n > 1 ? Math.min(4, step / 3) : 0
   // цвет кольца — только «не смотрели» (лайм) и LIVE (красный); просмотренное — серое
   const color = kind === 'live' ? 'var(--color-live)' : 'var(--color-acid)'
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
-      {seen.map((s, i) => (
-        <circle
-          key={i}
-          cx={SIZE / 2}
-          cy={SIZE / 2}
-          r={R}
-          fill="none"
-          stroke={s ? 'rgb(255 255 255 / 0.14)' : color}
-          strokeWidth={s ? 1.5 : 2.5}
-          strokeDasharray={`${step - gap} ${C - step + gap}`}
-          strokeDashoffset={-(i * step + gap / 2)}
-        />
-      ))}
+      {Array.from({ length: n }, (_, i) => {
+        const s = i < seen
+        return (
+          <circle
+            key={i}
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={R}
+            fill="none"
+            stroke={s ? 'rgb(255 255 255 / 0.14)' : color}
+            strokeWidth={s ? 1.5 : 2.5}
+            strokeDasharray={`${step - gap} ${C - step + gap}`}
+            strokeDashoffset={-(i * step + gap / 2)}
+          />
+        )
+      })}
     </svg>
   )
 }
@@ -75,7 +82,7 @@ function CoverArt({ k, cover, children }: { k: string; cover?: string; children?
  * клик открывает сторис матчей кружка, затем следующих кружков.
  */
 export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; covers?: Record<string, string> }) {
-  const [seen, setSeen] = useState<Set<number>>(() => new Set())
+  const [seen, setSeen] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
     const update = () => setSeen(readSeen())
@@ -93,27 +100,16 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
   const open = (gi: number, e: React.MouseEvent<HTMLAnchorElement>) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
     e.preventDefault()
-    // очередь: матчи этого кружка, потом следующих; один матч — один раз
-    const queue: StoryQueueItem[] = []
-    const ids = new Set<number>()
-    for (const g of groups.slice(gi)) {
-      for (const it of g.items) {
-        if (ids.has(it.id)) continue
-        ids.add(it.id)
-        queue.push({ id: it.id, href: it.href, group: { key: g.key, label: g.label, kind: g.kind, cover: covers[g.key] }, focus: it.focus })
-      }
-    }
-    const g = groups[gi]
-    // как в соцсетях: начинаем с первого непросмотренного матча кружка
-    const start = g.items.find((it) => !seen.has(it.id)) ?? g.items[0]
-    openStory({ id: start.id, href: g.href, opener: e.currentTarget, queue })
+    // очередь: матчи этого кружка, потом следующих; начинаем с первого непросмотренного в этом кружке
+    const { queue, startId } = circleQueue(groups, gi, seen, covers)
+    openStory({ id: startId, href: groups[gi].href, opener: e.currentTarget, queue })
   }
 
   return (
     <nav aria-label="Истории дня" className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 pt-0.5 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
       {groups.map((g, gi) => {
-        const marks = g.items.map((it) => seen.has(it.id))
-        const done = marks.every(Boolean)
+        const n = seenCount(g, seen)
+        const done = n === g.items.length
         return (
           <a
             key={g.key}
@@ -124,7 +120,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             className="group flex w-[92px] shrink-0 flex-col items-center rounded-xl outline-offset-2"
           >
             <span className="relative block transition-transform duration-300 group-hover:-translate-y-0.5 group-active:scale-95" style={{ width: SIZE, height: SIZE }}>
-              <Ring kind={g.kind} seen={marks} />
+              <Ring kind={g.kind} n={g.items.length} seen={n} />
               <CoverArt k={g.key} cover={covers[g.key]} />
               {g.kind === 'live' ? (
                 <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 rounded-[5px] bg-live px-1.5 text-[9px] font-bold leading-[15px] tracking-wide text-white ring-2 ring-ink">

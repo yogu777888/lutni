@@ -7,7 +7,7 @@ import type { StoryData } from '@/lib/story'
 import { artFor, artGlow } from '@/lib/story-art'
 import { TeamLogo } from '../TeamLogo'
 import { OPEN_STORY, openStory, type OpenStoryDetail, type StoryQueueItem } from './events'
-import { markSeen } from './seen'
+import { markSeen, type SeenMark } from './seen'
 import { Slide, SLIDE_MS } from './slides'
 
 type Item = StoryQueueItem
@@ -161,9 +161,17 @@ export function StoryViewer() {
     async (list: Item[], index: number, dir: 1 | -1, opts: ShowOpts = {}) => {
       const token = ++req.current
       setLoading(true)
+      // кольца гаснут только от просмотра в кружке: открытия из списка матчей их не трогают.
+      // Матч без сторис, через который прошли вперёд, тоже считаем просмотренным — иначе кольцо не погаснет никогда
+      const marks: SeenMark[] = []
       for (let i = index; i >= 0 && i < list.length; i += dir) {
-        const data = await load(list[i].id)
+        const it = list[i]
+        const data = await load(it.id)
         if (token !== req.current) return
+        if (dir === 1 || data) {
+          if (it.group) marks.push({ key: it.group.key, id: it.id })
+          if (it.also) marks.push(...it.also)
+        }
         if (data) {
           setPos(i)
           setStory(data)
@@ -171,17 +179,18 @@ export function StoryViewer() {
           setNonce((n) => n + 1)
           setEnded(false)
           setLoading(false)
-          markSeen(data.id)
+          markSeen(marks)
           const nx = list[i + dir]
           if (nx) void load(nx.id)
           return
         }
         if (opts.strict) {
           // у выбранного матча сторис нет (мало данных) — открываем обычную страницу
-          leaveTo(list[i].href)
+          leaveTo(it.href)
           return
         }
       }
+      markSeen(marks)
       setLoading(false)
       // во всём кружке не нашлось ни одной сторис — открываем страницу тега
       if (opts.fallbackHref) leaveTo(opts.fallbackHref)
@@ -307,8 +316,6 @@ export function StoryViewer() {
   const item = story && items[pos]?.id === story.id ? items[pos] : null
   // открыли из кружка: «#прогруз · 2/5» в шапке и «почему» на обложке
   const group = item?.group
-  const inGroup = group ? items.filter((i) => i.group?.key === group.key) : []
-  const groupPos = group ? inGroup.findIndex((i) => i.id === item!.id) + 1 : 0
   const focus = focusFor(item, story)
   // фон — цвета кружка, из которого открыли (или тега матча); своя картинка кружка — сверху
   const artKey = group?.key ?? focus?.slug ?? null
@@ -435,7 +442,7 @@ export function StoryViewer() {
                   {group ? (
                     <>
                       <GroupLabel label={group.label} kind={group.kind} />
-                      {inGroup.length > 1 ? ` ${groupPos}/${inGroup.length}` : ''} ·{' '}
+                      {group.total > 1 ? ` ${group.pos}/${group.total}` : ''} ·{' '}
                     </>
                   ) : null}
                   {story.league}

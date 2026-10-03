@@ -1,4 +1,5 @@
 import type { CircleKind, StoryFocus } from '@/lib/story-groups'
+import type { SeenMark } from './seen'
 
 /** Открыть сторис из любого места страницы: StoryLink, кружки на главной, кнопка на странице матча, ?story=<id>. */
 export const OPEN_STORY = 'tagbet:story'
@@ -7,9 +8,11 @@ export const OPEN_STORY = 'tagbet:story'
 export type StoryQueueItem = {
   id: number
   href: string
-  /** cover — своя картинка кружка (public/stories), если есть: фон сторис */
-  group?: { key: string; label: string; kind: CircleKind; cover?: string }
+  /** cover — своя картинка кружка (public/stories), если есть: фон сторис; pos/total — место матча в кружке («2/5») */
+  group?: { key: string; label: string; kind: CircleKind; cover?: string; pos: number; total: number }
   focus?: StoryFocus | null
+  /** Матчи следующих кружков, которые уже были раньше в очереди: отметить просмотренными, когда дойдём сюда. */
+  also?: SeenMark[]
 }
 
 export type OpenStoryDetail = {
