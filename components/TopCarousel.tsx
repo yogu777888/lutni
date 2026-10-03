@@ -40,8 +40,8 @@ export function TopCarousel({ heads, className = '', children }: { heads: { leag
 
   const head = heads[cur] ?? heads[0]
   return (
-    <article className={`relative flex min-w-0 flex-col py-5 transition-colors duration-300 hover:border-edge-2 ${className}`}>
-      <div className="flex items-center justify-between gap-3 px-5 sm:px-6">
+    <article className={`relative flex min-w-0 flex-col py-[18px] transition-colors duration-300 hover:border-edge-2 ${className}`}>
+      <div className="flex items-center justify-between gap-3 px-[18px]">
         <p className="min-w-0 truncate text-[13px] font-medium text-chalk">
           {head?.live ? <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse-live rounded-full bg-live align-middle" /> : null}
           Матч дня
@@ -53,7 +53,7 @@ export function TopCarousel({ heads, className = '', children }: { heads: { leag
               aria-haspopup="listbox"
               aria-expanded={open}
               onClick={() => setOpen((o) => !o)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-white/[0.07] pl-3 pr-2 text-[13px] font-medium text-fg transition-colors hover:bg-white/[0.11]"
+              className="inline-flex h-7 items-center gap-1.5 rounded-[9px] bg-white/[0.07] pl-3 pr-2 text-[13px] font-medium text-fg transition-colors hover:bg-white/[0.11]"
             >
               {head?.league}
               <svg viewBox="0 0 24 24" className={`h-4 w-4 text-dim transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -101,7 +101,7 @@ export function TopCarousel({ heads, className = '', children }: { heads: { leag
           if (k !== cur) setCur(k)
         }}
       >
-        {Children.map(children, (c) => <div className="flex w-full shrink-0 snap-start px-5 sm:px-6">{c}</div>)}
+        {Children.map(children, (c) => <div className="flex w-full shrink-0 snap-start px-[18px]">{c}</div>)}
       </div>
     </article>
   )

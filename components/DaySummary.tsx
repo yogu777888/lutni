@@ -63,7 +63,7 @@ const ROW = '-mx-2 flex min-w-0 flex-1 items-center justify-between gap-3 rounde
  */
 function ListTile({ title, hint, href, live = false, rows }: ListCard) {
   return (
-    <article className={`flex h-full min-w-0 flex-col px-4 pb-2 pt-3.5 sm:px-5 ${CARD}`}>
+    <article className={`flex h-full min-w-0 flex-col px-[18px] pb-2 pt-[18px] ${CARD}`}>
       <Link href={href} prefetch={false} className="group -mx-1 flex items-center justify-between gap-2 rounded-lg px-1">
         <span className="min-w-0 truncate text-[13px] font-medium text-chalk">
           {live ? <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse-live rounded-full bg-live align-middle" /> : null}
@@ -417,7 +417,7 @@ function RecapTile({ r, href }: { r: FavRecap; href: string }) {
   )
   const seg = (k: RecapGame['result']) => r.games.filter((g) => g.result === k).length
   return (
-    <article className={`flex h-full min-w-0 flex-col px-4 pb-2 pt-3.5 sm:px-5 ${CARD}`}>
+    <article className={`flex h-full min-w-0 flex-col px-[18px] pb-2 pt-[18px] ${CARD}`}>
       <Link href={href} prefetch={false} className="group -mx-1 flex items-center justify-between gap-2 rounded-lg px-1">
         <span className="min-w-0 truncate text-[13px] font-medium text-chalk">
           Фавориты вчера <span className="text-mute">· как сыграли</span>
