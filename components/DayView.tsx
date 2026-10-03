@@ -103,7 +103,7 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
 
   return (
     <>
-      <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5 pt-4 sm:pt-5">
+      <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 pt-3 sm:pt-4">
         <div className="min-w-0">
           <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
           <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px]">
@@ -122,8 +122,8 @@ export async function DayView({ ymd, today }: { ymd: string; today: string }) {
       </section>
 
       {storyGroups.length ? (
-        <section aria-label="Истории дня" className="mt-6 sm:mt-7">
-          <p className="mb-3 text-[13px] font-medium text-dim">Истории дня</p>
+        // кружки понятны и без подписи «Истории дня» — так первый экран влезает целиком
+        <section aria-label="Истории дня" className="mt-5 sm:mt-6">
           <StoryCircles groups={storyGroups} covers={storyCovers()} />
         </section>
       ) : null}

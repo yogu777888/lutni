@@ -1,24 +1,19 @@
-import Link from 'next/link'
+import { featuredInfo } from '@/config/leagues'
 import type { FeedItem } from '@/lib/data'
-import { summaryCards, type CardKind, type DayState, type DaySummary as Summary } from '@/lib/day-summary'
+import { summaryCards, type CardKind, type DaySummary as Summary } from '@/lib/day-summary'
 import { formatTime, plural } from '@/lib/format'
 import { matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
-import { bestTag, isLive } from '@/lib/rank'
-import { TAG_BY_SLUG } from '@/lib/tags'
+import { isLive } from '@/lib/rank'
 import type { Match } from '@/lib/types'
 import { buildVerdict, outcomeText, outOf10 } from '@/lib/verdict'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
 
 const edge = (ev: number) => `${ev >= 0 ? '+' : '−'}${Math.abs(ev * 100).toFixed(1).replace('.', ',')}%`
-/** Чей шанс в центре кольца — словами. */
-const WHO = { home: 'шанс хозяев', draw: 'шанс ничьей', away: 'шанс гостей' } as const
-const WHO_SHORT = { home: 'хозяева', draw: 'ничья', away: 'гости' } as const
-const WHY_TONE = { accent: 'text-acid', hot: 'text-hot', neutral: 'text-chalk' } as const
 const names = (m: Match) => `${m.home.name} — ${m.away.name}`
 /** Ссылка-накладка: вся карточка кликабельна, а текст ссылки — понятное название. */
-const COVER = "after:absolute after:inset-0 after:rounded-[24px] after:content-['']"
+const COVER = "after:absolute after:inset-0 after:rounded-[22px] after:content-['']"
 
 /**
  * Вид сводки: «спокойный» — тёмные плитки и одна лаймовая; «цветной» — ещё янтарная.
@@ -97,44 +92,52 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
   )
 }
 
-// ─── Рамка и крупная цифра ───────────────────────────────────────────────────
+// ─── Рамка: одна схема на все плитки ─────────────────────────────────────────
+//
+// Подпись → крупная цифра → матч → одна строка пояснения. Никаких подписей мельче 13px,
+// осей и легенд: плитку читают за секунду, подробности — в сторис по клику.
 
-/** Плитка: подпись и иконка сверху, цифра — сразу под ними, график — внизу. */
 function Tile({ tone = 'plain', label, icon, children }: { tone?: Tone; label: React.ReactNode; icon: keyof typeof ICONS; children: React.ReactNode }) {
   const t = TONES[tone]
   return (
     <article
       style={t.vars as React.CSSProperties}
-      className={`relative flex h-full min-h-[168px] min-w-0 flex-col rounded-[24px] border p-4 text-[var(--t-fg)] transition-[border-color,filter] duration-300 sm:min-h-[176px] sm:px-5 sm:py-[18px] ${t.cls}`}
+      className={`relative flex h-full min-h-[146px] min-w-0 flex-col rounded-[22px] border p-4 text-[var(--t-fg)] transition-[border-color,filter] duration-300 sm:px-5 sm:py-[18px] ${t.cls}`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="flex min-w-0 items-center gap-1.5 truncate text-[13.5px] font-medium text-[var(--t-label)]">{label}</span>
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--t-chip)]">
+        <span className="flex min-w-0 items-center gap-1.5 truncate text-[13px] font-medium text-[var(--t-label)]">{label}</span>
+        <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full bg-[var(--t-chip)]">
           <Icon name={icon} />
         </span>
       </div>
-      <div className="flex min-w-0 flex-1 flex-col pt-3">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col justify-end pt-2">{children}</div>
     </article>
   )
 }
 
-/** Крупная цифра: полужирная и плотная, как в системных виджетах. */
+/** Крупная цифра; подпись к ней — обычным размером, на телефоне её можно спрятать. */
 function Big({ children, unit, className = '' }: { children: React.ReactNode; unit?: React.ReactNode; className?: string }) {
   return (
     <div className="flex min-w-0 items-baseline gap-1.5">
-      <span className={`num text-[34px] font-semibold leading-none tracking-[-0.05em] sm:text-[37px] ${className}`}>{children}</span>
-      {unit ? <span className="truncate text-[13.5px] font-medium text-[var(--t-sub)]">{unit}</span> : null}
+      <span className={`num whitespace-nowrap text-[30px] font-semibold leading-none tracking-[-0.045em] sm:text-[34px] ${className}`}>{children}</span>
+      {unit ? <span className="truncate text-[14px] font-medium text-[var(--t-sub)]">{unit}</span> : null}
     </div>
   )
 }
 
-function MatchLink({ it }: { it: FeedItem }) {
+/** Матч плитки: вся плитка — ссылка (открывает сторис). */
+function MatchLink({ it, children }: { it: FeedItem; children?: React.ReactNode }) {
   return (
-    <StoryLink id={it.match.id} href={matchHref(it.match)} className={`mt-1.5 block truncate text-[14px] font-semibold ${COVER}`}>
-      {names(it.match)}
+    <StoryLink id={it.match.id} href={matchHref(it.match)} className={`mt-2.5 block truncate text-[14px] font-semibold ${COVER}`}>
+      {children ?? names(it.match)}
     </StoryLink>
   )
 }
+
+/** Одна строка пояснения под матчем. */
+const Note = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <p className={`mt-0.5 line-clamp-2 text-[13px] leading-snug text-[var(--t-sub)] sm:line-clamp-1 ${className}`}>{children}</p>
+)
 
 /** Подпись короче на телефоне: узкая плитка не обрезает слова. */
 const Short = ({ phone, full }: { phone: string; full: string }) => (
@@ -144,156 +147,8 @@ const Short = ({ phone, full }: { phone: string; full: string }) => (
   </>
 )
 
-/** Низ плитки: график прижат к нижнему краю. */
-const Foot = ({ children }: { children: React.ReactNode }) => <div className="mt-auto pt-3">{children}</div>
-
-// ─── Мини-графики ────────────────────────────────────────────────────────────
-
-/**
- * Value: одна полоска длиной в кэф букмекера; светлая часть — честная цена,
- * тёмный хвост — то, сколько платят сверх неё, то есть перевес.
- */
-function EdgeBar({ odd, fair }: { odd: number; fair: number }) {
-  const share = Math.min(1, fair / odd)
-  return (
-    <div aria-hidden>
-      <div className="num flex items-baseline justify-between gap-2 text-[12px]">
-        <span className="truncate text-[var(--t-sub)]">стоит {fair.toFixed(2)}</span>
-        <span className="shrink-0 font-semibold">
-          <span className="hidden sm:inline">платят </span>
-          {odd.toFixed(2)}
-        </span>
-      </div>
-      <div className="mt-1.5 flex h-2.5 gap-0.5">
-        <span className="rounded-l-full bg-[var(--t-mut)]" style={{ width: `${share * 100}%` }} />
-        <span className="flex-1 rounded-r-full bg-[var(--t-fg)]" />
-      </div>
-    </div>
-  )
-}
-
-/** Прогруз: наклон от кэфа на открытии к нынешнему — две точки и прямая между ними, цифры по краям. */
-function Slope({ side, from, to, color }: { side: string; from: number; to: number; color: string }) {
-  const gid = color === 'var(--t-fg)' ? 'ds-slope-ink' : 'ds-slope-hot'
-  const drop = 1 - to / from
-  const y1 = 6
-  const y2 = Math.min(40, 6 + Math.max(0.3, drop / 0.3) * 34)
-  return (
-    <div className="num flex items-center gap-2.5 text-[12px]" aria-hidden>
-      <span className="shrink-0 text-[var(--t-sub)]">
-        {side ? `${side} ` : ''}
-        {from.toFixed(2)}
-      </span>
-      <div className="relative h-11 min-w-0 flex-1">
-        <svg viewBox="0 0 100 44" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
-          <defs>
-            <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor={color} stopOpacity="0.3" />
-              <stop offset="1" stopColor={color} stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d={`M3 ${y1} L97 ${y2} L97 44 L3 44 Z`} fill={`url(#${gid})`} />
-          <path d={`M3 ${y1} L97 ${y2}`} fill="none" stroke={color} strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
-        </svg>
-        <span className="absolute left-[3%] h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--t-sub)]" style={{ top: `${(y1 / 44) * 100}%` }} />
-        <span className="absolute left-[97%] h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ top: `${(y2 / 44) * 100}%`, background: color }} />
-      </div>
-      <span className="shrink-0 font-semibold" style={{ color }}>
-        {to.toFixed(2)}
-      </span>
-    </div>
-  )
-}
-
-const DOT: Record<DayState, string> = {
-  done: 'bg-[var(--t-mut)]',
-  live: 'bg-live',
-  next: 'bg-[var(--t-fg)]',
-}
-
-/** Матчи по часам: колонка точек на каждый час — сыгран (бледная), идёт (красная), впереди (яркая). */
-function HourDots({ hours }: { hours: Summary['hours'] }) {
-  if (!hours.length) return null
-  const all = hours.flatMap((h) => h.states)
-  const n = (k: DayState) => all.filter((s) => s === k).length
-  // точки мельче, только если в какой-то час очень много матчей: ни один матч не теряем
-  const rows = Math.ceil(Math.max(...hours.map((h) => h.states.length)) / 2)
-  const gap = 2
-  const dot = Math.max(3, Math.min(7, Math.floor((36 - (rows - 1) * gap) / rows)))
-  const legend: [DayState, string][] = [
-    ['live', `${n('live')} ${plural(n('live'), ['идёт', 'идут', 'идут'])}`],
-    ['next', `${n('next')} впереди`],
-    ['done', `${n('done')} ${plural(n('done'), ['сыгран', 'сыграно', 'сыграно'])}`],
-  ]
-  return (
-    <div>
-      <div className="flex h-9 items-end justify-between gap-[3px]" aria-hidden>
-        {hours.map((h) => (
-          // точки часа — парами снизу вверх: так колонка ниже, а точки крупнее
-          <div key={h.hour} className="flex h-full min-w-0 flex-1 justify-center">
-            <div className="flex h-full flex-wrap-reverse content-start" style={{ width: dot * 2 + gap, gap }}>
-              {h.states.map((st, i) => (
-                <span key={i} className={`shrink-0 rounded-full ${DOT[st]}`} style={{ width: dot, height: dot }} />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="num mt-1.5 flex justify-between text-[11px] text-[var(--t-sub)]">
-        <span>{String(hours[0].hour).padStart(2, '0')}:00</span>
-        <span>{String(hours[hours.length - 1].hour).padStart(2, '0')}:00</span>
-      </div>
-      {/* подпись нужна, только если точки разного вида */}
-      {legend.filter(([k]) => n(k)).length > 1 ? (
-        <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11.5px] text-[var(--t-sub)]">
-          {legend
-            .filter(([k]) => n(k))
-            .map(([k, t]) => (
-              <span key={k} className="inline-flex items-center gap-1.5">
-                <span className={`h-1.5 w-1.5 rounded-full ${DOT[k]}`} />
-                {t}
-              </span>
-            ))}
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
-/** Точки-шкала: 10 точек, закрашено — шанс в десятках процентов. */
-function DotGauge({ p }: { p: number }) {
-  const on = Math.round(p * 10)
-  return (
-    <span className="inline-flex shrink-0 gap-[2.5px]" aria-hidden>
-      {Array.from({ length: 10 }, (_, i) => (
-        <span key={i} className={`h-1.5 w-1.5 rounded-full ${i < on ? 'bg-[var(--t-fg)]' : 'bg-[var(--t-mut)]'}`} />
-      ))}
-    </span>
-  )
-}
-
-/** Турниры дня — полоски в дорожках с числом матчей. */
-function LeagueBars({ leagues }: { leagues: Summary['topLeagues'] }) {
-  const most = Math.max(...leagues.map((l) => l.count))
-  return (
-    <ul className="space-y-2">
-      {leagues.slice(0, 3).map((l) => (
-        <li key={l.id}>
-          <div className="flex items-baseline justify-between gap-3 text-[12.5px]">
-            <span className="min-w-0 truncate text-[var(--t-label)]">{l.name}</span>
-            <span className="num shrink-0 font-semibold">{l.count}</span>
-          </div>
-          <div className="mt-1 h-1.5 rounded-full bg-[var(--t-mut)]" aria-hidden>
-            <div className="h-full rounded-full bg-[var(--t-fg)]" style={{ width: `${(l.count / most) * 100}%` }} />
-          </div>
-        </li>
-      ))}
-    </ul>
-  )
-}
-
 /** Кольцо одного значения: доля круга = шанс. */
-function Ring({ p, size = 52 }: { p: number; size?: number }) {
+function Ring({ p, size = 40 }: { p: number; size?: number }) {
   const r = 22
   const c = 2 * Math.PI * r
   return (
@@ -301,53 +156,6 @@ function Ring({ p, size = 52 }: { p: number; size?: number }) {
       <circle cx="26" cy="26" r={r} fill="none" stroke="var(--t-mut)" strokeWidth="6" />
       <circle cx="26" cy="26" r={r} fill="none" stroke="var(--t-fg)" strokeWidth="6" strokeLinecap="round" strokeDasharray={`${c * p} ${c}`} />
     </svg>
-  )
-}
-
-const SEG = { home: 'var(--color-home)', draw: 'var(--color-tie)', away: 'var(--color-away)' } as const
-
-/** Кольцо матча дня: П1 / Х / П2 долями круга, в центре — шанс фаворита. */
-function ChanceRing({ cells, size }: { cells: { k: keyof typeof SEG; p: number }[]; size: number }) {
-  const small = size < 130
-  const r = 50
-  const c = 2 * Math.PI * r
-  const gap = 5
-  let start = 0
-  const fav = cells.reduce((a, b) => (b.p > a.p ? b : a))
-  return (
-    <div className="relative shrink-0" style={{ width: size, height: size }} aria-hidden>
-      <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-        <circle cx="60" cy="60" r={r} fill="none" stroke="rgb(255 255 255 / 0.05)" strokeWidth="13" />
-        {cells.map((cell) => {
-          const len = cell.p * c
-          const el = (
-            <circle
-              key={cell.k}
-              cx="60"
-              cy="60"
-              r={r}
-              fill="none"
-              stroke={SEG[cell.k]}
-              strokeWidth="13"
-              strokeDasharray={`${Math.max(0, len - gap)} ${c - len + gap}`}
-              strokeDashoffset={-(start + gap / 2)}
-            />
-          )
-          start += len
-          return el
-        })}
-      </svg>
-      <div className="absolute inset-0 grid place-items-center text-center">
-        <div>
-          {/* шанс фаворита — «из 10»: так понятнее, чем проценты */}
-          <div className={`num font-semibold leading-none tracking-[-0.04em] ${small ? 'text-[26px]' : 'text-[34px]'}`}>
-            {outOf10(fav.p).split(' ')[0]}
-            <span className="ml-1 text-[0.42em] font-medium tracking-normal text-dim">из 10</span>
-          </div>
-          <div className={`mt-1 text-dim ${small ? 'text-[10.5px]' : 'text-[11.5px]'}`}>{small ? WHO_SHORT[fav.k] : WHO[fav.k]}</div>
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -359,41 +167,42 @@ const until = (ts: number) => {
   return `через ${Math.round(min / 60)} ч`
 }
 
+const sideName = (m: Match, side: 'home' | 'away') => (side === 'home' ? m.home.name : m.away.name)
+
 // ─── Виджеты ─────────────────────────────────────────────────────────────────
 
-function Card({ kind, s, tone, wide = false }: { kind: CardKind; s: Summary; tone?: Tone; wide?: boolean }) {
+function Card({ kind, s, tone }: { kind: CardKind; s: Summary; tone?: Tone }) {
   switch (kind) {
     case 'value': {
       const it = s.value!
       const p = it.summary!.pick!
       return (
         <Tile tone={tone} label={<Short phone="Выгодно" full="Выгодная ставка" />} icon="percent">
-          <Big unit={<span className="hidden sm:inline">к честной цене</span>}>{edge(p.ev ?? 0)}</Big>
+          <Big unit={<span className="hidden sm:inline">выгоды</span>}>{edge(p.ev ?? 0)}</Big>
           <MatchLink it={it} />
-          <p className="mt-0.5 truncate text-[12.5px] text-[var(--t-sub)] first-letter:uppercase">{outcomeText(p.key, it.match)}</p>
-          <Foot>{p.odd ? <EdgeBar odd={p.odd} fair={1 / p.prob} /> : null}</Foot>
+          <Note className="first-letter:uppercase">
+            {outcomeText(p.key, it.match)}
+            {p.odd ? ` · ${p.odd.toFixed(2)}` : ''}
+          </Note>
         </Tile>
       )
     }
     case 'progruz': {
       const g = s.progruz!
-      const color = tone === 'amber' ? 'var(--t-fg)' : 'var(--color-hot)'
       return (
         <Tile tone={tone} label={<Short phone="Сюда ставят" full="Куда идут деньги" />} icon="down">
-          <Big className={tone === 'amber' ? '' : 'text-hot'} unit={<span className="hidden sm:inline">упал кэф</span>}>
+          <Big className={tone === 'amber' ? '' : 'text-hot'} unit={<span className="hidden sm:inline">кэф</span>}>
             −{Math.round(g.drop * 100)}%
           </Big>
           <MatchLink it={g.item} />
-          <p className="mt-0.5 truncate text-[12.5px] text-[var(--t-sub)]">
-            Массово ставят на «{g.side === 'home' ? g.item.match.home.name : g.item.match.away.name}»
-          </p>
-          <Foot>
-            <Slope side="" from={g.from} to={g.to} color={color} />
-          </Foot>
+          <Note>Ставят на «{sideName(g.item.match, g.side)}»</Note>
         </Tile>
       )
     }
-    case 'live':
+    case 'live': {
+      // матч дня уже крупно слева — здесь показываем другой из идущих
+      const top = s.live.find((x) => x.match.id !== s.top?.match.id) ?? s.live[0]
+      const m = top?.match
       return (
         <Tile
           tone={tone}
@@ -405,39 +214,28 @@ function Card({ kind, s, tone, wide = false }: { kind: CardKind; s: Summary; ton
             </>
           }
         >
-          <a href="#live" className={`block ${COVER}`}>
-            <Big unit={plural(s.liveCount, ['матч', 'матча', 'матчей'])}>{s.liveCount}</Big>
-          </a>
-          <Foot>
-            <ul className="space-y-2">
-              {s.live.slice(0, 2).map(({ match: m }) => (
-                <li key={m.id} className="min-w-0 text-[12.5px]">
-                  <div className="flex min-w-0 items-baseline gap-2">
-                    <span className="num w-7 shrink-0 text-live">{m.statusCode === 4 ? 'Пер' : m.elapsed ? `${m.elapsed}′` : ''}</span>
-                    <span className="min-w-0 truncate text-[var(--t-label)]">
-                      {m.home.name} <span className="num font-semibold text-[var(--t-fg)]">{m.score ? `${m.score.home}:${m.score.away}` : '–'}</span> {m.away.name}
-                    </span>
-                  </div>
-                  {/* сколько матча уже сыграно */}
-                  <div className="ml-9 mt-1 h-1 rounded-full bg-[var(--t-mut)]" aria-hidden>
-                    <div className="h-full rounded-full bg-live" style={{ width: `${Math.min(100, ((m.elapsed ?? 45) / 90) * 100)}%` }} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </Foot>
+          <Big unit={plural(s.liveCount, ['матч', 'матча', 'матчей'])}>{s.liveCount}</Big>
+          {m ? (
+            <>
+              <MatchLink it={top}>
+                {m.home.name} <span className="num">{m.score ? `${m.score.home}:${m.score.away}` : '–'}</span> {m.away.name}
+              </MatchLink>
+              <Note>
+                <span className="text-live">{m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'}</span>
+                {s.liveCount > 1 ? <span className="hidden sm:inline"> · все — ниже</span> : null}
+              </Note>
+            </>
+          ) : null}
         </Tile>
       )
+    }
     case 'next': {
       const it = s.next!
       return (
         <Tile tone={tone} label={s.liveCount ? 'Следующий матч' : 'Первый матч'} icon="clock">
           <Big unit={<span className="hidden sm:inline">{until(it.match.ts)}</span>}>{formatTime(it.match.ts)}</Big>
           <MatchLink it={it} />
-          <p className="mt-0.5 truncate text-[12.5px] text-[var(--t-sub)] sm:hidden">{until(it.match.ts)}</p>
-          <Foot>
-            <HourDots hours={s.hours} />
-          </Foot>
+          <Note>{featuredInfo(it.match.league)?.short || it.match.league.name}</Note>
         </Tile>
       )
     }
@@ -445,29 +243,9 @@ function Card({ kind, s, tone, wide = false }: { kind: CardKind; s: Summary; ton
       const g = s.goals!
       return (
         <Tile tone={tone} label="Ждём голов" icon="ball">
-          <Link href="/tag/tb-2-5" prefetch={false} className={`block ${COVER}`}>
-            <Big
-              unit={
-                <>
-                  {plural(g.count, ['матч', 'матча', 'матчей'])}
-                  <span className="hidden sm:inline">, где ждём 3+ гола</span>
-                </>
-              }
-            >
-              {g.count}
-            </Big>
-          </Link>
-          <Foot>
-            <ul className="space-y-2">
-              {g.list.slice(0, 2).map((row, i) => (
-                <li key={row.id} className={`${i ? 'hidden sm:flex' : 'flex'} min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] sm:flex-nowrap`}>
-                  <span className="min-w-0 basis-full truncate text-[var(--t-label)] sm:basis-auto sm:flex-1">{row.title}</span>
-                  <DotGauge p={row.p} />
-                  <span className="num shrink-0 text-right font-semibold">{outOf10(row.p)}</span>
-                </li>
-              ))}
-            </ul>
-          </Foot>
+          <Big unit={plural(g.count, ['матч', 'матча', 'матчей'])}>{g.count}</Big>
+          <MatchLink it={g.item} />
+          <Note>3 гола и больше — шанс {outOf10(g.p)}</Note>
         </Tile>
       )
     }
@@ -475,14 +253,12 @@ function Card({ kind, s, tone, wide = false }: { kind: CardKind; s: Summary; ton
       const f = s.favorite!
       return (
         <Tile tone={tone} label="Фаворит дня" icon="star">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-end justify-between gap-3">
             <Big unit="из 10">{outOf10(f.p).split(' ')[0]}</Big>
             <Ring p={f.p} />
           </div>
           <MatchLink it={f.item} />
-          <p className="mt-0.5 truncate text-[12.5px] text-[var(--t-sub)]">
-            Шанс на победу «{f.side === 'home' ? f.item.match.home.name : f.item.match.away.name}»
-          </p>
+          <Note>Шанс на победу «{sideName(f.item.match, f.side)}»</Note>
         </Tile>
       )
     }
@@ -490,58 +266,70 @@ function Card({ kind, s, tone, wide = false }: { kind: CardKind; s: Summary; ton
       return (
         <Tile tone={tone} label="Всего за день" icon="calendar">
           <a href="#matches" className={`block ${COVER}`}>
-            <Big unit={`${plural(s.total, ['матч', 'матча', 'матчей'])} · ${s.leagues} ${plural(s.leagues, ['турнир', 'турнира', 'турниров'])}`}>{s.total}</Big>
+            <Big unit={plural(s.total, ['матч', 'матча', 'матчей'])}>{s.total}</Big>
           </a>
-          <Foot>
-            <div className={wide ? 'grid gap-x-10 gap-y-4 sm:grid-cols-2 sm:items-end' : ''}>
-              <HourDots hours={s.hours} />
-              {wide && s.topLeagues.length ? (
-                <div className="hidden min-w-0 sm:block">
-                  <LeagueBars leagues={s.topLeagues} />
-                </div>
-              ) : null}
-            </div>
-          </Foot>
+          <p className="mt-2.5 truncate text-[14px] font-semibold">{s.topLeagues.map((l) => featuredInfo(l)?.short || l.name).join(', ')}</p>
+          <Note>
+            {s.leagues} {plural(s.leagues, ['турнир', 'турнира', 'турниров'])}
+          </Note>
         </Tile>
       )
   }
 }
 
-/** Главный виджет: матч дня — команды, почему он главный, кольцо шансов и кэфы. */
+const SEG = { home: 'bg-home text-ink', draw: 'bg-tie text-fg', away: 'bg-away text-ink' } as const
+
+/**
+ * Шансы одной полосой: хозяева · ничья · гости — доли ширины, «из 10» прямо в полосе.
+ * Слева первая команда, справа вторая — как в названии матча.
+ */
+function ChanceBar({ m }: { m: Match }) {
+  const f = fair1x2(m.odds?.x12)
+  if (!f) return null
+  const cells = (['home', 'draw', 'away'] as const).map((k) => ({ k, p: f[k], n: outOf10(f[k]) }))
+  return (
+    <div
+      className="flex h-7 gap-0.5 overflow-hidden rounded-full"
+      role="img"
+      aria-label={`Шансы: «${m.home.name}» — ${cells[0].n}, ничья — ${cells[1].n}, «${m.away.name}» — ${cells[2].n}`}
+    >
+      {cells.map((c) => (
+        <span key={c.k} className={`num grid min-w-0 place-items-center text-[12.5px] font-semibold ${SEG[c.k]}`} style={{ width: `${c.p * 100}%` }}>
+          <span className="truncate px-1.5">{c.p >= 0.17 ? c.n : c.n.split(' ')[0]}</span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Матч дня: команды крупно, одна фраза — кто скорее выиграет, полоса шансов и две кнопки.
+ * Подробности (форма, личные встречи, кэфы) — в сторис по клику.
+ */
 function TopCard({ it }: { it: FeedItem }) {
   const m = it.match
   const live = isLive(m)
   const played = Boolean(m.score) && (live || m.status === 'finished')
-  const f = fair1x2(m.odds?.x12)
   const pick = m.status === 'scheduled' ? it.summary?.pick : null
-  const hotKey = pick?.kind === 'value' ? pick.key : null
-  // в лаймовой «пилюле» — тот же выгодный кэф, что и в строке «Выгодно: …»
-  const cells = f
-    ? (['home', 'draw', 'away'] as const).map((k) => ({ k, p: f[k], odd: (k === hotKey ? pick?.odd : null) ?? m.odds?.x12?.[k]?.value ?? null }))
-    : null
-  // почему это матч дня — самый весомый тег и его объяснение
-  const best = bestTag(it.tags)
-  const def = best ? TAG_BY_SLUG.get(best.slug) : undefined
-  // главное словами: кто сильнее, и одна подробность — деньги, голы или тег
-  // в карточке — только выгодная ставка: обычный прогноз модели бывает «против» главной фразы и путает
+  // только выгодная ставка: обычный прогноз модели бывает «против» главной фразы и путает
   const v = m.status === 'scheduled' ? buildVerdict({ match: m, tags: it.tags, pick: pick?.kind === 'value' ? pick : null }) : null
-  const detail = v ? (v.money ?? v.goals) : null
+  const bet = v?.bet
+  const betLabel = bet && pick ? (pick.key === v.side ? 'Выгодно' : `Выгодно: ${bet.text}`) : null
   const team = (t: Match['home'], goals: number | undefined, dim = false) => (
     <span className={`flex min-w-0 items-center gap-3 ${dim ? 'text-chalk' : ''}`}>
-      <TeamLogo name={t.name} src={t.logo} size={28} />
+      <TeamLogo name={t.name} src={t.logo} size={30} />
       <span className="min-w-0 flex-1 truncate">{t.name}</span>
-      {played ? <span className={`num shrink-0 text-[26px] font-semibold ${live ? 'text-live' : 'text-fg'}`}>{goals}</span> : null}
+      {played ? <span className={`num shrink-0 text-[28px] font-semibold ${live ? 'text-live' : 'text-fg'}`}>{goals}</span> : null}
     </span>
   )
   return (
-    <article className="relative col-span-2 flex min-w-0 flex-col rounded-[24px] border border-edge bg-panel p-5 shadow-[inset_0_1px_0_rgb(255_255_255/0.035)] transition-colors duration-300 hover:border-edge-2 sm:p-6 lg:row-span-2">
+    <article className="relative col-span-2 flex min-w-0 flex-col rounded-[22px] border border-edge bg-panel p-5 shadow-[inset_0_1px_0_rgb(255_255_255/0.035)] transition-colors duration-300 hover:border-edge-2 sm:p-6 lg:row-span-2">
       <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[13.5px] font-medium text-chalk">Матч дня</p>
-          <p className="mt-0.5 truncate text-[12.5px] text-mute">{m.league.name}</p>
-        </div>
+        <p className="min-w-0 truncate text-[13px] font-medium text-chalk">
+          Матч дня <span className="text-mute">· {featuredInfo(m.league)?.short || m.league.name}</span>
+        </p>
         <span
-          className={`num inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold ${
+          className={`num inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold ${
             live ? 'bg-live/10 text-live' : 'bg-white/[0.06] text-chalk'
           }`}
         >
@@ -550,71 +338,43 @@ function TopCard({ it }: { it: FeedItem }) {
         </span>
       </div>
 
-      <div className="mt-5 grid items-center gap-5 sm:grid-cols-[minmax(0,1fr)_auto]">
-        <div className="min-w-0">
-          <StoryLink id={m.id} href={matchHref(m)} className={`block space-y-2 text-[20px] font-semibold leading-tight tracking-[-0.025em] sm:text-[23px] ${COVER}`}>
-            {team(m.home, m.score?.home)}
-            {team(m.away, m.score?.away, true)}
-          </StoryLink>
-          {v ? <p className="mt-4 text-[16px] font-semibold leading-snug tracking-[-0.01em] text-fg">{v.headline}</p> : null}
-          {detail ? (
-            <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-dim">{detail}</p>
-          ) : best && def ? (
-            <p className={`line-clamp-3 text-[13px] leading-snug text-dim ${v ? 'mt-1' : 'mt-3.5'}`}>
-              <span className={WHY_TONE[def.kind]}>{def.label}</span> · {best.reason}
+      <StoryLink id={m.id} href={matchHref(m)} className={`mt-4 block space-y-2 text-[22px] font-semibold leading-tight tracking-[-0.025em] sm:text-[24px] ${COVER}`}>
+        {team(m.home, m.score?.home)}
+        {team(m.away, m.score?.away, true)}
+      </StoryLink>
+
+      <div className="mt-auto pt-5">
+        {v ? <p className="mb-3 text-[17px] font-semibold leading-snug tracking-[-0.01em]">{v.headline}</p> : null}
+        {played ? (
+          <>
+            <p className="mb-3 text-[17px] font-semibold leading-snug tracking-[-0.01em]">
+              {live ? (m.statusCode === 4 ? 'Перерыв' : m.elapsed ? `Идёт ${m.elapsed}-я минута` : 'Идёт матч') : 'Матч завершён'}
             </p>
+            {live ? (
+              <div className="h-1.5 rounded-full bg-white/[0.08]" aria-hidden>
+                <div className="h-full rounded-full bg-live" style={{ width: `${Math.min(100, ((m.elapsed ?? 45) / 90) * 100)}%` }} />
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <ChanceBar m={m} />
+        )}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[13px]">
+          <span aria-hidden className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-white/[0.06] py-1.5 pl-1.5 pr-3.5 font-medium text-fg">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-acid text-acid-ink">
+              <svg viewBox="0 0 12 12" className="ml-px h-2.5 w-2.5" fill="currentColor">
+                <path d="M3 1.5v9l7.5-4.5z" />
+              </svg>
+            </span>
+            Матч в слайдах
+          </span>
+          {bet && betLabel ? (
+            <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-acid/[0.12] px-3.5 py-1.5 font-semibold text-acid">
+              <span className="truncate">{betLabel}</span>
+              {bet.odd ? <span className="num shrink-0">· {bet.odd.toFixed(2)}</span> : null}
+            </span>
           ) : null}
         </div>
-        {cells ? (
-          <span className="hidden sm:block">
-            <ChanceRing cells={cells} size={156} />
-          </span>
-        ) : null}
-      </div>
-
-      {cells ? (
-        // на телефоне кольцо — слева от кэфов, на компьютере кэфы — строкой внизу
-        <div className="relative z-10 mt-auto grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 pt-5 sm:block">
-          <span className="sm:hidden">
-            <ChanceRing cells={cells} size={104} />
-          </span>
-          <div className="flex min-w-0 flex-col items-start gap-1.5 sm:flex-row sm:flex-wrap sm:gap-2" aria-label="Кэфы на исходы">
-            {cells.map((c) => {
-              const hot = c.k === hotKey
-              return (
-                <span
-                  key={c.k}
-                  className={`num inline-flex h-8 items-center gap-2 rounded-full pl-3 pr-3.5 text-[13px] sm:h-9 ${hot ? 'bg-acid text-acid-ink' : 'bg-white/[0.06] text-fg'}`}
-                  title={hot ? 'Кэф выше честного' : undefined}
-                >
-                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: SEG[c.k] }} />
-                  {/* исход словами: команда или «ничья», а не П1/Х/П2 */}
-                  <span className={`max-w-[11rem] truncate ${hot ? '' : 'text-dim'}`}>{c.k === 'draw' ? 'Ничья' : c.k === 'home' ? m.home.name : m.away.name}</span>
-                  <span className="font-semibold">{c.odd ? c.odd.toFixed(2) : '—'}</span>
-                </span>
-              )
-            })}
-          </div>
-        </div>
-      ) : (
-        <div className="mt-auto" />
-      )}
-
-      <div className="mt-4 flex flex-col-reverse items-start gap-3 text-[13px] sm:flex-row sm:items-center sm:justify-between">
-        <span aria-hidden className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-white/[0.06] py-1.5 pl-1.5 pr-3.5 font-medium text-fg">
-          <span className="grid h-6 w-6 place-items-center rounded-full bg-acid text-acid-ink">
-            <svg viewBox="0 0 12 12" className="ml-px h-2.5 w-2.5" fill="currentColor">
-              <path d="M3 1.5v9l7.5-4.5z" />
-            </svg>
-          </span>
-          Матч в слайдах
-        </span>
-        {v?.bet ? (
-          <span className={`min-w-0 sm:truncate ${v.bet.value ? 'text-acid' : 'text-dim'}`}>
-            {v.bet.value ? 'Выгодно' : 'Прогноз'}: {v.bet.text}
-            {v.bet.odd ? <span className="num ml-1 font-semibold">за {v.bet.odd.toFixed(2)}</span> : null}
-          </span>
-        ) : null}
       </div>
     </article>
   )
@@ -622,7 +382,7 @@ function TopCard({ it }: { it: FeedItem }) {
 
 /**
  * Порядок плиток на экране: value — первой, прогруз — последним (наискосок от value,
- * чтобы цветные плитки не стояли рядом); растянутой в ряд всегда идёт «Всего за день».
+ * чтобы цветные плитки не стояли рядом).
  */
 function arrange(cards: CardKind[]): CardKind[] {
   const order: CardKind[] = ['value', 'live', 'goals', 'next', 'favorite', 'progruz', 'count']
@@ -630,8 +390,8 @@ function arrange(cards: CardKind[]): CardKind[] {
 }
 
 /**
- * «Сводка дня» — виджеты под кружками историй: большой «Матч дня» и до четырёх
- * маленьких, у каждого — свой мини-график. Каждый открывает сторис матча или нужный блок.
+ * «Сводка дня» — первый экран главной: «Матч дня» слева и до четырёх плиток справа (2×2).
+ * Всё влезает в экран ноутбука без прокрутки; каждый виджет открывает сторис матча или нужный блок.
  */
 export function DaySummary({ s, look = 'calm', className = '' }: { s: Summary; look?: SummaryLook; className?: string }) {
   if (!s.top) return null
@@ -645,7 +405,7 @@ export function DaySummary({ s, look = 'calm', className = '' }: { s: Summary; l
         const wide = cards.length <= 2 || (cards.length === 3 && i === 2)
         return (
           <div key={k} className={`min-w-0 ${wide ? 'col-span-2' : ''} ${cards.length === 2 ? 'lg:col-span-2' : ''}`}>
-            <Card kind={k} s={s} tone={tones[k]} wide={wide} />
+            <Card kind={k} s={s} tone={tones[k]} />
           </div>
         )
       })}

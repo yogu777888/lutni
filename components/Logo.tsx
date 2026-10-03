@@ -28,3 +28,18 @@ export function Logo({ size = 28, className = '' }: { size?: number; className?:
     </svg>
   )
 }
+
+/**
+ * Логотип шапки и подвала: главная — лаймовая решётка, «tag.bet» рядом шрифтом сайта
+ * и тише («.bet» приглушён). Название нужно рядом, пока решётку не узнают сами по себе.
+ */
+export function Brand({ size = 30, className = '' }: { size?: number; className?: string }) {
+  return (
+    <span className={`inline-flex items-center ${className}`} style={{ gap: Math.round(size * 0.32) }} role="img" aria-label="tag.bet">
+      <LogoMark size={size} />
+      <span className="font-semibold leading-none tracking-[-0.035em] text-fg" style={{ fontSize: Math.round(size * 0.66) }}>
+        tag<span className="text-dim">.bet</span>
+      </span>
+    </span>
+  )
+}
