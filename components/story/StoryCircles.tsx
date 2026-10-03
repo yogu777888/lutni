@@ -1,10 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { artFor, CIRCLE_BG } from '@/lib/story-art'
 import type { CircleKind, StoryGroup } from '@/lib/story-groups'
-import { LogoMark } from '../Logo'
 import { ArtIcon } from './ArtIcon'
 import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
@@ -68,10 +66,10 @@ function CoverArt({ k, cover, children }: { k: string; cover?: string; children?
   const art = artFor(k)
   return (
     <span
-      className="art-grain absolute inset-[5px] grid place-items-center overflow-hidden rounded-full ring-1 ring-inset ring-white/10"
+      className="absolute inset-[5px] grid place-items-center overflow-hidden rounded-full ring-1 ring-inset ring-edge"
       style={{ background: cover ? `center / cover no-repeat url("${cover}")` : CIRCLE_BG }}
     >
-      {cover ? null : (children ?? <ArtIcon name={art.icon} className="relative z-[1] h-[26px] w-[26px] text-white [filter:drop-shadow(0_2px_6px_rgb(0_0_0/0.4))]" />)}
+      {cover ? null : (children ?? <ArtIcon name={art.icon} className="h-[26px] w-[26px] text-chalk" />)}
     </span>
   )
 }
@@ -135,17 +133,6 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
         )
       })}
 
-      <Link href="/tags" prefetch={false} className="group flex w-[80px] shrink-0 flex-col items-center rounded-xl" title="Все теги и что они значат">
-        <span className="relative block transition-transform duration-300 group-hover:-translate-y-0.5" style={{ width: SIZE, height: SIZE }}>
-          <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full" aria-hidden>
-            <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="rgb(255 255 255 / 0.16)" strokeWidth="1.5" />
-          </svg>
-          <CoverArt k="all" cover={covers.all}>
-            <LogoMark size={21} className="relative z-[1]" />
-          </CoverArt>
-        </span>
-        <span className="mt-1.5 w-full truncate text-center text-[12px] font-medium leading-tight text-dim">Все теги</span>
-      </Link>
     </nav>
   )
 }

@@ -54,7 +54,7 @@ export const hasArt = (key: string) => key in ART
  * Фон кружка на главной: одна спокойная тёмная основа для всех — без радуги.
  * Различаются кружки иконкой, а цвет — только в кольце (не смотрели / LIVE / просмотрено).
  */
-export const CIRCLE_BG = 'radial-gradient(85% 85% at 30% 18%, rgb(255 255 255 / 0.09), transparent 62%), linear-gradient(160deg, #24231d 0%, #121210 100%)'
+export const CIRCLE_BG = 'var(--color-panel)'
 
 /** Фон просмотрщика историй: то же свечение, но мягко и сверху — текст остаётся читаемым. */
 export function artGlow(art: Art): string {
