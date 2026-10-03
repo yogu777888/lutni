@@ -402,78 +402,81 @@ function TopSlide({ it }: { it: FeedItem }) {
 
 // ─── Как сыграли фавориты вчера ──────────────────────────────────────────────
 
-const RESULT = {
-  won: { label: 'выиграл', bar: 'bg-chalk' },
-  draw: { label: 'ничья', bar: 'bg-[#5a5950]' },
-  // сенсация — штриховкой: не новый цвет (лайм, янтарь и красный заняты), а другая фактура
-  lost: { label: 'сенсация', bar: 'bg-[repeating-linear-gradient(135deg,var(--color-chalk)_0_2px,transparent_2px_6px)] ring-1 ring-inset ring-chalk/70' },
-} as const
-
 const q = (name: string) => `«${name}»`
-const score = (g: RecapGame) => (g.match.score ? `${g.match.score.home}:${g.match.score.away}` : '')
 
 /**
- * Аналитика дня: насколько вчера можно было полагаться на фаворитов. Крупно — «7 из 10»,
- * фраза словами с главной сенсацией, ниже — столбик на матч: высота — шанс фаворита до матча
- * (пунктир — 50%), заливка — чем кончилось. Честно и понятно без цифр.
+ * Аналитика дня: насколько вчера можно было полагаться на фаворитов. Крупно — «7 из 12»,
+ * одна полоса «выиграли · ничьи · сенсации» с подписью словами и строки сенсаций — матч со счётом
+ * и каким был шанс фаворита. Та же схема строк, что у плиток-подборок: строка открывает матч.
  */
 function RecapTile({ r, href }: { r: FavRecap; href: string }) {
   const n = r.games.length
-  const u = r.upset
+  // сенсации — проигрыши фаворитов, самые неожиданные первыми; не хватает — добираем ничьими
+  const odd = [...r.games.filter((g) => g.result === 'lost'), ...r.games.filter((g) => g.result === 'draw')].sort(
+    (a, b) => Number(a.result === 'draw') - Number(b.result === 'draw') || b.p - a.p,
+  )
+  const seg = (k: RecapGame['result']) => r.games.filter((g) => g.result === k).length
   return (
-    <article className={`flex h-full min-w-0 flex-col px-4 pb-4 pt-3.5 sm:px-5 ${CARD}`}>
+    <article className={`flex h-full min-w-0 flex-col px-4 pb-2 pt-3.5 sm:px-5 ${CARD}`}>
       <Link href={href} prefetch={false} className="group -mx-1 flex items-center justify-between gap-2 rounded-lg px-1">
         <span className="min-w-0 truncate text-[13px] font-medium text-chalk">
-          Как сыграли фавориты <span className="text-mute">· вчера</span>
+          Фавориты вчера <span className="text-mute">· как сыграли</span>
         </span>
         <Go />
       </Link>
-      <p className="num mt-3 text-[34px] font-semibold leading-none tracking-[-0.04em] lg:text-[clamp(34px,5vh,46px)]">
-        {r.won} <span className="text-dim">из {n}</span>
-      </p>
-      <p className="mt-2.5 text-[14px] leading-snug text-dim">
-        Фавориты по кэфам выиграли <b className="font-semibold text-fg">{r.won} из {n}</b> матчей
-        {r.draw ? <>, {pluralN(r.draw, ['ничья', 'ничьи', 'ничьих'])}</> : null}.{' '}
-        {u ? (
-          <>
-            Главная сенсация: <b className="font-semibold text-fg">{q(u.match.home.name)} — {q(u.match.away.name)} {score(u)}</b>, у проигравшего
-            фаворита шанс был {pct(u.p)}.
-          </>
-        ) : (
-          'Сенсаций не было.'
-        )}
-      </p>
-      <div className="mt-4 flex flex-wrap gap-x-3.5 gap-y-1 text-[13px] text-dim" aria-hidden>
-        {(['won', 'draw', 'lost'] as const).map((k) => (
-          <span key={k} className="inline-flex items-center gap-1.5">
-            <span className={`h-2.5 w-2.5 rounded-[3px] ${RESULT[k].bar}`} />
-            {RESULT[k].label}
-          </span>
-        ))}
-      </div>
-      {/* столбики: высота — шанс фаворита до матча, пунктир — 50% */}
-      <div className="relative mt-3 flex min-h-[96px] flex-1 items-end gap-1.5 pr-8" role="list" aria-label="Матчи фаворитов вчера">
-        <span className="pointer-events-none absolute inset-x-0 bottom-1/2 border-t border-dashed border-white/15" aria-hidden />
-        <span className="pointer-events-none absolute bottom-1/2 right-0 translate-y-1/2 text-[11px] leading-none text-mute" aria-hidden>
-          50%
+      <p className="mt-3 flex items-baseline gap-2">
+        <span className="num text-[34px] font-semibold leading-none tracking-[-0.04em] lg:text-[clamp(32px,4.6vh,42px)]">
+          {r.won} из {n}
         </span>
-        {r.games.map((g) => {
-          const fav = g.side === 'home' ? g.match.home.name : g.match.away.name
-          const t = `${q(g.match.home.name)} — ${q(g.match.away.name)} ${score(g)}: фаворит ${q(fav)} (${pct(g.p)}) — ${RESULT[g.result].label}`
+        <span className="text-[14px] text-dim">выиграли</span>
+      </p>
+      {/* одна полоса: доли исходов, подпись — словами под ней */}
+      <div className="mt-3 flex h-2.5 gap-0.5 overflow-hidden rounded-full" aria-hidden>
+        {(
+          [
+            ['won', 'bg-chalk'],
+            ['draw', 'bg-[#5a5950]'],
+            ['lost', 'bg-[repeating-linear-gradient(135deg,var(--color-chalk)_0_2px,#2a2924_2px_5px)]'],
+          ] as const
+        ).map(([k, cls]) => (seg(k) ? <span key={k} className={cls} style={{ flex: seg(k) }} /> : null))}
+      </div>
+      <p className="mt-2 text-[13px] text-dim">
+        {pluralN(r.won, ['победа', 'победы', 'побед'])}
+        {r.draw ? ` · ${pluralN(r.draw, ['ничья', 'ничьи', 'ничьих'])}` : ''}
+        {r.lost ? ` · ${pluralN(r.lost, ['сенсация', 'сенсации', 'сенсаций'])}` : ''}
+      </p>
+      <p className="mt-4 text-[13px] font-medium text-chalk">
+        {r.lost ? 'Сенсации' : r.draw ? 'Фавориты не дожали' : 'Все фавориты выиграли'}
+        {odd.length ? <span className="text-mute"> · шанс фаворита</span> : null}
+      </p>
+      <ol className="mt-1 flex flex-1 flex-col">
+        {odd.slice(0, 4).map((g, i) => {
+          const m = g.match
+          const fav = (side: 'home' | 'away') => (side === g.side ? 'font-semibold text-fg' : '')
           return (
-            <Link
-              key={g.match.id}
-              href={matchHref(g.match)}
-              prefetch={false}
-              role="listitem"
-              title={t}
-              aria-label={t}
-              className={`min-w-0 flex-1 rounded-t-[4px] transition-opacity hover:opacity-80 ${RESULT[g.result].bar}`}
-              style={{ height: `${Math.round(g.p * 100)}%` }}
-            />
+            <li key={m.id} className={`flex min-h-[50px] flex-1 border-t border-edge first:border-t-0 ${i >= 3 ? 'hidden lg:flex lg:[@media(max-height:759px)]:hidden' : ''}`}>
+              <Link
+                href={matchHref(m)}
+                prefetch={false}
+                title={`Фаворит ${q(g.side === 'home' ? m.home.name : m.away.name)}: шанс ${pct(g.p)}, итог ${m.score?.home}:${m.score?.away}`}
+                className={ROW}
+              >
+                <span className="min-w-0">
+                  <span className="block truncate">
+                    <span className={fav('home')}>{m.home.name}</span>
+                    <span className="text-mute"> — </span>
+                    <span className={fav('away')}>{m.away.name}</span>
+                  </span>
+                  <span className="block text-[13px] text-dim">
+                    счёт <span className="num font-semibold text-chalk">{m.score ? `${m.score.home}:${m.score.away}` : ''}</span>
+                  </span>
+                </span>
+                <span className="num shrink-0 text-[15px] font-semibold text-fg">{pct(g.p)}</span>
+              </Link>
+            </li>
           )
         })}
-      </div>
+      </ol>
     </article>
   )
 }
