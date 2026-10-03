@@ -72,13 +72,13 @@ describe('сводка дня', () => {
   it('live: число идущих матчей; без live — ближайший матч', () => {
     const live = buildDaySummary([item(1, 'live'), item(2, 'live'), item(3, 'scheduled')], NOW)
     expect(live.liveCount).toBe(2)
-    // матчи идут — live первым, ближайший матч — запасной виджет
-    expect(summaryCards(live)).toEqual(['live', 'next', 'count'])
+    // матчи идут — плитка «Сейчас» первой (идущие + ближайшие); турнир всего один — плитки турниров нет
+    expect(summaryCards(live)).toEqual(['live'])
 
     const calm = buildDaySummary([item(1, 'scheduled', { at: 5 }), item(2, 'scheduled', { at: 2 }), item(3, 'scheduled', { at: -1 })], NOW)
     // матч, который по времени уже должен был начаться, — не «ближайший»
     expect(calm.next?.match.id).toBe(2)
-    expect(summaryCards(calm)[0]).toBe('next')
+    expect(summaryCards(calm)).toEqual(['next'])
   })
 
   it('голы и фаворит: максимум по тегу ТБ 2.5 и по честному шансу', () => {
@@ -99,7 +99,7 @@ describe('сводка дня', () => {
     expect(s.favorite?.side).toBe('home')
   })
 
-  it('виджетов четыре, value и прогруз — первыми; фаворит не повторяет матч дня', () => {
+  it('плиток четыре, по вопросам: что идёт → … → выгодно; фаворит не повторяет матч дня', () => {
     const s = buildDaySummary(
       [
         item(1, 'scheduled', { ev: 0.09 }),
@@ -109,10 +109,63 @@ describe('сводка дня', () => {
       ],
       NOW,
     )
-    // матч дня — №3 (единственный без value и прогруза) и он же фаворит → фаворита нет в виджетах
+    // матч дня — №3 (единственный без value и прогруза) и он же фаворит → в подборке фаворитов его нет
     expect(s.top?.match.id).toBe(3)
     expect(s.favorite?.item.match.id).toBe(3)
-    expect(summaryCards(s)).toEqual(['value', 'progruz', 'live', 'count'])
+    expect(s.lists.favorites).toEqual([])
+    // value и прогруз — по одному матчу: в высокой плитке это пустота, такие подборки не показываем
+    expect(summaryCards(s)).toEqual(['live'])
+  })
+
+  it('подборки: по несколько матчей, сильнейшие первыми, без матча дня', () => {
+    const tb = (p: number) => ({ slug: 'tb-2-5', score: p, reason: `Скорее будет 3 гола и больше: шанс ${Math.round(p * 100)}%`, p })
+    const s = buildDaySummary(
+      [
+        item(1, 'scheduled', { ev: 0.04, x12: [1.25, 6.5, 11], tags: [tb(0.66)] }),
+        item(2, 'scheduled', { ev: 0.12, x12: [1.5, 4.2, 6.5], tags: [tb(0.6), progruz('Home 2', '1.80', '1.50', 17)] }),
+        item(3, 'scheduled', { x12: [2.6, 3.2, 2.8], tags: [tb(0.71), progruz('Away 3', '3.00', '2.70', 10)] }),
+        item(4, 'scheduled', { x12: [7.5, 4.8, 1.4] }),
+        item(5, 'live'),
+        item(6, 'live'),
+      ],
+      NOW,
+    )
+    const ids = (xs: { match: { id: number } }[]) => xs.map((x) => x.match.id)
+    const top = s.top!.match.id
+    expect(s.lists.live.map((x) => x.match.id).sort()).toEqual([5, 6])
+    expect(ids(s.lists.upcoming)).toEqual([1, 2, 3, 4])
+    // фаворит — от 60%, самый уверенный первым; матча дня в подборках нет
+    const favs = s.lists.favorites.map((f) => f.item.match.id)
+    expect(favs).not.toContain(3)
+    expect(favs).not.toContain(top)
+    expect(s.lists.favorites.every((f) => f.p >= 0.6)).toBe(true)
+    expect(s.lists.favorites.map((f) => f.p)).toEqual([...s.lists.favorites.map((f) => f.p)].sort((a, b) => b - a))
+    expect(s.lists.goals.map((g) => g.p)).toEqual([...s.lists.goals.map((g) => g.p)].sort((a, b) => b - a))
+    expect(s.lists.goals.map((g) => g.item.match.id)).not.toContain(top)
+    expect(ids(s.lists.values)).not.toContain(top)
+    expect(s.lists.drops.map((d) => d.item.match.id)).not.toContain(top)
+    expect(s.lists.drops.map((d) => d.drop)).toEqual([...s.lists.drops.map((d) => d.drop)].sort((a, b) => b - a))
+    expect(summaryCards(s)[0]).toBe('live')
+  })
+
+  it('сначала подборки из трёх матчей, потом — из двух; из одного матча плитки нет', () => {
+    const s = buildDaySummary(
+      [
+        item(1, 'scheduled', { ev: 0.09, x12: [1.3, 5.5, 9] }),
+        item(2, 'scheduled', { ev: 0.06, x12: [1.4, 4.8, 7.5] }),
+        item(3, 'scheduled', { x12: [1.35, 5, 8.5], tags: [progruz('Home 3', '2.00', '1.70', 15)] }),
+        item(4, 'scheduled', { x12: [8, 5, 1.33] }),
+        item(5, 'scheduled', { x12: [2.6, 3.2, 2.8] }),
+      ],
+      NOW,
+    )
+    const cards = summaryCards(s)
+    // ближайших матчей пять, фаворитов три (без матча дня) → полные плитки; выгодных — два → добор; прогруз — один → нет
+    expect(cards[0]).toBe('next')
+    expect(cards).toContain('favorite')
+    expect(cards.includes('value')).toBe(s.lists.values.length >= 2)
+    expect(cards.includes('progruz')).toBe(s.lists.drops.length >= 2)
+    expect(cards.length).toBeLessThanOrEqual(4)
   })
 
   it('фаворит с шансом ниже 60% — не виджет', () => {

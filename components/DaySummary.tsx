@@ -1,60 +1,26 @@
+import Link from 'next/link'
 import { featuredInfo } from '@/config/leagues'
 import type { FeedItem } from '@/lib/data'
 import { summaryCards, type CardKind, type DaySummary as Summary } from '@/lib/day-summary'
-import { formatDayMonth, formatTime, pct, plural, todayYmd, ymdInTz } from '@/lib/format'
-import { matchHref } from '@/lib/links'
+import { formatDayMonth, formatTime, pct, pluralN, todayYmd, ymdInTz } from '@/lib/format'
+import { leagueHref, matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
-import { bestTag, isLive } from '@/lib/rank'
-import type { Match } from '@/lib/types'
-import { buildVerdict, outcomeShort, split100 } from '@/lib/verdict'
+import { isLive } from '@/lib/rank'
+import { artFor, type ArtIcon as IconName } from '@/lib/story-art'
+import type { League, Match } from '@/lib/types'
+import { buildVerdict, split100, type Verdict } from '@/lib/verdict'
+import { ArtIcon } from './story/ArtIcon'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
 
-const edge = (ev: number) => `${ev >= 0 ? '+' : '−'}${Math.abs(ev * 100).toFixed(1).replace('.', ',')}%`
-const names = (m: Match) => `${m.home.name} — ${m.away.name}`
 /** Ссылка-накладка: вся карточка кликабельна, а текст ссылки — понятное название. */
 const COVER = "after:absolute after:inset-0 after:rounded-[22px] after:content-['']"
+const CARD = 'rounded-[22px] border border-edge bg-panel shadow-[inset_0_1px_0_rgb(255_255_255/0.035)]'
 
-// ─── Иконки строки «почему» в «Матче дня» (тонкая линия, 16px) ───────────────
+const MATCHES = ['матч', 'матча', 'матчей'] as const
+const leagueShort = (l: League) => featuredInfo(l)?.short || l.name
 
-const ICONS = {
-  down: (
-    <>
-      <path d="m22 17-8.5-8.5-5 5L2 7" />
-      <path d="M16 17h6v-6" />
-    </>
-  ),
-  ball: (
-    <>
-      <circle cx="12" cy="12" r="10" />
-      <path d="m12 7 4.3 3.1-1.6 5H9.3l-1.6-5z" />
-    </>
-  ),
-  star: <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" />,
-} as const
-
-function Icon({ name }: { name: keyof typeof ICONS }) {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      {ICONS[name]}
-    </svg>
-  )
-}
-
-// ─── Рамка: одна схема на все плитки ─────────────────────────────────────────
-//
-// Подпись → крупная цифра → матч → одна строка пояснения. Никаких подписей мельче 13px,
-// осей и легенд: плитку читают за секунду, подробности — в сторис по клику.
-// Фон у всех тёмный; цвет — только на главной цифре (лайм — выгодно, янтарь — падение кэфа)
-// и у live (красная точка и минута).
-
-/** Значок строки «почему» в «Матче дня»: янтарь — падение кэфа, остальное — нейтрально. */
-const ACCENT = {
-  none: 'bg-white/[0.06] text-chalk',
-  hot: 'bg-hot/[0.14] text-hot',
-} as const
-
-/** Стрелка «перейти» в правом верхнем углу: вся плитка — ссылка, стрелка подсказывает, что её можно нажать. */
+/** Стрелка «перейти» в правом верхнем углу: подсказывает, что по карточке можно нажать. */
 function Go() {
   return (
     <span
@@ -69,57 +35,6 @@ function Go() {
   )
 }
 
-/**
- * Плитка по высоте содержимого: подпись и стрелка → цифра с подписью → матч и пояснение внизу.
- * Цифры во всех плитках ряда стоят на одной высоте, даже если у матча две строки.
- */
-function Tile({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <article className="group relative flex h-full min-w-0 flex-col rounded-[22px] border border-edge bg-panel p-4 shadow-[inset_0_1px_0_rgb(255_255_255/0.035)] transition-colors duration-300 hover:border-edge-2 sm:px-5 sm:py-4">
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex min-w-0 items-center gap-1.5 truncate text-[13px] font-medium text-chalk">{label}</span>
-        <Go />
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col pt-2.5">{children}</div>
-    </article>
-  )
-}
-
-/** Крупная цифра и под ней — подпись обычным размером. Всегда столбиком: в соседних плитках всё на одной высоте. */
-function Big({ children, unit, className = '' }: { children: React.ReactNode; unit?: React.ReactNode; className?: string }) {
-  return (
-    <div className="min-w-0">
-      <span className={`num block whitespace-nowrap text-[30px] font-semibold leading-none tracking-[-0.045em] sm:text-[34px] lg:text-[clamp(30px,4.4vh,44px)] ${className}`}>{children}</span>
-      {unit ? <span className="mt-1 block truncate text-[14px] font-medium text-dim">{unit}</span> : null}
-    </div>
-  )
-}
-
-/** Матч и строка пояснения — внизу плитки. */
-const Detail = ({ children }: { children: React.ReactNode }) => <div className="mt-auto pt-2.5">{children}</div>
-
-/** Матч плитки: вся плитка — ссылка (открывает сторис). */
-function MatchLink({ it, children }: { it: FeedItem; children?: React.ReactNode }) {
-  return (
-    <StoryLink id={it.match.id} href={matchHref(it.match)} className={`line-clamp-2 text-[14px] font-semibold leading-snug ${COVER}`}>
-      {children ?? names(it.match)}
-    </StoryLink>
-  )
-}
-
-/** Одна строка пояснения под матчем. */
-const Note = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <p className={`mt-0.5 line-clamp-2 text-[13px] leading-snug text-dim sm:line-clamp-1 ${className}`}>{children}</p>
-)
-
-/** Подпись короче на телефоне: узкая плитка не обрезает слова. */
-const Short = ({ phone, full }: { phone: string; full: string }) => (
-  <>
-    <span className="sm:hidden">{phone}</span>
-    <span className="hidden sm:inline">{full}</span>
-  </>
-)
-
 /** Когда начнётся: сегодня — «через 40 мин», «через 3 ч»; в другой день — дата («6 октября»), а не «через 66 ч». */
 const until = (ts: number) => {
   if (ymdInTz(ts) !== todayYmd()) return formatDayMonth(ts)
@@ -129,136 +44,189 @@ const until = (ts: number) => {
   return `через ${Math.round(min / 60)} ч`
 }
 
-const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
-/** Порог тега «много голов»: в подборку попадают матчи, где шанс 3+ голов не ниже этого. */
-const GOALS_FROM = '57%'
+// ─── Плитки-подборки ─────────────────────────────────────────────────────────
+//
+// Каждая плитка отвечает на один вопрос несколькими матчами: в заголовке — вопрос и что значит
+// цифра («Фавориты · шанс победы»), ниже — строки «команды … цифра». Строка открывает сторис
+// матча, заголовок со стрелкой — все такие матчи. Текст не мельче 13px; цвет — только у цифр
+// (лайм — выгодно, янтарь — падение кэфа, красный — live) и у выделенной команды.
 
-const sideName = (m: Match, side: 'home' | 'away') => (side === 'home' ? m.home.name : m.away.name)
+type Row = { key: number; it?: FeedItem; href?: string; left: React.ReactNode; right: React.ReactNode; tone?: string }
+type ListCard = { title: string; hint?: string; href: string; live?: boolean; rows: Row[] }
 
-// ─── Виджеты ─────────────────────────────────────────────────────────────────
+const ROW = '-mx-2 flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-2 text-[14px] text-chalk transition-colors hover:bg-white/[0.04]'
 
-function Card({ kind, s }: { kind: CardKind; s: Summary }) {
-  switch (kind) {
-    case 'value': {
-      const it = s.value!
-      const p = it.summary!.pick!
-      return (
-        <Tile label={<Short phone="Выгодно" full="Выгодная ставка" />}>
-          <Big className="text-acid" unit="к честной цене">
-            {edge(p.ev ?? 0)}
-          </Big>
-          <Detail>
-            <MatchLink it={it} />
-            {/* что ставить и откуда процент: платят столько-то, а исход стоит столько-то */}
-            <Note>
-              {cap(outcomeShort(p.key))}
-              {p.odd ? ` · ${p.odd.toFixed(2)} вместо ${(1 / p.prob).toFixed(2)}` : ''}
-            </Note>
-          </Detail>
-        </Tile>
-      )
-    }
-    case 'progruz': {
-      // только то, что видно по линии: кэф снизился. Сколько на исход ставят — мы не знаем
-      const g = s.progruz!
-      return (
-        <Tile label={<Short phone="Кэф упал" full="Падение кэфа" />}>
-          <Big className="text-hot" unit="с открытия линии">
-            −{Math.round(g.drop * 100)}%
-          </Big>
-          <Detail>
-            <MatchLink it={g.item} />
-            <Note>
-              Кэф на {g.side === 'home' ? 'хозяев' : 'гостей'}: {g.from.toFixed(2)} → {g.to.toFixed(2)}
-            </Note>
-          </Detail>
-        </Tile>
-      )
-    }
-    case 'live': {
-      // матч дня уже крупно слева — здесь показываем другой из идущих
-      const top = s.live.find((x) => x.match.id !== s.top?.match.id) ?? s.live[0]
-      const m = top?.match
-      return (
-        <Tile
-          label={
+/**
+ * Строки делят высоту плитки поровну — плитка заполнена, сколько бы места ни дал экран.
+ * Четвёртая строка — только на компьютере с высоким окном: на телефоне и ноутбуке пониже хватает трёх.
+ */
+function ListTile({ title, hint, href, live = false, rows }: ListCard) {
+  return (
+    <article className={`flex h-full min-w-0 flex-col px-4 pb-2 pt-3.5 sm:px-5 ${CARD}`}>
+      <Link href={href} prefetch={false} className="group -mx-1 flex items-center justify-between gap-2 rounded-lg px-1">
+        <span className="min-w-0 truncate text-[13px] font-medium text-chalk">
+          {live ? <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse-live rounded-full bg-live align-middle" /> : null}
+          {title}
+          {hint ? <span className="text-mute"> · {hint}</span> : null}
+        </span>
+        <Go />
+      </Link>
+      <ol className="mt-1.5 flex flex-1 flex-col">
+        {rows.map((r, i) => {
+          const body = (
             <>
-              <span className="h-1.5 w-1.5 shrink-0 animate-pulse-live rounded-full bg-live" />
-              Сейчас в игре
+              <span className="min-w-0 truncate">{r.left}</span>
+              <span className={`num shrink-0 text-[15px] font-semibold ${r.tone ?? 'text-fg'}`}>{r.right}</span>
             </>
-          }
-        >
-          <Big unit={plural(s.liveCount, ['матч', 'матча', 'матчей'])}>{s.liveCount}</Big>
-          {m ? (
-            <Detail>
-              <MatchLink it={top}>
-                {m.home.name} <span className="num">{m.score ? `${m.score.home}:${m.score.away}` : '–'}</span> {m.away.name}
-              </MatchLink>
-              <Note>
-                <span className="text-live">{m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'}</span> ·{' '}
-                {featuredInfo(m.league)?.short || m.league.name}
-              </Note>
-            </Detail>
-          ) : null}
-        </Tile>
-      )
+          )
+          return (
+            <li key={r.key} className={`flex min-h-[36px] flex-1 border-t border-edge first:border-t-0 ${i >= 3 ? 'hidden lg:flex lg:[@media(max-height:759px)]:hidden' : ''}`}>
+              {r.it ? (
+                <StoryLink id={r.it.match.id} href={matchHref(r.it.match)} className={ROW}>
+                  {body}
+                </StoryLink>
+              ) : (
+                <Link href={r.href ?? '#matches'} prefetch={false} className={ROW}>
+                  {body}
+                </Link>
+              )}
+            </li>
+          )
+        })}
+      </ol>
+    </article>
+  )
+}
+
+/** «Барселона — Леванте»: выделенная команда — ярче (или цветом подборки), вторая — приглушённая. */
+function Teams({ m, hl = null, tone = 'text-fg' }: { m: Match; hl?: 'home' | 'away' | null; tone?: string }) {
+  const cls = (side: 'home' | 'away') => (!hl ? '' : hl === side ? `font-semibold ${tone}` : 'text-dim')
+  return (
+    <>
+      <span className={cls('home')}>{m.home.name}</span>
+      <span className="text-mute"> — </span>
+      <span className={cls('away')}>{m.away.name}</span>
+    </>
+  )
+}
+
+/** Чья команда в ставке (её выделяем цветом) и короткая подпись, если ставка не на победу. */
+function betShape(key: string): { side: 'home' | 'away' | null; label: string | null } {
+  if (key === 'home' || key === 'away') return { side: key, label: null }
+  if (key === 'hd' || key === 'da') return { side: key === 'hd' ? 'home' : 'away', label: 'не проиграет' }
+  if (key === 'draw') return { side: null, label: 'ничья' }
+  if (key === 'ha') return { side: null, label: 'без ничьей' }
+  if (key === 'bttsYes') return { side: null, label: 'обе забьют' }
+  if (key === 'bttsNo') return { side: null, label: 'не обе забьют' }
+  const t = /^(over|under)([\d.]+)$/.exec(key)
+  if (t) {
+    const line = Number(t[2])
+    if (t[1] === 'over') return { side: null, label: `${Math.ceil(line)}+ ${Math.ceil(line) < 5 ? 'гола' : 'голов'}` }
+    const n = Math.floor(line)
+    return { side: null, label: n === 0 ? 'без голов' : `до ${n} ${n === 1 ? 'гола' : 'голов'}` }
+  }
+  return { side: null, label: null }
+}
+
+function cardFor(kind: CardKind, s: Summary): ListCard {
+  const l = s.lists
+  switch (kind) {
+    case 'live': {
+      // идущих мало — добираем ближайшими, чтобы плитка не пустовала
+      const soon = l.upcoming.slice(0, Math.max(0, 4 - l.live.length))
+      return {
+        title: soon.length ? 'Сейчас и скоро' : 'Сейчас идут',
+        hint: soon.length ? pluralN(s.liveCount, ['идёт', 'идут', 'идут']) : pluralN(s.liveCount, MATCHES),
+        href: '#matches',
+        live: true,
+        rows: [
+          ...l.live.map((it) => {
+            const m = it.match
+            return {
+              key: m.id,
+              it,
+              left: (
+                <>
+                  {m.home.name} <span className="num font-semibold text-fg">{m.score ? `${m.score.home}:${m.score.away}` : '–'}</span> {m.away.name}
+                </>
+              ),
+              right: m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}′` : 'идёт',
+              tone: 'text-live',
+            }
+          }),
+          ...soon.map((it) => ({ key: it.match.id, it, left: <Teams m={it.match} />, right: formatTime(it.match.ts) })),
+        ],
+      }
     }
     case 'next': {
-      const it = s.next!
-      return (
-        <Tile label={s.liveCount ? 'Следующий матч' : 'Первый матч'}>
-          <Big unit={until(it.match.ts)}>{formatTime(it.match.ts)}</Big>
-          <Detail>
-            <MatchLink it={it} />
-            <Note>{featuredInfo(it.match.league)?.short || it.match.league.name}</Note>
-          </Detail>
-        </Tile>
-      )
+      const today = l.upcoming.length > 0 && ymdInTz(l.upcoming[0].match.ts) === todayYmd()
+      return {
+        title: today ? 'Скоро начнутся' : 'Первые матчи дня',
+        href: '#matches',
+        rows: l.upcoming.map((it) => ({ key: it.match.id, it, left: <Teams m={it.match} />, right: formatTime(it.match.ts) })),
+      }
     }
-    case 'goals': {
-      // это прогноз на будущие матчи: крупно — шанс 3+ голов у самого голевого, ниже — по какому порогу отбор
-      const g = s.goals!
-      const more = g.count - 1
-      return (
-        <Tile label="Ждём голов">
-          <Big unit={<Short phone="3+ гола" full="шанс 3+ голов" />}>{pct(g.p)}</Big>
-          <Detail>
-            <MatchLink it={g.item} />
-            <Note>
-              {more > 0 ? `Ещё ${more} ${plural(more, ['матч', 'матча', 'матчей'])} с шансом от ${GOALS_FROM}` : `В подборке — шанс от ${GOALS_FROM}`}
-            </Note>
-          </Detail>
-        </Tile>
-      )
-    }
-    case 'favorite': {
-      const f = s.favorite!
-      return (
-        <Tile label="Фаворит дня">
-          <Big unit={<Short phone="победа" full="шанс победы" />}>{pct(f.p)}</Big>
-          <Detail>
-            <MatchLink it={f.item} />
-            <Note>Фаворит по кэфам — «{sideName(f.item.match, f.side)}»</Note>
-          </Detail>
-        </Tile>
-      )
-    }
+    case 'favorite':
+      return {
+        title: 'Фавориты',
+        hint: 'шанс победы',
+        href: '/tag/favorit',
+        rows: l.favorites.map((f) => ({ key: f.item.match.id, it: f.item, left: <Teams m={f.item.match} hl={f.side} />, right: pct(f.p) })),
+      }
+    case 'goals':
+      return {
+        title: 'Ждём голов',
+        hint: 'шанс 3+ голов',
+        href: '/tag/tb-2-5',
+        rows: l.goals.map((g) => ({ key: g.item.match.id, it: g.item, left: <Teams m={g.item.match} />, right: pct(g.p) })),
+      }
+    case 'value':
+      return {
+        title: 'Выгодно',
+        hint: 'кэф выше честного',
+        href: '/tag/value',
+        rows: l.values.map((it) => {
+          const p = it.summary!.pick!
+          const b = betShape(p.key)
+          return {
+            key: it.match.id,
+            it,
+            left: <Teams m={it.match} hl={b.side} tone="text-acid" />,
+            right: (
+              <>
+                {b.label ? <span className="mr-1.5 text-[13px] font-medium text-dim">{b.label}</span> : null}
+                {p.odd ? p.odd.toFixed(2) : '—'}
+              </>
+            ),
+            tone: 'text-acid',
+          }
+        }),
+      }
+    case 'progruz':
+      // только то, что видно по линии: кэф снизился. Сколько на исход ставят — мы не знаем
+      return {
+        title: 'Кэф упал',
+        hint: 'с открытия линии',
+        href: '/tag/progruz',
+        rows: l.drops.map((d) => ({
+          key: d.item.match.id,
+          it: d.item,
+          left: <Teams m={d.item.match} hl={d.side} tone="text-hot" />,
+          right: `−${Math.round(d.drop * 100)}%`,
+          tone: 'text-hot',
+        })),
+      }
     case 'count':
-      return (
-        <Tile label="Всего за день">
-          <a href="#matches" className={`block ${COVER}`}>
-            <Big unit={plural(s.total, ['матч', 'матча', 'матчей'])}>{s.total}</Big>
-          </a>
-          <Detail>
-            <p className="line-clamp-2 text-[14px] font-semibold leading-snug">{s.topLeagues.map((l) => featuredInfo(l)?.short || l.name).join(', ')}</p>
-            <Note>
-              {s.leagues} {plural(s.leagues, ['турнир', 'турнира', 'турниров'])}
-            </Note>
-          </Detail>
-        </Tile>
-      )
+      return {
+        title: 'Турниры дня',
+        hint: pluralN(s.total, MATCHES),
+        href: '#matches',
+        rows: s.topLeagues.map((g) => ({ key: g.id, href: leagueHref(g.league), left: leagueShort(g.league), right: g.count })),
+      }
   }
 }
+
+// ─── Матч дня ────────────────────────────────────────────────────────────────
 
 /**
  * Шансы одной полосой: хозяева · ничья · гости — доли ширины, проценты (в сумме 100) в полосе,
@@ -277,7 +245,7 @@ function ChanceBar({ m }: { m: Match }) {
     name: k === 'draw' ? 'ничья' : k === 'home' ? m.home.name : m.away.name,
   }))
   // «Ничья» под серединой — только если по обе стороны хватает места подписям команд
-  const BAR = 560
+  const BAR = 500
   const est = (t: string) => t.length * 7 + 10
   const mid = f.home + f.draw / 2
   const drawAt = f.draw >= 0.1 && mid * BAR >= est(m.home.name) + 30 && (1 - mid) * BAR >= est(m.away.name) + 30 ? mid * 100 : null
@@ -285,7 +253,7 @@ function ChanceBar({ m }: { m: Match }) {
   const label = `Шансы по коэффициентам букмекеров: ${cells.map((c) => `${c.k === 'draw' ? c.name : `«${c.name}»`} — ${c.n}%`).join(', ')}`
   return (
     <div role="img" aria-label={label} title={label}>
-      <div className="flex h-7 gap-0.5 overflow-hidden rounded-full lg:h-[clamp(28px,3.6vh,36px)]">
+      <div className="flex h-7 gap-0.5 overflow-hidden rounded-full lg:h-[clamp(28px,3.4vh,34px)]">
         {cells.map((c) => (
           <span key={c.k} className={`num grid min-w-0 place-items-center text-[13px] font-semibold ${tone(c.k)}`} style={{ width: `${c.p * 100}%` }}>
             <span className="truncate px-1">{c.n}%</span>
@@ -293,7 +261,7 @@ function ChanceBar({ m }: { m: Match }) {
         ))}
       </div>
       {/* команды — по краям полосы, не обрезаются узким сегментом; «Ничья» — под серединой,
-          если ей хватает места (оценка по ширине полосы ~560 px), на телефоне — только команды */}
+          если ей хватает места (оценка по ширине полосы ~500 px), на телефоне — только команды */}
       <div className="relative mt-1.5 h-[18px] text-[12.5px] leading-[18px]" aria-hidden>
         <span
           className={`absolute left-0 top-0 max-w-[55%] truncate pl-1 sm:max-w-[var(--hm)] ${fav === 'home' ? 'text-chalk' : 'text-mute'}`}
@@ -317,21 +285,31 @@ function ChanceBar({ m }: { m: Match }) {
   )
 }
 
-/** Почему этот матч стоит смотреть: падение кэфа, самый весомый тег или голы — одной фразой. */
-function whyTop(it: FeedItem, v: ReturnType<typeof buildVerdict>): { text: string; icon: keyof typeof ICONS; accent: 'hot' | 'none' } | null {
-  if (v?.drop) return { text: v.drop, icon: 'down', accent: 'hot' }
-  // «выгодно» уже на кнопке, «фаворит» и «50 на 50» — в главной фразе
-  const t = bestTag(it.tags.filter((x) => !['value', 'favorit', 'ravnye', 'progruz'].includes(x.slug)))
-  if (t) return { text: t.reason, icon: t.slug === 'tb-2-5' || t.slug === 'obe-zabyut' ? 'ball' : 'star', accent: 'none' }
-  if (v?.goals) return { text: v.goals, icon: 'ball', accent: 'none' }
-  return null
+type Reason = { text: string; icon: IconName; hot: boolean }
+
+/**
+ * Почему стоит смотреть — до трёх фактов: падение кэфа, серии, дом, потери, личные встречи, голы.
+ * «Выгодно» — на кнопке, «фаворит» и «50 на 50» — в главной фразе, их не повторяем.
+ * Значки — те же, что у кружков историй с этими тегами. Во время матча вывода нет (v = null) —
+ * остаются факты из тегов.
+ */
+function reasonsFor(it: FeedItem, v: Verdict | null): Reason[] {
+  const out: Reason[] = []
+  if (v?.drop) out.push({ text: v.drop, icon: 'down', hot: true })
+  // до матча «фаворит» и «50 на 50» — в главной фразе; во время игры главной фразы нет, и эти факты — к месту
+  const skip = new Set(v ? ['value', 'favorit', 'ravnye', 'progruz'] : ['value', 'progruz'])
+  for (const t of [...it.tags].sort((a, b) => b.score - a.score)) {
+    if (!skip.has(t.slug)) out.push({ text: t.reason, icon: artFor(t.slug).icon, hot: false })
+  }
+  if (v?.goals && !it.tags.some((t) => t.slug === 'tb-2-5' || t.slug === 'tm-2-5')) out.push({ text: v.goals, icon: 'ball', hot: false })
+  return out.slice(0, 3)
 }
 
 /**
- * Матч дня: вывод → причина → разбор. Команды, одна фраза — кто скорее выиграет,
- * полоса шансов, одна конкретная причина и кнопка «Разбор за минуту» (сторис).
+ * Матч дня: команды и время → вывод словами и полоса шансов → почему (до трёх фактов) → разбор.
+ * На компьютере — высокая карточка слева, лишняя высота делится поровну между блоками.
  */
-function TopCard({ it }: { it: FeedItem }) {
+function TopCard({ it, full }: { it: FeedItem; full: boolean }) {
   const m = it.match
   const live = isLive(m)
   const played = Boolean(m.score) && (live || m.status === 'finished')
@@ -340,30 +318,30 @@ function TopCard({ it }: { it: FeedItem }) {
   const v = m.status === 'scheduled' ? buildVerdict({ match: m, tags: it.tags, pick: pick?.kind === 'value' ? pick : null }) : null
   const bet = v?.bet
   const betLabel = bet && pick ? (pick.key === v.side ? 'Выгодно' : `Выгодно: ${bet.text}`) : null
-  const why = played ? null : whyTop(it, v)
+  // факты о командах (серии, дом, потери, личные встречи) полезны и во время игры; после матча — уже нет
+  const reasons = m.status === 'finished' ? [] : reasonsFor(it, v)
   const team = (t: Match['home'], goals: number | undefined, dim = false) => (
     <span className={`flex min-w-0 items-center gap-3 ${dim ? 'text-chalk' : ''}`}>
       <TeamLogo name={t.name} src={t.logo} size={28} />
       <span className="min-w-0 flex-1 truncate">{t.name}</span>
-      {played ? <span className={`num shrink-0 text-[26px] font-semibold ${live ? 'text-live' : 'text-fg'}`}>{goals}</span> : null}
+      {played ? <span className={`num shrink-0 font-semibold ${live ? 'text-live' : 'text-fg'}`}>{goals}</span> : null}
     </span>
   )
   return (
-    // на телефоне — столбик: команды → вывод → кнопки. На компьютере — широкая карточка во всю строку,
-    // две колонки: слева команды со временем начала (как на табло) и кнопки, справа вывод с полосой шансов
-    // и причина; ряды выровнены, лишняя высота уходит поровну вокруг команд и вывода
-    <article className="group relative col-span-2 flex min-w-0 flex-col gap-5 rounded-[22px] border border-edge bg-panel p-5 shadow-[inset_0_1px_0_rgb(255_255_255/0.035)] transition-colors duration-300 hover:border-edge-2 sm:px-6 sm:py-5 lg:col-span-4 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)_auto] lg:gap-x-12 lg:gap-y-3 lg:px-7 lg:py-5">
-      <div className="lg:contents">
-        <div className="flex items-center justify-between gap-3 lg:col-span-2">
+    <article
+      className={`group relative flex min-w-0 flex-col justify-between gap-4 p-5 transition-colors duration-300 hover:border-edge-2 sm:col-span-2 sm:px-6 lg:row-span-2 ${full ? 'lg:col-span-4' : ''} ${CARD}`}
+    >
+      <div>
+        <div className="flex items-center justify-between gap-3">
           <p className="min-w-0 truncate text-[13px] font-medium text-chalk">
             {live ? <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse-live rounded-full bg-live align-middle" /> : null}
-            Матч дня <span className="text-mute">· {featuredInfo(m.league)?.short || m.league.name}</span>
+            Матч дня <span className="text-mute">· {leagueShort(m.league)}</span>
           </p>
           <Go />
         </div>
 
         {/* команды, справа — время начала, как на табло; после стартового свистка на этом месте счёт */}
-        <div className="mt-3.5 flex items-center gap-3 text-[21px] font-semibold leading-tight tracking-[-0.025em] sm:text-[23px] lg:col-start-1 lg:row-start-2 lg:mt-0 lg:gap-6 lg:self-center lg:text-[clamp(26px,4.2vh,40px)]">
+        <div className="mt-3.5 flex items-center gap-3 text-[21px] font-semibold leading-tight tracking-[-0.025em] sm:text-[23px] lg:gap-5 lg:text-[clamp(23px,3.6vh,32px)]">
           <StoryLink id={m.id} href={matchHref(m)} className={`block min-w-0 flex-1 space-y-1.5 ${COVER}`}>
             {team(m.home, m.score?.home)}
             {team(m.away, m.score?.away, true)}
@@ -378,39 +356,40 @@ function TopCard({ it }: { it: FeedItem }) {
         </div>
       </div>
 
-      <div className="lg:contents">
-        {played ? (
-          <div className="lg:col-start-2 lg:row-start-2 lg:self-center">
-            <p className="mb-3 text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-[clamp(18px,2.7vh,24px)]">
-              {live ? (m.statusCode === 4 ? 'Перерыв' : m.elapsed ? `Идёт ${m.elapsed}-я минута` : 'Идёт матч') : 'Матч завершён'}
-            </p>
-            {live ? (
-              <div className="h-1.5 rounded-full bg-white/[0.08]" aria-hidden>
-                <div className="h-full rounded-full bg-live" style={{ width: `${Math.min(100, ((m.elapsed ?? 45) / 90) * 100)}%` }} />
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <>
-            {/* вывод → на чём он основан (полоса шансов по кэфам) → причина */}
-            <div className="lg:col-start-2 lg:row-start-2 lg:self-center">
-              {v ? <p className="mb-2.5 text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:mb-3 lg:text-[clamp(18px,2.7vh,24px)]">{v.headline}</p> : null}
-              <ChanceBar m={m} />
+      {played ? (
+        <div>
+          <p className="mb-3 text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-[clamp(17px,2.5vh,21px)]">
+            {live ? (m.statusCode === 4 ? 'Перерыв' : m.elapsed ? `Идёт ${m.elapsed}-я минута` : 'Идёт матч') : 'Матч завершён'}
+          </p>
+          {live ? (
+            <div className="h-1.5 rounded-full bg-white/[0.08]" aria-hidden>
+              <div className="h-full rounded-full bg-live" style={{ width: `${Math.min(100, ((m.elapsed ?? 45) / 90) * 100)}%` }} />
             </div>
-            {why ? (
-              <p className="mt-3 flex items-start gap-2.5 text-[14px] leading-snug text-chalk lg:col-start-2 lg:row-start-3 lg:mt-0 lg:self-center">
-                <span className={`mt-px grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full ${ACCENT[why.accent]}`}>
-                  <Icon name={why.icon} />
-                </span>
-                <span className="line-clamp-2 pt-px">{why.text}</span>
-              </p>
-            ) : null}
-          </>
-        )}
-      </div>
+          ) : null}
+        </div>
+      ) : (
+        // вывод → на чём он основан (полоса шансов по кэфам)
+        <div>
+          {v ? <p className="mb-2.5 text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-[clamp(17px,2.5vh,21px)]">{v.headline}</p> : null}
+          <ChanceBar m={m} />
+        </div>
+      )}
 
-      {/* кнопки — внизу; на компьютере — под командами */}
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[13px] lg:col-start-1 lg:row-start-3 lg:justify-start lg:self-center">
+      {reasons.length ? (
+        // третий факт — только где хватает высоты: на невысоком ноутбуке карточка не должна вылезать за экран
+        <ul className="space-y-2.5">
+          {reasons.map((r, i) => (
+            <li key={i} className={`flex items-start gap-2.5 text-[14px] leading-snug text-chalk ${i === 2 ? 'lg:[@media(max-height:779px)]:hidden' : ''}`}>
+              <span className={`mt-px grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full ${r.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.06] text-chalk'}`}>
+                <ArtIcon name={r.icon} className="h-[13px] w-[13px]" />
+              </span>
+              <span className="line-clamp-2 pt-px">{r.text}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[13px]">
         <span aria-hidden className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-white/[0.06] py-1.5 pl-1.5 pr-3.5 font-medium text-fg">
           <span className="grid h-6 w-6 place-items-center rounded-full bg-acid text-acid-ink">
             <svg viewBox="0 0 12 12" className="ml-px h-2.5 w-2.5" fill="currentColor">
@@ -431,37 +410,24 @@ function TopCard({ it }: { it: FeedItem }) {
 }
 
 /**
- * Порядок плиток на экране: value — первой, прогруз — последним (наискосок от value).
- */
-function arrange(cards: CardKind[]): CardKind[] {
-  const order: CardKind[] = ['value', 'live', 'goals', 'next', 'favorite', 'progruz', 'count']
-  return [...cards].sort((a, b) => order.indexOf(a) - order.indexOf(b))
-}
-
-/**
- * «Сводка дня» — первый экран главной. На телефоне — «Матч дня» и плитки по две в ряд; на компьютере —
- * «Матч дня» широкой карточкой во всю строку и до четырёх плиток одним рядом под ним. Сводка тянется
- * до низа окна (см. DayView): лишнюю высоту забирает в основном «Матч дня», плитки остаются почти
- * по содержимому — без пустот. Все плитки тёмные, цвет — только на главной цифре; каждая открывает
- * сторис матча или нужный блок.
+ * «Сводка дня» — первый экран главной: слева высокий «Матч дня», справа до четырёх плиток-подборок (2×2).
+ * На телефоне — всё столбиком, на планшете — подборки по две в ряд. Сводка тянется до низа окна
+ * (см. DayView): строки подборок делят высоту поровну, пустых мест в плитках нет.
  */
 export function DaySummary({ s, className = '' }: { s: Summary; className?: string }) {
   if (!s.top) return null
-  const cards = arrange(summaryCards(s))
+  const cards = summaryCards(s)
   const n = cards.length
+  // плиток меньше четырёх — растягиваем последние, чтобы в сетке не было дыр
+  const span = (i: number) => (n === 1 ? 'sm:col-span-2 lg:row-span-2' : n === 2 || (n === 3 && i === 2) ? 'sm:col-span-2' : '')
   return (
-    <section aria-label="Сводка дня" className={`grid grid-cols-2 gap-3 lg:grid-cols-4 ${n ? 'lg:grid-rows-[1fr_auto]' : ''} ${className}`}>
-      <TopCard it={s.top} />
-      {cards.map((k, i) => {
-        // карточек меньше четырёх — растягиваем, чтобы в ряду не было дыр
-        const phone = n <= 2 || (n === 3 && i === 2) ? 'col-span-2' : ''
-        const desk = n === 1 ? 'lg:col-span-4' : n === 2 || (n === 3 && i === 2) ? 'lg:col-span-2' : 'lg:col-span-1'
-        return (
-          <div key={k} className={`min-w-0 ${phone} ${desk}`}>
-            <Card kind={k} s={s} />
-          </div>
-        )
-      })}
+    <section aria-label="Сводка дня" className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-4 ${className}`}>
+      <TopCard it={s.top} full={n === 0} />
+      {cards.map((k, i) => (
+        <div key={k} className={`min-w-0 ${span(i)}`}>
+          <ListTile {...cardFor(k, s)} />
+        </div>
+      ))}
     </section>
   )
 }
