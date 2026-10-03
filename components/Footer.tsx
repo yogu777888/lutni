@@ -1,13 +1,13 @@
 import Link from 'next/link'
 import { SITE } from '@/config/site'
-import { Brand } from './Logo'
+import { LogoMark } from './Logo'
 
 export function Footer() {
   return (
     <footer className="mt-20 border-t border-edge">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <Brand size={30} />
+          <LogoMark size={32} />
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-dim">
             Теги ставок на футбол: сравнение коэффициентов, вероятности без маржи, форма команд и прогнозы на основе данных.
           </p>
