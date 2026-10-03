@@ -230,9 +230,9 @@ function cardFor(kind: CardKind, s: Summary): ListCard {
 // ─── Матч дня ────────────────────────────────────────────────────────────────
 
 /**
- * Шансы одной полосой: хозяева · ничья · гости — доли ширины, проценты (в сумме 100) в полосе,
- * под ней — чей это шанс: команда, «ничья», команда. Без своих цветов, чтобы не спорить с лаймом:
- * светлая часть — фаворит, остальные — тёмные.
+ * Шансы одной полосой прямо под табло: левая часть — под хозяевами, правая — под гостями, середина —
+ * ничья; проценты (в сумме 100) внутри. Подписи с названиями не нужны — команды стоят прямо над полосой.
+ * Без своих цветов, чтобы не спорить с лаймом: светлая часть — фаворит, остальные — тёмные.
  */
 function ChanceBar({ m }: { m: Match }) {
   const f = fair1x2(m.odds?.x12)
@@ -245,43 +245,21 @@ function ChanceBar({ m }: { m: Match }) {
     n: n[k],
     name: k === 'draw' ? 'ничья' : k === 'home' ? m.home.name : m.away.name,
   }))
-  // «Ничья» под серединой — только если по обе стороны хватает места подписям команд
-  const BAR = 500
-  const est = (t: string) => t.length * 7 + 10
-  const mid = f.home + f.draw / 2
-  const drawAt = f.draw >= 0.1 && mid * BAR >= est(m.home.name) + 30 && (1 - mid) * BAR >= est(m.away.name) + 30 ? mid * 100 : null
   const tone = (k: (typeof cells)[number]['k']) => (k === fav ? 'bg-chalk text-ink' : k === 'draw' ? 'bg-[#26251f] text-dim' : 'bg-[#3a3931] text-chalk')
   const label = `Шансы по коэффициентам букмекеров: ${cells.map((c) => `${c.k === 'draw' ? c.name : `«${c.name}»`} — ${c.n}%`).join(', ')}`
   return (
     <div role="img" aria-label={label} title={label}>
-      <div className="flex h-7 gap-0.5 overflow-hidden rounded-full lg:h-[clamp(28px,3.4vh,34px)]">
+      <div className="flex h-7 gap-0.5 overflow-hidden rounded-[9px] lg:h-[clamp(28px,3.4vh,34px)]">
         {cells.map((c) => (
           <span key={c.k} className={`num grid min-w-0 place-items-center text-[13px] font-semibold ${tone(c.k)}`} style={{ width: `${c.p * 100}%` }}>
             <span className="truncate px-1">{c.n}%</span>
           </span>
         ))}
       </div>
-      {/* команды — по краям полосы, не обрезаются узким сегментом; «Ничья» — под серединой,
-          если ей хватает места (оценка по ширине полосы ~500 px), на телефоне — только команды */}
-      <div className="relative mt-1.5 h-[18px] text-[12.5px] leading-[18px]" aria-hidden>
-        <span
-          className={`absolute left-0 top-0 max-w-[55%] truncate pl-1 sm:max-w-[var(--hm)] ${fav === 'home' ? 'text-chalk' : 'text-mute'}`}
-          style={{ '--hm': drawAt ? `${drawAt - 6}%` : '55%' } as React.CSSProperties}
-        >
-          {m.home.name}
-        </span>
-        {drawAt ? (
-          <span className="absolute top-0 hidden -translate-x-1/2 text-mute sm:block" style={{ left: `${drawAt}%` }}>
-            Ничья
-          </span>
-        ) : null}
-        <span
-          className={`absolute right-0 top-0 max-w-[45%] truncate pr-1 text-right sm:max-w-[var(--am)] ${fav === 'away' ? 'text-chalk' : 'text-mute'}`}
-          style={{ '--am': drawAt ? `${100 - drawAt - 6}%` : '45%' } as React.CSSProperties}
-        >
-          {m.away.name}
-        </span>
-      </div>
+      {/* на невысоком ноутбуке подпись прячем — карточка должна влезать в экран */}
+      <p className="mt-1.5 text-center text-[13px] text-mute lg:[@media(max-height:779px)]:hidden" aria-hidden>
+        шансы по кэфам букмекеров · в середине — ничья
+      </p>
     </div>
   )
 }
@@ -307,8 +285,9 @@ function reasonsFor(it: FeedItem, v: Verdict | null): Reason[] {
 }
 
 /**
- * Слайд «Матча дня»: команды и время → вывод словами и полоса шансов → почему (до трёх фактов) → разбор.
- * Шапка с лигой и точками — у карусели (TopCarousel); лишняя высота делится поровну между блоками.
+ * Слайд «Матча дня» — как карточка матча в спортивных приложениях: табло (хозяева · время или счёт · гости),
+ * под ним вывод словами и полоса шансов, ниже — факты «почему» одной панелью и кнопки.
+ * Шапка с выбором лиги — у карусели (TopCarousel); лишняя высота делится поровну между блоками.
  */
 function TopSlide({ it }: { it: FeedItem }) {
   const m = it.match
@@ -321,60 +300,65 @@ function TopSlide({ it }: { it: FeedItem }) {
   const betLabel = bet && pick ? (pick.key === v.side ? 'Выгодно' : `Выгодно: ${bet.text}`) : null
   // факты о командах (серии, дом, потери, личные встречи) полезны и во время игры; после матча — уже нет
   const reasons = m.status === 'finished' ? [] : reasonsFor(it, v)
-  const team = (t: Match['home'], goals: number | undefined, dim = false) => (
-    <span className={`flex min-w-0 items-center gap-3 ${dim ? 'text-chalk' : ''}`}>
-      <TeamLogo name={t.name} src={t.logo} size={28} />
-      <span className="min-w-0 flex-1 truncate">{t.name}</span>
-      {played ? <span className={`num shrink-0 font-semibold ${live ? 'text-live' : 'text-fg'}`}>{goals}</span> : null}
+  const minute = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'
+  const side = (t: Match['home'], k: 'home' | 'away') => (
+    <span className="flex min-w-0 flex-col items-center gap-2 text-center">
+      <TeamLogo name={t.name} src={t.logo} size={48} />
+      <span
+        className={`line-clamp-2 text-[16px] font-semibold leading-tight tracking-[-0.015em] sm:text-[18px] lg:text-[clamp(17px,2.5vh,21px)] ${v?.side && v.side !== k ? 'text-chalk' : 'text-fg'}`}
+      >
+        {t.name}
+      </span>
     </span>
   )
   return (
-    <div className="relative flex min-w-0 flex-1 flex-col justify-between gap-4">
-      <div>
-        {/* команды, справа — время начала, как на табло; после стартового свистка на этом месте счёт */}
-        <div className="flex items-center gap-3 text-[21px] font-semibold leading-tight tracking-[-0.025em] sm:text-[23px] lg:gap-5 lg:text-[clamp(23px,3.6vh,32px)]">
-          <StoryLink id={m.id} href={matchHref(m)} className={`block min-w-0 flex-1 space-y-1.5 ${COVER}`}>
-            {team(m.home, m.score?.home)}
-            {team(m.away, m.score?.away, true)}
-          </StoryLink>
-          {played ? null : (
-            <p className="shrink-0 text-right">
-              <span className="num block leading-none">{formatTime(m.ts)}</span>
-              {/* «через 40 мин» — только где есть место: на телефоне названия команд важнее */}
-              <span className="mt-2 hidden text-[13px] font-medium leading-none tracking-normal text-dim sm:block">{until(m.ts)}</span>
-            </p>
-          )}
-        </div>
-      </div>
+    <div className="relative flex min-w-0 flex-1 flex-col justify-between gap-4 lg:[@media(max-height:779px)]:gap-3">
+      {/* табло: хозяева — время (после свистка — счёт) — гости; вся карточка открывает сторис */}
+      <StoryLink id={m.id} href={matchHref(m)} className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3 ${COVER}`}>
+        {side(m.home, 'home')}
+        <span className="flex flex-col items-center pt-2">
+          <span
+            className={`num whitespace-nowrap text-[30px] font-semibold leading-none tracking-[-0.03em] sm:text-[34px] lg:text-[clamp(32px,4.6vh,44px)] ${live ? 'text-live' : ''}`}
+          >
+            {played && m.score ? `${m.score.home} : ${m.score.away}` : formatTime(m.ts)}
+          </span>
+          <span className={`mt-2 whitespace-nowrap text-[13px] font-medium ${live ? 'text-live' : 'text-dim'}`}>
+            {live ? minute : m.status === 'finished' ? 'итог' : until(m.ts)}
+          </span>
+        </span>
+        {side(m.away, 'away')}
+      </StoryLink>
 
       {played ? (
-        <div>
-          <p className="mb-3 text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-[clamp(17px,2.5vh,21px)]">
-            {live ? (m.statusCode === 4 ? 'Перерыв' : m.elapsed ? `Идёт ${m.elapsed}-я минута` : 'Идёт матч') : 'Матч завершён'}
-          </p>
-          {live ? (
+        live ? (
+          // идёт матч: сколько сыграно — тонкой полосой; вывода до матча здесь уже нет
+          <div>
             <div className="h-1.5 rounded-full bg-white/[0.08]" aria-hidden>
               <div className="h-full rounded-full bg-live" style={{ width: `${Math.min(100, ((m.elapsed ?? 45) / 90) * 100)}%` }} />
             </div>
-          ) : null}
-        </div>
+            <p className="mt-2 text-center text-[13px] text-mute">сыграно {Math.min(90, m.elapsed ?? 45)} из 90 минут</p>
+          </div>
+        ) : null
       ) : (
         // вывод → на чём он основан (полоса шансов по кэфам)
         <div>
-          {v ? <p className="mb-2.5 text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-[clamp(17px,2.5vh,21px)]">{v.headline}</p> : null}
+          {v ? <p className="mb-2.5 text-center text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-[clamp(17px,2.5vh,21px)]">{v.headline}</p> : null}
           <ChanceBar m={m} />
         </div>
       )}
 
       {reasons.length ? (
-        // третий факт — только где хватает высоты: на невысоком ноутбуке карточка не должна вылезать за экран
-        <ul className="space-y-2.5">
+        // факты «почему» — одной панелью; третий — только где хватает высоты (невысокий ноутбук)
+        <ul className="rounded-[14px] bg-white/[0.035] px-3.5">
           {reasons.map((r, i) => (
-            <li key={i} className={`flex items-start gap-2.5 text-[14px] leading-snug text-chalk ${i === 2 ? 'lg:[@media(max-height:779px)]:hidden' : ''}`}>
-              <span className={`mt-px grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full ${r.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.06] text-chalk'}`}>
+            <li
+              key={i}
+              className={`flex items-center gap-3 border-t border-edge py-2 text-[14px] leading-snug text-chalk first:border-t-0 ${i === 2 ? 'lg:[@media(max-height:779px)]:hidden' : ''}`}
+            >
+              <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-[7px] ${r.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.06] text-chalk'}`}>
                 <ArtIcon name={r.icon} className="h-[13px] w-[13px]" />
               </span>
-              <span className="line-clamp-2 pt-px">{r.text}</span>
+              <span className="line-clamp-2">{r.text}</span>
             </li>
           ))}
         </ul>

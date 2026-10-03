@@ -94,7 +94,7 @@ export function TopCarousel({ heads, className = '', children }: { heads: { leag
       </div>
       <div
         ref={track}
-        className="scrollbar-none mt-3.5 flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain"
+        className="scrollbar-none mt-3 flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain"
         onScroll={(e) => {
           const el = e.currentTarget
           const k = Math.round(el.scrollLeft / Math.max(1, el.clientWidth))
