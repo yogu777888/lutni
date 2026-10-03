@@ -69,33 +69,39 @@ function Go() {
   )
 }
 
+/**
+ * Плитка по высоте содержимого: подпись и стрелка → цифра с подписью → матч и пояснение внизу.
+ * Цифры во всех плитках ряда стоят на одной высоте, даже если у матча две строки.
+ */
 function Tile({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
-    <article className="group relative flex h-full min-h-[150px] min-w-0 flex-col rounded-[22px] border border-edge bg-panel p-4 shadow-[inset_0_1px_0_rgb(255_255_255/0.035)] transition-colors duration-300 hover:border-edge-2 sm:px-5 sm:py-[18px]">
+    <article className="group relative flex h-full min-w-0 flex-col rounded-[22px] border border-edge bg-panel p-4 shadow-[inset_0_1px_0_rgb(255_255_255/0.035)] transition-colors duration-300 hover:border-edge-2 sm:px-5 sm:py-4">
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-1.5 truncate text-[13px] font-medium text-chalk">{label}</span>
         <Go />
       </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-end pt-2">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col pt-2.5">{children}</div>
     </article>
   )
 }
 
-/** Крупная цифра и подпись к ней обычным размером: в узкой плитке подпись встаёт под цифру. */
+/** Крупная цифра и под ней — подпись обычным размером. Всегда столбиком: в соседних плитках всё на одной высоте. */
 function Big({ children, unit, className = '' }: { children: React.ReactNode; unit?: React.ReactNode; className?: string }) {
   return (
-    // подпись встаёт рядом с цифрой, а если места нет — переносится под неё целиком, не обрезаясь
-    <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-1">
-      <span className={`num whitespace-nowrap text-[30px] font-semibold leading-none tracking-[-0.045em] sm:text-[34px] lg:text-[clamp(34px,5.6vh,52px)] ${className}`}>{children}</span>
-      {unit ? <span className="whitespace-nowrap text-[14px] font-medium text-dim">{unit}</span> : null}
+    <div className="min-w-0">
+      <span className={`num block whitespace-nowrap text-[30px] font-semibold leading-none tracking-[-0.045em] sm:text-[34px] lg:text-[clamp(30px,4.4vh,44px)] ${className}`}>{children}</span>
+      {unit ? <span className="mt-1 block truncate text-[14px] font-medium text-dim">{unit}</span> : null}
     </div>
   )
 }
 
+/** Матч и строка пояснения — внизу плитки. */
+const Detail = ({ children }: { children: React.ReactNode }) => <div className="mt-auto pt-2.5">{children}</div>
+
 /** Матч плитки: вся плитка — ссылка (открывает сторис). */
 function MatchLink({ it, children }: { it: FeedItem; children?: React.ReactNode }) {
   return (
-    <StoryLink id={it.match.id} href={matchHref(it.match)} className={`mt-2.5 line-clamp-2 text-[14px] font-semibold leading-snug ${COVER}`}>
+    <StoryLink id={it.match.id} href={matchHref(it.match)} className={`line-clamp-2 text-[14px] font-semibold leading-snug ${COVER}`}>
       {children ?? names(it.match)}
     </StoryLink>
   )
@@ -113,18 +119,6 @@ const Short = ({ phone, full }: { phone: string; full: string }) => (
     <span className="hidden sm:inline">{full}</span>
   </>
 )
-
-/** Кольцо одного значения: доля круга = шанс. */
-function Ring({ p, size = 40 }: { p: number; size?: number }) {
-  const r = 22
-  const c = 2 * Math.PI * r
-  return (
-    <svg viewBox="0 0 52 52" width={size} height={size} className="shrink-0 -rotate-90" aria-hidden>
-      <circle cx="26" cy="26" r={r} fill="none" stroke="rgb(255 255 255 / 0.08)" strokeWidth="6" />
-      <circle cx="26" cy="26" r={r} fill="none" stroke="var(--color-fg)" strokeWidth="6" strokeLinecap="round" strokeDasharray={`${c * p} ${c}`} />
-    </svg>
-  )
-}
 
 /** Когда начнётся: сегодня — «через 40 мин», «через 3 ч»; в другой день — дата («6 октября»), а не «через 66 ч». */
 const until = (ts: number) => {
@@ -153,12 +147,14 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
           <Big className="text-acid" unit="к честной цене">
             {edge(p.ev ?? 0)}
           </Big>
-          <MatchLink it={it} />
-          {/* что ставить и откуда процент: платят столько-то, а исход стоит столько-то */}
-          <Note>
-            {cap(outcomeShort(p.key))}
-            {p.odd ? ` · ${p.odd.toFixed(2)} вместо ${(1 / p.prob).toFixed(2)}` : ''}
-          </Note>
+          <Detail>
+            <MatchLink it={it} />
+            {/* что ставить и откуда процент: платят столько-то, а исход стоит столько-то */}
+            <Note>
+              {cap(outcomeShort(p.key))}
+              {p.odd ? ` · ${p.odd.toFixed(2)} вместо ${(1 / p.prob).toFixed(2)}` : ''}
+            </Note>
+          </Detail>
         </Tile>
       )
     }
@@ -170,10 +166,12 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
           <Big className="text-hot" unit="с открытия линии">
             −{Math.round(g.drop * 100)}%
           </Big>
-          <MatchLink it={g.item} />
-          <Note>
-            Кэф на {g.side === 'home' ? 'хозяев' : 'гостей'}: {g.from.toFixed(2)} → {g.to.toFixed(2)}
-          </Note>
+          <Detail>
+            <MatchLink it={g.item} />
+            <Note>
+              Кэф на {g.side === 'home' ? 'хозяев' : 'гостей'}: {g.from.toFixed(2)} → {g.to.toFixed(2)}
+            </Note>
+          </Detail>
         </Tile>
       )
     }
@@ -192,7 +190,7 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
         >
           <Big unit={plural(s.liveCount, ['матч', 'матча', 'матчей'])}>{s.liveCount}</Big>
           {m ? (
-            <>
+            <Detail>
               <MatchLink it={top}>
                 {m.home.name} <span className="num">{m.score ? `${m.score.home}:${m.score.away}` : '–'}</span> {m.away.name}
               </MatchLink>
@@ -200,7 +198,7 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
                 <span className="text-live">{m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'}</span> ·{' '}
                 {featuredInfo(m.league)?.short || m.league.name}
               </Note>
-            </>
+            </Detail>
           ) : null}
         </Tile>
       )
@@ -210,8 +208,10 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
       return (
         <Tile label={s.liveCount ? 'Следующий матч' : 'Первый матч'}>
           <Big unit={until(it.match.ts)}>{formatTime(it.match.ts)}</Big>
-          <MatchLink it={it} />
-          <Note>{featuredInfo(it.match.league)?.short || it.match.league.name}</Note>
+          <Detail>
+            <MatchLink it={it} />
+            <Note>{featuredInfo(it.match.league)?.short || it.match.league.name}</Note>
+          </Detail>
         </Tile>
       )
     }
@@ -222,10 +222,12 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
       return (
         <Tile label="Ждём голов">
           <Big unit={<Short phone="3+ гола" full="шанс 3+ голов" />}>{pct(g.p)}</Big>
-          <MatchLink it={g.item} />
-          <Note>
-            {more > 0 ? `Ещё ${more} ${plural(more, ['матч', 'матча', 'матчей'])} с шансом от ${GOALS_FROM}` : `В подборке — шанс от ${GOALS_FROM}`}
-          </Note>
+          <Detail>
+            <MatchLink it={g.item} />
+            <Note>
+              {more > 0 ? `Ещё ${more} ${plural(more, ['матч', 'матча', 'матчей'])} с шансом от ${GOALS_FROM}` : `В подборке — шанс от ${GOALS_FROM}`}
+            </Note>
+          </Detail>
         </Tile>
       )
     }
@@ -233,12 +235,11 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
       const f = s.favorite!
       return (
         <Tile label="Фаворит дня">
-          <div className="flex items-end justify-between gap-3">
-            <Big unit={<Short phone="победа" full="шанс победы" />}>{pct(f.p)}</Big>
-            <Ring p={f.p} />
-          </div>
-          <MatchLink it={f.item} />
-          <Note>Фаворит по кэфам — «{sideName(f.item.match, f.side)}»</Note>
+          <Big unit={<Short phone="победа" full="шанс победы" />}>{pct(f.p)}</Big>
+          <Detail>
+            <MatchLink it={f.item} />
+            <Note>Фаворит по кэфам — «{sideName(f.item.match, f.side)}»</Note>
+          </Detail>
         </Tile>
       )
     }
@@ -248,10 +249,12 @@ function Card({ kind, s }: { kind: CardKind; s: Summary }) {
           <a href="#matches" className={`block ${COVER}`}>
             <Big unit={plural(s.total, ['матч', 'матча', 'матчей'])}>{s.total}</Big>
           </a>
-          <p className="mt-2.5 line-clamp-2 text-[14px] font-semibold leading-snug">{s.topLeagues.map((l) => featuredInfo(l)?.short || l.name).join(', ')}</p>
-          <Note>
-            {s.leagues} {plural(s.leagues, ['турнир', 'турнира', 'турниров'])}
-          </Note>
+          <Detail>
+            <p className="line-clamp-2 text-[14px] font-semibold leading-snug">{s.topLeagues.map((l) => featuredInfo(l)?.short || l.name).join(', ')}</p>
+            <Note>
+              {s.leagues} {plural(s.leagues, ['турнир', 'турнира', 'турниров'])}
+            </Note>
+          </Detail>
         </Tile>
       )
   }
@@ -282,7 +285,7 @@ function ChanceBar({ m }: { m: Match }) {
   const label = `Шансы по коэффициентам букмекеров: ${cells.map((c) => `${c.k === 'draw' ? c.name : `«${c.name}»`} — ${c.n}%`).join(', ')}`
   return (
     <div role="img" aria-label={label} title={label}>
-      <div className="flex h-7 gap-0.5 overflow-hidden rounded-full">
+      <div className="flex h-7 gap-0.5 overflow-hidden rounded-full lg:h-[clamp(28px,3.6vh,36px)]">
         {cells.map((c) => (
           <span key={c.k} className={`num grid min-w-0 place-items-center text-[13px] font-semibold ${tone(c.k)}`} style={{ width: `${c.p * 100}%` }}>
             <span className="truncate px-1">{c.n}%</span>
@@ -346,11 +349,12 @@ function TopCard({ it }: { it: FeedItem }) {
     </span>
   )
   return (
-    // три группы: команды сверху, вывод посередине, кнопки снизу — свободное место делится между ними,
-    // а не собирается одной дырой, когда карточка тянется на высоту экрана
-    <article className="group relative col-span-2 flex min-w-0 flex-col justify-between gap-5 rounded-[22px] border border-edge bg-panel p-5 shadow-[inset_0_1px_0_rgb(255_255_255/0.035)] transition-colors duration-300 hover:border-edge-2 sm:px-6 sm:py-5 lg:row-span-2">
-      <div>
-        <div className="flex items-center justify-between gap-3">
+    // на телефоне — столбик: команды → вывод → кнопки. На компьютере — широкая карточка во всю строку,
+    // две колонки: слева команды со временем начала (как на табло) и кнопки, справа вывод с полосой шансов
+    // и причина; ряды выровнены, лишняя высота уходит поровну вокруг команд и вывода
+    <article className="group relative col-span-2 flex min-w-0 flex-col gap-5 rounded-[22px] border border-edge bg-panel p-5 shadow-[inset_0_1px_0_rgb(255_255_255/0.035)] transition-colors duration-300 hover:border-edge-2 sm:px-6 sm:py-5 lg:col-span-4 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)_auto] lg:gap-x-12 lg:gap-y-3 lg:px-7 lg:py-5">
+      <div className="lg:contents">
+        <div className="flex items-center justify-between gap-3 lg:col-span-2">
           <p className="min-w-0 truncate text-[13px] font-medium text-chalk">
             {live ? <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse-live rounded-full bg-live align-middle" /> : null}
             Матч дня <span className="text-mute">· {featuredInfo(m.league)?.short || m.league.name}</span>
@@ -359,7 +363,7 @@ function TopCard({ it }: { it: FeedItem }) {
         </div>
 
         {/* команды, справа — время начала, как на табло; после стартового свистка на этом месте счёт */}
-        <div className="mt-3.5 flex items-center gap-3 text-[21px] font-semibold leading-tight tracking-[-0.025em] sm:text-[23px] lg:text-[clamp(23px,3.8vh,34px)]">
+        <div className="mt-3.5 flex items-center gap-3 text-[21px] font-semibold leading-tight tracking-[-0.025em] sm:text-[23px] lg:col-start-1 lg:row-start-2 lg:mt-0 lg:gap-6 lg:self-center lg:text-[clamp(26px,4.2vh,40px)]">
           <StoryLink id={m.id} href={matchHref(m)} className={`block min-w-0 flex-1 space-y-1.5 ${COVER}`}>
             {team(m.home, m.score?.home)}
             {team(m.away, m.score?.away, true)}
@@ -374,10 +378,10 @@ function TopCard({ it }: { it: FeedItem }) {
         </div>
       </div>
 
-      <div>
+      <div className="lg:contents">
         {played ? (
-          <>
-            <p className="mb-3 text-[17px] font-semibold leading-snug tracking-[-0.01em]">
+          <div className="lg:col-start-2 lg:row-start-2 lg:self-center">
+            <p className="mb-3 text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-[clamp(18px,2.7vh,24px)]">
               {live ? (m.statusCode === 4 ? 'Перерыв' : m.elapsed ? `Идёт ${m.elapsed}-я минута` : 'Идёт матч') : 'Матч завершён'}
             </p>
             {live ? (
@@ -385,14 +389,16 @@ function TopCard({ it }: { it: FeedItem }) {
                 <div className="h-full rounded-full bg-live" style={{ width: `${Math.min(100, ((m.elapsed ?? 45) / 90) * 100)}%` }} />
               </div>
             ) : null}
-          </>
+          </div>
         ) : (
           <>
             {/* вывод → на чём он основан (полоса шансов по кэфам) → причина */}
-            {v ? <p className="mb-2.5 text-[17px] font-semibold leading-snug tracking-[-0.01em]">{v.headline}</p> : null}
-            <ChanceBar m={m} />
+            <div className="lg:col-start-2 lg:row-start-2 lg:self-center">
+              {v ? <p className="mb-2.5 text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:mb-3 lg:text-[clamp(18px,2.7vh,24px)]">{v.headline}</p> : null}
+              <ChanceBar m={m} />
+            </div>
             {why ? (
-              <p className="mt-3 flex items-start gap-2.5 text-[14px] leading-snug text-chalk">
+              <p className="mt-3 flex items-start gap-2.5 text-[14px] leading-snug text-chalk lg:col-start-2 lg:row-start-3 lg:mt-0 lg:self-center">
                 <span className={`mt-px grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full ${ACCENT[why.accent]}`}>
                   <Icon name={why.icon} />
                 </span>
@@ -402,24 +408,23 @@ function TopCard({ it }: { it: FeedItem }) {
           </>
         )}
       </div>
-      {/* кнопки — внизу карточки */}
-      <div>
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[13px]">
-          <span aria-hidden className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-white/[0.06] py-1.5 pl-1.5 pr-3.5 font-medium text-fg">
-            <span className="grid h-6 w-6 place-items-center rounded-full bg-acid text-acid-ink">
-              <svg viewBox="0 0 12 12" className="ml-px h-2.5 w-2.5" fill="currentColor">
-                <path d="M3 1.5v9l7.5-4.5z" />
-              </svg>
-            </span>
-            Разбор за минуту
+
+      {/* кнопки — внизу; на компьютере — под командами */}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[13px] lg:col-start-1 lg:row-start-3 lg:justify-start lg:self-center">
+        <span aria-hidden className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-white/[0.06] py-1.5 pl-1.5 pr-3.5 font-medium text-fg">
+          <span className="grid h-6 w-6 place-items-center rounded-full bg-acid text-acid-ink">
+            <svg viewBox="0 0 12 12" className="ml-px h-2.5 w-2.5" fill="currentColor">
+              <path d="M3 1.5v9l7.5-4.5z" />
+            </svg>
           </span>
-          {bet && betLabel ? (
-            <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-acid/[0.12] px-3.5 py-1.5 font-semibold text-acid">
-              <span className="truncate">{betLabel}</span>
-              {bet.odd ? <span className="num shrink-0">· {bet.odd.toFixed(2)}</span> : null}
-            </span>
-          ) : null}
-        </div>
+          Разбор за минуту
+        </span>
+        {bet && betLabel ? (
+          <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-acid/[0.12] px-3.5 py-1.5 font-semibold text-acid">
+            <span className="truncate">{betLabel}</span>
+            {bet.odd ? <span className="num shrink-0">· {bet.odd.toFixed(2)}</span> : null}
+          </span>
+        ) : null}
       </div>
     </article>
   )
@@ -434,21 +439,25 @@ function arrange(cards: CardKind[]): CardKind[] {
 }
 
 /**
- * «Сводка дня» — первый экран главной: «Матч дня» слева и до четырёх плиток справа (2×2).
- * Все плитки тёмные, цвет — только на главной цифре и значке, чтобы главным оставался «Матч дня».
- * Всё влезает в экран ноутбука без прокрутки; каждый виджет открывает сторис матча или нужный блок.
+ * «Сводка дня» — первый экран главной. На телефоне — «Матч дня» и плитки по две в ряд; на компьютере —
+ * «Матч дня» широкой карточкой во всю строку и до четырёх плиток одним рядом под ним. Сводка тянется
+ * до низа окна (см. DayView): лишнюю высоту забирает в основном «Матч дня», плитки остаются почти
+ * по содержимому — без пустот. Все плитки тёмные, цвет — только на главной цифре; каждая открывает
+ * сторис матча или нужный блок.
  */
 export function DaySummary({ s, className = '' }: { s: Summary; className?: string }) {
   if (!s.top) return null
   const cards = arrange(summaryCards(s))
+  const n = cards.length
   return (
-    <section aria-label="Сводка дня" className={`grid grid-cols-2 gap-3 lg:grid-cols-4 ${className}`}>
+    <section aria-label="Сводка дня" className={`grid grid-cols-2 gap-3 lg:grid-cols-4 ${n ? 'lg:grid-rows-[1fr_auto]' : ''} ${className}`}>
       <TopCard it={s.top} />
       {cards.map((k, i) => {
-        // карточек меньше четырёх — последние растягиваем, чтобы в сетке не было дыр
-        const wide = cards.length <= 2 || (cards.length === 3 && i === 2)
+        // карточек меньше четырёх — растягиваем, чтобы в ряду не было дыр
+        const phone = n <= 2 || (n === 3 && i === 2) ? 'col-span-2' : ''
+        const desk = n === 1 ? 'lg:col-span-4' : n === 2 || (n === 3 && i === 2) ? 'lg:col-span-2' : 'lg:col-span-1'
         return (
-          <div key={k} className={`min-w-0 ${wide ? 'col-span-2' : ''} ${cards.length === 2 ? 'lg:col-span-2' : ''}`}>
+          <div key={k} className={`min-w-0 ${phone} ${desk}`}>
             <Card kind={k} s={s} />
           </div>
         )
