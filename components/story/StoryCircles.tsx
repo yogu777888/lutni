@@ -106,7 +106,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
   }
 
   return (
-    <nav aria-label="Истории дня" className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 pt-0.5 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
+    <nav aria-label="Истории дня" className="scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 pt-0.5 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
       {groups.map((g, gi) => {
         const n = seenCount(g, seen)
         const done = n === g.items.length
@@ -117,7 +117,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             onClick={(e) => open(gi, e)}
             title={g.hint}
             aria-label={`${g.label}. ${g.hint}. Смотреть истории`}
-            className="group flex w-[92px] shrink-0 flex-col items-center rounded-xl outline-offset-2"
+            className="group flex w-[80px] shrink-0 flex-col items-center rounded-xl outline-offset-2"
           >
             <span className="relative block transition-transform duration-300 group-hover:-translate-y-0.5 group-active:scale-95" style={{ width: SIZE, height: SIZE }}>
               <Ring kind={g.kind} n={g.items.length} seen={n} />
@@ -128,14 +128,14 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
                 </span>
               ) : null}
             </span>
-            <span className="mt-1.5 w-full text-center text-[12.5px] font-medium leading-tight">
+            <span className="mt-1.5 w-full text-center text-[12px] font-medium leading-tight">
               <Caption g={g} dim={done} />
             </span>
           </a>
         )
       })}
 
-      <Link href="/tags" prefetch={false} className="group flex w-[92px] shrink-0 flex-col items-center rounded-xl" title="Все теги и что они значат">
+      <Link href="/tags" prefetch={false} className="group flex w-[80px] shrink-0 flex-col items-center rounded-xl" title="Все теги и что они значат">
         <span className="relative block transition-transform duration-300 group-hover:-translate-y-0.5" style={{ width: SIZE, height: SIZE }}>
           <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full" aria-hidden>
             <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="rgb(255 255 255 / 0.16)" strokeWidth="1.5" />
@@ -144,7 +144,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             <LogoMark size={21} className="relative z-[1]" />
           </CoverArt>
         </span>
-        <span className="mt-1.5 w-full truncate text-center text-[12.5px] font-medium leading-tight text-dim">Все теги</span>
+        <span className="mt-1.5 w-full truncate text-center text-[12px] font-medium leading-tight text-dim">Все теги</span>
       </Link>
     </nav>
   )
