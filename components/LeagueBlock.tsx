@@ -7,17 +7,18 @@ import { MatchRow, ROW_COLS } from './MatchRow'
 
 const anyOdds = (items: FeedItem[]) => items.some((i) => i.match.odds?.x12)
 
-/** Подписи колонок, как у табло: шансы без маржи и коэффициенты П1 · Х · П2. */
+/** Подписи колонок, как у табло: кто сильнее (полоса шансов) и коэффициенты на хозяев · ничью · гостей. */
 function ColumnHead() {
   return (
     <div className={`hidden items-center gap-x-4 border-b border-edge px-5 py-2.5 text-[11px] uppercase tracking-[0.12em] text-mute sm:grid ${ROW_COLS}`}>
       <span>Время</span>
       <span>Матч</span>
-      <span className="text-center">Шансы, %</span>
-      <span className="grid grid-cols-3 gap-1.5 text-center">
-        <span>П1</span>
-        <span>Х</span>
-        <span>П2</span>
+      <span className="text-center">Кто сильнее</span>
+      {/* кэфы: на победу хозяев, на ничью, на победу гостей — словами, без «П1/Х/П2» */}
+      <span className="grid grid-cols-3 gap-1.5 text-center normal-case tracking-normal">
+        <span>Хозяева</span>
+        <span>Ничья</span>
+        <span>Гости</span>
       </span>
     </div>
   )

@@ -7,11 +7,14 @@ import { fair1x2 } from '@/lib/odds'
 import { bestTag, isLive } from '@/lib/rank'
 import { TAG_BY_SLUG } from '@/lib/tags'
 import type { Match } from '@/lib/types'
+import { buildVerdict, outcomeText, outOf10 } from '@/lib/verdict'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
 
 const edge = (ev: number) => `${ev >= 0 ? '+' : '−'}${Math.abs(ev * 100).toFixed(1).replace('.', ',')}%`
-const SIDE = { home: 'П1', draw: 'Х', away: 'П2' } as const
+/** Чей шанс в центре кольца — словами. */
+const WHO = { home: 'шанс хозяев', draw: 'шанс ничьей', away: 'шанс гостей' } as const
+const WHO_SHORT = { home: 'хозяева', draw: 'ничья', away: 'гости' } as const
 const WHY_TONE = { accent: 'text-acid', hot: 'text-hot', neutral: 'text-chalk' } as const
 const names = (m: Match) => `${m.home.name} — ${m.away.name}`
 /** Ссылка-накладка: вся карточка кликабельна, а текст ссылки — понятное название. */
@@ -133,6 +136,14 @@ function MatchLink({ it }: { it: FeedItem }) {
   )
 }
 
+/** Подпись короче на телефоне: узкая плитка не обрезает слова. */
+const Short = ({ phone, full }: { phone: string; full: string }) => (
+  <>
+    <span className="sm:hidden">{phone}</span>
+    <span className="hidden sm:inline">{full}</span>
+  </>
+)
+
 /** Низ плитки: график прижат к нижнему краю. */
 const Foot = ({ children }: { children: React.ReactNode }) => <div className="mt-auto pt-3">{children}</div>
 
@@ -142,14 +153,15 @@ const Foot = ({ children }: { children: React.ReactNode }) => <div className="mt
  * Value: одна полоска длиной в кэф букмекера; светлая часть — честная цена,
  * тёмный хвост — то, сколько платят сверх неё, то есть перевес.
  */
-function EdgeBar({ label, odd, fair }: { label: string; odd: number; fair: number }) {
+function EdgeBar({ odd, fair }: { odd: number; fair: number }) {
   const share = Math.min(1, fair / odd)
   return (
     <div aria-hidden>
-      <div className="num flex items-baseline justify-between text-[12px]">
-        <span className="text-[var(--t-sub)]">честно {fair.toFixed(2)}</span>
-        <span className="font-semibold">
-          {label} {odd.toFixed(2)}
+      <div className="num flex items-baseline justify-between gap-2 text-[12px]">
+        <span className="truncate text-[var(--t-sub)]">стоит {fair.toFixed(2)}</span>
+        <span className="shrink-0 font-semibold">
+          <span className="hidden sm:inline">платят </span>
+          {odd.toFixed(2)}
         </span>
       </div>
       <div className="mt-1.5 flex h-2.5 gap-0.5">
@@ -169,7 +181,8 @@ function Slope({ side, from, to, color }: { side: string; from: number; to: numb
   return (
     <div className="num flex items-center gap-2.5 text-[12px]" aria-hidden>
       <span className="shrink-0 text-[var(--t-sub)]">
-        {side} {from.toFixed(2)}
+        {side ? `${side} ` : ''}
+        {from.toFixed(2)}
       </span>
       <div className="relative h-11 min-w-0 flex-1">
         <svg viewBox="0 0 100 44" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
@@ -295,6 +308,7 @@ const SEG = { home: 'var(--color-home)', draw: 'var(--color-tie)', away: 'var(--
 
 /** Кольцо матча дня: П1 / Х / П2 долями круга, в центре — шанс фаворита. */
 function ChanceRing({ cells, size }: { cells: { k: keyof typeof SEG; p: number }[]; size: number }) {
+  const small = size < 130
   const r = 50
   const c = 2 * Math.PI * r
   const gap = 5
@@ -325,11 +339,12 @@ function ChanceRing({ cells, size }: { cells: { k: keyof typeof SEG; p: number }
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">
         <div>
-          <div className="num text-[30px] font-semibold leading-none tracking-[-0.04em] sm:text-[34px]">
-            {Math.round(fav.p * 100)}
-            <span className="text-[0.5em] text-dim">%</span>
+          {/* шанс фаворита — «из 10»: так понятнее, чем проценты */}
+          <div className={`num font-semibold leading-none tracking-[-0.04em] ${small ? 'text-[26px]' : 'text-[34px]'}`}>
+            {outOf10(fav.p).split(' ')[0]}
+            <span className="ml-1 text-[0.42em] font-medium tracking-normal text-dim">из 10</span>
           </div>
-          <div className="mt-1 text-[11.5px] text-dim">шанс {SIDE[fav.k]}</div>
+          <div className={`mt-1 text-dim ${small ? 'text-[10.5px]' : 'text-[11.5px]'}`}>{small ? WHO_SHORT[fav.k] : WHO[fav.k]}</div>
         </div>
       </div>
     </div>
@@ -352,10 +367,11 @@ function Card({ kind, s, tone, wide = false }: { kind: CardKind; s: Summary; ton
       const it = s.value!
       const p = it.summary!.pick!
       return (
-        <Tile tone={tone} label="Value дня" icon="percent">
-          <Big>{edge(p.ev ?? 0)}</Big>
+        <Tile tone={tone} label={<Short phone="Выгодно" full="Выгодная ставка" />} icon="percent">
+          <Big unit={<span className="hidden sm:inline">к честной цене</span>}>{edge(p.ev ?? 0)}</Big>
           <MatchLink it={it} />
-          <Foot>{p.odd ? <EdgeBar label={p.label} odd={p.odd} fair={1 / p.prob} /> : null}</Foot>
+          <p className="mt-0.5 truncate text-[12.5px] text-[var(--t-sub)] first-letter:uppercase">{outcomeText(p.key, it.match)}</p>
+          <Foot>{p.odd ? <EdgeBar odd={p.odd} fair={1 / p.prob} /> : null}</Foot>
         </Tile>
       )
     }
@@ -363,11 +379,16 @@ function Card({ kind, s, tone, wide = false }: { kind: CardKind; s: Summary; ton
       const g = s.progruz!
       const color = tone === 'amber' ? 'var(--t-fg)' : 'var(--color-hot)'
       return (
-        <Tile tone={tone} label="Прогруз дня" icon="down">
-          <Big className={tone === 'amber' ? '' : 'text-hot'}>−{Math.round(g.drop * 100)}%</Big>
+        <Tile tone={tone} label={<Short phone="Сюда ставят" full="Куда идут деньги" />} icon="down">
+          <Big className={tone === 'amber' ? '' : 'text-hot'} unit={<span className="hidden sm:inline">упал кэф</span>}>
+            −{Math.round(g.drop * 100)}%
+          </Big>
           <MatchLink it={g.item} />
+          <p className="mt-0.5 truncate text-[12.5px] text-[var(--t-sub)]">
+            Массово ставят на «{g.side === 'home' ? g.item.match.home.name : g.item.match.away.name}»
+          </p>
           <Foot>
-            <Slope side={SIDE[g.side]} from={g.from} to={g.to} color={color} />
+            <Slope side="" from={g.from} to={g.to} color={color} />
           </Foot>
         </Tile>
       )
@@ -428,7 +449,8 @@ function Card({ kind, s, tone, wide = false }: { kind: CardKind; s: Summary; ton
             <Big
               unit={
                 <>
-                  {plural(g.count, ['матч', 'матча', 'матчей'])} с <span className="opacity-70">#</span>ТБ2.5
+                  {plural(g.count, ['матч', 'матча', 'матчей'])}
+                  <span className="hidden sm:inline">, где ждём 3+ гола</span>
                 </>
               }
             >
@@ -441,7 +463,7 @@ function Card({ kind, s, tone, wide = false }: { kind: CardKind; s: Summary; ton
                 <li key={row.id} className={`${i ? 'hidden sm:flex' : 'flex'} min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] sm:flex-nowrap`}>
                   <span className="min-w-0 basis-full truncate text-[var(--t-label)] sm:basis-auto sm:flex-1">{row.title}</span>
                   <DotGauge p={row.p} />
-                  <span className="num w-8 shrink-0 text-right font-semibold">{Math.round(row.p * 100)}%</span>
+                  <span className="num shrink-0 text-right font-semibold">{outOf10(row.p)}</span>
                 </li>
               ))}
             </ul>
@@ -454,12 +476,12 @@ function Card({ kind, s, tone, wide = false }: { kind: CardKind; s: Summary; ton
       return (
         <Tile tone={tone} label="Фаворит дня" icon="star">
           <div className="flex items-center justify-between gap-3">
-            <Big unit="%">{Math.round(f.p * 100)}</Big>
+            <Big unit="из 10">{outOf10(f.p).split(' ')[0]}</Big>
             <Ring p={f.p} />
           </div>
           <MatchLink it={f.item} />
           <p className="mt-0.5 truncate text-[12.5px] text-[var(--t-sub)]">
-            {SIDE[f.side]} · победа: {f.side === 'home' ? f.item.match.home.name : f.item.match.away.name}
+            Шанс на победу «{f.side === 'home' ? f.item.match.home.name : f.item.match.away.name}»
           </p>
         </Tile>
       )
@@ -493,10 +515,17 @@ function TopCard({ it }: { it: FeedItem }) {
   const f = fair1x2(m.odds?.x12)
   const pick = m.status === 'scheduled' ? it.summary?.pick : null
   const hotKey = pick?.kind === 'value' ? pick.key : null
-  const cells = f ? (['home', 'draw', 'away'] as const).map((k) => ({ k, p: f[k], odd: m.odds?.x12?.[k]?.value ?? null })) : null
+  // в лаймовой «пилюле» — тот же выгодный кэф, что и в строке «Выгодно: …»
+  const cells = f
+    ? (['home', 'draw', 'away'] as const).map((k) => ({ k, p: f[k], odd: (k === hotKey ? pick?.odd : null) ?? m.odds?.x12?.[k]?.value ?? null }))
+    : null
   // почему это матч дня — самый весомый тег и его объяснение
   const best = bestTag(it.tags)
   const def = best ? TAG_BY_SLUG.get(best.slug) : undefined
+  // главное словами: кто сильнее, и одна подробность — деньги, голы или тег
+  // в карточке — только выгодная ставка: обычный прогноз модели бывает «против» главной фразы и путает
+  const v = m.status === 'scheduled' ? buildVerdict({ match: m, tags: it.tags, pick: pick?.kind === 'value' ? pick : null }) : null
+  const detail = v ? (v.money ?? v.goals) : null
   const team = (t: Match['home'], goals: number | undefined, dim = false) => (
     <span className={`flex min-w-0 items-center gap-3 ${dim ? 'text-chalk' : ''}`}>
       <TeamLogo name={t.name} src={t.logo} size={28} />
@@ -527,8 +556,11 @@ function TopCard({ it }: { it: FeedItem }) {
             {team(m.home, m.score?.home)}
             {team(m.away, m.score?.away, true)}
           </StoryLink>
-          {best && def ? (
-            <p className="mt-3.5 line-clamp-3 text-[13px] leading-snug text-dim">
+          {v ? <p className="mt-4 text-[16px] font-semibold leading-snug tracking-[-0.01em] text-fg">{v.headline}</p> : null}
+          {detail ? (
+            <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-dim">{detail}</p>
+          ) : best && def ? (
+            <p className={`line-clamp-3 text-[13px] leading-snug text-dim ${v ? 'mt-1' : 'mt-3.5'}`}>
               <span className={WHY_TONE[def.kind]}>{def.label}</span> · {best.reason}
             </p>
           ) : null}
@@ -546,7 +578,7 @@ function TopCard({ it }: { it: FeedItem }) {
           <span className="sm:hidden">
             <ChanceRing cells={cells} size={104} />
           </span>
-          <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:flex-wrap sm:gap-2" aria-label="Шансы без маржи и кэфы">
+          <div className="flex min-w-0 flex-col items-start gap-1.5 sm:flex-row sm:flex-wrap sm:gap-2" aria-label="Кэфы на исходы">
             {cells.map((c) => {
               const hot = c.k === hotKey
               return (
@@ -555,10 +587,10 @@ function TopCard({ it }: { it: FeedItem }) {
                   className={`num inline-flex h-8 items-center gap-2 rounded-full pl-3 pr-3.5 text-[13px] sm:h-9 ${hot ? 'bg-acid text-acid-ink' : 'bg-white/[0.06] text-fg'}`}
                   title={hot ? 'Кэф выше честного' : undefined}
                 >
-                  <span className="h-2 w-2 rounded-full" style={{ background: SEG[c.k] }} />
-                  <span className={hot ? '' : 'text-dim'}>{SIDE[c.k]}</span>
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: SEG[c.k] }} />
+                  {/* исход словами: команда или «ничья», а не П1/Х/П2 */}
+                  <span className={`max-w-[11rem] truncate ${hot ? '' : 'text-dim'}`}>{c.k === 'draw' ? 'Ничья' : c.k === 'home' ? m.home.name : m.away.name}</span>
                   <span className="font-semibold">{c.odd ? c.odd.toFixed(2) : '—'}</span>
-                  <span className={hot ? 'opacity-60' : 'text-mute'}>{Math.round(c.p * 100)}%</span>
                 </span>
               )
             })}
@@ -568,8 +600,8 @@ function TopCard({ it }: { it: FeedItem }) {
         <div className="mt-auto" />
       )}
 
-      <div className="mt-4 flex items-center justify-between gap-3 text-[13px]">
-        <span aria-hidden className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] py-1.5 pl-1.5 pr-3.5 font-medium text-fg">
+      <div className="mt-4 flex flex-col-reverse items-start gap-3 text-[13px] sm:flex-row sm:items-center sm:justify-between">
+        <span aria-hidden className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-white/[0.06] py-1.5 pl-1.5 pr-3.5 font-medium text-fg">
           <span className="grid h-6 w-6 place-items-center rounded-full bg-acid text-acid-ink">
             <svg viewBox="0 0 12 12" className="ml-px h-2.5 w-2.5" fill="currentColor">
               <path d="M3 1.5v9l7.5-4.5z" />
@@ -577,10 +609,10 @@ function TopCard({ it }: { it: FeedItem }) {
           </span>
           Матч в слайдах
         </span>
-        {pick ? (
-          <span className={`truncate ${pick.kind === 'value' ? 'text-acid' : 'text-dim'}`}>
-            Прогноз {pick.label}
-            {pick.odd ? <span className="num ml-1 font-semibold">{pick.odd.toFixed(2)}</span> : null}
+        {v?.bet ? (
+          <span className={`min-w-0 sm:truncate ${v.bet.value ? 'text-acid' : 'text-dim'}`}>
+            {v.bet.value ? 'Выгодно' : 'Прогноз'}: {v.bet.text}
+            {v.bet.odd ? <span className="num ml-1 font-semibold">за {v.bet.odd.toFixed(2)}</span> : null}
           </span>
         ) : null}
       </div>

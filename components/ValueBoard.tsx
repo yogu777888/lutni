@@ -3,12 +3,13 @@ import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import type { FeedItem } from '@/lib/data'
 import { formatTime } from '@/lib/format'
 import { matchHref } from '@/lib/links'
+import { outcomeText } from '@/lib/verdict'
 import { edgeTone, Flaps } from './Flaps'
 import { StoryLink } from './story/StoryLink'
 
 const edge = (ev: number) => `${ev >= 0 ? '+' : '−'}${Math.abs(ev * 100).toFixed(1).replace('.', ',')}%`
 
-const COLS = 'sm:grid-cols-[minmax(0,2.3fr)_0.7fr_repeat(3,minmax(0,1fr))]'
+const COLS = 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)_repeat(3,minmax(0,0.8fr))]'
 
 /**
  * «Табло перевеса» — главный экран tag.bet: где легальный букмекер платит больше
@@ -18,7 +19,7 @@ export function ValueBoard({ items }: { items: FeedItem[] }) {
   if (!items.length) return null
   return (
     <section className="mt-16 sm:mt-20">
-      <p className="eyebrow">Табло перевеса</p>
+      <p className="eyebrow">Выгодные ставки</p>
       <h2 className="h2 mt-3 max-w-[20ch] text-[30px] sm:text-[44px]">Где букмекер платит больше, чем стоит исход</h2>
       <p className="mt-4 max-w-[58ch] text-[16px] text-dim sm:text-[17px]">
         Сравниваем коэффициент легального букмекера с <span className="font-semibold text-fg">честной ценой</span> мирового рынка без маржи. Когда
@@ -28,10 +29,10 @@ export function ValueBoard({ items }: { items: FeedItem[] }) {
       <div className="card mt-8 overflow-hidden shadow-[0_40px_80px_-40px_#000]">
         <div className={`hidden items-center gap-4 border-b border-edge px-6 py-3.5 text-[11px] uppercase tracking-[0.14em] text-mute sm:grid ${COLS}`}>
           <span>Матч</span>
-          <span>Исход</span>
-          <span className="text-right">Кэф</span>
-          <span className="text-right">Честный</span>
-          <span className="text-right">Перевес</span>
+          <span>Ставка</span>
+          <span className="text-right">Платят</span>
+          <span className="text-right">Стоит</span>
+          <span className="text-right">Выгода</span>
         </div>
         {items.map(({ match: m, summary }, i) => {
           const p = summary!.pick!
@@ -56,9 +57,10 @@ export function ValueBoard({ items }: { items: FeedItem[] }) {
                   {m.league.name} · {formatTime(m.ts)}
                 </span>
               </div>
-              <div className="hidden text-[14px] text-dim sm:block">{p.label}</div>
+              {/* исход словами: «победа «X»», «3 гола и больше» — вместо «П1», «ТБ 2.5» */}
+              <div className="col-span-3 -mt-1 text-[14px] leading-snug text-chalk first-letter:uppercase sm:col-span-1 sm:mt-0">{outcomeText(p.key, m)}</div>
               {cell(
-                `Кэф · ${p.label}`,
+                'Платят',
                 partner && p.odd ? (
                   <a href={goHref(partner, 'value', m.id)} target="_blank" rel={SPONSORED_REL} className="group inline-flex flex-col sm:items-end" title={`Поставить в БК ${partner.name}`}>
                     <Flaps text={odd} className="text-[17px] sm:text-[19px]" start={i * 3} />
@@ -68,13 +70,13 @@ export function ValueBoard({ items }: { items: FeedItem[] }) {
                   <Flaps text={odd} className="text-[17px] sm:text-[19px]" start={i * 3} />
                 ),
               )}
-              {cell('Честный', <Flaps text={(1 / p.prob).toFixed(2)} className="text-[17px] sm:text-[19px]" start={i * 3 + 2} />)}
-              {cell('Перевес', <Flaps text={edge(p.ev ?? 0)} tone={edgeTone(p.ev ?? 0)} className="text-[17px] sm:text-[19px]" start={i * 3 + 4} />)}
+              {cell('Стоит', <Flaps text={(1 / p.prob).toFixed(2)} className="text-[17px] sm:text-[19px]" start={i * 3 + 2} />)}
+              {cell('Выгода', <Flaps text={edge(p.ev ?? 0)} tone={edgeTone(p.ev ?? 0)} className="text-[17px] sm:text-[19px]" start={i * 3 + 4} />)}
             </div>
           )
         })}
         <div className="flex flex-wrap justify-between gap-2 border-t border-edge bg-[#0e0e0c] px-4 py-3 text-[12px] text-mute sm:px-6">
-          <span>Перевес = кэф × честный шанс − 1: чем он больше, тем ярче. Не гарантия, а цена.</span>
+          <span>Выгода — насколько букмекер платит больше, чем стоит исход: чем больше, тем ярче. Это оценка, а не гарантия.</span>
           <span>Ссылки на букмекеров — реклама · 18+</span>
         </div>
       </div>

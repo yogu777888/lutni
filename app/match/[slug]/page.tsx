@@ -12,6 +12,7 @@ import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { OddsTable } from '@/components/match/OddsTable'
 import { PickCard } from '@/components/match/PickCard'
 import { SplitBar } from '@/components/match/ProbBars'
+import { VerdictCard } from '@/components/match/VerdictCard'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerCard } from '@/components/PartnerCard'
 import { Section } from '@/components/Section'
@@ -28,6 +29,7 @@ import { isValue } from '@/lib/model'
 import { leagueHref, matchHref } from '@/lib/links'
 import { buildStory } from '@/lib/story'
 import type { Match } from '@/lib/types'
+import { buildVerdict, outcomeText } from '@/lib/verdict'
 
 export const dynamic = 'force-dynamic'
 
@@ -101,6 +103,20 @@ export default async function MatchPage({ params }: Props) {
       })
     : null
 
+  // «Коротко о матче» словами — только до начала: кто скорее выиграет, голы, деньги, ставка
+  const verdict = scheduled
+    ? buildVerdict({
+        match: m,
+        tags,
+        probs: x,
+        over25,
+        btts,
+        pick: pick
+          ? { key: pick.candidate.key, odd: (pick.candidate.bestPartner ?? pick.candidate.best)?.value ?? null, kind: pick.kind, prob: pick.candidate.prob }
+          : null,
+      })
+    : null
+
   const hasStory = buildStory(ins) !== null
   const partner = pick?.candidate.bestPartner?.partner ?? primaryPartner()
   const pickOffer = pick?.candidate.bestPartner
@@ -117,6 +133,13 @@ export default async function MatchPage({ params }: Props) {
         ]}
       />
       <h1 className="display mb-6 mt-2 text-[32px] sm:text-[48px]">{h1}</h1>
+
+      {/* сначала ответ словами, потом цифры */}
+      {verdict ? (
+        <div className="mb-5">
+          <VerdictCard v={verdict} pickAnchor={pick ? '#pick' : undefined} />
+        </div>
+      ) : null}
 
       <MatchHero full={full} cells={cells} books={cons.books}>
         {hasStory || tags.length ? (
@@ -161,8 +184,8 @@ export default async function MatchPage({ params }: Props) {
               aside={model ? (model.source === 'xg' ? 'модель по xG' : `рынок ${cons.books > 1 ? `(${cons.books} БК)` : ''} + модель`) : 'рынок'}
             >
               <div className="space-y-5">
-                {over25 != null ? <SplitBar left={over25} leftLabel="ТБ 2.5" rightLabel="ТМ 2.5" /> : null}
-                {btts != null ? <SplitBar left={btts} leftLabel="Обе забьют" rightLabel="Нет" /> : null}
+                {over25 != null ? <SplitBar left={over25} leftLabel="3 гола и больше" rightLabel="До 2 голов" /> : null}
+                {btts != null ? <SplitBar left={btts} leftLabel="Обе забьют" rightLabel="Кто-то не забьёт" /> : null}
                 {model ? (
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className="rounded-2xl bg-panel-2 p-4">
@@ -272,7 +295,7 @@ export default async function MatchPage({ params }: Props) {
         <StickyCta
           partner={partner}
           href={goHref(partner, 'sticky', m.id)}
-          title={pick ? `Прогноз: ${pick.candidate.label}${pickOffer ? ` за ${pickOffer.value.toFixed(2)}` : ''}` : `Ставки на ${pair}`}
+          title={pick ? `Прогноз: ${outcomeText(pick.candidate.key, m)}${pickOffer ? ` за ${pickOffer.value.toFixed(2)}` : ''}` : `Ставки на ${pair}`}
           subtitle={partner.name}
           action="Ставка"
         />

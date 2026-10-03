@@ -4,6 +4,7 @@ import { formatOdd, formatTime } from '@/lib/format'
 import { matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
 import { TAG_BY_SLUG, type TagHit } from '@/lib/tags'
+import { buildVerdict, outOf10 } from '@/lib/verdict'
 import type { Match } from '@/lib/types'
 import { StoryLink } from './story/StoryLink'
 
@@ -38,24 +39,28 @@ export function StatusCell({ m }: { m: Match }) {
   return <span className="num text-[18px] font-semibold tracking-tight text-chalk">{formatTime(m.ts)}</span>
 }
 
-/** Шансы без маржи по коротким кэфам: фаворит — ярче. */
+/**
+ * «Кто сильнее» без цифр: полоса хозяева · ничья · гости по шансам без маржи.
+ * Слева — первая команда, справа — вторая, как в названии матча; цифры — в подсказке.
+ */
 function Chances({ m }: { m: Match }) {
   const f = fair1x2(m.odds?.x12)
-  if (!f) return <span className="text-center text-[13px] text-mute">—</span>
-  const vals = [f.home, f.draw, f.away]
-  const max = Math.max(...vals)
+  if (!f) return <span className="block text-center text-[13px] text-mute">—</span>
+  const seg = [
+    { k: 'home', p: f.home, cls: 'bg-home', name: `«${m.home.name}»` },
+    { k: 'draw', p: f.draw, cls: 'bg-tie', name: 'ничья' },
+    { k: 'away', p: f.away, cls: 'bg-away', name: `«${m.away.name}»` },
+  ]
   return (
-    <span className="num grid grid-cols-3 text-center text-[16px] font-semibold">
-      {vals.map((v, i) => (
-        <span key={i} className={v === max ? 'text-fg' : 'text-mute'}>
-          {Math.round(v * 100)}
-        </span>
+    <span className="flex h-2 gap-0.5" title={seg.map((x) => `${x.name} — ${outOf10(x.p)}`).join(', ')} role="img" aria-label={`Шансы: ${seg.map((x) => `${x.name} — ${outOf10(x.p)}`).join(', ')}`}>
+      {seg.map((x) => (
+        <span key={x.k} className={`rounded-[3px] ${x.cls}`} style={{ width: `${x.p * 100}%` }} />
       ))}
     </span>
   )
 }
 
-function Odds({ m, hotKey }: { m: Match; hotKey: string | null }) {
+function Odds({ m, hotKey, hotOdd = null }: { m: Match; hotKey: string | null; hotOdd?: number | null }) {
   const x = m.odds?.x12
   const done = m.status === 'finished'
   return (
@@ -72,7 +77,8 @@ function Odds({ m, hotKey }: { m: Match; hotKey: string | null }) {
             }`}
             title={q?.opening ? `Открытие ${q.opening.toFixed(2)}` : undefined}
           >
-            {q ? formatOdd(q.value) : '—'}
+            {/* в лаймовой ячейке — тот выгодный кэф, о котором написано в строке */}
+            {hot && hotOdd ? formatOdd(hotOdd) : q ? formatOdd(q.value) : '—'}
             {dropped && !hot ? <span className="ml-0.5 text-[9px] text-hot">▼</span> : null}
           </span>
         )
@@ -94,6 +100,7 @@ function Score({ m, big = false }: { m: Match; big?: boolean }) {
 
 /** Теги строкой, как хэштеги: решётка value — лаймовая, прогруза — янтарная. */
 export function Hashtags({ tags, max = 3 }: { tags: TagHit[]; max?: number }) {
+  if (!tags.length) return null
   return (
     <>
       {tags.slice(0, max).map((t) => {
@@ -101,7 +108,7 @@ export function Hashtags({ tags, max = 3 }: { tags: TagHit[]; max?: number }) {
         if (!def) return null
         const hash = def.kind === 'accent' ? 'text-acid' : def.kind === 'hot' ? 'text-hot' : 'text-mute'
         return (
-          <Link key={t.slug} href={`/tag/${t.slug}`} prefetch={false} title={t.reason} className="text-dim transition-colors hover:text-fg">
+          <Link key={t.slug} href={`/tag/${t.slug}`} prefetch={false} title={t.reason} className="whitespace-nowrap text-dim transition-colors hover:text-fg">
             <span className={hash}>#</span>
             {def.label.replace(/^#/, '')}
           </Link>
@@ -152,7 +159,17 @@ export function MatchRow({
     )
   }
 
-  const meta = showLeague || tags.length || pick
+  // вывод словами — только до начала матча: кто сильнее и что выгодно.
+  // Обычный прогноз модели в строке не пишем: он бывает «против» вывода и путает — он на странице матча.
+  const v = m.status === 'scheduled' ? buildVerdict({ match: m, tags, pick: pick?.kind === 'value' ? pick : null }) : null
+  const bet = v?.bet
+  // 1X2: выгодный кэф горит лаймом в своей ячейке — в тексте только «что выгодно»
+  const inCell = Boolean(hotKey)
+  const betText = bet ? (inCell && v.side && pick?.key === v.side ? 'выгодно' : `выгодно: ${bet.text}`) : null
+  // теги, которые повторяют сказанное словами, не дублируем
+  const said = new Set([bet ? 'value' : '', v?.level === 'strong' ? 'favorit' : '', v?.level === 'even' ? 'ravnye' : ''])
+  const shownTags = tags.filter((t) => !said.has(t.slug))
+  const meta = showLeague || v || shownTags.length
   return (
     <div
       className={`relative grid items-center gap-x-4 gap-y-2.5 px-4 py-3.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${
@@ -176,13 +193,14 @@ export function MatchRow({
         {meta ? (
           <div className="relative z-10 mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12.5px]">
             {showLeague ? <span className="text-mute">{m.league.name}</span> : null}
-            <Hashtags tags={tags} />
-            {pick ? (
-              <span className={pick.kind === 'value' ? 'text-acid' : 'text-dim'}>
-                Прогноз {pick.label}
-                {pick.odd ? <span className="num ml-1 font-semibold">{pick.odd.toFixed(2)}</span> : null}
+            {v ? <span className="font-medium text-chalk">{v.headline}</span> : null}
+            {betText ? (
+              <span className="text-acid">
+                {betText}
+                {bet!.odd && !inCell ? <span className="num ml-1 font-semibold">{bet!.odd.toFixed(2)}</span> : null}
               </span>
             ) : null}
+            <Hashtags tags={shownTags} max={v ? 2 : 3} />
           </div>
         ) : null}
       </div>
@@ -203,7 +221,7 @@ export function MatchRow({
                 </span>
               </div>
             ) : (
-              <Odds m={m} hotKey={hotKey} />
+              <Odds m={m} hotKey={hotKey} hotOdd={pick?.odd ?? null} />
             )}
           </div>
         </>

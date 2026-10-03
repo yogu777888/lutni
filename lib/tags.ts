@@ -7,11 +7,12 @@
  *  - SEO-страницы /tag/<slug> («прогнозы на тотал больше 2.5 сегодня»);
  *  - повод для клика на букмекера (у каждого тега есть рекомендуемый рынок).
  */
-import { pct, pluralN } from './format'
+import { pluralN } from './format'
 import type { Candidate, Consensus, ModelOutput, Pick } from './model'
 import { isValue } from './model'
 import type { H2H, TeamForm } from './stats'
 import type { Injury, Match, Standings } from './types'
+import { outcomeText, outOf10 } from './verdict'
 
 export type TagDef = {
   slug: string
@@ -32,9 +33,9 @@ export type TagDef = {
 export const TAGS: TagDef[] = [
   {
     slug: 'value',
-    label: '#value',
-    title: 'Value-ставки',
-    hint: 'Коэффициент выше справедливого',
+    label: '#выгодно',
+    title: 'Выгодные ставки (value)',
+    hint: 'Букмекер платит больше, чем стоит исход',
     about:
       'Value-ставка — это исход, коэффициент на который у конкретного букмекера выше справедливого. Справедливый коэффициент мы считаем по консенсусу рынка без маржи (с повышенным весом «острых» букмекеров) и пуассоновской модели голов. Чем больше перевес (EV), тем выгоднее ставка на дистанции.',
     bet: 'Исход с максимальным перевесом',
@@ -43,9 +44,9 @@ export const TAGS: TagDef[] = [
   },
   {
     slug: 'progruz',
-    label: '#прогруз',
-    title: 'Прогрузы',
-    hint: 'Коэффициент резко упал',
+    label: '#идут деньги',
+    title: 'Прогрузы — куда идут деньги',
+    hint: 'На исход массово ставят — коэффициент резко упал',
     about:
       'Прогруз — заметное падение коэффициента на исход от открытия линии к текущему моменту. Обычно это значит, что на исход идут крупные деньги или вышли важные новости (травмы, составы). Мы сравниваем средние коэффициенты открытия и текущие по всем букмекерам.',
     bet: 'Исход, на который падает коэффициент',
@@ -54,9 +55,9 @@ export const TAGS: TagDef[] = [
   },
   {
     slug: 'tb-2-5',
-    label: '#ТБ2.5',
-    title: 'Тотал больше 2.5',
-    hint: 'Ждём результативный матч',
+    label: '#много голов',
+    title: 'Тотал больше 2.5 (3 гола и больше)',
+    hint: 'Ждём 3 гола и больше',
     about:
       'Матчи, в которых рынок и модель ожидают три и больше голов. Учитываем вероятность тотала больше 2.5 по линиям букмекеров, ожидаемые голы (xG) и результативность команд в последних матчах.',
     bet: 'Тотал больше 2.5',
@@ -65,9 +66,9 @@ export const TAGS: TagDef[] = [
   },
   {
     slug: 'tm-2-5',
-    label: '#ТМ2.5',
-    title: 'Тотал меньше 2.5',
-    hint: 'Ждём закрытую игру',
+    label: '#мало голов',
+    title: 'Тотал меньше 2.5 (до 2 голов)',
+    hint: 'Ждём не больше 2 голов',
     about:
       'Матчи, где рынок ждёт не больше двух голов: осторожные команды, сильная оборона, высокая цена ошибки. Основа — вероятность тотала меньше 2.5 по линиям букмекеров и модель голов.',
     bet: 'Тотал меньше 2.5',
@@ -76,9 +77,9 @@ export const TAGS: TagDef[] = [
   },
   {
     slug: 'obe-zabyut',
-    label: '#обезабьют',
+    label: '#обе забьют',
     title: 'Обе забьют',
-    hint: 'Голы с обеих сторон',
+    hint: 'Скорее забьют обе команды',
     about:
       'Матчи, где высока вероятность, что забьют обе команды: по линии «обе забьют — да», пуассоновской модели и статистике последних игр (как часто команды забивают и пропускают).',
     bet: 'Обе забьют — да',
@@ -89,7 +90,7 @@ export const TAGS: TagDef[] = [
     slug: 'favorit',
     label: '#фаворит',
     title: 'Явные фавориты',
-    hint: 'Один из соперников сильно сильнее',
+    hint: 'Одна команда заметно сильнее',
     about:
       'Матчи с явным фаворитом: рынок оценивает шансы одной из команд на победу в 60% и выше. Такие исходы часто используют в экспрессах, а на одиночные ставки смотрят в сторону форы.',
     bet: 'Победа фаворита или фора',
@@ -98,9 +99,9 @@ export const TAGS: TagDef[] = [
   },
   {
     slug: 'ravnye',
-    label: '#равные',
+    label: '#50 на 50',
     title: 'Равные силы',
-    hint: 'Шансы почти одинаковые',
+    hint: 'Силы почти равны',
     about:
       'Матчи равных соперников: разница в шансах на победу минимальна. В таких играх часто смотрят ничью, двойной шанс или тоталы.',
     bet: 'Ничья, двойной шанс или тотал',
@@ -109,9 +110,9 @@ export const TAGS: TagDef[] = [
   },
   {
     slug: 'andedog',
-    label: '#андердог',
-    title: 'Андердог в форме',
-    hint: 'Аутсайдер линии играет лучше фаворита',
+    label: '#может удивить',
+    title: 'Андердог в форме — может удивить',
+    hint: 'Не фаворит, но играет лучше соперника',
     about:
       'Команда — аутсайдер по линии букмекеров, но в последних пяти матчах набрала заметно больше очков, чем соперник. Рынок может недооценивать текущую форму.',
     bet: 'Победа или фора андердога',
@@ -131,7 +132,7 @@ export const TAGS: TagDef[] = [
   },
   {
     slug: 'krepost',
-    label: '#крепость',
+    label: '#сильны дома',
     title: 'Домашняя крепость',
     hint: 'Хозяева не проигрывают дома',
     about:
@@ -142,7 +143,7 @@ export const TAGS: TagDef[] = [
   },
   {
     slug: 'kadry',
-    label: '#кадры',
+    label: '#травмы',
     title: 'Кадровые потери',
     hint: 'Много травмированных и дисквалифицированных',
     about:
@@ -153,7 +154,7 @@ export const TAGS: TagDef[] = [
   },
   {
     slug: 'h2h',
-    label: '#h2h',
+    label: '#личные встречи',
     title: 'Тренд личных встреч',
     hint: 'Устойчивый тренд в очных матчах',
     about:
@@ -164,7 +165,7 @@ export const TAGS: TagDef[] = [
   },
   {
     slug: 'top-match',
-    label: '#топматч',
+    label: '#топ-матч',
     title: 'Топ-матчи',
     hint: 'Встреча лидеров',
     about: 'Встречи команд из верхней части турнирной таблицы — главные матчи тура.',
@@ -176,7 +177,8 @@ export const TAGS: TagDef[] = [
 
 export const TAG_BY_SLUG = new Map(TAGS.map((t) => [t.slug, t]))
 
-export type TagHit = { slug: string; score: number; reason: string }
+/** p — вероятность, на которой держится тег (тоталы, «обе забьют», фаворит): чтобы не доставать цифру из текста. */
+export type TagHit = { slug: string; score: number; reason: string; p?: number }
 
 export type TagInput = {
   match: Match
@@ -194,11 +196,13 @@ export type TagInput = {
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x))
 const MATCHES = ['матч', 'матча', 'матчей'] as const
 const q = (name: string) => `«${name}»`
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 
 export function computeTags(input: TagInput): TagHit[] {
   const { match, cons, model } = input
   const hits: TagHit[] = []
-  const add = (slug: string, score: number, reason: string) => hits.push({ slug, score: clamp01(score), reason })
+  const add = (slug: string, score: number, reason: string, p?: number) =>
+    hits.push(p === undefined ? { slug, score: clamp01(score), reason } : { slug, score: clamp01(score), reason, p })
   const home = match.home.name
   const away = match.away.name
 
@@ -215,7 +219,7 @@ export function computeTags(input: TagInput): TagHit[] {
     add(
       'value',
       (c.ev ?? 0) / 0.12,
-      `${c.label} за ${o.value.toFixed(2)} (${o.partner?.name ?? o.bookmakerName}) при справедливом ${c.fairOdd.toFixed(2)}: перевес +${((c.ev ?? 0) * 100).toFixed(1)}%`,
+      `${cap(outcomeText(c.key, match))} за ${o.value.toFixed(2)} (${o.partner?.name ?? o.bookmakerName}) при честной цене ${c.fairOdd.toFixed(2)}: выгода +${((c.ev ?? 0) * 100).toFixed(1)}%`,
     )
   }
 
@@ -232,38 +236,41 @@ export function computeTags(input: TagInput): TagHit[] {
       add(
         'progruz',
         best.drop / 0.2,
-        `Коэффициент на победу ${q(best.side === 'home' ? home : away)} упал с ${best.from.toFixed(2)} до ${best.to.toFixed(2)} (−${Math.round(best.drop * 100)}%)`,
+        `Коэффициент на победу ${q(best.side === 'home' ? home : away)} упал с ${best.from.toFixed(2)} до ${best.to.toFixed(2)} (−${Math.round(best.drop * 100)}%): на этот исход массово ставят`,
       )
     }
   }
 
   // тоталы
   if (over25 != null) {
-    if (over25 >= 0.57) add('tb-2-5', (over25 - 0.55) / 0.2, `Вероятность тотала больше 2.5 — ${pct(over25)}`)
-    else if (1 - over25 >= 0.57) add('tm-2-5', (0.45 - over25) / 0.2, `Вероятность тотала меньше 2.5 — ${pct(1 - over25)}`)
+    if (over25 >= 0.57) add('tb-2-5', (over25 - 0.55) / 0.2, `Скорее будет 3 гола и больше: шанс ${outOf10(over25)}`, over25)
+    else if (1 - over25 >= 0.57) add('tm-2-5', (0.45 - over25) / 0.2, `Скорее будет не больше 2 голов: шанс ${outOf10(1 - over25)}`, 1 - over25)
   } else if (input.homeForm && input.awayForm) {
     const f = (input.homeForm.over25Rate + input.awayForm.over25Rate) / 2
-    if (f >= 0.7) add('tb-2-5', (f - 0.6) / 0.3, `ТБ 2.5 заходил в ${pct(f)} последних матчей команд`)
-    if (f <= 0.3) add('tm-2-5', (0.4 - f) / 0.3, `ТМ 2.5 заходил в ${pct(1 - f)} последних матчей команд`)
+    if (f >= 0.7) add('tb-2-5', (f - 0.6) / 0.3, `3 гола и больше было в ${outOf10(f)} последних матчей команд`, f)
+    if (f <= 0.3) add('tm-2-5', (0.4 - f) / 0.3, `Не больше 2 голов было в ${outOf10(1 - f)} последних матчей команд`, 1 - f)
   }
 
   // обе забьют
   if (btts != null && btts >= 0.57) {
-    add('obe-zabyut', (btts - 0.55) / 0.2, `Вероятность, что забьют обе команды, — ${pct(btts)}`)
+    add('obe-zabyut', (btts - 0.55) / 0.2, `Скорее забьют обе команды: шанс ${outOf10(btts)}`, btts)
   } else if (btts == null && input.homeForm && input.awayForm) {
     const hf = input.homeForm
     const af = input.awayForm
     if (hf.bttsRate >= 0.6 && af.bttsRate >= 0.6 && hf.failedToScoreRate <= 0.2 && af.failedToScoreRate <= 0.2) {
-      add('obe-zabyut', (hf.bttsRate + af.bttsRate) / 2 - 0.4, `Обе забивали в ${pct((hf.bttsRate + af.bttsRate) / 2)} последних матчей команд`)
+      const rate = (hf.bttsRate + af.bttsRate) / 2
+      add('obe-zabyut', rate - 0.4, `Обе забивали в ${outOf10(rate)} последних матчей команд`, rate)
     }
   }
 
   // фаворит / равные
   if (x12) {
     const fav = x12.home >= x12.away ? { name: home, p: x12.home } : { name: away, p: x12.away }
-    if (fav.p >= 0.6) add('favorit', (fav.p - 0.55) / 0.3, `Шансы ${q(fav.name)} на победу — ${pct(fav.p)}`)
+    if (fav.p >= 0.6) add('favorit', (fav.p - 0.55) / 0.3, `Шансы ${q(fav.name)} на победу — ${outOf10(fav.p)}`, fav.p)
     const diff = Math.abs(x12.home - x12.away)
-    if (diff <= 0.06) add('ravnye', 1 - diff / 0.06, `Шансы почти равны: П1 ${pct(x12.home)} — П2 ${pct(x12.away)}, ничья ${pct(x12.draw)}`)
+    if (diff <= 0.06) {
+      add('ravnye', 1 - diff / 0.06, `Силы почти равны: шансы ${q(home)} — ${outOf10(x12.home)}, ${q(away)} — ${outOf10(x12.away)}, ничьей — ${outOf10(x12.draw)}`)
+    }
   }
 
   const hf = input.homeForm
@@ -279,7 +286,7 @@ export function computeTags(input: TagInput): TagHit[] {
       add(
         'andedog',
         (dog.points5 - fav.points5) / 9,
-        `Команда ${q(dogHome ? home : away)} — аутсайдер по линии (${pct(dogP)}), но за 5 матчей набрала ${pluralN(dog.points5, ['очко', 'очка', 'очков'])} против ${fav.points5} у соперника`,
+        `Команда ${q(dogHome ? home : away)} — не фаворит (шанс ${outOf10(dogP)}), но за 5 матчей набрала ${pluralN(dog.points5, ['очко', 'очка', 'очков'])} против ${fav.points5} у соперника`,
       )
     }
   }
@@ -318,7 +325,7 @@ export function computeTags(input: TagInput): TagHit[] {
   const h = input.h2h
   if (h && h.games.length >= 4) {
     const n = h.games.length
-    if (h.over25Rate >= 0.75) add('h2h', h.over25Rate - 0.25, `В ${Math.round(h.over25Rate * n)} из ${n} последних очных встреч было больше 2.5 голов`)
+    if (h.over25Rate >= 0.75) add('h2h', h.over25Rate - 0.25, `В ${Math.round(h.over25Rate * n)} из ${n} последних личных встреч было 3 гола и больше`)
     else if (h.homeWins / n >= 0.75) add('h2h', h.homeWins / n - 0.25, `Команда ${q(home)} выиграла ${h.homeWins} из ${n} последних личных встреч`)
     else if (h.awayWins / n >= 0.75) add('h2h', h.awayWins / n - 0.25, `Команда ${q(away)} выиграла ${h.awayWins} из ${n} последних личных встреч`)
   }

@@ -12,7 +12,7 @@ import { goHref } from './affiliate'
 import type { MatchInsights } from './data'
 import { dayLabel, formatDateShort, formatTime, pct, pluralN, todayYmd, ymdInTz } from './format'
 import { matchHref } from './links'
-import { describePick } from './preview'
+import { buildVerdict, outcomeText } from './verdict'
 import type { Res } from './stats'
 import { TAG_BY_SLUG, type TagDef } from './tags'
 import type { MatchStatus, Score } from './types'
@@ -34,7 +34,13 @@ export type FormSide = {
 }
 
 export type StorySlide =
-  | { kind: 'cover'; tags: { slug: string; label: string; kind: TagDef['kind']; reason: string }[]; teaser: string }
+  | {
+      kind: 'cover'
+      tags: { slug: string; label: string; kind: TagDef['kind']; reason: string }[]
+      teaser: string
+      /** вывод словами до матча: «Скорее выиграет «X»» */
+      verdict: string | null
+    }
   | {
       kind: 'odds'
       title: string
@@ -103,6 +109,7 @@ export type StoryData = {
 }
 
 const q = (s: string) => `«${s}»`
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 const dec = (x: number, d = 1) => x.toFixed(d).replace('.', ',')
 
 function adText(p: Partner) {
@@ -151,7 +158,16 @@ export function buildStory(ins: MatchInsights): StoryData | null {
     const def = TAG_BY_SLUG.get(t.slug)
     return def ? [{ slug: def.slug, label: def.label, kind: def.kind, reason: t.reason }] : []
   })
-  slides.push({ kind: 'cover', tags: coverTags, teaser: '' })
+  const offer0 = pick ? (pick.candidate.bestPartner ?? pick.candidate.best) : null
+  const verdict = scheduled
+    ? buildVerdict({
+        match: m,
+        tags,
+        probs: model?.x12 ?? cons.x12,
+        pick: pick ? { key: pick.candidate.key, odd: offer0?.value ?? null, kind: pick.kind } : null,
+      })
+    : null
+  slides.push({ kind: 'cover', tags: coverTags, teaser: '', verdict: verdict?.headline ?? null })
 
   // ── ход матча (live и завершённые)
   if (played) {
@@ -225,7 +241,7 @@ export function buildStory(ins: MatchInsights): StoryData | null {
 
   // ── движение линии (если что-то заметно сдвинулось)
   if (scheduled) {
-    const labels = { home: 'П1', draw: 'Х', away: 'П2' } as const
+    const labels = { home: 'Хозяева', draw: 'Ничья', away: 'Гости' } as const
     const rows = (['home', 'draw', 'away'] as const).flatMap((o) => {
       const mv = cons.movement[o]
       if (!mv || !(mv.opening > 1) || !(mv.current > 1)) return []
@@ -236,7 +252,7 @@ export function buildStory(ins: MatchInsights): StoryData | null {
       const who = top.outcome === 'home' ? `победу команды ${q(H)}` : top.outcome === 'away' ? `победу команды ${q(A)}` : 'ничью'
       slides.push({
         kind: 'movement',
-        title: `Прогруз на ${top.label}`,
+        title: top.outcome === 'draw' ? 'Деньги идут на ничью' : `Деньги идут на ${q(top.outcome === 'home' ? H : A)}`,
         sub: `Коэффициент на ${who} упал с ${top.opening.toFixed(2)} до ${top.current.toFixed(2)}: на этот исход идут деньги`,
         rows,
       })
@@ -356,8 +372,9 @@ export function buildStory(ins: MatchInsights): StoryData | null {
     const offer = c.bestPartner ?? c.best
     slides.push({
       kind: 'pick',
-      label: c.label,
-      desc: describePick(c, m),
+      // исход словами, а не «П1»; пояснение — почему это ставка
+      label: cap(outcomeText(c.key, m)),
+      desc: pick.kind === 'value' ? 'Букмекер платит за этот исход больше, чем он стоит' : 'Самый вероятный исход с нормальным кэфом',
       prob: c.prob,
       fairOdd: c.fairOdd,
       odd: offer?.value ?? null,
@@ -386,7 +403,7 @@ export function buildStory(ins: MatchInsights): StoryData | null {
         href: goHref(partner, 'story', m.id),
         text:
           pick && offer
-            ? `Поставить ${pick.candidate.label} за ${offer.value.toFixed(2)}`
+            ? `Поставить за ${offer.value.toFixed(2)}`
             : m.status === 'live'
               ? `Ставки по ходу матча в ${partner.name}`
               : `Сделать ставку в ${partner.name}`,

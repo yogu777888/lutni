@@ -40,9 +40,10 @@ function Ring({ kind, seen }: { kind: CircleKind; seen: boolean[] }) {
 
 function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
   const text = dim ? 'text-dim' : 'text-fg'
+  // теги словами бывают в два слова («#идут деньги») — подпись в две строки, без обрезки
   if (g.label.startsWith('#')) {
     return (
-      <span className={`block truncate ${text}`}>
+      <span className={`line-clamp-2 break-words ${text}`}>
         <span className="text-mute">#</span>
         {g.label.slice(1)}
       </span>

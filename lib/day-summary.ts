@@ -64,9 +64,10 @@ export function parseProgruz(it: FeedItem): ProgruzInfo | null {
   return { item: it, side: m[1] === it.match.away.name ? 'away' : 'home', from, to, drop: 1 - to / from }
 }
 
-/** Вероятность ТБ 2.5 из объяснения тега («… — 72%»). */
+/** Вероятность ТБ 2.5: цифра тега, у старых записей — из объяснения («… — 72%»). */
 function overPct(it: FeedItem): number | null {
   const t = tag(it, 'tb-2-5')
+  if (t?.p !== undefined) return t.p
   const m = t ? /(\d+)%/.exec(t.reason) : null
   return m ? Number(m[1]) / 100 : null
 }

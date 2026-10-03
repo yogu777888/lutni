@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from 'react'
 import type { CompareRow, FormSide, Side, StoryData, StorySlide, StoryTeam } from '@/lib/story'
 import type { StoryFocus } from '@/lib/story-groups'
 import type { Res } from '@/lib/stats'
+import { outOf10 } from '@/lib/verdict'
 import { tagChipClass, tagHashClass } from '../tag-chip'
 import { TeamLogo } from '../TeamLogo'
 
@@ -178,6 +179,11 @@ function Cover({ s, story, focus }: { s: S<'cover'>; story: StoryData; focus: St
             story.when
           )}
         </div>
+        {s.verdict ? (
+          <p className="st-rise mx-auto mt-4 max-w-[20rem] text-[19px] font-bold leading-snug [text-shadow:0_1px_12px_rgb(0_0_0/0.6)]" style={wait(580)}>
+            {s.verdict}
+          </p>
+        ) : null}
         {focus ? (
           <div className="st-rise mx-auto mt-5 max-w-[20rem] rounded-2xl bg-panel/80 p-3 text-left ring-1 ring-inset ring-edge-2" style={wait(650)}>
             <span className={tagChipClass(focus.kind, 'sm')}>
@@ -212,9 +218,9 @@ function Cover({ s, story, focus }: { s: S<'cover'>; story: StoryData; focus: St
 
 function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
   const items = [
-    { key: 'home', label: 'П1', name: story.home.name, team: story.home, p: s.probs.home, best: s.best.home, fair: s.fair.home, bar: 'bg-home' },
-    { key: 'draw', label: 'Х', name: 'ничья', team: null, p: s.probs.draw, best: s.best.draw, fair: s.fair.draw, bar: 'bg-tie' },
-    { key: 'away', label: 'П2', name: story.away.name, team: story.away, p: s.probs.away, best: s.best.away, fair: s.fair.away, bar: 'bg-away' },
+    { key: 'home', label: 'Хозяева', name: story.home.name, team: story.home, p: s.probs.home, best: s.best.home, fair: s.fair.home, bar: 'bg-home' },
+    { key: 'draw', label: 'Ничья', name: 'без победителя', team: null, p: s.probs.draw, best: s.best.draw, fair: s.fair.draw, bar: 'bg-tie' },
+    { key: 'away', label: 'Гости', name: story.away.name, team: story.away, p: s.probs.away, best: s.best.away, fair: s.fair.away, bar: 'bg-away' },
   ]
   const max = Math.max(...items.map((i) => i.p))
   return (
@@ -224,7 +230,8 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
         <div className="grid h-[min(30dvh,230px)] grid-cols-3 items-end gap-3 border-b border-edge-2">
           {items.map((it, i) => (
             <div key={it.key} className="flex h-full flex-col items-center justify-end">
-              <Num value={it.p} format={pctFmt} delay={300 + i * 120} className="mb-1.5 text-[26px] font-bold" />
+              {/* шанс — «из 10»: так понятнее, чем проценты */}
+              <Num value={it.p} format={outOf10} delay={300 + i * 120} className="mb-1.5 whitespace-nowrap text-[19px] font-bold" />
               <div
                 className={`st-grow-y w-full rounded-t-[6px] ${it.bar}`}
                 style={{ height: `${Math.max(3, (it.p / max) * 80)}%`, ...wait(300 + i * 120) }}
@@ -245,7 +252,7 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
                 <div className="num text-[15px] font-bold">{it.best ? it.best.toFixed(2) : '—'}</div>
                 <div className="text-[10px] text-mute">лучший кэф</div>
               </div>
-              <div className="num mt-1 text-[11px] text-dim">без маржи {it.fair.toFixed(2)}</div>
+              <div className="num mt-1 text-[11px] text-dim">стоит {it.fair.toFixed(2)}</div>
             </div>
           ))}
         </div>
@@ -311,8 +318,8 @@ function Goals({ s, story }: { s: S<'goals'>; story: StoryData }) {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          {s.over25 != null ? <Meter p={s.over25} label="Тотал больше 2.5" alt={`меньше 2.5 — ${pctFmt(1 - s.over25)}`} delay={450} /> : null}
-          {s.btts != null ? <Meter p={s.btts} label="Обе забьют" alt={`не забьёт хотя бы одна — ${pctFmt(1 - s.btts)}`} delay={600} /> : null}
+          {s.over25 != null ? <Meter p={s.over25} label="3 гола и больше" alt={`не больше 2 — ${pctFmt(1 - s.over25)}`} delay={450} /> : null}
+          {s.btts != null ? <Meter p={s.btts} label="Обе забьют" alt={`кто-то не забьёт — ${pctFmt(1 - s.btts)}`} delay={600} /> : null}
         </div>
       </div>
     </Frame>
@@ -567,7 +574,7 @@ function Movement({ s, story }: { s: S<'movement'>; story: StoryData }) {
   const names = { home: story.home.name, draw: 'ничья', away: story.away.name }
   return (
     <Frame>
-      <Head eyebrow="Движение линии" title={s.title} sub={s.sub} />
+      <Head eyebrow="Куда идут деньги" title={s.title} sub={s.sub} />
       <div className="my-auto space-y-5 py-4">
         {s.rows.map((r, i) => {
           const d = 300 + i * 150
@@ -577,7 +584,8 @@ function Movement({ s, story }: { s: S<'movement'>; story: StoryData }) {
             <div key={r.outcome} className="st-rise" style={wait(d)}>
               <div className="mb-2 flex items-baseline justify-between gap-2">
                 <span className="min-w-0 truncate text-[14px] font-bold">
-                  {r.label} <span className="font-medium text-dim">· {names[r.outcome]}</span>
+                  {r.label}
+                  {r.outcome !== 'draw' ? <span className="font-medium text-dim"> · {names[r.outcome]}</span> : null}
                 </span>
                 <span className="num shrink-0 text-[14px] font-bold">
                   {r.opening.toFixed(2)} → {r.current.toFixed(2)}{' '}
@@ -685,17 +693,17 @@ function Stars({ value }: { value: number }) {
 function PickSlide({ s }: { s: S<'pick'> }) {
   // для value-прогноза показываем саму суть перевеса: наш шанс выше того, что заложен в коэффициент
   const bars = [
-    { key: 'model', label: 'Шанс по расчёту tag.bet', p: s.prob, cls: 'bg-acid' },
-    ...(s.value && s.odd ? [{ key: 'book', label: `Шанс, заложенный в кэф ${s.odd.toFixed(2)}`, p: 1 / s.odd, cls: 'bg-tie' }] : []),
+    { key: 'model', label: 'Шанс по нашему расчёту', p: s.prob, cls: 'bg-acid' },
+    ...(s.value && s.odd ? [{ key: 'book', label: `Шанс, на который рассчитан кэф ${s.odd.toFixed(2)}`, p: 1 / s.odd, cls: 'bg-tie' }] : []),
   ]
   return (
     <Frame>
       <div className="st-rise flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-acid">
         Прогноз tag.bet
-        {s.value ? <span className="rounded-full bg-acid px-2 py-0.5 text-[10px] tracking-normal text-acid-ink">value</span> : null}
+        {s.value ? <span className="rounded-full bg-acid px-2 py-0.5 text-[10px] tracking-normal text-acid-ink">выгодно</span> : null}
       </div>
       <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <div className="st-pop text-[68px] font-bold leading-none tracking-tight text-acid" style={wait(150)}>
+        <div className="st-pop max-w-[20rem] text-[32px] font-bold leading-[1.1] tracking-tight text-acid" style={wait(150)}>
           {s.label}
         </div>
         <p className="st-rise mt-2 max-w-[19rem] text-[17px] font-semibold leading-snug first-letter:uppercase" style={wait(300)}>
@@ -721,7 +729,7 @@ function PickSlide({ s }: { s: S<'pick'> }) {
 
         <dl className="st-rise mt-5 grid w-full grid-cols-3 gap-2" style={wait(800)}>
           <div className="rounded-xl bg-panel-2 px-1 py-2 ring-1 ring-inset ring-edge">
-            <dt className="text-[10px] text-dim">Без маржи</dt>
+            <dt className="text-[10px] text-dim">Стоит</dt>
             <dd className="num text-[17px] font-bold">{s.fairOdd.toFixed(2)}</dd>
           </div>
           <div className="rounded-xl bg-panel-2 px-1 py-2 ring-1 ring-inset ring-edge">
@@ -729,7 +737,7 @@ function PickSlide({ s }: { s: S<'pick'> }) {
             <dd className="num text-[17px] font-bold">{s.odd ? s.odd.toFixed(2) : '—'}</dd>
           </div>
           <div className="rounded-xl bg-panel-2 px-1 py-2 ring-1 ring-inset ring-edge">
-            <dt className="text-[10px] text-dim">Перевес</dt>
+            <dt className="text-[10px] text-dim">Выгода</dt>
             <dd className={`num text-[17px] font-bold ${s.ev != null && s.ev > 0 ? 'text-acid' : ''}`}>
               {s.ev != null ? `${s.ev >= 0 ? '+' : '−'}${dec(Math.abs(s.ev) * 100)}%` : '—'}
             </dd>

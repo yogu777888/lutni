@@ -24,15 +24,15 @@ export function Sidebar() {
         <ul className="mt-4 space-y-3 text-[14px]">
           <li className="flex items-center gap-2.5">
             <TagPill slug="value" link={false} />
-            <span className="text-dim">цена выше честной</span>
+            <span className="text-dim">платят больше, чем стоит</span>
           </li>
           <li className="flex items-center gap-2.5">
             <TagPill slug="progruz" link={false} />
-            <span className="text-dim">линия резко сдвинулась</span>
+            <span className="text-dim">на исход массово ставят</span>
           </li>
           <li className="flex items-center gap-2.5">
             <TagPill slug="tb-2-5" link={false} />
-            <span className="text-dim">ждём много голов</span>
+            <span className="text-dim">ждём 3 гола и больше</span>
           </li>
         </ul>
         <Link href="/tags" className="group mt-5 inline-flex items-center gap-1.5 border-b-2 border-acid pb-0.5 text-[14px] font-semibold">

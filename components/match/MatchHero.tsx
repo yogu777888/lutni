@@ -61,7 +61,7 @@ export function MatchHero({
 
       <div className="mt-7 grid grid-cols-2 items-center gap-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-6">
         {team(m.home)}
-        <span className="hidden text-center text-[13px] text-mute sm:block">{played ? (live ? 'идёт матч' : 'итог') : 'шанс на исход'}</span>
+        <span className="hidden text-center text-[13px] text-mute sm:block">{played ? (live ? 'идёт матч' : 'итог') : 'шансы из 10'}</span>
         {team(m.away, true)}
       </div>
 
@@ -93,11 +93,12 @@ export function MatchHero({
                     c.key === 'draw' ? 'text-chalk' : 'text-fg'
                   }`}
                 >
-                  {Math.round(c.p * 100)}
-                  <span className="ml-0.5 text-[0.42em] tracking-normal">%</span>
+                  {/* шанс «из 10»: так понятнее, чем проценты; точная цифра — в подсказке */}
+                  <span title={`${Math.round(c.p * 100)}%`}>{Math.min(9, Math.max(1, Math.round(c.p * 10)))}</span>
+                  <span className="ml-1 text-[0.32em] font-bold tracking-normal text-dim">из 10</span>
                 </div>
                 <div className="mt-1.5 truncate text-[12px] text-dim">
-                  <span className="sm:hidden">{c.key === 'home' ? 'П1' : c.key === 'away' ? 'П2' : 'Х'}</span>
+                  <span className="sm:hidden">{c.key === 'home' ? 'хозяева' : c.key === 'away' ? 'гости' : 'ничья'}</span>
                   <span className="hidden sm:inline">{c.label}</span>
                 </div>
               </div>
@@ -123,7 +124,7 @@ export function MatchHero({
                 >
                   <div className="num text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[30px]">{c.odd ? c.odd.toFixed(2) : '—'}</div>
                   <div className={`mt-1.5 text-[11px] ${c.hot ? 'font-semibold text-acid-ink/70' : 'text-mute'}`}>
-                    честно {c.fair.toFixed(2)}
+                    стоит {c.fair.toFixed(2)}
                     {c.hot && c.odd ? <span className="hidden sm:inline"> · {signed(c.odd / c.fair - 1)}</span> : null}
                   </div>
                 </div>
@@ -131,7 +132,7 @@ export function MatchHero({
             </div>
           ) : null}
           <p className="mt-4 text-[12px] text-mute">
-            Шансы — без маржи{books > 1 ? `, по ${books} букмекерам` : ''}. Лаймом горит коэффициент выше честного.
+            Шансы — из коэффициентов{books > 1 ? ` ${books} букмекеров` : ''} без их наценки. Лаймом горит кэф, который выше, чем стоит исход.
           </p>
         </>
       ) : null}
