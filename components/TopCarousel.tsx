@@ -53,7 +53,7 @@ export function TopCarousel({ heads, className = '', children }: { heads: { leag
               aria-haspopup="listbox"
               aria-expanded={open}
               onClick={() => setOpen((o) => !o)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-edge-2 bg-white/[0.04] pl-3.5 pr-2.5 text-[13px] font-medium text-fg transition-colors hover:bg-white/[0.08]"
+              className="inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-white/[0.07] pl-3 pr-2 text-[13px] font-medium text-fg transition-colors hover:bg-white/[0.11]"
             >
               {head?.league}
               <svg viewBox="0 0 24 24" className={`h-4 w-4 text-dim transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -61,7 +61,7 @@ export function TopCarousel({ heads, className = '', children }: { heads: { leag
               </svg>
             </button>
             {open ? (
-              <div role="listbox" aria-label="Лига" className="absolute right-0 top-[calc(100%+6px)] min-w-[180px] rounded-2xl border border-edge-2 bg-panel-2 p-1.5 shadow-[0_16px_40px_rgb(0_0_0/0.5)]">
+              <div role="listbox" aria-label="Лига" className="absolute right-0 top-[calc(100%+6px)] min-w-[180px] rounded-[14px] border border-edge bg-panel-2 p-1.5 shadow-[0_16px_40px_rgb(0_0_0/0.5)]">
                 {heads.map((h, k) => (
                   <button
                     key={k}
@@ -72,7 +72,7 @@ export function TopCarousel({ heads, className = '', children }: { heads: { leag
                       go(k)
                       setOpen(false)
                     }}
-                    className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-[14px] transition-colors hover:bg-white/[0.06] ${k === cur ? 'text-fg' : 'text-chalk'}`}
+                    className={`flex w-full items-center justify-between gap-3 rounded-[9px] px-3 py-2 text-left text-[14px] transition-colors hover:bg-white/[0.06] ${k === cur ? 'text-fg' : 'text-chalk'}`}
                   >
                     <span className="flex items-center gap-2">
                       {h.league}

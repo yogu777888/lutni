@@ -26,7 +26,7 @@ function Go() {
   return (
     <span
       aria-hidden
-      className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/[0.06] text-chalk transition-colors duration-300 group-hover:bg-white/[0.12] group-hover:text-fg"
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-[9px] bg-white/[0.06] text-chalk transition-colors duration-300 group-hover:bg-white/[0.12] group-hover:text-fg"
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M5 12h14" />
@@ -381,8 +381,8 @@ function TopSlide({ it }: { it: FeedItem }) {
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[13px]">
-        <span aria-hidden className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-white/[0.06] py-1.5 pl-1.5 pr-3.5 font-medium text-fg">
-          <span className="grid h-6 w-6 place-items-center rounded-full bg-acid text-acid-ink">
+        <span aria-hidden className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[10px] bg-white/[0.06] py-1.5 pl-1.5 pr-3.5 font-medium text-fg">
+          <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-acid text-acid-ink">
             <svg viewBox="0 0 12 12" className="ml-px h-2.5 w-2.5" fill="currentColor">
               <path d="M3 1.5v9l7.5-4.5z" />
             </svg>
@@ -390,7 +390,7 @@ function TopSlide({ it }: { it: FeedItem }) {
           Разбор за минуту
         </span>
         {bet && betLabel ? (
-          <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-acid/[0.12] px-3.5 py-1.5 font-semibold text-acid">
+          <span className="inline-flex min-w-0 items-center gap-1.5 rounded-[10px] bg-acid/[0.12] px-3.5 py-1.5 font-semibold text-acid">
             <span className="truncate">{betLabel}</span>
             {bet.odd ? <span className="num shrink-0">· {bet.odd.toFixed(2)}</span> : null}
           </span>
