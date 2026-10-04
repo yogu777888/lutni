@@ -156,8 +156,9 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         </section>
 
         {storyGroups.length ? (
-          // кружки понятны и без подписи «Истории дня» — так первый экран влезает целиком
-          <section aria-label="Истории дня" className="mt-5 sm:mt-6">
+          // кружки понятны и без подписи «Истории дня» — так первый экран влезает целиком;
+          // отступ сверху — у ряда (pt-1.5): ряд прокручивается и обрезал бы круг фокуса у кружка
+          <section aria-label="Истории дня" className="mt-4 sm:mt-5">
             <StoryCircles groups={storyGroups} covers={storyCovers()} />
           </section>
         ) : null}

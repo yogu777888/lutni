@@ -9,8 +9,12 @@ import { circleQueue, seenCount } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
 
 const SIZE = 68
-const R = 31.5
+/** Кольцо 2.5px по радиусу 32: до края 0.75px (сглаживание не обрезается), до обложки — 2.25px воздуха. */
+const R = 32
+const STROKE = 2.5
 const C = 2 * Math.PI * R
+/** Просмотренный сегмент: спокойный серый, но заметный — кольцо читается целым кругом. */
+const SEEN_STROKE = 'var(--color-mute)'
 
 /**
  * Кольцо из сегментов — по одному на матч кружка. Просмотренные гаснут по порядку, от верха
@@ -20,26 +24,24 @@ const C = 2 * Math.PI * R
 function Ring({ kind, n, seen }: { kind: CircleKind; n: number; seen: number }) {
   const step = C / n
   const gap = n > 1 ? Math.min(4, step / 3) : 0
-  // цвет кольца — только «не смотрели» (лайм) и LIVE (красный); просмотренное — серое
+  // цвет кольца — только «не смотрели» (лайм) и LIVE (красный); просмотренное — серое той же толщины:
+  // иначе кольцо из толстых и тонких дуг выглядит кривым, а слишком бледный серый — недорисованным
   const color = kind === 'live' ? 'var(--color-live)' : 'var(--color-acid)'
   return (
-    <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
-      {Array.from({ length: n }, (_, i) => {
-        const s = i < seen
-        return (
-          <circle
-            key={i}
-            cx={SIZE / 2}
-            cy={SIZE / 2}
-            r={R}
-            fill="none"
-            stroke={s ? 'rgb(255 255 255 / 0.14)' : color}
-            strokeWidth={s ? 1.5 : 2.5}
-            strokeDasharray={`${step - gap} ${C - step + gap}`}
-            strokeDashoffset={-(i * step + gap / 2)}
-          />
-        )
-      })}
+    <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full -rotate-90 overflow-visible" aria-hidden>
+      {Array.from({ length: n }, (_, i) => (
+        <circle
+          key={i}
+          cx={SIZE / 2}
+          cy={SIZE / 2}
+          r={R}
+          fill="none"
+          stroke={i < seen ? SEEN_STROKE : color}
+          strokeWidth={STROKE}
+          strokeDasharray={`${step - gap} ${C - step + gap}`}
+          strokeDashoffset={-(i * step + gap / 2)}
+        />
+      ))}
     </svg>
   )
 }
@@ -66,7 +68,7 @@ function CoverArt({ k, cover, children }: { k: string; cover?: string; children?
   const art = artFor(k)
   return (
     <span
-      className="absolute inset-[5px] grid place-items-center overflow-hidden rounded-full ring-1 ring-inset ring-edge"
+      className="absolute inset-[5.5px] grid place-items-center overflow-hidden rounded-full ring-1 ring-inset ring-edge"
       style={{ background: cover ? `center / cover no-repeat url("${cover}")` : CIRCLE_BG }}
     >
       {cover ? null : (children ?? <ArtIcon name={art.icon} className="h-[26px] w-[26px] text-chalk" />)}
@@ -104,7 +106,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
   }
 
   return (
-    <nav aria-label="Истории дня" className="scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 pt-0.5 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
+    <nav aria-label="Истории дня" className="scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 pt-1.5 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
       {groups.map((g, gi) => {
         const n = seenCount(g, seen)
         const done = n === g.items.length
@@ -115,9 +117,13 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             onClick={(e) => open(gi, e)}
             title={g.hint}
             aria-label={`${g.label}. ${g.hint}. Смотреть истории`}
-            className="group flex w-[80px] shrink-0 flex-col items-center rounded-xl outline-offset-2"
+            className="group flex w-[80px] shrink-0 flex-col items-center focus-visible:outline-none"
           >
-            <span className="relative block transition-transform duration-300 group-hover:-translate-y-0.5 group-active:scale-95" style={{ width: SIZE, height: SIZE }}>
+            {/* фокус с клавиатуры — белым кругом вокруг кружка, а не рамкой вокруг кружка с подписью */}
+            <span
+              className="relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95"
+              style={{ width: SIZE, height: SIZE }}
+            >
               <Ring kind={g.kind} n={g.items.length} seen={n} />
               <CoverArt k={g.key} cover={covers[g.key]} />
               {g.kind === 'live' ? (
