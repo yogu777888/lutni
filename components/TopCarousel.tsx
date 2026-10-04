@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { CHIP, StoryChipFace, ValueChip } from './Chips'
 import { openStory } from './story/events'
 
-/** Матч слайда — для кнопок под лентой: они относятся к матчу, который сейчас на экране. */
-export type MainSlide = { id: number; href: string; live: boolean; bet: { label: string; odd: number | null } | null }
+/** Матч слайда — для шапки и кнопок карточки: турнир, разбор и «Выгодно» — про матч, который сейчас на экране. */
+export type MainSlide = { id: number; href: string; live: boolean; caption: string; bet: { label: string; odd: number | null } | null }
 /** День в блоке: «Вчера» — итоги, «Сегодня», «Завтра» — анонс. */
 export type MainDay = { key: string; label: string; slides: MainSlide[] }
 
@@ -19,10 +19,10 @@ function Arrow({ dir }: { dir: 'left' | 'right' }) {
 
 /**
  * «Главные матчи» — до пяти важных встреч дня (lib/day-summary.ts, mainMatches). Подписи над карточкой нет:
- * она и так понятна (владелец оставил подпись только над «Цифрами дня»). В правом верхнем углу карточки —
- * стрелки «1 из 5» (на телефоне — и свайп), без автопрокрутки, и чип дня: он меняет только этот блок —
- * заглянуть во вчера (итоги) и в завтра (анонс); истории, переходы под блоком и список матчей остаются про
- * день страницы. Слайды — лента со scroll-snap: без JS видны все матчи дня.
+ * она и так понятна (владелец оставил подпись только над «Цифрами дня»). Шапка карточки: слева турнир и тур
+ * матча на экране, справа стрелки «1 из 5» (на телефоне — внизу, и свайп), без автопрокрутки, и чип дня: он
+ * меняет только этот блок — заглянуть во вчера (итоги) и в завтра (анонс); истории, переходы под блоком
+ * и список матчей остаются про день страницы. Слайды — лента со scroll-snap: без JS видны все матчи дня.
  */
 export function TopCarousel({
   days,
@@ -90,13 +90,16 @@ export function TopCarousel({
         </button>
       </div>
     ) : null
-  const controls = n > 1 || days.length > 1
   return (
     <article aria-label="Главные матчи" className={`relative flex min-w-0 flex-col py-[18px] ${className}`}>
-      {controls ? (
-        // в правом верхнем углу — стрелки и чип дня (сверху и справа поровну); день не со страницы — подписан на чипе
-        <div className="flex items-center justify-end gap-3 px-[18px]">
-          {arrows('flex')}
+      {/* шапка: слева турнир матча на экране, справа стрелки и чип дня (в углу — сверху и справа поровну) */}
+      <div className="flex items-center justify-between gap-3 px-[18px]">
+        <p className="min-w-0 truncate text-[13px] text-dim">
+          {meta?.live ? <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse-live rounded-full bg-live align-middle" aria-label="идёт" /> : null}
+          {meta?.caption}
+        </p>
+        <div className="flex shrink-0 items-center gap-3">
+          {arrows('hidden sm:flex')}
           {days.length > 1 ? (
             <div ref={menu} className="relative z-20 shrink-0">
               <button type="button" aria-haspopup="listbox" aria-expanded={open} aria-label={`День главных матчей: ${current?.label ?? ''}`} onClick={() => setOpen((o) => !o)} className={`${CHIP} gap-1.5 pl-3 pr-2`}>
@@ -132,12 +135,12 @@ export function TopCarousel({
             </div>
           ) : null}
         </div>
-      ) : null}
+      </div>
 
       <div
         key={current?.key}
         ref={track}
-        className={`scrollbar-none flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain ${controls ? 'mt-3 lg:[@media(max-height:739px)]:mt-2' : ''}`}
+        className="scrollbar-none mt-3 flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain lg:[@media(max-height:739px)]:mt-2"
         onScroll={(e) => {
           const el = e.currentTarget
           const k = Math.round(el.scrollLeft / Math.max(1, el.clientWidth))
@@ -151,8 +154,8 @@ export function TopCarousel({
         ))}
       </div>
 
-      {/* на телефоне и планшете — под лентой: «Выгодно» и разбор матча, который на экране.
-          На компьютере эти кнопки — под табло в самом слайде */}
+      {/* на телефоне и планшете — под лентой: «Выгодно» строкой выше, ниже разбор матча на экране
+          (на телефоне рядом — стрелки). На компьютере эти кнопки — под табло в самом слайде */}
       <div className="mt-4 flex flex-wrap items-center gap-2 px-[18px] lg:hidden">
         {meta?.bet ? (
           <div className="flex w-full min-w-0">
@@ -164,6 +167,7 @@ export function TopCarousel({
             <StoryChipFace />
           </button>
         ) : null}
+        {arrows('ml-auto flex shrink-0 sm:hidden')}
       </div>
     </article>
   )

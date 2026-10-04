@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { featuredInfo } from '@/config/leagues'
 import type { FeedItem } from '@/lib/data'
-import { navExamples, type DaySummary as Summary } from '@/lib/day-summary'
+import { navExamples, parseProgruz, type DaySummary as Summary } from '@/lib/day-summary'
 import { formatDayMonth, formatTime, pct, pluralN, todayYmd, ymdInTz } from '@/lib/format'
 import { matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
@@ -100,13 +100,15 @@ type Reason = { text: string; icon: IconName; hot: boolean }
 /**
  * Два факта о встрече — с цифрами и выборкой из тегов: о движении линии («Кэф на «X» снизился: 2.40 → 1.97»)
  * и о командах (серии, дом, потери, личные встречи). «Выгодно» — на кнопке, «фаворит» и «50 на 50» —
- * в главной фразе, их не повторяем. Фактов нет — панели нет, ничего не выдумываем.
+ * в главной фразе (и до матча, и во время игры), их не повторяем. Фактов нет — панели нет, ничего не выдумываем.
  */
 function reasonsFor(it: FeedItem, v: Verdict | null): Reason[] {
   const out: Reason[] = []
-  if (v?.drop) out.push({ text: v.drop, icon: 'down', hot: true })
-  // до матча «фаворит» и «50 на 50» — в главной фразе; во время игры главной фразы нет, и эти факты — к месту
-  const skip = new Set(v ? ['value', 'favorit', 'ravnye', 'progruz'] : ['value', 'progruz'])
+  // падение кэфа — первым; во время игры вывода нет, но падение до начала — всё равно факт
+  const p = v ? null : parseProgruz(it)
+  const drop = v?.drop ?? (p ? `Кэф на ${team(it.match, p.side)} снизился: ${p.from.toFixed(2)} → ${p.to.toFixed(2)}` : null)
+  if (drop) out.push({ text: drop, icon: 'down', hot: true })
+  const skip = new Set(['value', 'favorit', 'ravnye', 'progruz'])
   for (const t of [...it.tags].sort((a, b) => b.score - a.score)) {
     if (!skip.has(t.slug)) out.push({ text: t.reason, icon: artFor(t.slug).icon, hot: false })
   }
@@ -114,16 +116,22 @@ function reasonsFor(it: FeedItem, v: Verdict | null): Reason[] {
   return out.slice(0, 2)
 }
 
-/** Сыгранный матч глазами шансов до него: «Фаворит «Барселона» (79%) выиграл» / «Сенсация: …». */
-function resultLine(m: Match): string | null {
+/**
+ * Идущий или сыгранный матч глазами шансов до него — только счёт и кэфы перед матчем, без прогнозов:
+ * в игре — «Фаворит «Бетис» (65%) ведёт», «Пока ничья, фаворит — «Бетис» (65%)», «Ведёт «Хетафе», хотя
+ * фаворит — «Бетис» (65%)»; после матча — «Фаворит … выиграл», «Ничья: фаворит … не выиграл», «Сенсация: …».
+ */
+function playedLine(m: Match): string | null {
   const f = fair1x2(m.odds?.x12)
-  const s = m.scoreFT ?? m.score
+  const finished = m.status === 'finished'
+  const s = finished ? (m.scoreFT ?? m.score) : m.score
   if (!f || !s) return null
-  if (Math.abs(f.home - f.away) < 0.1) return 'Шансы были почти равны'
+  if (Math.abs(f.home - f.away) < 0.1) return finished ? 'Шансы были почти равны' : 'Шансы до матча были почти равны'
   const side = f.home >= f.away ? 'home' : 'away'
   const diff = side === 'home' ? s.home - s.away : s.away - s.home
   const fav = `${team(m, side)} (${pct(f[side])})`
-  return diff > 0 ? `Фаворит ${fav} выиграл` : diff === 0 ? `Ничья: фаворит ${fav} не выиграл` : `Сенсация: фаворит ${fav} проиграл`
+  if (finished) return diff > 0 ? `Фаворит ${fav} выиграл` : diff === 0 ? `Ничья: фаворит ${fav} не выиграл` : `Сенсация: фаворит ${fav} проиграл`
+  return diff > 0 ? `Фаворит ${fav} ведёт` : diff === 0 ? `Пока ничья, фаворит — ${fav}` : `Ведёт ${team(m, side === 'home' ? 'away' : 'home')}, хотя фаворит — ${fav}`
 }
 
 /** Вывод до матча — только с выгодной ставкой: обычный прогноз модели бывает «против» главной фразы и путает. */
@@ -134,13 +142,14 @@ const verdictOf = (it: FeedItem) => {
   return buildVerdict({ match: m, tags: it.tags, pick: pick?.kind === 'value' ? pick : null })
 }
 
-/** Матч слайда для кнопок под лентой: разбор и «Выгодно» относятся к матчу, который сейчас на экране. */
+/** Матч слайда для шапки и кнопок карточки: турнир, разбор и «Выгодно» — про матч, который сейчас на экране. */
 function slideMeta(it: FeedItem): MainSlide {
   const m = it.match
   const v = verdictOf(it)
   const pick = m.status === 'scheduled' ? it.summary?.pick : null
   const bet = v?.bet && pick ? { label: pick.key === v.side ? 'Выгодно' : `Выгодно: ${v.bet.text}`, odd: v.bet.odd } : null
-  return { id: m.id, href: matchHref(m), live: isLive(m), bet }
+  const caption = `${leagueShort(m.league)}${m.round ? ` · ${m.round}` : ''}`
+  return { id: m.id, href: matchHref(m), live: isLive(m), caption, bet }
 }
 
 /**
@@ -158,10 +167,11 @@ function TopSlide({ it }: { it: FeedItem }) {
   const bet = slideMeta(it).bet
   // факты о командах полезны и во время игры; после матча — уже нет
   const reasons = finished ? [] : reasonsFor(it, v)
-  const headline = v?.headline ?? (finished ? resultLine(m) : null)
+  // до матча — вывод; в игре и после — счёт глазами шансов до матча: у всех слайдов одна схема «фраза → полоса»
+  const headline = v?.headline ?? (played ? playedLine(m) : null)
   const odds = Boolean(fair1x2(m.odds?.x12))
   const minute = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'
-  const wide = live || odds || reasons.length > 0
+  const wide = odds || reasons.length > 0
   const side = (t: Match['home'], k: 'home' | 'away') => (
     <span className="flex min-w-0 flex-col items-center gap-2 text-center">
       <TeamLogo name={t.name} src={t.logo} size="var(--logo)" />
@@ -175,11 +185,8 @@ function TopSlide({ it }: { it: FeedItem }) {
 
   return (
     <div className={`relative flex min-w-0 flex-1 flex-col justify-center gap-4 ${wide ? 'lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-10' : ''}`}>
+      {/* турнир и тур — в шапке карточки (TopCarousel), напротив стрелок и чипа дня */}
       <div className="flex min-w-0 flex-col items-center gap-3 lg:gap-[clamp(12px,1.8vh,20px)] lg:[@media(max-height:739px)]:gap-2">
-        <p className="text-[13px] text-dim">
-          {leagueShort(m.league)}
-          {m.round ? ` · ${m.round}` : ''}
-        </p>
         {/* табло: хозяева — время (после свистка — счёт) — гости; вся карточка открывает сторис;
             эмблемы растут с высотой окна, чтобы на большом мониторе карточка не пустела */}
         <StoryLink
@@ -212,16 +219,8 @@ function TopSlide({ it }: { it: FeedItem }) {
 
       {wide ? (
         <div className="flex min-w-0 flex-col gap-4 lg:gap-3.5 lg:border-l lg:border-edge lg:pl-10">
-          {live ? (
-            // идёт матч: сколько сыграно — тонкой полосой; вывода до матча здесь уже нет
-            <div>
-              <div className="h-1.5 rounded-full bg-white/[0.08]" aria-hidden>
-                <div className="h-full rounded-full bg-live" style={{ width: `${Math.min(100, ((m.elapsed ?? 45) / 90) * 100)}%` }} />
-              </div>
-              <p className="mt-2 text-center text-[13px] text-mute lg:text-left">сыграно {Math.min(90, m.elapsed ?? 45)} из 90 минут</p>
-            </div>
-          ) : odds ? (
-            // вывод (или итог сыгранного) → на чём он основан: шансы по кэфам перед матчем
+          {odds ? (
+            // фраза → на чём она основана: шансы по кэфам перед матчем (и у идущего, и у сыгранного)
             <div>
               {headline ? (
                 <p className="mb-2.5 text-center text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-left lg:text-[clamp(17px,2.5vh,24px)]">{headline}</p>
