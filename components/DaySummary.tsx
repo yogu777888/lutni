@@ -172,44 +172,48 @@ function TopSlide({ it }: { it: FeedItem }) {
   const odds = Boolean(fair1x2(m.odds?.x12))
   const minute = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'
   const wide = odds || reasons.length > 0
-  const side = (t: Match['home'], k: 'home' | 'away') => (
-    <span className="flex min-w-0 flex-col items-center gap-2 text-center">
+  const score = played ? m.score : null
+  // ярче — фаворит до матча, в игре и после — кто ведёт или победил; равные силы или ничья — обе команды яркие
+  const lead = score ? (score.home === score.away ? null : score.home > score.away ? 'home' : 'away') : (v?.side ?? null)
+  const tone = (k: 'home' | 'away') => (lead && lead !== k ? 'text-chalk' : 'text-fg')
+  const BIG = 'num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-[26px] sm:text-[30px] lg:text-[clamp(28px,4.2vh,46px)]'
+  const row = (t: Match['home'], k: 'home' | 'away') => (
+    <span className="flex min-w-0 items-center gap-3">
       <TeamLogo name={t.name} src={t.logo} size="var(--logo)" />
-      <span
-        className={`line-clamp-2 text-[17px] font-semibold leading-tight tracking-[-0.015em] sm:text-[19px] lg:text-[clamp(18px,2.8vh,28px)] ${v?.side && v.side !== k ? 'text-chalk' : 'text-fg'}`}
-      >
-        {t.name}
-      </span>
+      <span className={`line-clamp-2 text-[20px] font-semibold leading-tight tracking-[-0.02em] sm:text-[22px] lg:text-[clamp(22px,3.2vh,32px)] ${tone(k)}`}>{t.name}</span>
     </span>
   )
 
   return (
     <div className={`relative flex min-w-0 flex-1 flex-col justify-center gap-4 ${wide ? 'lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-10' : ''}`}>
       {/* турнир и тур — в шапке карточки (TopCarousel), напротив стрелок и чипа дня */}
-      <div className="flex min-w-0 flex-col items-center gap-3 lg:gap-[clamp(12px,1.8vh,20px)] lg:[@media(max-height:739px)]:gap-2">
-        {/* табло: хозяева — время (после свистка — счёт) — гости; вся карточка открывает сторис;
-            эмблемы растут с высотой окна, чтобы на большом мониторе карточка не пустела */}
+      <div className="flex min-w-0 flex-col gap-4 lg:gap-[clamp(16px,2.4vh,26px)] lg:[@media(max-height:739px)]:gap-3">
+        {/* табло строками, как в спортивных приложениях: эмблема и название — хозяева сверху, гости снизу;
+            справа время (после свистка — счёт у каждой команды). Вся карточка открывает сторис;
+            эмблемы и названия растут с высотой окна, чтобы на большом мониторе карточка не пустела */}
         <StoryLink
           id={m.id}
           href={matchHref(m)}
-          className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3 [--logo:56px] lg:[--logo:clamp(56px,7vh,76px)] lg:[@media(max-height:739px)]:[--logo:44px] ${COVER}`}
+          className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-3 [--logo:30px] lg:gap-y-[clamp(10px,1.6vh,16px)] lg:[--logo:clamp(30px,4.4vh,42px)] lg:[@media(max-height:739px)]:[--logo:28px] ${COVER}`}
         >
-          {side(m.home, 'home')}
-          <span className="flex flex-col items-center pt-3">
-            <span
-              className={`num whitespace-nowrap text-[28px] font-semibold leading-none tracking-[-0.03em] sm:text-[32px] lg:text-[clamp(30px,4.6vh,52px)] ${live ? 'text-live' : ''}`}
-            >
-              {played && m.score ? `${m.score.home} : ${m.score.away}` : formatTime(m.ts)}
+          {row(m.home, 'home')}
+          {score ? (
+            <span className={`${BIG} text-right ${live ? 'text-live' : tone('home')}`}>{score.home}</span>
+          ) : (
+            <span className="row-span-2 flex flex-col items-end text-right">
+              <span className={BIG}>{formatTime(m.ts)}</span>
+              <span className={`mt-2 whitespace-nowrap text-[13px] font-medium ${live ? 'text-live' : 'text-dim'}`}>{live ? minute : until(m.ts)}</span>
             </span>
-            <span className={`mt-2 whitespace-nowrap text-[13px] font-medium ${live ? 'text-live' : 'text-dim'}`}>
-              {live ? minute : finished ? 'итог' : until(m.ts)}
-            </span>
-          </span>
-          {side(m.away, 'away')}
+          )}
+          {row(m.away, 'away')}
+          {score ? <span className={`${BIG} text-right ${live ? 'text-live' : tone('away')}`}>{score.away}</span> : null}
+          {score ? (
+            <span className={`col-span-2 -mt-1 text-right text-[13px] font-medium ${live ? 'text-live' : 'text-dim'}`}>{live ? minute : 'итог'}</span>
+          ) : null}
         </StoryLink>
         {/* на компьютере «Разбор за минуту» и «Выгодно» — под табло (на телефоне — под лентой, в TopCarousel);
             вся карточка — ссылка на сторис, поэтому здесь это подписи, а не отдельные кнопки */}
-        <div aria-hidden className="mt-1 hidden flex-wrap items-center justify-center gap-2 lg:flex lg:[@media(max-height:739px)]:mt-0">
+        <div aria-hidden className="hidden flex-wrap items-center gap-2 lg:flex">
           <span className={`${CHIP} shrink-0 gap-2 pl-1 pr-3.5`}>
             <StoryChipFace />
           </span>
@@ -223,7 +227,7 @@ function TopSlide({ it }: { it: FeedItem }) {
             // фраза → на чём она основана: шансы по кэфам перед матчем (и у идущего, и у сыгранного)
             <div>
               {headline ? (
-                <p className="mb-2.5 text-center text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-left lg:text-[clamp(17px,2.5vh,24px)]">{headline}</p>
+                <p className="mb-2.5 text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-[clamp(17px,2.5vh,24px)]">{headline}</p>
               ) : null}
               <ChanceBar m={m} />
             </div>
