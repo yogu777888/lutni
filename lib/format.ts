@@ -64,16 +64,20 @@ export function ymdInTz(ts: number, tz: string = SITE.timeZone): string {
 
 /**
  * «Сейчас» для сайта и демо-данных — одни часы на всех: иначе «через 40 мин» и «что уже началось»
- * расходятся с матчами. В демо часы можно перевести (SSTATS_MOCK_NOW — дальше время идёт от этого момента)
- * или остановить: SSTATS_MOCK=design — всегда воскресенье, 4 октября 2026-го, 19:30 по Москве. Тогда на
- * главной всегда один и тот же день во всех состояниях (идут, скоро, сыграны) — удобно работать над виджетами.
- * На клиенте переменных демо нет — там обычные часы.
+ * расходятся с матчами. В демо (SSTATS_MOCK=1 или design) часы стоят: всегда воскресенье, 4 октября
+ * 2026-го, 19:30 по Москве — на главной один и тот же день во всех состояниях (идут, скоро, сыграны),
+ * так попросил владелец, пока идёт работа над виджетами. SSTATS_MOCK_NOW «переводит» часы демо, и дальше
+ * время идёт от этого момента (например, чтобы посмотреть, как матчи начинаются). На клиенте переменных
+ * демо нет — там обычные часы.
  */
 const MOCK_MODE = process.env.SSTATS_MOCK
+const IN_MOCK = MOCK_MODE === '1' || MOCK_MODE === 'design'
 export const DESIGN_NOW = Date.parse('2026-10-04T19:30:00+03:00')
 const SHIFT_FROM = Date.parse(process.env.SSTATS_MOCK_NOW ?? '')
-const CLOCK_SHIFT = MOCK_MODE === '1' && Number.isFinite(SHIFT_FROM) ? SHIFT_FROM - Date.now() : 0
-export const appNow = (): number => (MOCK_MODE === 'design' ? DESIGN_NOW : Date.now() + CLOCK_SHIFT)
+/** Демо со стоящими часами (без SSTATS_MOCK_NOW). */
+export const CLOCK_FROZEN = IN_MOCK && !Number.isFinite(SHIFT_FROM)
+const CLOCK_SHIFT = IN_MOCK && Number.isFinite(SHIFT_FROM) ? SHIFT_FROM - Date.now() : 0
+export const appNow = (): number => (CLOCK_FROZEN ? DESIGN_NOW : Date.now() + CLOCK_SHIFT)
 
 export const todayYmd = () => ymdInTz(appNow())
 

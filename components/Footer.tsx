@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { SITE } from '@/config/site'
 import { IS_DESIGN, IS_MOCK } from '@/lib/sstats/client'
+import { teamLogos } from '@/lib/sstats/team-logos'
 import { LogoMark } from './Logo'
 
 export function Footer() {
@@ -53,6 +54,8 @@ export function Footer() {
             <p>
               Сейчас включён демо-режим: матчи и коэффициенты сгенерированы для проверки сайта
               {IS_DESIGN ? ' (часы стоят: 4 октября, 19:30).' : '.'}
+              {/* подсказка владельцу: без файла эмблем вместо логотипов — монограммы */}
+              {Object.keys(teamLogos()).length ? null : ' Эмблем команд нет — выполните npm run team-logos и обновите страницу.'}
             </p>
           ) : null}
         </div>

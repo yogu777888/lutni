@@ -26,7 +26,9 @@ type Entry = { v: unknown; t: number; f: number; s: number }
 const HARD_EXPIRY_MS = 7 * 24 * 3600 * 1000
 const MAX_ENTRIES = Number(process.env.CACHE_MAX_ENTRIES || 4000)
 const CACHE_DIR = process.env.CACHE_DIR || path.join(process.cwd(), '.cache', 'data')
-const DISK_ENABLED = process.env.CACHE_DISK !== '0'
+// в демо на диск не пишем: данные дешёвые, а старые записи (без эмблем, с прежними часами) жили бы часами
+const IN_MOCK = process.env.SSTATS_MOCK === '1' || process.env.SSTATS_MOCK === 'design'
+const DISK_ENABLED = process.env.CACHE_DISK ? process.env.CACHE_DISK !== '0' : !IN_MOCK
 
 class SwrCache {
   private mem = new Map<string, Entry>()

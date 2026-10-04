@@ -8,6 +8,7 @@
  * вероятностей с маржой и шумом конкретного букмекера.
  */
 import { addDays, appNow, diffDays, tzOffsetHours, ymdInTz } from '../format'
+import { teamLogos } from './team-logos'
 import type {
   ApiEnvelope,
   RawBet,
@@ -184,24 +185,8 @@ function strength(team: string): number {
   return best || 1
 }
 
-/**
- * Настоящие эмблемы команд для демо: `.data/team-logos.json` (название → logoUrl) делает
- * `npm run team-logos` — один раз берёт команды демо-лиг из SStats API. Нет файла — монограммы.
- */
+/** Настоящие эмблемы команд (`npm run team-logos`, см. ./team-logos.ts); обновляются на каждый запрос. */
 let LOGOS: Record<string, string> = {}
-let logosLoaded: Promise<void> | null = null
-function loadLogos() {
-  logosLoaded ??= (async () => {
-    try {
-      const [{ readFile }, path] = await Promise.all([import('node:fs/promises'), import('node:path')])
-      const dir = process.env.DATA_DIR || path.join(process.cwd(), '.data')
-      LOGOS = JSON.parse(await readFile(path.join(dir, 'team-logos.json'), 'utf8'))
-    } catch {
-      LOGOS = {}
-    }
-  })()
-  return logosLoaded
-}
 
 function rawTeam(name: string): RawTeam {
   const country = TEAM_COUNTRY.get(name) ?? ''
@@ -843,11 +828,11 @@ function odds(gameId: number): ApiEnvelope<RawBookmakerOdds[]> {
 
 /**
  * Точка входа: имитирует GET {path}?{params} к api.sstats.net. Часы — общие с сайтом (`appNow`):
- * SSTATS_MOCK_NOW=2026-10-02T19:30:00+03:00 «переводит» их (например, чтобы посмотреть live ночью),
- * SSTATS_MOCK=design — останавливает на 4 октября, 19:30.
+ * в демо они стоят на 4 октября, 19:30; SSTATS_MOCK_NOW=2026-10-02T21:00:00+03:00 «переводит» их,
+ * и время идёт дальше от этого момента.
  */
 export async function mockFetch(pathname: string, params: URLSearchParams): Promise<unknown> {
-  await loadLogos()
+  LOGOS = teamLogos()
   const now = appNow()
   const path = pathname.replace(/\/+$/, '')
   const low = path.toLowerCase()

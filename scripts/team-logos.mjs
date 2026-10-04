@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Настоящие эмблемы для демо-режима: один раз берёт команды демо-лиг из SStats API
- * и сохраняет «название → logoUrl» в .data/team-logos.json. Демо (SSTATS_MOCK=1 или design)
- * подхватывает файл сам — вместо монограмм будут эмблемы клубов.
+ * и сохраняет «название → logoUrl» в .data/team-logos.json. Демо (SSTATS_MOCK=1) подхватывает
+ * файл само — вместо монограмм будут эмблемы клубов (перезапустите npm run dev).
  *
  *   npm run team-logos
  *
@@ -115,7 +115,7 @@ async function main() {
   console.log(`Готово: эмблемы у ${Object.keys(logos).length} из ${teams.size} команд → ${path.relative(ROOT, OUT)}`)
   console.log(`Запросов к API: ${calls}`)
   if (still.length) console.log(`Без эмблемы (будут монограммы): ${still.join(', ')}`)
-  console.log('Перезапустите сайт (npm run dev), чтобы демо подхватило эмблемы.')
+  console.log('Перезапустите npm run dev — и в демо вместо монограмм будут эмблемы.')
 }
 
 main().catch((e) => {
