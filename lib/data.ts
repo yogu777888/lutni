@@ -397,6 +397,15 @@ export async function getChanceCheck(opts: Opts = {}): Promise<ChanceCheck | nul
 }
 
 /**
+ * Матчи соседнего дня для чипа «Вчера / Завтра» в «Главных матчах»: из кэша — сразу (оба дня греет
+ * прогрев и «Проверка шансов»), на холодном старте страница ждёт не дольше полутора секунд — дальше без них.
+ */
+export async function peekMatchesByDate(ymd: string, ms = 1500): Promise<Match[]> {
+  const run = settle(getMatchesByDate(ymd), [] as Match[])
+  return Promise.race([run, new Promise<Match[]>((r) => setTimeout(() => r([]), ms).unref?.())])
+}
+
+/**
  * Для главной: на холодном старте 30 дней матчей — десятки запросов к API, поэтому страница ждёт
  * не дольше полутора секунд, а расчёт доходит в фоне (его же запускает прогрев) — к следующему открытию.
  */

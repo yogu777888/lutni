@@ -7,7 +7,7 @@ import { useRef } from 'react'
  * Кнопка «календарь» рядом с вкладками дней: любой день в пределах года назад и двух месяцев вперёд.
  * Сам выбор — системный календарь браузера (input type=date), без своих попапов.
  */
-export function DatePicker({ active, today, min, max }: { active: string; today: string; min: string; max: string }) {
+export function DatePicker({ active, today, min, max, hash = '' }: { active: string; today: string; min: string; max: string; hash?: string }) {
   const router = useRouter()
   const input = useRef<HTMLInputElement>(null)
 
@@ -49,7 +49,7 @@ export function DatePicker({ active, today, min, max }: { active: string; today:
         max={max}
         onChange={(e) => {
           const d = e.target.value
-          if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d >= min && d <= max) router.push(d === today ? '/' : `/matches/${d}`)
+          if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d >= min && d <= max) router.push(`${d === today ? '/' : `/matches/${d}`}${hash}`)
         }}
       />
     </span>

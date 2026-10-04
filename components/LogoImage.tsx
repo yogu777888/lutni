@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Monogram } from './Monogram'
 
-export function LogoImage({ name, src, size }: { name: string; src: string; size: number }) {
+export function LogoImage({ name, src, size }: { name: string; src: string; size: number | string }) {
   const [failed, setFailed] = useState(false)
   if (failed) return <Monogram name={name} size={size} />
   return (
@@ -11,8 +11,8 @@ export function LogoImage({ name, src, size }: { name: string; src: string; size
     <img
       src={src}
       alt=""
-      width={size}
-      height={size}
+      width={typeof size === 'number' ? size : undefined}
+      height={typeof size === 'number' ? size : undefined}
       loading="lazy"
       decoding="async"
       referrerPolicy="no-referrer"

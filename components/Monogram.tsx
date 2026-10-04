@@ -7,7 +7,7 @@ export function initials(name: string): string {
 }
 
 /** Монограмма вместо логотипа: одна спокойная графитовая плашка для всех команд — без пестроты. */
-export function Monogram({ name, size }: { name: string; size: number }) {
+export function Monogram({ name, size }: { name: string; size: number | string }) {
   return (
     <span
       aria-hidden
@@ -15,7 +15,8 @@ export function Monogram({ name, size }: { name: string; size: number }) {
       style={{
         width: size,
         height: size,
-        fontSize: Math.max(8, Math.round(size * 0.36)),
+        // размер может быть и CSS-длиной (`var(--logo)`) — тогда буквы считает сам браузер
+        fontSize: typeof size === 'number' ? Math.max(8, Math.round(size * 0.36)) : `calc(${size} * 0.36)`,
         letterSpacing: '-0.01em',
       }}
     >

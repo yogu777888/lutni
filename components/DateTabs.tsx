@@ -20,8 +20,9 @@ function shortDay(ymd: string, today: string): string {
 /**
  * Выбор дня — простые текстовые вкладки с лаймовой чертой под выбранным днём.
  * Не капсула: иначе их путают с меню в шапке. Пока матчи идут — красная точка у «Сегодня».
+ * Стоят у списка «Все матчи дня», поэтому ведут сразу к списку выбранного дня (`hash`).
  */
-export function DateTabs({ active, today, liveToday = false }: { active: string; today: string; liveToday?: boolean }) {
+export function DateTabs({ active, today, liveToday = false, hash = '' }: { active: string; today: string; liveToday?: boolean; hash?: string }) {
   const strip = Array.from({ length: SITE.daysAhead + 2 }, (_, i) => addDays(today, i - 1))
   // день, выбранный через календарь, — отдельной вкладкой с датой: раньше полосы или после неё
   const days = strip.includes(active) ? strip : active < strip[0] ? [active, ...strip] : [...strip, active]
@@ -34,7 +35,7 @@ export function DateTabs({ active, today, liveToday = false }: { active: string;
           return (
             <Link
               key={d}
-              href={dayHref(d, today)}
+              href={`${dayHref(d, today)}${hash}`}
               prefetch={false}
               aria-current={on ? 'page' : undefined}
               className={`inline-flex h-9 shrink-0 items-center border-b-2 text-[15px] font-medium transition-colors ${
@@ -48,7 +49,7 @@ export function DateTabs({ active, today, liveToday = false }: { active: string;
             </Link>
           )
         })}
-        <DatePicker active={active} today={today} min={addDays(today, -365)} max={addDays(today, 60)} />
+        <DatePicker active={active} today={today} min={addDays(today, -365)} max={addDays(today, 60)} hash={hash} />
       </div>
     </nav>
   )

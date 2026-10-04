@@ -1,10 +1,10 @@
 import Link from 'next/link'
 import { countryRank, featuredRank } from '@/config/leagues'
-import { getMatchesByDate, peekChanceCheck, tagsFor, type FeedItem } from '@/lib/data'
+import { getMatchesByDate, peekMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { dayHref } from '@/lib/links'
-import { diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
+import { addDays, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { isLive, liveRank } from '@/lib/rank'
-import { buildDaySummary } from '@/lib/day-summary'
+import { buildDaySummary, mainMatches } from '@/lib/day-summary'
 import { storyCovers } from '@/lib/story-covers'
 import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
@@ -100,8 +100,6 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
   // на первом экране — только главные кружки, остальные теги — по «Все теги»
   const storyGroups = mainCircles(buildStoryGroups(items))
   const daySummary = buildDaySummary(items)
-  // «Проверка шансов» — только на «Сегодня»; пока не посчитана (холодный старт) — плитки-подборки
-  const check = ymd === today && daySummary.top ? await peekChanceCheck() : null
   const values = open
     .filter((i) => i.summary?.pick?.kind === 'value' && i.match.status === 'scheduled')
     .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
@@ -113,6 +111,19 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
 
   const heading = dayHeading(ymd, today)
   const past = diffDays(ymd, today) < 0
+  // «Главные матчи»: на «Сегодня» чип в блоке листает вчера (итоги) и завтра (анонс) — только сам блок;
+  // в другие дни — только свой день. На прошедших днях сводки нет: там список результатов.
+  const mainToday = past ? [] : mainMatches(items)
+  const hasSummary = mainToday.length > 0
+  // заголовок «Все матчи дня» — когда над списком есть что-то ещё (сводка, выгодные ставки)
+  const listHead = hasSummary || values.length > 0
+  const near = async (d: string) => mainMatches((await peekMatchesByDate(d)).map((m) => ({ match: m, ...tagsFor(m) })))
+  const [mainYesterday, mainTomorrow] = ymd === today && hasSummary ? await Promise.all([near(addDays(today, -1)), near(addDays(today, 1))]) : [[], []]
+  const mainDays = [
+    { key: 'yesterday', label: 'Вчера', items: mainYesterday },
+    { key: ymd, label: ymd === today ? 'Сегодня' : heading.title, items: mainToday, page: true },
+    { key: 'tomorrow', label: 'Завтра', items: mainTomorrow },
+  ]
   // красная точка у «Сегодня»: на главной знаем сами, на других днях — из того же кэша матчей
   let liveToday = ymd === today && liveAll.length > 0
   if (ymd !== today) {
@@ -136,23 +147,19 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
       {/* первый экран: заголовок, кружки и сводка. На компьютере сводка тянется до низа окна —
           заходишь и сразу видишь всё нужное, а «Все матчи дня» начинаются ниже, по прокрутке.
           На очень высоких мониторах — не выше 50rem (хватает на обычное окно браузера на экране 1080p), чтобы плитки не раздувались. */}
-      <div className={daySummary.top ? 'flex flex-col lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
-        <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3 pt-1 sm:pt-0">
-          <div className="min-w-0">
-            <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
-            <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px]">
-              <span className="rise">
-                <span>
-                  {heading.title}
-                  {/* дата — и в заголовке для поисковиков */}
-                  <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
-                </span>
+      <div className={hasSummary ? 'flex flex-col lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
+        {/* выбор дня — у списка «Все матчи дня»: чип в блоке «Главные матчи» меняет только блок */}
+        <section className="min-w-0 pt-1 sm:pt-0">
+          <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
+          <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px]">
+            <span className="rise">
+              <span>
+                {heading.title}
+                {/* дата — и в заголовке для поисковиков */}
+                <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
               </span>
-            </h1>
-          </div>
-          <div className="fade-up w-full min-w-0 sm:w-auto" style={{ animationDelay: '150ms' }}>
-            <DateTabs active={ymd} today={today} liveToday={liveToday} />
-          </div>
+            </span>
+          </h1>
         </section>
 
         {storyGroups.length ? (
@@ -163,15 +170,25 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
           </section>
         ) : null}
 
-        <DaySummary s={daySummary} check={check} className="mt-5 lg:flex-1" />
+        {/* на невысоком экране (720px) отступ над сводкой меньше — так она влезает целиком */}
+        {hasSummary ? <DaySummary s={daySummary} days={mainDays} className="mt-5 lg:flex-1 lg:[@media(max-height:739px)]:mt-4" /> : null}
       </div>
 
       <ValueBoard items={values} />
 
-      <section id="matches" className="mt-16 scroll-mt-24 sm:mt-20">
-        <p className="eyebrow">{past ? 'Результаты' : 'Матчи'}</p>
-        <div className="mt-3 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
-          <h2 className="h2 text-[30px] sm:text-[44px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
+      {/* без сводки (прошедшие дни) список идёт сразу под заголовком страницы — второй заголовок не нужен */}
+      <section id="matches" className={`scroll-mt-24 ${listHead ? 'mt-16 sm:mt-20' : 'mt-5 sm:mt-6'}`}>
+        {listHead ? (
+          <>
+            <p className="eyebrow">{past ? 'Результаты' : 'Матчи'}</p>
+            <h2 className="h2 mt-3 text-[30px] sm:text-[44px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
+          </>
+        ) : null}
+        {/* выбор дня — здесь, у списка (чип в «Главных матчах» меняет только сам блок); рядом — порядок списка */}
+        <div className={`flex flex-wrap items-center justify-between gap-x-6 gap-y-3 ${listHead ? 'mt-5' : ''}`}>
+          <div className="w-full min-w-0 sm:w-auto">
+            <DateTabs active={ymd} today={today} liveToday={liveToday} hash="#matches" />
+          </div>
           {past || !matches.length ? null : (
             // порядок списка — обычными ссылками (?sort=time): работает без JS, у страницы один canonical
             <nav aria-label="Порядок матчей" className="flex items-center gap-1 rounded-full border border-edge p-1 text-[14px] font-medium">

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { activeNav } from '@/components/NavCapsule'
 import type { FeedItem, MatchSummary } from '@/lib/data'
-import { buildDaySummary, dayStats, parseProgruz } from '@/lib/day-summary'
+import { buildDaySummary, dayStats, mainMatches, navExamples, parseProgruz } from '@/lib/day-summary'
 import type { Match } from '@/lib/types'
 
 const NOW = Date.UTC(2026, 9, 2, 12)
@@ -88,9 +88,6 @@ describe('сводка дня', () => {
       NOW,
     )
     expect(s.goals).toMatchObject({ count: 2, p: 0.72 })
-    // для мини-графика — матчи с ТБ, самые голевые первыми
-    expect(s.goals?.list.map((g) => g.p)).toEqual([0.72, 0.61])
-    expect(s.goals?.list[0].title).toBe('Home 2 — Away 2')
     expect(s.goals?.item.match.id).toBe(2)
     expect(s.favorite?.item.match.id).toBe(2)
     expect(s.favorite?.side).toBe('home')
@@ -172,22 +169,22 @@ describe('сводка дня', () => {
     expect(s.lists.drops.map((d) => d.drop)).toEqual([...s.lists.drops.map((d) => d.drop)].sort((a, b) => b - a))
   })
 
-  it('карусель матча дня: матч дня первым, дальше — по одному из каждой другой топ-лиги', () => {
+  it('главные матчи: по важности турнира, сначала по одному на лигу; идущие и предстоящие важнее сыгранных', () => {
     const inLeague = (it: FeedItem, id: number, name: string): FeedItem => ({ ...it, match: { ...it.match, league: { ...it.match.league, id, name } } })
-    const s = buildDaySummary(
-      [
-        item(1, 'scheduled', { ev: 0.05 }),
-        inLeague(item(2, 'scheduled'), 140, 'Испания. Ла Лига'),
-        inLeague(item(3, 'scheduled'), 140, 'Испания. Ла Лига'),
-        inLeague(item(4, 'scheduled'), 78, 'Германия. Бундеслига'),
-        item(5, 'scheduled'),
-      ],
-      NOW,
-    )
-    expect(s.tops[0]).toBe(s.top)
-    const leagues = s.tops.map((t) => t.match.league.id)
-    expect(new Set(leagues).size).toBe(leagues.length)
-    expect(leagues.sort()).toEqual([140, 39, 78].sort())
+    const apl = (n: number, st: Match['status']) => item(n, st) // id 39 — АПЛ
+    const liga = (n: number, st: Match['status']) => inLeague(item(n, st), 140, 'Испания. Ла Лига')
+    const other = (n: number) => inLeague(item(n, 'scheduled'), 999, 'Кипр. Первый дивизион')
+    const day = [apl(1, 'scheduled'), apl(2, 'live'), liga(3, 'scheduled'), other(4), apl(5, 'finished'), liga(6, 'postponed')]
+    const ids = mainMatches(day).map((it) => it.match.id)
+    // сыгранный и перенесённый — мимо, пока впереди есть матчи
+    expect(ids).not.toContain(5)
+    expect(ids).not.toContain(6)
+    // топ-лиги раньше безвестного турнира, и по одной встрече на лигу прежде повтора лиги
+    expect(ids.indexOf(4)).toBeGreaterThan(ids.indexOf(3))
+    expect(new Set(ids.slice(0, 2).map((id) => day.find((it) => it.match.id === id)!.match.league.id)).size).toBe(2)
+    // день сыгран (вчера) — сыгранные матчи, по важности
+    expect(mainMatches([apl(7, 'finished'), other(8)].map((it) => ({ ...it, match: { ...it.match, status: 'finished' as const } }))).map((it) => it.match.id)[0]).toBe(7)
+    expect(mainMatches([apl(1, 'scheduled')], 1)).toHaveLength(1)
   })
 
   it('фаворит с шансом ниже 60% — не виджет', () => {
@@ -196,15 +193,25 @@ describe('сводка дня', () => {
     expect(dayStats(s).favorite).toBeNull()
   })
 
-  it('точки дня: матчи по времени — сыгран, идёт, впереди; перенесённые не считаем', () => {
+  it('примеры под главными матчами: сначала ещё не начавшиеся, если их нет — идущий матч', () => {
     const s = buildDaySummary(
-      [item(3, 'scheduled', { at: 3 }), item(1, 'finished', { at: -3 }), item(2, 'live', { at: -1 }), item(4, 'postponed', { at: 4 })],
+      [
+        item(1, 'live', { tags: [progruz('Home 1', '2.40', '1.97', 18)] }),
+        item(2, 'scheduled', { tags: [progruz('Away 2', '3.10', '2.80', 10)] }),
+        item(4, 'scheduled', { tags: [progruz('Away 4', '3.00', '2.76', 8)] }),
+        item(3, 'scheduled', { ev: 0.04 }),
+      ],
       NOW,
     )
-    expect(s.timeline).toEqual(['done', 'live', 'next'])
-    // по часам: от первого матча до последнего, пустые часы внутри дня — тоже колонки
-    expect(s.hours.map((h) => h.states.length)).toEqual([1, 0, 1, 0, 0, 0, 1])
-    expect(s.hours[1].states).toEqual([])
+    // доматчевый пример важнее большего падения в идущем матче; матч дня — не пример
+    const drop = navExamples(s).drop
+    expect(drop?.item.match.status).toBe('scheduled')
+    expect(drop?.item.match.id).not.toBe(s.top?.match.id)
+    // доматчевых падений нет — пример из идущего: падение с открытия линии до начала — уже факт
+    const live = buildDaySummary([item(1, 'live', { tags: [progruz('Home 1', '2.40', '1.97', 18)] }), item(3, 'scheduled')], NOW)
+    expect(navExamples(live).drop).toMatchObject({ side: 'home', from: 2.4, to: 1.97 })
+    // голов не ждём нигде — примера нет, плитка ведёт на подборку без цифры
+    expect(navExamples(live).goals).toBeNull()
   })
 
   it('прошедший день: нет открытых матчей — нет и сводки', () => {

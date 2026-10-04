@@ -1,31 +1,21 @@
 /**
- * «Сводка дня» — виджеты первого экрана главной: матч дня и плитки — каждая отвечает на один вопрос
- * одной крупной цифрой по одному матчу: кто скорее выиграет, где ждать голов, где упал кэф, что
- * выгодно. Подборки (`lists`) — кандидаты для плиток, сильнейшие первыми. Все цифры — из тех же тегов
- * и кэфов, что и в списке матчей, чтобы виджет и строка не расходились.
+ * «Сводка дня» — первый экран главной: «Главные матчи» (`mainMatches`) и переходы под ними — «Все матчи»,
+ * «Ждём голов», «Кэф упал» — с одним примером-цифрой (`navExamples`). Подборки (`lists`) — кандидаты для
+ * примеров, сильнейшие первыми. Все цифры — из тех же тегов и кэфов, что и в списке матчей, чтобы виджет
+ * и строка не расходились.
  */
 import { featuredRank } from '@/config/leagues'
 import type { FeedItem } from './data'
-import { formatTime } from './format'
 import { fair1x2, fairTwoWay, totalAt } from './odds'
-import { interest, isLive, isMinor, liveRank } from './rank'
-import type { League, Match } from './types'
+import { interest, isLive, isMinor } from './rank'
 
 export type ProgruzInfo = { item: FeedItem; side: 'home' | 'away'; from: number; to: number; drop: number }
-export type GoalsInfo = {
-  count: number
-  item: FeedItem
-  p: number
-  /** матчи с ТБ 2.5 — самые голевые первыми */
-  list: { id: number; p: number; title: string }[]
-}
-/** Состояние матча дня для «точек»: сыгран, идёт, впереди. */
-export type DayState = 'done' | 'live' | 'next'
+export type GoalsInfo = { count: number; item: FeedItem; p: number }
 export type FavoriteInfo = { item: FeedItem; side: 'home' | 'away'; p: number }
 
 /**
- * Кандидаты для плиток: по несколько матчей на вопрос, сильнейшие — первыми; только ещё не начавшиеся
- * (цифры в плитках доматчевые) и без матча дня — он и так крупно сверху.
+ * Кандидаты для примеров под «Главными матчами»: по несколько матчей на вопрос, сильнейшие — первыми;
+ * только ещё не начавшиеся (цифры доматчевые) и без матча дня.
  */
 export type DayLists = {
   /** уверенные фавориты (шанс от 60%) */
@@ -39,14 +29,12 @@ export type DayLists = {
 }
 
 export type DaySummary = {
-  /** Главный матч дня: топ-турнир + сильные теги. */
+  /** Матч дня: топ-турнир + сильные теги (его нет в подборках — он первым в «Главных матчах»). */
   top: FeedItem | null
-  /** Карусель «Матча дня»: первым — матч дня, дальше — главный матч каждой другой топ-лиги (до 5). */
-  tops: FeedItem[]
   /** Самый большой перевес среди предстоящих матчей. */
   value: FeedItem | null
+  /** Самое большое падение кэфа среди открытых матчей (и идущих). */
   progruz: ProgruzInfo | null
-  live: FeedItem[]
   liveCount: number
   /** Ближайший матч — когда ничего не идёт. */
   next: FeedItem | null
@@ -54,21 +42,13 @@ export type DaySummary = {
   favorite: FavoriteInfo | null
   total: number
   leagues: number
-  /** Главные турниры дня: топ-лиги первыми, потом по числу матчей. */
-  topLeagues: { id: number; name: string; count: number; league: League }[]
   lists: DayLists
-  /** Матчи дня по времени начала: сыгран / идёт / впереди (перенесённые и отменённые — мимо). */
-  timeline: DayState[]
-  /** Те же матчи по часам начала (по времени сайта) — для «точек по часам»; пустые часы внутри дня тоже есть. */
-  hours: { hour: number; states: DayState[] }[]
 }
 
-const LIVE_SHOWN = 3
-const GOALS_SHOWN = 3
-/** Строк в плитке-подборке: на телефоне и невысоком экране видно три, на высоком — четыре. */
+/** Кандидатов в каждой подборке. */
 const LIST_SHOWN = 4
-/** Слайдов в карусели «Матча дня». */
-const TOPS_SHOWN = 5
+/** Главных матчей в большом блоке. */
+const MAINS_SHOWN = 5
 
 const isOpen = (it: FeedItem) => it.match.status === 'scheduled' || isLive(it.match)
 const tag = (it: FeedItem, slug: string) => it.tags.find((t) => t.slug === slug)
@@ -121,31 +101,12 @@ const max = <T>(xs: T[], score: (x: T) => number): T | null => {
   return best
 }
 
-function topLeagues(items: FeedItem[]) {
-  const by = new Map<number, { id: number; name: string; count: number; rank: number; league: League }>()
-  for (const { match: m } of items) {
-    const g = by.get(m.league.id) ?? { id: m.league.id, name: m.league.name, count: 0, rank: featuredRank(m.league), league: m.league }
-    g.count++
-    by.set(m.league.id, g)
-  }
-  return [...by.values()]
-    .sort((a, b) => (a.rank < 0 ? 1e3 : a.rank) - (b.rank < 0 ? 1e3 : b.rank) || b.count - a.count)
-    .slice(0, LIST_SHOWN)
-    .map(({ id, name, count, league }) => ({ id, name, count, league }))
-}
-
 /** Топ-лиги чуть впереди при близких цифрах: «Бавария» интереснее безвестного клуба с тем же шансом. */
 const featuredBonus = (it: FeedItem, w: number) => (featuredRank(it.match.league) >= 0 ? w : 0)
 
 export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary {
   const open = items.filter(isOpen)
   const scheduled = open.filter((it) => it.match.status === 'scheduled')
-  const dated = [...items]
-    .sort((a, b) => a.match.ts - b.match.ts)
-    .flatMap(({ match: m }) => {
-      const state: DayState | null = isLive(m) ? 'live' : m.status === 'finished' ? 'done' : m.status === 'scheduled' ? 'next' : null
-      return state ? [{ state, hour: Number(formatTime(m.ts).slice(0, 2)) }] : []
-    })
 
   const value = max(
     scheduled.filter((it) => it.summary?.pick?.kind === 'value'),
@@ -161,16 +122,6 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
   const used = new Set([value?.match.id, progruz?.item.match.id])
   const pool = open.filter((it) => !isMinor(it.match))
   const top = max(pool.filter((it) => !used.has(it.match.id)), prestige) ?? max(pool, prestige) ?? max(open, prestige)
-  // по одному матчу дня на каждую топ-лигу — самый громкий в ней; лига матча дня — уже первая
-  const byLeague = new Map<number, FeedItem>()
-  for (const it of pool) {
-    if (featuredRank(it.match.league) < 0 || it.match.league.id === top?.match.league.id) continue
-    const cur = byLeague.get(it.match.league.id)
-    if (!cur || prestige(it) > prestige(cur)) byLeague.set(it.match.league.id, it)
-  }
-  const tops = top ? [top, ...[...byLeague.values()].sort((a, b) => prestige(b) - prestige(a))].slice(0, TOPS_SHOWN) : []
-
-  const liveAll = open.filter((it) => isLive(it.match)).sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts)
 
   const upcoming = scheduled.filter((it) => it.match.ts >= now)
   const firstTs = Math.min(...upcoming.map((it) => it.match.ts))
@@ -181,17 +132,7 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
 
   const tb = open.filter((it) => overPct(it) !== null)
   const goalsBest = max(tb, (it) => overPct(it)! + (featuredRank(it.match.league) >= 0 ? 0.001 : 0))
-  const goals = goalsBest
-    ? {
-        count: tb.length,
-        item: goalsBest,
-        p: overPct(goalsBest)!,
-        list: [...tb]
-          .sort((a, b) => overPct(b)! - overPct(a)! || a.match.ts - b.match.ts)
-          .slice(0, GOALS_SHOWN)
-          .map((it) => ({ id: it.match.id, p: overPct(it)!, title: `${it.match.home.name} — ${it.match.away.name}` })),
-      }
-    : null
+  const goals = goalsBest ? { count: tb.length, item: goalsBest, p: overPct(goalsBest)! } : null
 
   // фаворит дня — самый уверенный исход в «взрослом» матче; топ-турниры важнее
   const favs = scheduled
@@ -231,36 +172,45 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
 
   return {
     top,
-    tops,
     value,
     progruz,
-    live: liveAll.slice(0, LIVE_SHOWN),
-    liveCount: liveAll.length,
+    liveCount: open.filter((it) => isLive(it.match)).length,
     next,
     goals,
     favorite,
     total: items.length,
     leagues: new Set(items.map((it) => it.match.league.id)).size,
-    topLeagues: topLeagues(items),
     lists,
-    timeline: dated.map((d) => d.state),
-    hours: byHour(dated),
   }
-}
-
-function byHour(dated: { hour: number; state: DayState }[]) {
-  if (!dated.length) return []
-  const first = dated[0].hour
-  const last = dated[dated.length - 1].hour
-  const out = Array.from({ length: last - first + 1 }, (_, i) => ({ hour: first + i, states: [] as DayState[] }))
-  for (const d of dated) out[d.hour - first].states.push(d.state)
-  return out
 }
 
 /** Фаворит дня — только по-настоящему уверенный исход. */
 const FAVORITE_MIN = 0.6
 
-/** Плитки сводки: по одному матчу на вопрос — крупная цифра и матч, к которому она относится. */
+/**
+ * Главные матчи дня для большого блока (листаются стрелками «1 из 4»): по важности турнира и команд
+ * (`prestige`), сначала по одному на лигу, потом добор; вероятность победы и падение кэфа сами по себе
+ * главный матч не определяют. Идущие и предстоящие важнее сыгранных: сыгранные — только когда впереди
+ * ничего нет (вчера, поздний вечер). Молодёжные, женские, перенесённые и отменённые — мимо.
+ */
+export function mainMatches(items: FeedItem[], limit = MAINS_SHOWN): FeedItem[] {
+  const pool = items.filter((it) => !isMinor(it.match) && (isOpen(it) || it.match.status === 'finished'))
+  const open = pool.filter(isOpen)
+  const base = (open.length ? open : pool).sort((a, b) => prestige(b) - prestige(a) || a.match.ts - b.match.ts)
+  const leagues = new Set<number>()
+  const first: FeedItem[] = []
+  const rest: FeedItem[] = []
+  for (const it of base) {
+    if (leagues.has(it.match.league.id)) rest.push(it)
+    else {
+      leagues.add(it.match.league.id)
+      first.push(it)
+    }
+  }
+  return [...first, ...rest].slice(0, limit)
+}
+
+/** Примеры для переходов: по одному матчу на вопрос — цифра и матч, к которому она относится. */
 export type DayStats = {
   favorite: FavoriteInfo | null
   goals: { item: FeedItem; p: number } | null
@@ -286,5 +236,18 @@ export function dayStats(s: DaySummary): DayStats {
     goals: first(l.goals, (g) => g.item),
     drop: first(l.drops, (d) => d.item),
     value: first(l.values, (v) => v),
+  }
+}
+
+/**
+ * Примеры для переходов под «Главными матчами»: где ждать голов и где упал кэф. Сначала — ещё не
+ * начавшиеся матчи (без матча дня, по возможности разные — как в `dayStats`); если таких нет — любой
+ * открытый матч дня, и идущий тоже: падение кэфа с открытия линии до начала — уже факт.
+ */
+export function navExamples(s: DaySummary): { goals: { item: FeedItem; p: number } | null; drop: ProgruzInfo | null } {
+  const st = dayStats(s)
+  return {
+    goals: st.goals ?? (s.goals ? { item: s.goals.item, p: s.goals.p } : null),
+    drop: st.drop ?? s.progruz,
   }
 }
