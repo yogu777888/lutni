@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { SITE } from '@/config/site'
-import { IS_MOCK } from '@/lib/sstats/client'
+import { IS_DESIGN, IS_MOCK } from '@/lib/sstats/client'
 import { LogoMark } from './Logo'
 
 export function Footer() {
@@ -49,7 +49,12 @@ export function Footer() {
             ним сайт может получать вознаграждение. Данные о матчах и коэффициентах — SStats.net. © {new Date().getFullYear()} {SITE.name}
           </p>
           {/* демо-режим: вместо полосы над шапкой — тихая строка здесь, чтобы синтетические данные не выдавали за настоящие */}
-          {IS_MOCK ? <p>Сейчас включён демо-режим: матчи и коэффициенты сгенерированы для проверки сайта.</p> : null}
+          {IS_MOCK ? (
+            <p>
+              Сейчас включён демо-режим: матчи и коэффициенты сгенерированы для проверки сайта
+              {IS_DESIGN ? ' (часы стоят: 4 октября, 19:30).' : '.'}
+            </p>
+          ) : null}
         </div>
       </div>
     </footer>

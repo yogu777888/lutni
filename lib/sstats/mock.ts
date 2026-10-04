@@ -7,7 +7,7 @@
  * системой, счёт — пуассоновский по силе команд, коэффициенты — из тех же
  * вероятностей с маржой и шумом конкретного букмекера.
  */
-import { addDays, diffDays, tzOffsetHours, ymdInTz } from '../format'
+import { addDays, appNow, diffDays, tzOffsetHours, ymdInTz } from '../format'
 import type {
   ApiEnvelope,
   RawBet,
@@ -184,9 +184,28 @@ function strength(team: string): number {
   return best || 1
 }
 
+/**
+ * Настоящие эмблемы команд для демо: `.data/team-logos.json` (название → logoUrl) делает
+ * `npm run team-logos` — один раз берёт команды демо-лиг из SStats API. Нет файла — монограммы.
+ */
+let LOGOS: Record<string, string> = {}
+let logosLoaded: Promise<void> | null = null
+function loadLogos() {
+  logosLoaded ??= (async () => {
+    try {
+      const [{ readFile }, path] = await Promise.all([import('node:fs/promises'), import('node:path')])
+      const dir = process.env.DATA_DIR || path.join(process.cwd(), '.data')
+      LOGOS = JSON.parse(await readFile(path.join(dir, 'team-logos.json'), 'utf8'))
+    } catch {
+      LOGOS = {}
+    }
+  })()
+  return logosLoaded
+}
+
 function rawTeam(name: string): RawTeam {
   const country = TEAM_COUNTRY.get(name) ?? ''
-  return { id: TEAM_ID.get(name) ?? 0, name, logoUrl: null, country: { code: '', name: country } }
+  return { id: TEAM_ID.get(name) ?? 0, name, logoUrl: LOGOS[name] ?? null, country: { code: '', name: country } }
 }
 
 // ─── Расписание ──────────────────────────────────────────────────────────────
@@ -823,15 +842,13 @@ function odds(gameId: number): ApiEnvelope<RawBookmakerOdds[]> {
 }
 
 /**
- * SSTATS_MOCK_NOW=2026-10-02T19:30:00+03:00 — «перевести часы» демо-данных, например чтобы
- * посмотреть live-матчи ночью. Время идёт дальше от указанного момента.
+ * Точка входа: имитирует GET {path}?{params} к api.sstats.net. Часы — общие с сайтом (`appNow`):
+ * SSTATS_MOCK_NOW=2026-10-02T19:30:00+03:00 «переводит» их (например, чтобы посмотреть live ночью),
+ * SSTATS_MOCK=design — останавливает на 4 октября, 19:30.
  */
-const fixedNow = Date.parse(process.env.SSTATS_MOCK_NOW ?? '')
-const MOCK_SHIFT = Number.isFinite(fixedNow) ? fixedNow - Date.now() : 0
-
-/** Точка входа: имитирует GET {path}?{params} к api.sstats.net. */
 export async function mockFetch(pathname: string, params: URLSearchParams): Promise<unknown> {
-  const now = Date.now() + MOCK_SHIFT
+  await loadLogos()
+  const now = appNow()
   const path = pathname.replace(/\/+$/, '')
   const low = path.toLowerCase()
   let m: RegExpExecArray | null

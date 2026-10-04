@@ -60,7 +60,22 @@ export function ymdInTz(ts: number, tz: string = SITE.timeZone): string {
   return fmt(tz).format(new Date(ts))
 }
 
-export const todayYmd = () => ymdInTz(Date.now())
+// ─── Часы сайта ──────────────────────────────────────────────────────────────
+
+/**
+ * «Сейчас» для сайта и демо-данных — одни часы на всех: иначе «через 40 мин» и «что уже началось»
+ * расходятся с матчами. В демо часы можно перевести (SSTATS_MOCK_NOW — дальше время идёт от этого момента)
+ * или остановить: SSTATS_MOCK=design — всегда воскресенье, 4 октября 2026-го, 19:30 по Москве. Тогда на
+ * главной всегда один и тот же день во всех состояниях (идут, скоро, сыграны) — удобно работать над виджетами.
+ * На клиенте переменных демо нет — там обычные часы.
+ */
+const MOCK_MODE = process.env.SSTATS_MOCK
+export const DESIGN_NOW = Date.parse('2026-10-04T19:30:00+03:00')
+const SHIFT_FROM = Date.parse(process.env.SSTATS_MOCK_NOW ?? '')
+const CLOCK_SHIFT = MOCK_MODE === '1' && Number.isFinite(SHIFT_FROM) ? SHIFT_FROM - Date.now() : 0
+export const appNow = (): number => (MOCK_MODE === 'design' ? DESIGN_NOW : Date.now() + CLOCK_SHIFT)
+
+export const todayYmd = () => ymdInTz(appNow())
 
 export function addDays(ymd: string, days: number): string {
   const [y, m, d] = ymd.split('-').map(Number)

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { featuredInfo } from '@/config/leagues'
 import type { FeedItem } from '@/lib/data'
 import { goalsChance, navExamples, parseProgruz, type DaySummary as Summary, type ProgruzInfo } from '@/lib/day-summary'
-import { formatDayMonth, formatTime, pct, pluralN, todayYmd, ymdInTz } from '@/lib/format'
+import { appNow, formatDayMonth, formatTime, pct, pluralN, todayYmd, ymdInTz } from '@/lib/format'
 import { matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
 import { isLive } from '@/lib/rank'
@@ -43,7 +43,7 @@ function Go() {
 /** Когда начнётся: сегодня — «через 40 мин», «через 3 ч»; в другой день — дата («6 октября»), а не «через 66 ч». */
 const until = (ts: number) => {
   if (ymdInTz(ts) !== todayYmd()) return formatDayMonth(ts)
-  const min = Math.round((ts - Date.now()) / 60_000)
+  const min = Math.round((ts - appNow()) / 60_000)
   if (min <= 0) return 'вот-вот начнётся'
   if (min < 60) return `через ${min} мин`
   return `через ${Math.round(min / 60)} ч`

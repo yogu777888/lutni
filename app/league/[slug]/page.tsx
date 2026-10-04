@@ -7,7 +7,7 @@ import { Section } from '@/components/Section'
 import { Sidebar } from '@/components/Sidebar'
 import { StandingsTable } from '@/components/StandingsTable'
 import { currentSeason, getLeague, getSeasonGames, getStandings, settle, tagsFor } from '@/lib/data'
-import { dayLabel, formatDateShort, idFromSlug, todayYmd, ymdInTz } from '@/lib/format'
+import { appNow, dayLabel, formatDateShort, idFromSlug, todayYmd, ymdInTz } from '@/lib/format'
 import { leagueHref } from '@/lib/links'
 import type { Match } from '@/lib/types'
 
@@ -50,7 +50,7 @@ export default async function LeaguePage({ params }: Props) {
   const canonical = leagueHref(league)
   if (`/league/${slug}` !== canonical) permanentRedirect(canonical)
 
-  const now = Date.now()
+  const now = appNow()
   const upcoming = games.filter((g) => g.status === 'live' || (g.status === 'scheduled' && g.ts > now - 3 * 3600_000)).slice(0, 12)
   const results = games
     .filter((g) => g.status === 'finished')

@@ -10,7 +10,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "inspect-api": "node scripts/inspect-api.mjs"
+    "inspect-api": "node scripts/inspect-api.mjs",
+    "team-logos": "node scripts/team-logos.mjs"
   },
   "engines": {
     "node": ">=20.9"

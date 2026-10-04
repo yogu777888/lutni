@@ -8,7 +8,8 @@
  */
 import { isFeatured } from '@/config/leagues'
 import { featuredFirst, getChanceCheck, getMatchInsights, getMatchesByDate, settle } from './data'
-import { addDays, todayYmd } from './format'
+import { addDays, appNow, todayYmd } from './format'
+import { IS_DESIGN } from './sstats/client'
 import { singleton } from './runtime'
 
 type State = {
@@ -65,16 +66,17 @@ export async function warmOnce() {
   warmerState.running = true
   const started = Date.now()
   try {
-    // «Проверка шансов» на главной: 30 прошедших дней считаются один раз и дальше берутся из кэша
+    // «Проверка шансов» (/about#proverka): 30 прошедших дней считаются один раз и дальше берутся из кэша
     await settle(getChanceCheck({ priority: 'low' }), null)
     const max = Number(process.env.WARMER_MAX_MATCHES || 60)
     const today = todayYmd()
-    const now = Date.now()
+    const now = appNow()
     const targets = []
     for (const ymd of [today, addDays(today, 1)]) {
       try {
         const list = await getMatchesByDate(ymd, { priority: 'low' })
-        targets.push(...list.filter((m) => m.status === 'scheduled' && m.ts > now && isFeatured(m.league)))
+        // в демо для дизайна — все матчи топ-лиг, и идущие: у каждого главного матча есть форма для графика
+        targets.push(...list.filter((m) => isFeatured(m.league) && (IS_DESIGN || (m.status === 'scheduled' && m.ts > now))))
       } catch {
         warmerState.errors++
       }

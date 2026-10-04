@@ -6,7 +6,7 @@
 import { featuredRank } from '@/config/leagues'
 import { cache, type CacheOptions } from './cache'
 import { CHANCE_DAYS, chanceCheck, mergeTallies, tallyChances, type ChanceCheck, type ChanceTally } from './chance-check'
-import { addDays, diffDays, todayYmd, tzOffsetHours, ymdInTz, ymdToNoonTs } from './format'
+import { addDays, appNow, diffDays, todayYmd, tzOffsetHours, ymdInTz, ymdToNoonTs } from './format'
 import { buildCandidates, buildConsensus, buildModel, choosePick, type Candidate, type Consensus, type ModelOutput, type Pick } from './model'
 import type { BookOdds } from './odds'
 import { buildPreview, type Paragraph } from './preview'
@@ -44,7 +44,7 @@ const byTime = (a: Match, b: Match) => a.ts - b.ts || a.id - b.id
 /** Сколько держать данные матча в кэше — по его статусу. */
 function matchTtl(m: Match | null | undefined): CacheOptions {
   if (!m) return { ttl: 300, stale: 600 }
-  const now = Date.now()
+  const now = appNow()
   if (m.status === 'live' || m.status === 'suspended') return { ttl: 45, stale: 90 }
   if (m.status === 'scheduled') {
     const until = m.ts - now
@@ -358,7 +358,7 @@ export async function getUpcomingFeed(days = 3, opts: Opts = {}): Promise<{ item
     Array.from({ length: days }, (_, i) => getMatchesByDate(addDays(today, i), opts)),
   )
   const ok = results.some((r) => r.status === 'fulfilled')
-  const now = Date.now()
+  const now = appNow()
   const items = results
     .flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
     .filter((m) => m.status === 'scheduled' || m.status === 'live')

@@ -6,6 +6,7 @@
  */
 import { featuredRank } from '@/config/leagues'
 import type { FeedItem } from './data'
+import { appNow } from './format'
 import { fair1x2, fairTwoWay, totalAt } from './odds'
 import { interest, isLive, isMinor } from './rank'
 
@@ -39,6 +40,8 @@ export type DaySummary = {
   /** Ближайший матч — когда ничего не идёт. */
   next: FeedItem | null
   goals: GoalsInfo | null
+  /** Самый голевой открытый матч (и матч дня, и идущий) — запасной пример для «Ждём голов», от 50%. */
+  goalsAny: { item: FeedItem; p: number } | null
   favorite: FavoriteInfo | null
   total: number
   leagues: number
@@ -104,7 +107,7 @@ const max = <T>(xs: T[], score: (x: T) => number): T | null => {
 /** Топ-лиги чуть впереди при близких цифрах: «Бавария» интереснее безвестного клуба с тем же шансом. */
 const featuredBonus = (it: FeedItem, w: number) => (featuredRank(it.match.league) >= 0 ? w : 0)
 
-export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary {
+export function buildDaySummary(items: FeedItem[], now = appNow()): DaySummary {
   const open = items.filter(isOpen)
   const scheduled = open.filter((it) => it.match.status === 'scheduled')
 
@@ -170,10 +173,16 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
       .slice(0, LIST_SHOWN),
   }
 
+  const goalsAny = max(
+    open.map((it) => ({ item: it, p: goalsChance(it) ?? 0 })).filter((g) => g.p >= GOALS_MIN),
+    (g) => g.p + featuredBonus(g.item, 0.03),
+  )
+
   return {
     top,
     value,
     progruz,
+    goalsAny,
     liveCount: open.filter((it) => isLive(it.match)).length,
     next,
     goals,
@@ -247,7 +256,7 @@ export function dayStats(s: DaySummary): DayStats {
 export function navExamples(s: DaySummary): { goals: { item: FeedItem; p: number } | null; drop: ProgruzInfo | null } {
   const st = dayStats(s)
   return {
-    goals: st.goals ?? (s.goals ? { item: s.goals.item, p: s.goals.p } : null),
+    goals: st.goals ?? s.goalsAny,
     drop: st.drop ?? s.progruz,
   }
 }

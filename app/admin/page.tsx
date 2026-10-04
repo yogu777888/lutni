@@ -62,7 +62,7 @@ export default async function AdminPage({ searchParams }: Props) {
         <Section title="Источник данных">
           <dl className="grid grid-cols-2 gap-y-1.5 text-sm">
             <dt className="text-dim">Режим</dt>
-            <dd className={IS_MOCK ? 'font-bold text-draw' : 'font-bold text-win'}>{IS_MOCK ? 'ДЕМО (SSTATS_MOCK=1)' : 'SStats API'}</dd>
+            <dd className={IS_MOCK ? 'font-bold text-draw' : 'font-bold text-win'}>{IS_MOCK ? `ДЕМО (SSTATS_MOCK=${process.env.SSTATS_MOCK})` : 'SStats API'}</dd>
             <dt className="text-dim">Запросов за минуту</dt>
             <dd className="num">
               {lim.inWindow} / {lim.limit} (в очереди {lim.queued})

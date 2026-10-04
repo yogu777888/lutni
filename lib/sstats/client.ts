@@ -11,10 +11,13 @@ import type { ApiEnvelope } from './types'
  *  SSTATS_RPM     — наш собственный потолок запросов в минуту (по умолчанию 25 без ключа, 60 с ключом;
  *                   если квота вашего ключа выше — поднимите, при ответе 429 клиент сам притормозит)
  *  SSTATS_MOCK=1  — демо-режим без сети (синтетические данные)
+ *  SSTATS_MOCK=design — то же, но часы стоят: всегда 4 октября, 19:30 (для работы над виджетами, см. lib/format.ts)
  */
 const BASE = (process.env.SSTATS_API_URL || 'https://api.sstats.net').replace(/\/+$/, '')
 const API_KEY = process.env.SSTATS_API_KEY || ''
-export const IS_MOCK = process.env.SSTATS_MOCK === '1'
+export const IS_MOCK = process.env.SSTATS_MOCK === '1' || process.env.SSTATS_MOCK === 'design'
+/** Демо для дизайна: часы стоят, прогрев разбирает все матчи дня (и идущие) — у всех есть форма. */
+export const IS_DESIGN = process.env.SSTATS_MOCK === 'design'
 const RPM = Number(process.env.SSTATS_RPM || (API_KEY ? 60 : 25))
 
 export const limiter = singleton(
