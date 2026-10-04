@@ -193,6 +193,10 @@ const STAT_FIELDS: [string, string, string?][] = [
   ['dangerousAttacks', 'Опасные атаки'],
 ]
 
+/**
+ * Статистика матча как есть: нет значения (null) — нет строки, а 0 : 0 — настоящее значение (в начале игры
+ * угловых может и не быть). Пустые строки 0 : 0 прячет показ — `visibleStats`.
+ */
 function normalizeStats(s: RawStatistics | null | undefined): StatPair[] {
   if (!s) return []
   const out: StatPair[] = []
@@ -200,11 +204,14 @@ function normalizeStats(s: RawStatistics | null | undefined): StatPair[] {
     const h = num(s[`${key}Home`] as Num | null)
     const a = num(s[`${key}Away`] as Num | null)
     if (h === null || a === null) continue
-    if (h === 0 && a === 0 && key !== 'redCards' && key !== 'yellowCards') continue
     out.push({ key, label, home: h, away: a, suffix })
   }
   return out
 }
+
+/** Для списков статистики: строки 0 : 0 ничего не говорят (кроме карточек) — не показываем. */
+export const visibleStats = (stats: StatPair[]) =>
+  stats.filter((s) => s.home !== 0 || s.away !== 0 || s.key === 'redCards' || s.key === 'yellowCards')
 
 function eventKind(e: RawEvent): MatchEvent['kind'] {
   const n = (e.name || '').toLowerCase()

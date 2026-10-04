@@ -1,15 +1,17 @@
 import Link from 'next/link'
 import { countryRank, featuredRank } from '@/config/leagues'
-import { getMatchesByDate, peekMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
+import { daySnaps, getMatchesByDate, peekOddsSnap, tagsFor, waitMatchFull, waitOddsSnap, type FeedItem } from '@/lib/data'
 import { dayHref } from '@/lib/links'
 import { addDays, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
+import { lineMoves, type OddsSnap } from '@/lib/lines'
 import { isLive, liveRank } from '@/lib/rank'
-import { buildDaySummary, mainMatches } from '@/lib/day-summary'
+import { dayCounts, goalsPicks, mainMatches, moveExample } from '@/lib/day-summary'
 import { storyCovers } from '@/lib/story-covers'
 import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
-import { DaySummary } from './DaySummary'
+import { DaySummary, type MainItem } from './DaySummary'
+import type { DayLink } from './TopCarousel'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
 import { StoryCircles } from './story/StoryCircles'
@@ -99,7 +101,6 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
   const open = items.filter((i) => i.match.status === 'scheduled' || i.match.status === 'live')
   // на первом экране — только главные кружки, остальные теги — по «Все теги»
   const storyGroups = mainCircles(buildStoryGroups(items))
-  const daySummary = buildDaySummary(items)
   const values = open
     .filter((i) => i.summary?.pick?.kind === 'value' && i.match.status === 'scheduled')
     .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
@@ -111,19 +112,23 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
 
   const heading = dayHeading(ymd, today)
   const past = diffDays(ymd, today) < 0
-  // «Главные матчи»: на «Сегодня» чип в блоке листает вчера (итоги) и завтра (анонс) — только сам блок;
-  // в другие дни — только свой день. На прошедших днях сводки нет: там список результатов.
-  const mainToday = past ? [] : mainMatches(items)
-  const hasSummary = mainToday.length > 0
+  // «Главные матчи» — в любой день: впереди — анонсы и идущие, на прошедших днях — итоги главных матчей.
+  // До начала — линия одного букмекера, в игре и после — статистика матча; на холодном старте ждём их недолго
+  // линия для подборок: топ-турниры без снимка догружаются (не дольше 1,2 с, остальное — в фоне, к следующему открытию)
+  const [mains, day] = await Promise.all([
+    Promise.all(
+      mainMatches(items).map(async (it): Promise<MainItem> => {
+        const m = it.match
+        const scheduled = m.status === 'scheduled'
+        const [snap, full] = await Promise.all([scheduled ? waitOddsSnap(m) : peekOddsSnap(m.id), scheduled ? null : waitMatchFull(m.id)])
+        return { it, snap, full }
+      }),
+    ),
+    daySnaps(matches, 1200),
+  ])
+  const hasSummary = mains.length > 0
   // заголовок «Все матчи дня» — когда над списком есть что-то ещё (сводка, выгодные ставки)
   const listHead = hasSummary || values.length > 0
-  const near = async (d: string) => mainMatches((await peekMatchesByDate(d)).map((m) => ({ match: m, ...tagsFor(m) })))
-  const [mainYesterday, mainTomorrow] = ymd === today && hasSummary ? await Promise.all([near(addDays(today, -1)), near(addDays(today, 1))]) : [[], []]
-  const mainDays = [
-    { key: 'yesterday', label: 'Вчера', items: mainYesterday },
-    { key: ymd, label: ymd === today ? 'Сегодня' : heading.title, items: mainToday, page: true },
-    { key: 'tomorrow', label: 'Завтра', items: mainTomorrow },
-  ]
   // красная точка у «Сегодня»: на главной знаем сами, на других днях — из того же кэша матчей
   let liveToday = ymd === today && liveAll.length > 0
   if (ymd !== today) {
@@ -133,6 +138,20 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
       liveToday = false
     }
   }
+  // чип дня в «Главных матчах» — переходы на страницы дней: вся страница (блок, подборки, список) — про один день
+  const near: [string, string][] = [
+    [addDays(today, -1), 'Вчера'],
+    [today, 'Сегодня'],
+    [addDays(today, 1), 'Завтра'],
+  ]
+  if (!near.some(([d]) => d === ymd)) near.push([ymd, formatDayMonth(ymdToNoonTs(ymd))])
+  const dayLinks: DayLink[] = near
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([d, label]) => ({ key: d, label, href: dayHref(d, today), current: d === ymd, live: d === today && liveToday }))
+  // превью подборок — по линии одного букмекера: те же снимки, что и у страниц подборок
+  const snaps = new Map<number, OddsSnap | null>(day.snaps)
+  for (const x of mains) if (x.snap) snaps.set(x.it.match.id, x.snap)
+  const snapOf = (id: number) => snaps.get(id) ?? peekOddsSnap(id)
   // по времени — только для дней, где матчи ещё впереди; у прошедших порядок по турнирам = главные результаты первыми
   const byTime = sort === 'time' && !past
   const timeList = byTime
@@ -148,7 +167,6 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
           заходишь и сразу видишь всё нужное, а «Все матчи дня» начинаются ниже, по прокрутке.
           На очень высоких мониторах — не выше 50rem (хватает на обычное окно браузера на экране 1080p), чтобы плитки не раздувались. */}
       <div className={hasSummary ? 'flex flex-col lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
-        {/* выбор дня — у списка «Все матчи дня»: чип в блоке «Главные матчи» меняет только блок */}
         <section className="min-w-0 pt-1 sm:pt-0">
           <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
           <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px]">
@@ -171,12 +189,27 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         ) : null}
 
         {/* на невысоком окне (ниже 800px) отступ над сводкой меньше — так она влезает целиком */}
-        {hasSummary ? <DaySummary s={daySummary} days={mainDays} className="mt-5 lg:flex-1 lg:[@media(min-height:740px)_and_(max-height:799px)]:mt-4 lg:[@media(max-height:739px)]:mt-3" /> : null}
+        {hasSummary ? (
+          <DaySummary
+            mains={mains}
+            days={dayLinks}
+            picks={{
+              ymd,
+              dayHref: base,
+              past,
+              counts: dayCounts(items),
+              goals: goalsPicks(items, snapOf),
+              move: moveExample(items, snapOf),
+              movesCovered: items.filter((it) => lineMoves(snapOf(it.match.id)).length > 0).length,
+            }}
+            className="mt-5 lg:flex-1 lg:[@media(min-height:740px)_and_(max-height:799px)]:mt-4 lg:[@media(max-height:739px)]:mt-3"
+          />
+        ) : null}
       </div>
 
       <ValueBoard items={values} />
 
-      {/* без сводки (прошедшие дни) список идёт сразу под заголовком страницы — второй заголовок не нужен */}
+      {/* без сводки (в этот день нет ни одного «взрослого» матча) список идёт сразу под заголовком страницы — второй заголовок не нужен */}
       <section id="matches" className={`scroll-mt-24 ${listHead ? 'mt-16 sm:mt-20' : 'mt-5 sm:mt-6'}`}>
         {listHead ? (
           <>
@@ -184,7 +217,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
             <h2 className="h2 mt-3 text-[30px] sm:text-[44px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
           </>
         ) : null}
-        {/* выбор дня — здесь, у списка (чип в «Главных матчах» меняет только сам блок); рядом — порядок списка */}
+        {/* выбор дня — и здесь, у списка (как и чип в «Главных матчах», ведёт на страницу дня); рядом — порядок списка */}
         <div className={`flex flex-wrap items-center justify-between gap-x-6 gap-y-3 ${listHead ? 'mt-5' : ''}`}>
           <div className="w-full min-w-0 sm:w-auto">
             <DateTabs active={ymd} today={today} liveToday={liveToday} hash="#matches" />

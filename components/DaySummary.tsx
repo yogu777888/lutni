@@ -1,20 +1,17 @@
 import Link from 'next/link'
 import { featuredInfo } from '@/config/leagues'
 import type { FeedItem } from '@/lib/data'
-import { goalsChance, navExamples, parseProgruz, type DaySummary as Summary, type ProgruzInfo } from '@/lib/day-summary'
+import { GOALS_PICK, type DayCounts, type GoalsPick, type MovePick } from '@/lib/day-summary'
+import { lineFact, pickFacts } from '@/lib/facts'
 import { appNow, formatDayMonth, formatTime, pct, plural, pluralN, todayYmd, ymdInTz } from '@/lib/format'
+import { biggestMove, lineMoves, moveOutcome, periodEndLabel, x12Line, type LineMove, type OddsSnap } from '@/lib/lines'
 import { matchHref } from '@/lib/links'
-import { fair1x2 } from '@/lib/odds'
 import { isLive } from '@/lib/rank'
-import type { Res } from '@/lib/stats'
-import { artFor, type ArtIcon as IconName } from '@/lib/story-art'
-import type { League, Match } from '@/lib/types'
-import { buildVerdict, split100, type Verdict } from '@/lib/verdict'
-import { CHIP, StoryChipFace, ValueChip } from './Chips'
-import { ArtIcon } from './story/ArtIcon'
+import type { League, Match, MatchFull, StatPair } from '@/lib/types'
+import { CHIP, StoryChipFace } from './Chips'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
-import { TopCarousel, type MainSlide } from './TopCarousel'
+import { TopCarousel, type DayLink, type MainSlide } from './TopCarousel'
 
 /** Ссылка-накладка: вся карточка кликабельна, а текст ссылки — понятное название. */
 const COVER = "after:absolute after:inset-0 after:rounded-[22px] after:content-['']"
@@ -23,7 +20,7 @@ const CARD = 'rounded-[22px] border border-edge bg-panel shadow-[inset_0_1px_0_r
 const MATCHES = ['матч', 'матча', 'матчей'] as const
 const TOURNEYS = ['турнир', 'турнира', 'турниров'] as const
 const leagueShort = (l: League) => featuredInfo(l)?.short || l.name
-const team = (m: Match, side: 'home' | 'away') => `«${side === 'home' ? m.home.name : m.away.name}»`
+const pair = (m: Match) => `${m.home.name} — ${m.away.name}`
 
 /** Стрелка «перейти» — квадрат 32px, как остальные кнопки внутри карточек. */
 function Go() {
@@ -49,262 +46,151 @@ const until = (ts: number) => {
   return `через ${Math.round(min / 60)} ч`
 }
 
+/** Время снимка линии: сегодня — «19:25», в другой день — «3 октября, 19:25». */
+const snapTime = (at: number) => (ymdInTz(at) === todayYmd() ? formatTime(at) : `${formatDayMonth(at)}, ${formatTime(at)}`)
+
 // ─── Главные матчи ───────────────────────────────────────────────────────────
 
+/** Матч главного блока: линия одного букмекера (до начала) и статистика (в игре и после) — что успели получить. */
+export type MainItem = { it: FeedItem; snap: OddsSnap | null; full: MatchFull | null }
+
 /**
- * Шансы трёх исходов одной полосой: слева хозяева, в середине ничья, справа гости; проценты (в сумме 100)
- * внутри. Под полосой — подписи исходов прямо по местам и кэфы (по линии перед матчем): полоса не под
- * табло, поэтому без подписей непонятно, где кто. Без своих цветов: светлая часть — фаворит.
+ * До начала: строка кэфов одного букмекера с временем снимка («Фонбет, линия на 19:25») и два факта с выборкой
+ * — о командах или движении линии. Вероятностей и выводов здесь нет: они — в подробностях матча.
  */
-function ChanceBar({ m }: { m: Match }) {
-  const f = fair1x2(m.odds?.x12)
-  if (!f) return null
-  const n = split100(f)
-  const fav = f.home >= f.away ? 'home' : 'away'
-  const x = m.odds?.x12
-  const cells = (['home', 'draw', 'away'] as const).map((k) => ({
-    k,
-    p: f[k],
-    n: n[k],
-    odd: x?.[k]?.value ?? null,
-    name: k === 'draw' ? 'ничья' : k === 'home' ? m.home.name : m.away.name,
-  }))
-  const tone = (k: (typeof cells)[number]['k']) => (k === fav ? 'bg-chalk text-ink' : k === 'draw' ? 'bg-[#26251f] text-dim' : 'bg-[#3a3931] text-chalk')
-  const label = `Шансы по коэффициентам букмекеров: ${cells.map((c) => `${c.k === 'draw' ? c.name : `«${c.name}»`} — ${c.n}% (кэф ${c.odd?.toFixed(2) ?? '—'})`).join(', ')}`
-  // на телефоне кэф — строкой ниже названия: иначе у длинных названий он обрезается
-  const cell = (c: (typeof cells)[number], align: string) => (
-    <span className={`min-w-0 sm:truncate ${align} ${c.k === fav ? 'text-chalk' : ''}`}>
-      <span className="max-sm:block max-sm:truncate">{c.name}</span>
-      {c.odd ? <span className="num text-mute max-sm:block sm:ml-1.5">{c.odd.toFixed(2)}</span> : null}
-    </span>
-  )
+function PreMatch({ m, snap, facts }: { m: Match; snap: OddsSnap | null; facts: string[] }) {
+  const line = x12Line(snap)
   return (
-    <div role="img" aria-label={label} title={label}>
-      <div className="flex h-7 gap-0.5 overflow-hidden rounded-[9px] lg:h-[clamp(28px,3.4vh,34px)]">
-        {cells.map((c) => (
-          <span key={c.k} className={`num grid min-w-0 place-items-center text-[13px] font-semibold ${tone(c.k)}`} style={{ width: `${c.p * 100}%` }}>
-            <span className="truncate px-1">{c.n}%</span>
-          </span>
-        ))}
+    <div className="flex min-w-0 flex-col gap-5 lg:gap-[clamp(16px,2.4vh,24px)]">
+      {line ? (
+        <div>
+          <p className="text-[13px] text-dim">
+            Коэффициенты · {line.bookmaker}, линия на {snapTime(line.at)}
+          </p>
+          <p className="mt-1.5 flex flex-wrap items-baseline gap-x-6 gap-y-1">
+            {(
+              [
+                ['Хозяева', line.home],
+                ['Ничья', line.draw],
+                ['Гости', line.away],
+              ] as const
+            ).map(([label, odd]) => (
+              <span key={label} className="flex items-baseline gap-2">
+                <span className="text-[14px] text-dim">{label}</span>
+                <span className="num text-[20px] font-semibold tracking-[-0.02em] text-fg lg:text-[clamp(20px,2.6vh,24px)]">{odd.toFixed(2)}</span>
+              </span>
+            ))}
+          </p>
+        </div>
+      ) : (
+        <p className="text-[14px] text-dim">Линии легального букмекера на матч пока нет</p>
+      )}
+      {facts.length ? (
+        <ul className="space-y-2.5" aria-label={`Факты о матче ${pair(m)}`}>
+          {facts.map((f, k) => (
+            // второй факт — от 740px высоты окна: на невысоком окне сводка иначе не влезает
+            <li key={f} className={`flex gap-3 text-[15px] leading-snug text-chalk ${k ? 'lg:[@media(max-height:739px)]:hidden' : ''}`}>
+              <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-mute" aria-hidden />
+              <span className="line-clamp-2">{f}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
+/** Строка сравнения: значения команд по краям, показатель посередине, под ними тонкая полоса долей. */
+function StatRow({ s, className = '' }: { s: StatPair; className?: string }) {
+  const fmt = (v: number) => `${Number.isInteger(v) ? v : v.toFixed(2)}${s.suffix ?? ''}`
+  const total = s.home + s.away
+  const share = total > 0 ? s.home / total : 0.5
+  const lead = s.home === s.away ? null : s.home > s.away ? 'home' : 'away'
+  const label = s.key === 'expectedGoals' ? 'xG — ожидаемые голы' : s.label
+  return (
+    <li role="group" aria-label={`${label}: ${fmt(s.home)} — ${fmt(s.away)}`} className={className}>
+      <div className="grid grid-cols-[minmax(3rem,auto)_minmax(0,1fr)_minmax(3rem,auto)] items-baseline gap-3" aria-hidden>
+        <span className={`num text-[20px] font-semibold leading-none ${lead === 'away' ? 'text-dim' : 'text-fg'}`}>{fmt(s.home)}</span>
+        <span className="truncate text-center text-[13px] text-dim">{label}</span>
+        <span className={`num text-right text-[20px] font-semibold leading-none ${lead === 'home' ? 'text-dim' : 'text-fg'}`}>{fmt(s.away)}</span>
       </div>
-      <p className="mt-1.5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 text-[13px] text-dim" aria-hidden>
-        {cell(cells[0], 'text-left')}
-        {cell(cells[1], 'text-center')}
-        {cell(cells[2], 'text-right')}
-      </p>
-    </div>
-  )
-}
-
-type Reason = { text: string; icon: IconName; hot: boolean }
-
-/**
- * Два факта о встрече — с цифрами и выборкой из тегов: о движении линии («Кэф на «X» снизился: 2.40 → 1.97»)
- * и о командах (серии, дом, потери, личные встречи). «Выгодно» — на кнопке, «фаворит» и «50 на 50» —
- * в главной фразе (и до матча, и во время игры), их не повторяем. Фактов нет — панели нет, ничего не выдумываем.
- */
-function reasonsFor(it: FeedItem, v: Verdict | null): Reason[] {
-  const out: Reason[] = []
-  // падение кэфа — первым; во время игры вывода нет, но падение до начала — всё равно факт
-  const p = v ? null : parseProgruz(it)
-  const drop = v?.drop ?? (p ? `Кэф на ${team(it.match, p.side)} снизился: ${p.from.toFixed(2)} → ${p.to.toFixed(2)}` : null)
-  if (drop) out.push({ text: drop, icon: 'down', hot: true })
-  const skip = new Set(['value', 'favorit', 'ravnye', 'progruz'])
-  for (const t of [...it.tags].sort((a, b) => b.score - a.score)) {
-    if (!skip.has(t.slug)) out.push({ text: t.reason, icon: artFor(t.slug).icon, hot: false })
-  }
-  if (v?.goals && !it.tags.some((t) => t.slug === 'tb-2-5' || t.slug === 'tm-2-5')) out.push({ text: v.goals, icon: 'ball', hot: false })
-  return out.slice(0, 2)
-}
-
-/**
- * Идущий или сыгранный матч глазами шансов до него — только счёт и кэфы перед матчем, без прогнозов:
- * в игре — «Фаворит «Бетис» (65%) ведёт», «Пока ничья, фаворит — «Бетис» (65%)», «Ведёт «Хетафе», хотя
- * фаворит — «Бетис» (65%)»; после матча — «Фаворит … выиграл», «Ничья: фаворит … не выиграл», «Сенсация: …».
- */
-function playedLine(m: Match): string | null {
-  const f = fair1x2(m.odds?.x12)
-  const finished = m.status === 'finished'
-  const s = finished ? (m.scoreFT ?? m.score) : m.score
-  if (!f || !s) return null
-  if (Math.abs(f.home - f.away) < 0.1) return finished ? 'Шансы были почти равны' : 'Шансы до матча были почти равны'
-  const side = f.home >= f.away ? 'home' : 'away'
-  const diff = side === 'home' ? s.home - s.away : s.away - s.home
-  const fav = `${team(m, side)} (${pct(f[side])})`
-  if (finished) return diff > 0 ? `Фаворит ${fav} выиграл` : diff === 0 ? `Ничья: фаворит ${fav} не выиграл` : `Сенсация: фаворит ${fav} проиграл`
-  return diff > 0 ? `Фаворит ${fav} ведёт` : diff === 0 ? `Пока ничья, фаворит — ${fav}` : `Ведёт ${team(m, side === 'home' ? 'away' : 'home')}, хотя фаворит — ${fav}`
-}
-
-// ─── Мини-графики справа в «Главных матчах» ──────────────────────────────────
-
-/** Результат матча квадратом: монохромно, без светофора — победа светлая, ничья серая, поражение пустое. */
-const RES: Record<Res, { l: string; cls: string; word: string }> = {
-  W: { l: 'В', cls: 'bg-chalk text-ink', word: 'победа' },
-  D: { l: 'Н', cls: 'bg-white/[0.14] text-chalk', word: 'ничья' },
-  L: { l: 'П', cls: 'text-mute ring-1 ring-inset ring-white/[0.16]', word: 'поражение' },
-}
-
-/** Мини-панель: подпись сверху, график под ней; одна в ряду — во всю ширину (на телефоне — всегда столбиком). */
-function Panel({ title, wide = false, children }: { title: string; wide?: boolean; children: React.ReactNode }) {
-  return (
-    <div className={`min-w-0 rounded-[14px] bg-white/[0.035] px-3.5 py-3 lg:[@media(max-height:799px)]:py-2.5 ${wide ? 'sm:col-span-2' : ''}`}>
-      <p className="truncate text-[13px] text-dim">{title}</p>
-      <div className="mt-2 lg:[@media(max-height:799px)]:mt-1.5">{children}</div>
-    </div>
-  )
-}
-
-/** Форма — последние 5 матчей каждой команды, свежий справа; команда — эмблемой, как в табло слева. */
-function FormChart({ m, form }: { m: Match; form: { home: Res[]; away: Res[] } }) {
-  const row = (t: Match['home'], rs: Res[]) => (
-    <div className="flex items-center gap-2.5" role="img" aria-label={`«${t.name}»: ${[...rs].reverse().map((r) => RES[r].word).join(', ')}`}>
-      <span aria-hidden className="flex shrink-0">
-        <TeamLogo name={t.name} src={t.logo} size={22} />
-      </span>
-      <span className="flex shrink-0 gap-1" aria-hidden>
-        {[...rs].reverse().map((r, i) => (
-          <span key={i} className={`grid h-[22px] w-[22px] place-items-center rounded-[6px] text-[13px] font-semibold lg:[@media(max-height:799px)]:h-5 lg:[@media(max-height:799px)]:w-5 ${RES[r].cls}`}>
-            {RES[r].l}
-          </span>
-        ))}
-      </span>
-    </div>
-  )
-  return (
-    <div className="space-y-1.5 lg:[@media(max-height:799px)]:space-y-1">
-      {row(m.home, form.home)}
-      {row(m.away, form.away)}
-    </div>
-  )
-}
-
-/** Голы — шанс 3+ голов крупной цифрой и полоской «сколько из 100». */
-function GoalsChart({ p }: { p: number }) {
-  return (
-    <div>
-      <p className="flex items-baseline gap-2">
-        <span className="num text-[22px] font-semibold leading-none text-fg">{pct(p)}</span>
-        <span className="truncate text-[13px] text-dim">шанс 3+ голов</span>
-      </p>
-      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/[0.08]" aria-hidden>
-        <div className="h-full rounded-full bg-chalk" style={{ width: `${Math.round(p * 100)}%` }} />
+      <div className="mt-2 flex h-[3px] gap-0.5" aria-hidden>
+        <span className={`rounded-full ${lead === 'home' ? 'bg-chalk' : 'bg-white/[0.16]'}`} style={{ width: `${share * 100}%` }} />
+        <span className={`flex-1 rounded-full ${lead === 'away' ? 'bg-chalk' : 'bg-white/[0.16]'}`} />
       </div>
-    </div>
+    </li>
   )
 }
 
+const LIVE_KEYS = ['shotsOnGoal', 'cornerKicks']
+
 /**
- * Кэф упал — «было → стало» с открытия линии: процент янтарём, под ним наклонная линия из двух точек во всю
- * ширину (как у плитки «Кэф упал»; круче — сильнее падение). Та же схема, что у «Голов»: цифра, под ней линия.
+ * В игре — «Сейчас в матче»: удары в створ и угловые, подписи команд над значениями; после матча — те же
+ * показатели и xG (если он настоящий, из статистики матча) и переход к подробностям. Нет данных — так и
+ * пишем, нулями не заменяем. Доматчевых цифр здесь нет: при счёте на табло они путают.
  */
-function DropMini({ d }: { d: ProgruzInfo }) {
-  const y2 = 2 + Math.min(1, Math.max(0.25, d.drop / 0.35)) * 8
+function PlayStats({ m, full }: { m: Match; full: MatchFull | null }) {
+  const live = isLive(m)
+  const by = (k: string) => full?.stats.find((s) => s.key === k)
+  const done = by('expectedGoals') ? [...LIVE_KEYS, 'expectedGoals'] : [...LIVE_KEYS, 'ballPossession']
+  const rows = (live ? LIVE_KEYS : done).map(by).filter((s): s is StatPair => Boolean(s))
   return (
-    <div>
-      <p className="flex min-w-0 items-baseline gap-2">
-        <span className="num text-[22px] font-semibold leading-none text-hot">−{Math.round(d.drop * 100)}%</span>
-        <span className="num truncate text-[13px] text-dim">
-          {d.from.toFixed(2)} → {d.to.toFixed(2)}
-        </span>
-      </p>
-      {/* линия тянется во всю ширину панели, точки — отдельными кружками, чтобы не сплющивались */}
-      <div className="relative mx-1 mt-2 h-3" aria-hidden>
-        <svg viewBox="0 0 100 12" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
-          <line x1="0" y1="2" x2="100" y2={y2} stroke="var(--color-hot)" strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        </svg>
-        <span className="absolute -left-1 top-[-2px] h-2 w-2 rounded-full border-[1.5px] border-hot bg-panel" />
-        <span className="absolute -right-1 h-2 w-2 rounded-full bg-hot" style={{ top: y2 - 4 }} />
-      </div>
+    <div className="flex min-w-0 flex-col">
+      {/* минута — под счётом слева, здесь её не повторяем */}
+      <p className="text-[16px] font-semibold tracking-[-0.01em] text-fg lg:text-[clamp(16px,2.2vh,19px)]">{live ? 'Сейчас в матче' : 'Статистика матча'}</p>
+      {rows.length ? (
+        <>
+          <p className="mt-3 flex justify-between gap-4 text-[13px] font-medium text-chalk lg:[@media(max-height:739px)]:mt-2">
+            <span className="truncate">{m.home.name}</span>
+            <span className="truncate text-right">{m.away.name}</span>
+          </p>
+          <ul className="mt-2.5 space-y-3 lg:[@media(max-height:799px)]:space-y-2.5">
+            {rows.map((s, k) => (
+              // третья строка — от 740px высоты окна: на невысоком окне сводка иначе не влезает
+              <StatRow key={s.key} s={s} className={k >= 2 ? 'lg:[@media(max-height:739px)]:hidden' : ''} />
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p className="mt-3 text-[14px] text-dim">{live ? 'Статистика по ходу игры пока не пришла' : 'Статистики матча нет'}</p>
+      )}
+      {live ? null : (
+        <Link href={matchHref(m)} prefetch={false} className="relative z-[2] mt-4 inline-flex w-fit items-center gap-1.5 text-[14px] font-medium text-fg transition-colors hover:text-acid">
+          Подробности матча
+          <span aria-hidden>→</span>
+        </Link>
+      )}
     </div>
   )
 }
 
-/**
- * Графики справа под полосой шансов: форма, голы, падение кэфа — что есть по данным, не больше двух
- * (форма — только у разобранных матчей). Нет ни одного — остаются факты словами. После матча — ничего.
- */
-function chartsFor(it: FeedItem): React.ReactNode[] {
-  const m = it.match
-  if (m.status === 'finished') return []
-  const form = it.summary?.form
-  const goals = goalsChance(it)
-  const drop = parseProgruz(it)
-  const out: { key: string; title: string; node: React.ReactNode }[] = []
-  if (form?.home.length && form.away.length) out.push({ key: 'form', title: 'Форма · 5 матчей', node: <FormChart m={m} form={form} /> })
-  if (goals !== null) out.push({ key: 'goals', title: 'Голы', node: <GoalsChart p={goals} /> })
-  if (drop) out.push({ key: 'drop', title: `Кэф на ${team(m, drop.side)} упал`, node: <DropMini d={drop} /> })
-  const shown = out.slice(0, 2)
-  return shown.map((c) => (
-    <Panel key={c.key} title={c.title} wide={shown.length === 1}>
-      {c.node}
-    </Panel>
-  ))
-}
-
-/** Вывод до матча — только с выгодной ставкой: обычный прогноз модели бывает «против» главной фразы и путает. */
-const verdictOf = (it: FeedItem) => {
-  const m = it.match
-  if (m.status !== 'scheduled') return null
-  const pick = it.summary?.pick
-  return buildVerdict({ match: m, tags: it.tags, pick: pick?.kind === 'value' ? pick : null })
-}
-
-/** Матч слайда для шапки и кнопок карточки: турнир, разбор и «Выгодно» — про матч, который сейчас на экране. */
+/** Матч слайда для шапки и кнопки разбора: турнир и разбор — про матч, который сейчас на экране. */
 function slideMeta(it: FeedItem): MainSlide {
   const m = it.match
-  const v = verdictOf(it)
-  const pick = m.status === 'scheduled' ? it.summary?.pick : null
-  const bet = v?.bet && pick ? { label: pick.key === v.side ? 'Выгодно' : `Выгодно: ${v.bet.text}`, odd: v.bet.odd } : null
-  const caption = `${leagueShort(m.league)}${m.round ? ` · ${m.round}` : ''}`
-  return { id: m.id, href: matchHref(m), live: isLive(m), caption, bet }
+  return { id: m.id, href: matchHref(m), live: isLive(m), caption: `${leagueShort(m.league)}${m.round ? ` · ${m.round}` : ''}` }
+}
+
+/** Два факта до матча: сильнейший о командах (из разбора матча) и движение линии того же букмекера, что в строке кэфов. */
+function factsFor(it: FeedItem, snap: OddsSnap | null): string[] {
+  const mv: LineMove | null = biggestMove(lineMoves(snap))
+  return pickFacts(it.summary?.facts ?? [], lineFact(mv, it.match.ts))
 }
 
 /**
- * Факты «почему» одной панелью; на компьютере второй — от 800px высоты окна: факт бывает в две строки,
- * и на окне 720–800px сводка иначе не влезает целиком.
+ * Слайд главного матча. Слева — эмблемы, полные названия, время или счёт и минута LIVE, под табло — «Разбор
+ * за минуту». Справа — одна открытая область без внутренних карточек: до начала — кэфы одного букмекера и два
+ * факта, в игре — «Сейчас в матче», после — статистика и подробности. На телефоне — столбиком.
  */
-function Facts({ reasons, className = '' }: { reasons: Reason[]; className?: string }) {
-  return (
-    <ul className={`rounded-[14px] bg-white/[0.035] px-3.5 ${className}`}>
-      {reasons.map((r, i) => (
-        <li
-          key={i}
-          className={`flex items-center gap-3 border-t border-edge py-2 text-[14px] leading-snug text-chalk first:border-t-0 ${i === 1 ? 'lg:[@media(max-height:799px)]:hidden' : ''}`}
-        >
-          <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-[7px] ${r.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.06] text-chalk'}`}>
-            <ArtIcon name={r.icon} className="h-[13px] w-[13px]" />
-          </span>
-          <span className="line-clamp-2">{r.text}</span>
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-/**
- * Слайд главного матча — как карточка матча в спортивных приложениях. На компьютере в две колонки:
- * слева турнир и табло (названия команд — главный акцент, время скромнее), справа через тонкий
- * разделитель — вывод словами, полоса шансов с подписями и кэфами и два факта; у сыгранного матча —
- * счёт и итог глазами шансов. На телефоне — столбиком. Кнопки и стрелки — у ленты (TopCarousel).
- */
-function TopSlide({ it }: { it: FeedItem }) {
+function TopSlide({ item }: { item: MainItem }) {
+  const { it, snap, full } = item
   const m = it.match
   const live = isLive(m)
   const finished = m.status === 'finished'
   const played = Boolean(m.score) && (live || finished)
-  const v = verdictOf(it)
-  const bet = slideMeta(it).bet
-  // факты о командах полезны и во время игры; после матча — уже нет
-  const reasons = finished ? [] : reasonsFor(it, v)
-  // до матча — вывод; в игре и после — счёт глазами шансов до матча: у всех слайдов одна схема «фраза → полоса»
-  const headline = v?.headline ?? (played ? playedLine(m) : null)
-  const odds = Boolean(fair1x2(m.odds?.x12))
-  const charts = chartsFor(it)
   const minute = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'
-  const wide = odds || charts.length > 0 || reasons.length > 0
   const score = played ? m.score : null
-  // ярче — фаворит до матча, в игре и после — кто ведёт или победил; равные силы или ничья — обе команды яркие
-  const lead = score ? (score.home === score.away ? null : score.home > score.away ? 'home' : 'away') : (v?.side ?? null)
+  // ярче — кто ведёт или победил; до матча и при ничьей — обе команды одинаково
+  const lead = score && score.home !== score.away ? (score.home > score.away ? 'home' : 'away') : null
   const tone = (k: 'home' | 'away') => (lead && lead !== k ? 'text-chalk' : 'text-fg')
   const BIG = 'num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-[26px] sm:text-[30px] lg:text-[clamp(28px,4.2vh,46px)]'
   const row = (t: Match['home'], k: 'home' | 'away') => (
@@ -313,11 +199,13 @@ function TopSlide({ it }: { it: FeedItem }) {
       <span className={`line-clamp-2 text-[20px] font-semibold leading-tight tracking-[-0.02em] sm:text-[22px] lg:text-[clamp(22px,3.2vh,32px)] ${tone(k)}`}>{t.name}</span>
     </span>
   )
+  const facts = live || finished ? [] : factsFor(it, snap)
+  const right = live || finished ? <PlayStats m={m} full={full} /> : <PreMatch m={m} snap={snap} facts={facts} />
 
   return (
-    <div className={`relative flex min-w-0 flex-1 flex-col justify-center gap-4 ${wide ? 'lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-10' : ''}`}>
+    <div className="relative flex min-w-0 flex-1 flex-col justify-center gap-5 lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-10">
       {/* турнир и тур — в шапке карточки (TopCarousel), напротив стрелок и чипа дня */}
-      <div className="flex min-w-0 flex-col gap-4 lg:gap-[clamp(16px,2.4vh,26px)] lg:[@media(max-height:739px)]:gap-3">
+      <div className="flex min-w-0 flex-col gap-4 lg:gap-[clamp(14px,2vh,20px)] lg:[@media(max-height:739px)]:gap-3">
         {/* табло строками, как в спортивных приложениях: эмблема и название — хозяева сверху, гости снизу;
             справа время (после свистка — счёт у каждой команды). Вся карточка открывает сторис;
             эмблемы и названия растут с высотой окна, чтобы на большом мониторе карточка не пустела */}
@@ -341,87 +229,43 @@ function TopSlide({ it }: { it: FeedItem }) {
             <span className={`col-span-2 -mt-1 text-right text-[13px] font-medium ${live ? 'text-live' : 'text-dim'}`}>{live ? minute : 'итог'}</span>
           ) : null}
         </StoryLink>
-        {/* на компьютере «Разбор за минуту» и «Выгодно» — под табло (на телефоне — под лентой, в TopCarousel);
-            вся карточка — ссылка на сторис, поэтому здесь это подписи, а не отдельные кнопки */}
-        <div aria-hidden className="hidden flex-wrap items-center gap-2 lg:flex">
-          <span className={`${CHIP} shrink-0 gap-2 pl-1 pr-3.5`}>
+        {/* на компьютере «Разбор за минуту» — сразу под табло (на телефоне — под лентой, в TopCarousel);
+            вся карточка — ссылка на сторис, поэтому здесь это подпись, а не отдельная кнопка */}
+        <div aria-hidden className="hidden lg:block">
+          <span className={`${CHIP} w-fit shrink-0 gap-2 pl-1 pr-3.5`}>
             <StoryChipFace />
           </span>
-          {bet ? <ValueChip label={bet.label} odd={bet.odd} /> : null}
         </div>
       </div>
 
-      {wide ? (
-        <div className="flex min-w-0 flex-col gap-4 lg:gap-3.5 lg:border-l lg:border-edge lg:pl-10 lg:[@media(max-height:799px)]:gap-3">
-          {odds ? (
-            // фраза → на чём она основана: шансы по кэфам перед матчем (и у идущего, и у сыгранного)
-            <div>
-              {headline ? (
-                <p className="mb-2.5 text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-[clamp(17px,2.5vh,24px)]">{headline}</p>
-              ) : null}
-              <ChanceBar m={m} />
-            </div>
-          ) : null}
-          {charts.length ? (
-            <>
-              {/* графики вместо фактов словами: форма, голы, падение кэфа — что есть по данным. На невысоком окне
-                  (ниже 740px) на них нет места — там, как раньше, один факт словами */}
-              <div className="grid gap-3 sm:grid-cols-2 lg:[@media(max-height:739px)]:hidden">{charts}</div>
-              {reasons.length ? <Facts reasons={reasons.slice(0, 1)} className="hidden lg:[@media(max-height:739px)]:block" /> : null}
-            </>
-          ) : reasons.length ? (
-            <Facts reasons={reasons} />
-          ) : null}
-        </div>
-      ) : null}
+      <div className="min-w-0 lg:border-l lg:border-edge lg:pl-10">{right}</div>
     </div>
   )
 }
 
-// ─── Переходы под блоком ─────────────────────────────────────────────────────
+// ─── Подборки под блоком ─────────────────────────────────────────────────────
 
 /**
- * Переход в раздел — плитка «Цифр дня»: название и стрелка, крупная цифра со словами рядом («31 матч · 4 турнира»,
- * «54% шанс 3+ голов», «−17% на победу «X»») и строка с матчем. Цифры всех плиток — на одной линии, слова
- * не мельче 14px; широкая плитка («Кэф упал») — с графиком справа. Нет цифры — только простые слова, без
- * выдуманных чисел. Списков матчей внутри нет — они ниже, по прокрутке, и на страницах тегов.
+ * Переход к подборке — компактный, с полезным превью и без крупных цифр: название и подпись, стрелка в углу
+ * (сверху и справа поровну), ниже одна-две строки превью; широкий — с мини-графиком справа. Вся плитка — ссылка.
  */
-function NavTile({
-  title,
-  href,
-  num,
-  tone = 'text-fg',
-  unit,
-  note,
-  aside,
-}: {
-  title: string
-  href: string
-  /** крупная цифра; нет — вместо неё простые слова (`unit`) */
-  num?: string | null
-  tone?: string
-  unit: React.ReactNode
-  note?: React.ReactNode
-  aside?: React.ReactNode
-}) {
+function NavTile({ title, caption, href, lines, aside }: { title: string; caption: string; href: string; lines: React.ReactNode[]; aside?: React.ReactNode }) {
   return (
     <Link href={href} prefetch={false} className={`group flex h-full min-w-0 flex-col p-[18px] transition-colors hover:border-edge-2 ${CARD}`}>
-      {/* стрелка — в строке названия (в углу: сверху и справа поровну); название тише цифры — главное в плитке цифра */}
-      <span className="flex items-center justify-between gap-3">
-        <span className="truncate text-[14px] font-medium text-chalk">{title}</span>
+      <span className="flex items-start justify-between gap-3">
+        <span className="min-w-0">
+          <span className="block truncate text-[15px] font-semibold leading-5 text-fg">{title}</span>
+          <span className="block truncate text-[13px] leading-[18px] text-dim">{caption}</span>
+        </span>
         <Go />
       </span>
-      {/* цифра растёт с высотой окна (на большом мониторе у первого экрана есть запас), но в 1280×720 сводка
-          должна влезать целиком — отсюда плотные строки. Цифры без моноширинных начертаний: так «31 матч» плотнее */}
-      <span className="mt-auto flex flex-col gap-3 pt-0.5 sm:flex-row sm:items-center sm:gap-6">
+      <span className="mt-auto flex flex-col gap-3 pt-3 sm:flex-row sm:items-end sm:gap-6">
         <span className="min-w-0 flex-1">
-          <span className="flex min-w-0 items-baseline gap-2">
-            {num ? (
-              <span className={`shrink-0 text-[28px] font-semibold leading-none tracking-[-0.03em] lg:text-[clamp(26px,3.5vh,34px)] ${tone}`}>{num}</span>
-            ) : null}
-            <span className="truncate text-[14px] leading-[18px] text-chalk">{unit}</span>
-          </span>
-          {note ? <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[13px] leading-[18px] text-dim">{note}</span> : null}
+          {lines.map((l, k) => (
+            <span key={k} className={`block truncate text-[14px] leading-5 ${k ? 'text-dim' : 'text-chalk'}`}>
+              {l}
+            </span>
+          ))}
         </span>
         {aside}
       </span>
@@ -430,104 +274,117 @@ function NavTile({
 }
 
 /**
- * «Было → стало» одного исхода: открытие линии и последнее значение, подписаны у самих точек. Истории по часам
- * у нас пока нет, поэтому кривой не рисуем: прямая между двумя честными точками, круче — сильнее падение.
- * Янтарь — цвет «кэф упал». На телефоне — под цифрой во всю ширину.
+ * Мини-график одного исхода одного букмекера: открытие линии → последнее значение, две честные точки без кривой.
+ * Подписи по краям — период сравнения («открытие» … «19:25» или «начала матча»). Упал — янтарь, вырос — серый.
  */
-function DropChart({ d }: { d: ProgruzInfo }) {
-  // высота графика и есть перепад: от 25% «шкалы» до полной при падении на 35% и больше
-  const h = 10 + Math.round(Math.min(1, Math.max(0.25, d.drop / 0.35)) * 30)
+function MoveChart({ mv, kickoff }: { mv: LineMove; kickoff: number }) {
+  const k = Math.min(1, Math.max(0.25, Math.abs(mv.change) / 0.35))
+  const down = mv.change < 0
+  const end = periodEndLabel(mv.at, kickoff)
+  const color = down ? 'var(--color-hot)' : 'var(--color-chalk)'
+  // точка «стало»: при падении — ниже открытия на долю высоты, при росте — выше
+  const y2 = down ? k : 1 - k
   return (
-    <span
-      role="img"
-      aria-label={`Кэф был ${d.from.toFixed(2)}, стал ${d.to.toFixed(2)}`}
-      className="flex w-full shrink-0 items-stretch gap-2.5 sm:w-[min(15rem,40%)]"
-      style={{ height: h }}
-    >
-      <span className="num -mt-[5px] self-start text-[13px] leading-[18px] text-chalk">{d.from.toFixed(2)}</span>
-      <span className="relative min-w-0 flex-1" aria-hidden>
+    <span className="block w-full shrink-0 sm:w-[min(13rem,42%)]" aria-hidden>
+      <span className="relative block h-5">
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-x-1 inset-y-1 h-[calc(100%-8px)] w-[calc(100%-8px)] overflow-visible">
-          {/* пунктир — уровень открытия: насколько ниже него кэф сейчас, видно и при небольшом падении */}
-          <line x1="0" y1="0" x2="100" y2="0" stroke="rgb(255 255 255 / 0.16)" strokeWidth="1" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
-          <line x1="0" y1="0" x2="100" y2="100" stroke="var(--color-hot)" strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          <line x1="0" y1={down ? 0 : 100} x2="100" y2={down ? 0 : 100} stroke="rgb(255 255 255 / 0.16)" strokeWidth="1" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
+          <line x1="0" y1={down ? 0 : 100} x2="100" y2={y2 * 100} stroke={color} strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
         </svg>
-        <span className="absolute left-0 top-0 h-2 w-2 rounded-full border-[1.5px] border-hot bg-panel" />
-        <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-hot" />
+        <span className="absolute left-0 h-2 w-2 rounded-full border-[1.5px] bg-panel" style={{ borderColor: color, top: down ? 0 : 'auto', bottom: down ? 'auto' : 0 }} />
+        <span className="absolute right-0 h-2 w-2 rounded-full" style={{ background: color, top: `calc(${y2 * 100}% - ${y2 * 8}px)` }} />
       </span>
-      <span className="num -mb-[5px] self-end text-[13px] font-semibold leading-[18px] text-hot">{d.to.toFixed(2)}</span>
+      <span className="mt-1 flex justify-between gap-3 text-[13px] leading-[18px] text-mute">
+        <span>открытие</span>
+        <span className="truncate">{end}</span>
+      </span>
     </span>
   )
 }
 
+/** Превью и ссылки подборок — про день страницы. */
+export type DayPicks = {
+  ymd: string
+  /** ссылка на страницу дня (у сегодняшнего — главная) */
+  dayHref: string
+  past: boolean
+  counts: DayCounts
+  goals: { picks: GoalsPick[]; covered: number }
+  move: MovePick | null
+  movesCovered: number
+}
+
+function Picks({ p }: { p: DayPicks }) {
+  const c = p.counts
+  const g = p.goals
+  const allLines: React.ReactNode[] =
+    c.live > 0
+      ? [
+          <>
+            {pluralN(c.total, MATCHES)} · <span className="text-live">{c.live} LIVE</span>
+          </>,
+          `${pluralN(c.leagues, TOURNEYS)}${c.finished ? ` · ${c.finished} сыграно` : ''}`,
+        ]
+      : [
+          `${pluralN(c.total, MATCHES)} · ${pluralN(c.leagues, TOURNEYS)}`,
+          p.past || !c.next ? (c.finished ? 'все сыграны — итоги в списке' : 'итоги в списке') : `первый — в ${formatTime(c.next.match.ts)}`,
+        ]
+  const top = g.picks[0]
+  const goalLines: React.ReactNode[] = top
+    ? [`${pluralN(g.picks.length, MATCHES)} с шансом от ${pct(GOALS_PICK)}`, `выше всех: ${pair(top.it.match)}, ${pct(top.g.p)}`]
+    : g.covered
+      ? [`Матчей с шансом от ${pct(GOALS_PICK)} нет`, `линия на тотал есть у ${pluralN(g.covered, MATCHES)}`]
+      : ['Линия букмекеров на тотал ещё загружается']
+  const mv = p.move
+  const moveLines: React.ReactNode[] = mv
+    ? [
+        `${pair(mv.it.match)} · ${moveOutcome(mv.mv.key, { home: mv.it.match.home.name, away: mv.it.match.away.name })}`,
+        <>
+          {mv.mv.bookmaker}, до матча: <span className="num">{mv.mv.from.toFixed(2)}</span> →{' '}
+          <span className={`num font-semibold ${mv.mv.change < 0 ? 'text-hot' : 'text-fg'}`}>{mv.mv.to.toFixed(2)}</span>
+        </>,
+      ]
+    : p.movesCovered
+      ? ['Заметных изменений линии нет', `кэфы открытия есть у ${pluralN(p.movesCovered, MATCHES)}`]
+      : ['Линия букмекеров ещё загружается']
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <NavTile title="Все матчи" caption="Расписание и результаты" href={`${p.dayHref}#matches`} lines={allLines} />
+      <NavTile title="Голевые матчи" caption="Полная подборка на 3+ гола" href={`/matches/${p.ymd}/goals`} lines={goalLines} />
+      <div className="min-w-0 sm:col-span-2">
+        <NavTile
+          title="Движение коэффициентов"
+          caption="Изменения линии за день"
+          href={`/matches/${p.ymd}/odds`}
+          lines={moveLines}
+          aside={mv ? <MoveChart mv={mv.mv} kickoff={mv.it.match.ts} /> : null}
+        />
+      </div>
+    </div>
+  )
+}
+
 /**
- * «Сводка дня» — первый экран: сверху «Главные матчи» (до пяти важных встреч, стрелки «1 из 5», чип дня
- * меняет только этот блок), под ним «Цифры дня» — три перехода 1:1:2 с крупной цифрой: «Все матчи», «Ждём голов»
- * и широкий «Кэф упал» с графиком. Кнопки и цифры под блоком — про день страницы.
+ * «Сводка дня» — первый экран: сверху «Главные матчи» (до пяти важных встреч, стрелки «1 из 5», чип дня —
+ * переход на страницу другого дня), под ним «Подборки» — три перехода 1:1:2 к страницам дня: «Все матчи»,
+ * «Голевые матчи» и широкий «Движение коэффициентов» с мини-графиком. Истории — короткий просмотр матчей,
+ * подборки — полные списки дня со сравнением и фильтрами.
  */
-export function DaySummary({
-  s,
-  days,
-  className = '',
-}: {
-  s: Summary
-  /** дни чипа в блоке; `page` — день страницы: с него блок и открывается */
-  days: { key: string; label: string; items: FeedItem[]; page?: boolean }[]
-  className?: string
-}) {
-  const shown = days.filter((d) => d.items.length)
-  const initial = shown.findIndex((d) => d.page)
-  if (initial < 0) return null
-  const { goals: g, drop: d } = navExamples(s)
-  const when = (it: FeedItem) => (isLive(it.match) ? 'идёт' : it.match.status === 'finished' ? 'сыгран' : formatTime(it.match.ts))
-  const pair = (it: FeedItem) => `${it.match.home.name} — ${it.match.away.name}`
+export function DaySummary({ mains, days, picks, className = '' }: { mains: MainItem[]; days: DayLink[]; picks: DayPicks; className?: string }) {
+  if (!mains.length) return null
   return (
     <section aria-label="Сводка дня" className={`flex flex-col ${className}`}>
       <TopCarousel
-        days={shown.map((day) => ({ key: day.key, label: day.label, slides: day.items.map(slideMeta) }))}
-        panels={shown.map((day) => day.items.map((it) => <TopSlide key={it.match.id} it={it} />))}
-        initial={initial}
+        slides={mains.map((x) => slideMeta(x.it))}
+        panels={mains.map((x) => <TopSlide key={x.it.match.id} item={x} />)}
+        days={days}
         className={`lg:flex-1 ${CARD}`}
       />
       {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг; к плиткам ближе, чем к блоку сверху */}
       <h2 className="mb-2.5 mt-4 text-[13px] font-medium text-mute lg:[@media(min-height:740px)_and_(max-height:799px)]:mb-2 lg:[@media(min-height:740px)_and_(max-height:799px)]:mt-3 lg:[@media(max-height:739px)]:mt-3">
-        Цифры дня
+        Подборки
       </h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <NavTile
-          title="Все матчи"
-          href="#matches"
-          num={String(s.total)}
-          unit={`${plural(s.total, MATCHES)} · ${pluralN(s.leagues, TOURNEYS)}`}
-          note={
-            s.liveCount > 0 ? (
-              <>
-                <span className="h-1.5 w-1.5 shrink-0 animate-pulse-live rounded-full bg-live" aria-hidden />
-                <span className="truncate text-chalk">{pluralN(s.liveCount, ['идёт', 'идут', 'идут'])} сейчас</span>
-              </>
-            ) : (
-              <span className="truncate">{s.next ? `ближайший в ${formatTime(s.next.match.ts)}` : 'все сыграны — итоги в списке'}</span>
-            )
-          }
-        />
-        <NavTile
-          title="Ждём голов"
-          href="/tag/tb-2-5"
-          num={g ? pct(g.p) : null}
-          unit={g ? 'шанс 3+ голов' : 'Подборка матчей на 3+ гола'}
-          note={g ? <span className="truncate">{pair(g.item)}</span> : undefined}
-        />
-        <div className="min-w-0 sm:col-span-2">
-          <NavTile
-            title="Кэф упал"
-            href="/tag/progruz"
-            num={d ? `−${Math.round(d.drop * 100)}%` : null}
-            tone="text-hot"
-            unit={d ? `на победу ${team(d.item.match, d.side)}` : 'Заметных падений кэфа нет'}
-            note={d ? <span className="truncate">{`${pair(d.item)} · ${when(d.item)}`}</span> : undefined}
-            aside={d ? <DropChart d={d} /> : null}
-          />
-        </div>
-      </div>
+      <Picks p={picks} />
     </section>
   )
 }

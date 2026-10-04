@@ -155,7 +155,8 @@ export default async function MatchPage({ params }: Props) {
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-6">
           {!scheduled && (full.events.length || full.stats.length) ? (
-            <Section title="Ход матча">
+            // в игре — «Сейчас в матче»: эти цифры учитывают счёт и ход игры; доматчевые блоки ниже подписаны «До матча»
+            <Section title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'} aside={m.status === 'live' ? 'по ходу игры' : 'итог'}>
               <div className="grid gap-6 md:grid-cols-2">
                 <EventsBlock events={full.events} />
                 <StatsBars stats={full.stats} />
@@ -166,7 +167,7 @@ export default async function MatchPage({ params }: Props) {
           {pick ? <PickCard pick={pick} match={m} /> : null}
 
           {tags.length ? (
-            <Section title="Теги матча" aside="почему они здесь">
+            <Section title="Теги матча" aside={scheduled ? 'почему они здесь' : 'до матча'}>
               <ul className="space-y-3">
                 {tags.map((t) => (
                   <li key={t.slug} className="flex items-start gap-3">
@@ -181,7 +182,7 @@ export default async function MatchPage({ params }: Props) {
           {x ? (
             <Section
               title="Голы и счёт"
-              aside={model ? (model.source === 'xg' ? 'модель по xG' : `рынок ${cons.books > 1 ? `(${cons.books} БК)` : ''} + модель`) : 'рынок'}
+              aside={`${scheduled ? '' : 'до матча · '}${model ? (model.source === 'xg' ? 'модель по xG' : `рынок ${cons.books > 1 ? `(${cons.books} БК)` : ''} + модель`) : 'рынок'}`}
             >
               <div className="space-y-5">
                 {over25 != null ? <SplitBar left={over25} leftLabel="3 гола и больше" rightLabel="До 2 голов" /> : null}
@@ -217,7 +218,7 @@ export default async function MatchPage({ params }: Props) {
           ) : null}
 
           {books.length ? (
-            <Section title="Коэффициенты букмекеров" aside={`${books.length} БК · ▼▲ движение от открытия`}>
+            <Section title="Коэффициенты букмекеров" aside={`${scheduled ? '' : 'до матча · '}${books.length} БК · ▼▲ движение от открытия`}>
               <OddsTable match={m} books={books} model={model} candidates={candidates} />
               <p className="mt-4 text-[11px] text-mute">
                 Лучший коэффициент в колонке подсвечен, точка — value (выше справедливого). Коэффициенты меняются — проверяйте

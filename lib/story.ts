@@ -12,6 +12,7 @@ import { goHref } from './affiliate'
 import type { MatchInsights } from './data'
 import { dayLabel, formatDateShort, formatTime, pct, pluralN, todayYmd, ymdInTz } from './format'
 import { matchHref } from './links'
+import { visibleStats } from './sstats/normalize'
 import { buildVerdict, outcomeText } from './verdict'
 import type { Res } from './stats'
 import { TAG_BY_SLUG, type TagDef } from './tags'
@@ -191,7 +192,7 @@ export function buildStory(ins: MatchInsights): StoryData | null {
         maxMinute,
       })
     }
-    const stats = full.stats.slice(0, 7)
+    const stats = visibleStats(full.stats).slice(0, 7)
     if (stats.length >= 3) {
       const poss = stats.find((s) => s.key === 'ballPossession')
       const shots = stats.find((s) => s.key === 'totalShots' || s.key === 'shotsTotal' || /удар/i.test(s.label))

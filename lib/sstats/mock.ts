@@ -395,9 +395,11 @@ function bookOdds(g: MockGame, bm: (typeof BOOKMAKERS)[number], opening: boolean
   // «прогруз»: у части матчей коэффициент на одну из сторон сильно упал к закрытию
   const move = rng('move', g.id)
   const dropSide = move() < 0.2 ? (move() < 0.5 ? 'home' : 'away') : null
+  // упал кэф на одну сторону — на другую он вырос: как и в настоящей линии
+  const riseSide = dropSide === 'home' ? 'away' : dropSide === 'away' ? 'home' : null
   const open = (v: number, side?: string) => {
     if (!opening) return v
-    const drift = side && side === dropSide ? 1.12 + move() * 0.1 : 1 + (r() - 0.5) * 0.08
+    const drift = side && side === dropSide ? 1.12 + move() * 0.1 : side && side === riseSide ? 0.84 + move() * 0.08 : 1 + (r() - 0.5) * 0.08
     return Math.round(v * drift * 100) / 100
   }
   const m = bm.margin

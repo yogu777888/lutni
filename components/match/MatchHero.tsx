@@ -87,7 +87,7 @@ export function MatchHero({
 
       {cells ? (
         <>
-          {played ? <p className="eyebrow mt-6">Шансы до матча</p> : null}
+          {played ? <p className="eyebrow mt-6">До матча · шансы на исход</p> : null}
           <div className={`grid grid-cols-3 gap-2 sm:gap-3 ${played ? 'mt-3' : 'mt-5'}`}>
             {cells.map((c) => (
               <div key={c.key} className="min-w-0 rounded-xl border border-edge bg-panel-2 px-2 pb-3 pt-3 text-center">

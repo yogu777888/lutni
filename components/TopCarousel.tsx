@@ -1,13 +1,14 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { CHIP, StoryChipFace, ValueChip } from './Chips'
+import { CHIP, StoryChipFace } from './Chips'
 import { openStory } from './story/events'
 
-/** Матч слайда — для шапки и кнопок карточки: турнир, разбор и «Выгодно» — про матч, который сейчас на экране. */
-export type MainSlide = { id: number; href: string; live: boolean; caption: string; bet: { label: string; odd: number | null } | null }
-/** День в блоке: «Вчера» — итоги, «Сегодня», «Завтра» — анонс. */
-export type MainDay = { key: string; label: string; slides: MainSlide[] }
+/** Матч слайда — для шапки и кнопки разбора: турнир и разбор — про матч, который сейчас на экране. */
+export type MainSlide = { id: number; href: string; live: boolean; caption: string }
+/** День в чипе: переход на страницу дня — вся страница (блок, подборки, список) про один и тот же день. */
+export type DayLink = { key: string; label: string; href: string; current: boolean; live?: boolean }
 
 function Arrow({ dir }: { dir: 'left' | 'right' }) {
   return (
@@ -18,44 +19,35 @@ function Arrow({ dir }: { dir: 'left' | 'right' }) {
 }
 
 /**
- * «Главные матчи» — до пяти важных встреч дня (lib/day-summary.ts, mainMatches). Подписи над карточкой нет:
- * она и так понятна (владелец оставил подпись только над «Цифрами дня»). Шапка карточки: слева турнир и тур
- * матча на экране, справа стрелки «1 из 5» (на телефоне — внизу, и свайп), без автопрокрутки, и чип дня: он
- * меняет только этот блок — заглянуть во вчера (итоги) и в завтра (анонс); истории, переходы под блоком
- * и список матчей остаются про день страницы. Слайды — лента со scroll-snap: без JS видны все матчи дня.
+ * «Главные матчи» — до пяти важных встреч дня (lib/day-summary.ts, mainMatches). Шапка карточки: слева турнир
+ * и тур матча на экране, справа стрелки «1 из 5» (на телефоне — внизу, и свайп), без автопрокрутки, и чип дня.
+ * Чип — переход на страницу дня: выбранный день меняет всю страницу согласованно (блок, подборки под ним,
+ * список матчей) и уходит в ссылки подборок. Слайды — лента со scroll-snap: без JS видны все матчи дня.
  */
 export function TopCarousel({
-  days,
+  slides,
   panels,
-  initial = 0,
+  days,
   className = '',
 }: {
-  days: MainDay[]
-  panels: React.ReactNode[][]
-  initial?: number
+  slides: MainSlide[]
+  panels: React.ReactNode[]
+  days: DayLink[]
   className?: string
 }) {
   const track = useRef<HTMLDivElement>(null)
   const menu = useRef<HTMLDivElement>(null)
-  const [day, setDay] = useState(initial)
   const [cur, setCur] = useState(0)
   const [open, setOpen] = useState(false)
-  const slides = panels[day] ?? []
-  const n = slides.length
-  const meta = days[day]?.slides[cur]
+  const n = panels.length
+  const meta = slides[cur]
+  const current = days.find((d) => d.current)
 
   const go = (k: number) => {
     const next = Math.max(0, Math.min(n - 1, k))
     const el = track.current
     if (el) el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' })
     setCur(next)
-  }
-
-  const pickDay = (d: number) => {
-    setDay(d)
-    setCur(0)
-    setOpen(false)
-    track.current?.scrollTo({ left: 0 })
   }
 
   // меню дня закрывается кликом мимо и Esc
@@ -75,7 +67,6 @@ export function TopCarousel({
     }
   }, [open])
 
-  const current = days[day]
   const arrows = (cls: string) =>
     n > 1 ? (
       <div className={`items-center gap-1.5 ${cls}`}>
@@ -101,37 +92,37 @@ export function TopCarousel({
         </p>
         <div className="flex shrink-0 items-center gap-3">
           {arrows('hidden sm:flex')}
-          {days.length > 1 ? (
+          {current ? (
             <div ref={menu} className="relative z-20 shrink-0">
-              <button type="button" aria-haspopup="listbox" aria-expanded={open} aria-label={`День главных матчей: ${current?.label ?? ''}`} onClick={() => setOpen((o) => !o)} className={`${CHIP} gap-1.5 pl-3 pr-2`}>
-                {current?.label}
+              <button type="button" aria-haspopup="true" aria-expanded={open} aria-label={`День: ${current.label}. Выбрать другой`} onClick={() => setOpen((o) => !o)} className={`${CHIP} gap-1.5 pl-3 pr-2`}>
+                {current.label}
                 <svg viewBox="0 0 24 24" className={`h-4 w-4 text-dim transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="m6 9 6 6 6-6" />
                 </svg>
               </button>
               {open ? (
-                <div role="listbox" aria-label="День главных матчей" className="absolute right-0 top-[calc(100%+6px)] min-w-[180px] rounded-[14px] border border-edge bg-panel-2 p-1.5 shadow-[0_16px_40px_rgb(0_0_0/0.5)]">
-                  {days.map((d, k) => (
-                    <button
+                <nav aria-label="День" className="absolute right-0 top-[calc(100%+6px)] min-w-[180px] rounded-[14px] border border-edge bg-panel-2 p-1.5 shadow-[0_16px_40px_rgb(0_0_0/0.5)]">
+                  {days.map((d) => (
+                    <Link
                       key={d.key}
-                      type="button"
-                      role="option"
-                      aria-selected={k === day}
-                      onClick={() => pickDay(k)}
-                      className={`flex w-full items-center justify-between gap-3 rounded-[10px] px-3 py-2 text-left text-[14px] transition-colors hover:bg-white/[0.06] ${k === day ? 'text-fg' : 'text-chalk'}`}
+                      href={d.href}
+                      prefetch={false}
+                      aria-current={d.current ? 'page' : undefined}
+                      onClick={() => setOpen(false)}
+                      className={`flex w-full items-center justify-between gap-3 rounded-[10px] px-3 py-2 text-left text-[14px] transition-colors hover:bg-white/[0.06] ${d.current ? 'text-fg' : 'text-chalk'}`}
                     >
                       <span className="flex items-center gap-2">
                         {d.label}
-                        {d.slides.some((s) => s.live) ? <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" aria-label="идут матчи" /> : null}
+                        {d.live ? <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" aria-label="идут матчи" /> : null}
                       </span>
-                      {k === day ? (
+                      {d.current ? (
                         <svg viewBox="0 0 24 24" className="h-4 w-4 text-acid" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                           <path d="M20 6 9 17l-5-5" />
                         </svg>
                       ) : null}
-                    </button>
+                    </Link>
                   ))}
-                </div>
+                </nav>
               ) : null}
             </div>
           ) : null}
@@ -139,7 +130,6 @@ export function TopCarousel({
       </div>
 
       <div
-        key={current?.key}
         ref={track}
         className="scrollbar-none mt-3 flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain lg:[@media(max-height:799px)]:mt-2"
         onScroll={(e) => {
@@ -148,21 +138,16 @@ export function TopCarousel({
           if (k !== cur) setCur(k)
         }}
       >
-        {slides.map((c, k) => (
+        {panels.map((c, k) => (
           <div key={k} className="flex w-full shrink-0 snap-start px-[18px] lg:px-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:px-6 lg:[@media(max-height:739px)]:px-5">
             {c}
           </div>
         ))}
       </div>
 
-      {/* на телефоне и планшете — под лентой: «Выгодно» строкой выше, ниже разбор матча на экране
-          (на телефоне рядом — стрелки). На компьютере эти кнопки — под табло в самом слайде */}
+      {/* на телефоне и планшете — под лентой: разбор матча на экране, на телефоне рядом — стрелки.
+          На компьютере кнопка разбора — под табло в самом слайде */}
       <div className="mt-4 flex flex-wrap items-center gap-2 px-[18px] lg:hidden">
-        {meta?.bet ? (
-          <div className="flex w-full min-w-0">
-            <ValueChip label={meta.bet.label} odd={meta.bet.odd} />
-          </div>
-        ) : null}
         {meta ? (
           <button type="button" onClick={(e) => openStory({ id: meta.id, href: meta.href, opener: e.currentTarget })} className={`${CHIP} shrink-0 gap-2 pl-1 pr-3.5`}>
             <StoryChipFace />

@@ -22,6 +22,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...TAGS.map((t) => ({ url: `${base}/tag/${t.slug}`, lastModified: now, changeFrequency: 'hourly' as const, priority: 0.8 })),
     ...PARTNERS.map((p) => ({ url: `${base}/bookmakers/${p.slug}`, changeFrequency: 'weekly' as const, priority: 0.6 })),
     ...days.filter((d) => d !== today).map((d) => ({ url: `${base}/matches/${d}`, lastModified: now, changeFrequency: 'hourly' as const, priority: 0.6 })),
+    // подборки дня: голевые матчи и движение линии — и на сегодня тоже
+    ...days.flatMap((d) => ['goals', 'odds'].map((p) => ({ url: `${base}/matches/${d}/${p}`, lastModified: now, changeFrequency: 'hourly' as const, priority: 0.5 }))),
   ]
   const lists = await Promise.all(days.map((d) => settle(getMatchesByDate(d, { priority: 'low' }), [] as Match[])))
   for (const m of lists.flat()) {

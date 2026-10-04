@@ -1,4 +1,5 @@
 import type { MatchEvent, StatPair } from '@/lib/types'
+import { visibleStats } from '@/lib/sstats/normalize'
 
 const ICON: Record<MatchEvent['kind'], string> = {
   goal: '⚽',
@@ -43,7 +44,8 @@ export function EventsBlock({ events }: { events: MatchEvent[] }) {
   )
 }
 
-export function StatsBars({ stats }: { stats: StatPair[] }) {
+export function StatsBars({ stats: all }: { stats: StatPair[] }) {
+  const stats = visibleStats(all)
   if (!stats.length) return <p className="text-sm text-dim">Статистика появится по ходу матча.</p>
   return (
     <ul className="space-y-3">

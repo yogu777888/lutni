@@ -3,12 +3,13 @@
  * через кэш (SWR + диск) и лимитер запросов. TTL зависит от статуса матча:
  * live обновляем раз в минуту, завершённые храним сутками.
  */
-import { featuredRank } from '@/config/leagues'
+import { featuredRank, isFeatured } from '@/config/leagues'
 import { cache, type CacheOptions } from './cache'
 import { CHANCE_DAYS, chanceCheck, mergeTallies, tallyChances, type ChanceCheck, type ChanceTally } from './chance-check'
 import { addDays, appNow, diffDays, todayYmd, tzOffsetHours, ymdInTz, ymdToNoonTs } from './format'
 import { buildCandidates, buildConsensus, buildModel, choosePick, type Candidate, type Consensus, type ModelOutput, type Pick } from './model'
 import type { BookOdds } from './odds'
+import type { OddsSnap } from './lines'
 import { buildPreview, type Paragraph } from './preview'
 import type { Priority } from './rate-limit'
 import { ApiError, apiGet } from './sstats/client'
@@ -24,6 +25,7 @@ import type {
 } from './sstats/types'
 import { buildForm, buildH2H, type H2H, type Res, type TeamForm } from './stats'
 import { computeTags, type TagHit } from './tags'
+import { teamFacts, type Fact } from './facts'
 import type { Glicko, Injury, LeagueInfo, Match, MatchFull, Standings, Team } from './types'
 
 export type Opts = { priority?: Priority }
@@ -155,16 +157,67 @@ export async function getMatchFull(id: number, opts: Opts = {}): Promise<MatchFu
   }
 }
 
-export async function getOdds(m: Match, opts: Opts = {}): Promise<BookOdds[]> {
+/**
+ * Коэффициенты всех букмекеров на матч и момент, когда мы их взяли (`at`): своего времени обновления у доматчевых
+ * кэфов SStats нет, а подписи «линия на 19:25» и «до 19:25» нужны честные. После начала матча API отдаёт кэфы закрытия.
+ */
+export async function getOddsSnap(m: Match, opts: Opts = {}): Promise<OddsSnap> {
   return cache.get(
-    `odds:${m.id}`,
-    async () =>
-      N.normalizeBookOdds(await apiGet<RawBookmakerOdds[]>(`/Odds/${m.id}`, {}, opts), {
+    `odds-snap:${m.id}`,
+    async () => ({
+      books: N.normalizeBookOdds(await apiGet<RawBookmakerOdds[]>(`/Odds/${m.id}`, {}, opts), {
         home: m.home.original,
         away: m.away.original,
       }),
+      at: appNow(),
+    }),
     matchTtl(m),
   )
+}
+
+export async function getOdds(m: Match, opts: Opts = {}): Promise<BookOdds[]> {
+  return (await getOddsSnap(m, opts)).books
+}
+
+/** Снимок линии из памяти — без запроса к API (для списков дня: линия есть у разобранных матчей). */
+export function peekOddsSnap(id: number): OddsSnap | null {
+  return cache.peek<OddsSnap>(`odds-snap:${id}`) ?? null
+}
+
+/** Подождать снимок линии не дольше `ms`: из кэша — сразу, на холодном старте — без него. */
+export async function waitOddsSnap(m: Match, ms = 1200): Promise<OddsSnap | null> {
+  const run = settle(getOddsSnap(m, { priority: 'low' }), null)
+  return Promise.race([run, new Promise<null>((r) => setTimeout(() => r(null), ms).unref?.())])
+}
+
+/**
+ * Снимки линии для подборок дня («Голевые матчи», «Движение коэффициентов»): из кэша — сразу; матчам
+ * топ-турниров без снимка догружаем линию, но страница ждёт не дольше `ms` — остальное дойдёт в фоне
+ * к следующему открытию. `pending` — у скольких топ-матчей линия ещё грузится.
+ */
+export async function daySnaps(matches: Match[], ms = 2500): Promise<{ snaps: Map<number, OddsSnap>; pending: number }> {
+  const snaps = new Map<number, OddsSnap>()
+  const need: Match[] = []
+  for (const m of matches) {
+    const s = peekOddsSnap(m.id)
+    if (s) snaps.set(m.id, s)
+    else if (isFeatured(m.league) && m.status !== 'postponed' && m.status !== 'cancelled') need.push(m)
+  }
+  if (need.length) {
+    const jobs = need.slice(0, 80).map((m) =>
+      settle(getOddsSnap(m, { priority: 'low' }), null).then((s) => {
+        if (s) snaps.set(m.id, s)
+      }),
+    )
+    await Promise.race([Promise.all(jobs), new Promise((r) => setTimeout(r, ms).unref?.())])
+  }
+  return { snaps, pending: need.filter((m) => !snaps.has(m.id)).length }
+}
+
+/** Полные данные матча (статистика, события) не дольше `ms` — для «Главных матчей»: идущие и сыгранные. */
+export async function waitMatchFull(id: number, ms = 1200): Promise<MatchFull | null> {
+  const run = settle(getMatchFull(id, { priority: 'low' }), null)
+  return Promise.race([run, new Promise<null>((r) => setTimeout(() => r(null), ms).unref?.())])
 }
 
 export async function getGlicko(m: Match, opts: Opts = {}): Promise<Glicko | null> {
@@ -232,8 +285,10 @@ export async function getStandings(leagueId: number, year: number, opts: Opts = 
 export type MatchSummary = {
   id: number
   tags: TagHit[]
-  /** последние 5 результатов команд (свежие первыми) — для графика «Форма» в «Главных матчах» */
+  /** последние 5 результатов команд (свежие первыми) — для графика «Форма» в сторис и на странице матча */
   form?: { home: Res[]; away: Res[] } | null
+  /** факты о командах с выборкой («Хозяева забивали в 9 из 10 последних домашних матчей») — для «Главных матчей» */
+  facts?: Fact[]
   pick: {
     key: string
     label: string
@@ -332,7 +387,8 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
   const preview = buildPreview({ full, cons, model, pick, glicko, homeForm, awayForm, h2h, injuries, standings, tags })
 
   const form = homeForm && awayForm ? { home: homeForm.last5, away: awayForm.last5 } : null
-  const summary: MatchSummary = { id, tags, form, pick: summaryPick(pick), at: Date.now() }
+  const facts = teamFacts({ homeForm, awayForm, h2h })
+  const summary: MatchSummary = { id, tags, form, facts, pick: summaryPick(pick), at: Date.now() }
   cache.set(`summary:${id}`, summary, { ttl: 3 * H, stale: 9 * H, persist: false })
 
   return { full, match: m, books, cons, glicko, model, candidates, pick, homeForm, awayForm, h2h, injuries, standings, tags, preview }
@@ -397,15 +453,6 @@ export async function getChanceCheck(opts: Opts = {}): Promise<ChanceCheck | nul
     },
     { ttl: 3 * H, stale: 24 * H },
   )
-}
-
-/**
- * Матчи соседнего дня для чипа «Вчера / Завтра» в «Главных матчах»: из кэша — сразу (оба дня греет
- * прогрев и «Проверка шансов»), на холодном старте страница ждёт не дольше полутора секунд — дальше без них.
- */
-export async function peekMatchesByDate(ymd: string, ms = 1500): Promise<Match[]> {
-  const run = settle(getMatchesByDate(ymd), [] as Match[])
-  return Promise.race([run, new Promise<Match[]>((r) => setTimeout(() => r([]), ms).unref?.())])
 }
 
 /**

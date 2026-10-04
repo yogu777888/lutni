@@ -30,6 +30,9 @@ export type TeamForm = {
   streak: { kind: 'W' | 'L' | 'unbeaten' | 'winless'; len: number } | null
   home: Record4 & { unbeatenRun: number }
   away: Record4
+  /** последние домашние и выездные матчи (до 10, свежие первыми) — для фактов с выборкой: «в 9 из 10 домашних» */
+  homeGames: FormGame[]
+  awayGames: FormGame[]
 }
 
 const finalScore = (m: Match): Score | null => m.scoreFT ?? (m.status === 'finished' ? m.score : null)
@@ -107,6 +110,8 @@ export function buildForm(teamId: number, matches: Match[], limit = 10): TeamFor
     streak,
     home: { ...rec(homeGames), unbeatenRun },
     away: rec(games.filter((g) => !g.isHome).slice(0, 8)),
+    homeGames: games.filter((g) => g.isHome).slice(0, 10),
+    awayGames: games.filter((g) => !g.isHome).slice(0, 10),
   }
 }
 
