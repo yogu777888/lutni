@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { activeNav } from '@/components/NavCapsule'
 import type { FeedItem, MatchSummary } from '@/lib/data'
-import { buildDaySummary, parseProgruz, summaryCards } from '@/lib/day-summary'
+import { buildDaySummary, dayStats, parseProgruz } from '@/lib/day-summary'
 import type { Match } from '@/lib/types'
 
 const NOW = Date.UTC(2026, 9, 2, 12)
@@ -72,13 +72,10 @@ describe('сводка дня', () => {
   it('live: число идущих матчей; без live — ближайший матч', () => {
     const live = buildDaySummary([item(1, 'live'), item(2, 'live'), item(3, 'scheduled')], NOW)
     expect(live.liveCount).toBe(2)
-    // матчи идут — плитка «Сейчас» первой (идущие + ближайшие); турнир всего один — плитки турниров нет
-    expect(summaryCards(live)).toEqual(['live'])
 
     const calm = buildDaySummary([item(1, 'scheduled', { at: 5 }), item(2, 'scheduled', { at: 2 }), item(3, 'scheduled', { at: -1 })], NOW)
     // матч, который по времени уже должен был начаться, — не «ближайший»
     expect(calm.next?.match.id).toBe(2)
-    expect(summaryCards(calm)).toEqual(['next'])
   })
 
   it('голы и фаворит: максимум по тегу ТБ 2.5 и по честному шансу', () => {
@@ -99,22 +96,48 @@ describe('сводка дня', () => {
     expect(s.favorite?.side).toBe('home')
   })
 
-  it('плиток четыре, по вопросам: что идёт → … → выгодно; фаворит не повторяет матч дня', () => {
+  it('плитки: по одному матчу на вопрос, без матча дня и без начавшихся', () => {
+    const tb = (p: number) => ({ slug: 'tb-2-5', score: p, reason: `Скорее будет 3 гола и больше: шанс ${Math.round(p * 100)}%`, p })
     const s = buildDaySummary(
       [
         item(1, 'scheduled', { ev: 0.09 }),
         item(2, 'scheduled', { tags: [progruz('Home 2', '2.00', '1.70', 15)] }),
         item(3, 'scheduled', { x12: [1.3, 5.5, 9] }),
-        item(4, 'live'),
+        item(4, 'live', { tags: [tb(0.8), progruz('Home 4', '2.40', '1.80', 25)] }),
+        item(5, 'scheduled', { x12: [1.4, 4.8, 7.5], tags: [tb(0.66)] }),
       ],
       NOW,
     )
-    // матч дня — №3 (единственный без value и прогруза) и он же фаворит → в подборке фаворитов его нет
-    expect(s.top?.match.id).toBe(3)
-    expect(s.favorite?.item.match.id).toBe(3)
-    expect(s.lists.favorites).toEqual([])
-    // value и прогруз — по одному матчу: в высокой плитке это пустота, такие подборки не показываем
-    expect(summaryCards(s)).toEqual(['live'])
+    const top = s.top!.match.id
+    const st = dayStats(s)
+    const ids = [st.favorite?.item.match.id, st.goals?.item.match.id, st.drop?.item.match.id, st.value?.match.id]
+    // матча дня в плитках нет — он и так крупно сверху
+    expect(ids).not.toContain(top)
+    // идущий №4 — сильнее всех по голам и падению кэфа, но цифры в плитках доматчевые
+    expect(ids).not.toContain(4)
+    expect(st.goals?.item.match.id).toBe(5)
+    expect(st.favorite?.p).toBeGreaterThanOrEqual(0.6)
+    if (top !== 2) expect(st.drop?.item.match.id).toBe(2)
+    if (top !== 1) expect(st.value?.match.id).toBe(1)
+  })
+
+  it('плитки по возможности про разные матчи, но лучше повтор, чем пустая плитка', () => {
+    const tb = (p: number) => ({ slug: 'tb-2-5', score: p, reason: `Скорее будет 3 гола и больше: шанс ${Math.round(p * 100)}%`, p })
+    const s = buildDaySummary(
+      [
+        item(1, 'scheduled', { x12: [2.6, 3.2, 2.8] }),
+        item(2, 'scheduled', { x12: [1.3, 5.5, 9], tags: [tb(0.7)] }),
+        item(3, 'scheduled', { x12: [1.4, 4.8, 7.5], tags: [tb(0.62)] }),
+        item(4, 'scheduled', { x12: [1.5, 4.2, 6.5] }),
+      ],
+      NOW,
+    )
+    const st = dayStats(s)
+    const top = s.top!.match.id
+    expect([st.favorite?.item.match.id, st.goals?.item.match.id]).not.toContain(top)
+    // голы есть только у одного матча, кроме матча дня, — он и в плитке, даже если уже занят фаворитом
+    expect(st.goals).not.toBeNull()
+    if (s.lists.goals.length > 1) expect(st.goals?.item.match.id).not.toBe(st.favorite?.item.match.id)
   })
 
   it('подборки: по несколько матчей, сильнейшие первыми, без матча дня', () => {
@@ -132,8 +155,10 @@ describe('сводка дня', () => {
     )
     const ids = (xs: { match: { id: number } }[]) => xs.map((x) => x.match.id)
     const top = s.top!.match.id
-    expect(s.lists.live.map((x) => x.match.id).sort()).toEqual([5, 6])
-    expect(ids(s.lists.upcoming)).toEqual([1, 2, 3, 4])
+    // кандидаты для плиток — только ещё не начавшиеся
+    const all = [...ids(s.lists.values), ...s.lists.goals.map((g) => g.item.match.id), ...s.lists.drops.map((d) => d.item.match.id)]
+    expect(all).not.toContain(5)
+    expect(all).not.toContain(6)
     // фаворит — от 60%, самый уверенный первым; матча дня в подборках нет
     const favs = s.lists.favorites.map((f) => f.item.match.id)
     expect(favs).not.toContain(3)
@@ -145,27 +170,6 @@ describe('сводка дня', () => {
     expect(ids(s.lists.values)).not.toContain(top)
     expect(s.lists.drops.map((d) => d.item.match.id)).not.toContain(top)
     expect(s.lists.drops.map((d) => d.drop)).toEqual([...s.lists.drops.map((d) => d.drop)].sort((a, b) => b - a))
-    expect(summaryCards(s)[0]).toBe('live')
-  })
-
-  it('сначала подборки из трёх матчей, потом — из двух; из одного матча плитки нет', () => {
-    const s = buildDaySummary(
-      [
-        item(1, 'scheduled', { ev: 0.09, x12: [1.3, 5.5, 9] }),
-        item(2, 'scheduled', { ev: 0.06, x12: [1.4, 4.8, 7.5] }),
-        item(3, 'scheduled', { x12: [1.35, 5, 8.5], tags: [progruz('Home 3', '2.00', '1.70', 15)] }),
-        item(4, 'scheduled', { x12: [8, 5, 1.33] }),
-        item(5, 'scheduled', { x12: [2.6, 3.2, 2.8] }),
-      ],
-      NOW,
-    )
-    const cards = summaryCards(s)
-    // ближайших матчей пять, фаворитов три (без матча дня) → полные плитки; выгодных — два → добор; прогруз — один → нет
-    expect(cards[0]).toBe('next')
-    expect(cards).toContain('favorite')
-    expect(cards.includes('value')).toBe(s.lists.values.length >= 2)
-    expect(cards.includes('progruz')).toBe(s.lists.drops.length >= 2)
-    expect(cards.length).toBeLessThanOrEqual(4)
   })
 
   it('карусель матча дня: матч дня первым, дальше — по одному из каждой другой топ-лиги', () => {
@@ -189,7 +193,7 @@ describe('сводка дня', () => {
   it('фаворит с шансом ниже 60% — не виджет', () => {
     const s = buildDaySummary([item(1, 'scheduled', { x12: [2.6, 3.2, 2.8] }), item(2, 'scheduled', { x12: [1.9, 3.4, 4.2] })], NOW)
     expect(s.favorite?.p).toBeLessThan(0.6)
-    expect(summaryCards(s)).not.toContain('favorite')
+    expect(dayStats(s).favorite).toBeNull()
   })
 
   it('точки дня: матчи по времени — сыгран, идёт, впереди; перенесённые не считаем', () => {

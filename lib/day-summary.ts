@@ -1,13 +1,13 @@
 /**
- * «Сводка дня» — виджеты первого экрана главной: матч дня и плитки-подборки — каждая отвечает
- * на один вопрос несколькими матчами: что идёт (или скоро начнётся), кто скорее выиграет, где ждать
- * голов, что выгодно, где упал кэф. Все цифры — из тех же тегов и кэфов, что и в списке матчей,
- * чтобы виджет и строка не расходились.
+ * «Сводка дня» — виджеты первого экрана главной: матч дня и плитки — каждая отвечает на один вопрос
+ * одной крупной цифрой по одному матчу: кто скорее выиграет, где ждать голов, где упал кэф, что
+ * выгодно. Подборки (`lists`) — кандидаты для плиток, сильнейшие первыми. Все цифры — из тех же тегов
+ * и кэфов, что и в списке матчей, чтобы виджет и строка не расходились.
  */
 import { featuredRank } from '@/config/leagues'
 import type { FeedItem } from './data'
 import { formatTime } from './format'
-import { fair1x2 } from './odds'
+import { fair1x2, fairTwoWay, totalAt } from './odds'
 import { interest, isLive, isMinor, liveRank } from './rank'
 import type { League, Match } from './types'
 
@@ -23,19 +23,18 @@ export type GoalsInfo = {
 export type DayState = 'done' | 'live' | 'next'
 export type FavoriteInfo = { item: FeedItem; side: 'home' | 'away'; p: number }
 
-/** Подборки для плиток: по несколько матчей на вопрос, сильнейшие — первыми. */
+/**
+ * Кандидаты для плиток: по несколько матчей на вопрос, сильнейшие — первыми; только ещё не начавшиеся
+ * (цифры в плитках доматчевые) и без матча дня — он и так крупно сверху.
+ */
 export type DayLists = {
-  /** идут сейчас: топ-лиги первыми */
-  live: FeedItem[]
-  /** ближайшие по времени начала */
-  upcoming: FeedItem[]
-  /** уверенные фавориты (шанс от 60%), без матча дня */
+  /** уверенные фавориты (шанс от 60%) */
   favorites: FavoriteInfo[]
-  /** шанс 3+ голов, без матча дня */
+  /** шанс 3+ голов */
   goals: { item: FeedItem; p: number }[]
-  /** выгодные ставки, без матча дня */
+  /** выгодные ставки */
   values: FeedItem[]
-  /** падение кэфа, без матча дня */
+  /** падение кэфа */
   drops: ProgruzInfo[]
 }
 
@@ -64,10 +63,7 @@ export type DaySummary = {
   hours: { hour: number; states: DayState[] }[]
 }
 
-export type CardKind = 'value' | 'progruz' | 'live' | 'next' | 'goals' | 'favorite' | 'count'
-
 const LIVE_SHOWN = 3
-const CARDS = 4
 const GOALS_SHOWN = 3
 /** Строк в плитке-подборке: на телефоне и невысоком экране видно три, на высоком — четыре. */
 const LIST_SHOWN = 4
@@ -88,6 +84,18 @@ export function parseProgruz(it: FeedItem): ProgruzInfo | null {
   if (!(from > to && to > 1)) return null
   return { item: it, side: m[1] === it.match.away.name ? 'away' : 'home', from, to, drop: 1 - to / from }
 }
+
+/**
+ * Шанс 3+ голов для плитки: цифра тега, а у матчей без тега — из пары кэфов «больше/меньше 2.5»
+ * одного снимка линии без маржи. Меньше 50% — не «ждём голов», такие матчи в плитку не берём.
+ */
+function goalsChance(it: FeedItem): number | null {
+  const tagged = overPct(it)
+  if (tagged !== null) return tagged
+  const t = totalAt(it.match.odds, 2.5)
+  return fairTwoWay(t?.over, t?.under)?.a ?? null
+}
+const GOALS_MIN = 0.5
 
 /** Вероятность ТБ 2.5: цифра тега, у старых записей — из объяснения («… — 72%»). */
 function overPct(it: FeedItem): number | null {
@@ -196,29 +204,24 @@ export function buildDaySummary(items: FeedItem[], now = Date.now()): DaySummary
     })
   const favorite = max(favs, (f) => f.p + (featuredRank(f.item.match.league) >= 0 ? 1 : 0))
 
-  // подборки для плиток: матч дня в них не повторяем — он и так крупно слева
+  // кандидаты для плиток: только ещё не начавшиеся и без матча дня — он и так крупно сверху
   const notTop = (it: FeedItem) => it.match.id !== top?.match.id
-  const upcomingList = [...upcoming].sort(
-    (a, b) => Number(isMinor(a.match)) - Number(isMinor(b.match)) || a.match.ts - b.match.ts || interest(b) - interest(a),
-  )
   const lists: DayLists = {
-    live: liveAll.slice(0, LIST_SHOWN),
-    // сначала «взрослые» матчи по времени, молодёжные и женские — если больше нечего показать
-    upcoming: upcomingList.slice(0, LIST_SHOWN),
     favorites: favs
       .filter((f) => f.p >= FAVORITE_MIN && notTop(f.item))
       .sort((a, b) => b.p + featuredBonus(b.item, 0.1) - (a.p + featuredBonus(a.item, 0.1)))
       .slice(0, LIST_SHOWN),
-    goals: tb
+    goals: scheduled
       .filter(notTop)
-      .map((it) => ({ item: it, p: overPct(it)! }))
+      .map((it) => ({ item: it, p: goalsChance(it) ?? 0 }))
+      .filter((g) => g.p >= GOALS_MIN)
       .sort((a, b) => b.p + featuredBonus(b.item, 0.03) - (a.p + featuredBonus(a.item, 0.03)) || a.item.match.ts - b.item.match.ts)
       .slice(0, LIST_SHOWN),
     values: scheduled
       .filter((it) => it.summary?.pick?.kind === 'value' && notTop(it))
       .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
       .slice(0, LIST_SHOWN),
-    drops: open
+    drops: scheduled
       .filter(notTop)
       .map(parseProgruz)
       .filter((p): p is ProgruzInfo => p !== null)
@@ -257,26 +260,31 @@ function byHour(dated: { hour: number; state: DayState }[]) {
 /** Фаворит дня — только по-настоящему уверенный исход. */
 const FAVORITE_MIN = 0.6
 
+/** Плитки сводки: по одному матчу на вопрос — крупная цифра и матч, к которому она относится. */
+export type DayStats = {
+  favorite: FavoriteInfo | null
+  goals: { item: FeedItem; p: number } | null
+  drop: ProgruzInfo | null
+  value: FeedItem | null
+}
+
 /**
- * Какие плитки-подборки показать (до 4) и в каком порядке — по вопросам посетителя:
- * что идёт сейчас (или скоро начнётся) → кто скорее выиграет → где ждать голов → что выгодно.
- * Сначала — подборки хотя бы из трёх матчей (короткая подборка в высокой плитке выглядит пустой);
- * не хватило — добираем подборками из двух: падение кэфа, турниры дня. Плитка «Сейчас» добирает
- * ближайшими матчами, если идущих мало.
+ * Какой матч показать в каждой плитке: самый сильный по своему вопросу (кандидаты уже отсортированы,
+ * доматчевые и без матча дня); по возможности разные матчи в разных плитках, но если другого
+ * подходящего нет — лучше повтор, чем пустая плитка.
  */
-export function summaryCards(s: DaySummary): CardKind[] {
-  const l = s.lists
-  const rows: Record<CardKind, number> = {
-    live: s.liveCount > 0 ? l.live.length + l.upcoming.length : 0,
-    next: l.upcoming.length,
-    favorite: l.favorites.length,
-    goals: l.goals.length,
-    value: l.values.length,
-    progruz: l.drops.length,
-    count: s.topLeagues.length,
+export function dayStats(s: DaySummary): DayStats {
+  const used = new Set<number>()
+  const first = <T>(xs: T[], item: (x: T) => FeedItem): T | null => {
+    const hit = xs.find((x) => !used.has(item(x).match.id)) ?? xs[0] ?? null
+    if (hit) used.add(item(hit).match.id)
+    return hit
   }
-  const order: CardKind[] = [s.liveCount > 0 ? 'live' : 'next', 'favorite', 'goals', 'value', 'progruz', 'count']
-  const pick = order.filter((k) => rows[k] >= 3).slice(0, CARDS)
-  for (const k of order) if (pick.length < CARDS && rows[k] === 2) pick.push(k)
-  return order.filter((k) => pick.includes(k))
+  const l = s.lists
+  return {
+    favorite: first(l.favorites, (f) => f.item),
+    goals: first(l.goals, (g) => g.item),
+    drop: first(l.drops, (d) => d.item),
+    value: first(l.values, (v) => v),
+  }
 }
