@@ -9,7 +9,6 @@ export type MainSlide = { id: number; href: string; live: boolean; bet: { label:
 /** День в блоке: «Вчера» — итоги, «Сегодня», «Завтра» — анонс. */
 export type MainDay = { key: string; label: string; slides: MainSlide[] }
 
-
 function Arrow({ dir }: { dir: 'left' | 'right' }) {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -19,25 +18,22 @@ function Arrow({ dir }: { dir: 'left' | 'right' }) {
 }
 
 /**
- * «Главные матчи» — до пяти важных встреч дня (lib/day-summary.ts, mainMatches): листаются стрелками
- * «1 из 4» внизу (на телефоне — и свайпом), без автопрокрутки. Над карточкой — маленькая подпись блока
- * (как «Топ-турниры» на странице лиг) и чип дня справа: он меняет только этот блок — заглянуть во вчера
- * (итоги) и в завтра (анонс); истории, переходы под блоком и список матчей остаются про день страницы.
- * Слайды — лента со scroll-snap: без JS видны все матчи дня.
+ * «Главные матчи» — до пяти важных встреч дня (lib/day-summary.ts, mainMatches). Подписи над карточкой нет:
+ * она и так понятна (владелец оставил подпись только над «Цифрами дня»). В правом верхнем углу карточки —
+ * стрелки «1 из 5» (на телефоне — и свайп), без автопрокрутки, и чип дня: он меняет только этот блок —
+ * заглянуть во вчера (итоги) и в завтра (анонс); истории, переходы под блоком и список матчей остаются про
+ * день страницы. Слайды — лента со scroll-snap: без JS видны все матчи дня.
  */
 export function TopCarousel({
   days,
   panels,
   initial = 0,
   className = '',
-  cardClassName = '',
 }: {
   days: MainDay[]
   panels: React.ReactNode[][]
   initial?: number
-  /** обёртка: подпись + карточка */
   className?: string
-  cardClassName?: string
 }) {
   const track = useRef<HTMLDivElement>(null)
   const menu = useRef<HTMLDivElement>(null)
@@ -94,21 +90,16 @@ export function TopCarousel({
         </button>
       </div>
     ) : null
+  const controls = n > 1 || days.length > 1
   return (
-    <div className={`flex min-w-0 flex-col ${className}`}>
-      {/* подпись блока — как «Топ-турниры» на странице лиг; справа на компьютере — стрелки «1 из 5» и чип дня */}
-      <div className="mb-2.5 flex items-center justify-between gap-3">
-        <h2 className="min-w-0 truncate text-[13px] font-medium text-mute">
-          {meta?.live ? <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse-live rounded-full bg-live align-middle" /> : null}
-          Главные матчи
-          {/* другой день блока — в подписи, чтобы не казалось, что переключилась вся страница */}
-          {day !== initial && current ? <span> · {current.label.toLowerCase()}</span> : null}
-        </h2>
-        <div className="flex shrink-0 items-center gap-3">
-          {arrows('hidden lg:flex')}
+    <article aria-label="Главные матчи" className={`relative flex min-w-0 flex-col py-[18px] ${className}`}>
+      {controls ? (
+        // в правом верхнем углу — стрелки и чип дня (сверху и справа поровну); день не со страницы — подписан на чипе
+        <div className="flex items-center justify-end gap-3 px-[18px]">
+          {arrows('flex')}
           {days.length > 1 ? (
             <div ref={menu} className="relative z-20 shrink-0">
-              <button type="button" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)} className={`${CHIP} gap-1.5 pl-3 pr-2`}>
+              <button type="button" aria-haspopup="listbox" aria-expanded={open} aria-label={`День главных матчей: ${current?.label ?? ''}`} onClick={() => setOpen((o) => !o)} className={`${CHIP} gap-1.5 pl-3 pr-2`}>
                 {current?.label}
                 <svg viewBox="0 0 24 24" className={`h-4 w-4 text-dim transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="m6 9 6 6 6-6" />
@@ -141,46 +132,39 @@ export function TopCarousel({
             </div>
           ) : null}
         </div>
+      ) : null}
+
+      <div
+        key={current?.key}
+        ref={track}
+        className={`scrollbar-none flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain ${controls ? 'mt-3 lg:[@media(max-height:739px)]:mt-2' : ''}`}
+        onScroll={(e) => {
+          const el = e.currentTarget
+          const k = Math.round(el.scrollLeft / Math.max(1, el.clientWidth))
+          if (k !== cur) setCur(k)
+        }}
+      >
+        {slides.map((c, k) => (
+          <div key={k} className="flex w-full shrink-0 snap-start px-[18px]">
+            {c}
+          </div>
+        ))}
       </div>
 
-      <article className={`relative flex min-w-0 flex-1 flex-col py-[18px] ${cardClassName}`}>
-        <div
-          key={current?.key}
-          ref={track}
-          className="scrollbar-none flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain"
-          onScroll={(e) => {
-            const el = e.currentTarget
-            const k = Math.round(el.scrollLeft / Math.max(1, el.clientWidth))
-            if (k !== cur) setCur(k)
-          }}
-        >
-          {slides.map((c, k) => (
-            <div key={k} className="flex w-full shrink-0 snap-start px-[18px]">
-              {c}
-            </div>
-          ))}
-        </div>
-
-        {/* на телефоне и планшете — под лентой: «Выгодно» строкой выше, ниже разбор и стрелки.
-            На компьютере эти кнопки — под табло в самом слайде, а стрелки — у подписи блока */}
-        <div className="mt-4 flex flex-wrap items-center gap-2 px-[18px] lg:hidden">
-          {meta ? (
-            <button
-              type="button"
-              onClick={(e) => openStory({ id: meta.id, href: meta.href, opener: e.currentTarget })}
-              className={`${CHIP} order-2 shrink-0 gap-2 pl-1 pr-3.5 sm:order-1`}
-            >
-              <StoryChipFace />
-            </button>
-          ) : null}
-          {meta?.bet ? (
-            <div className="order-1 flex w-full min-w-0 sm:order-2 sm:w-auto">
-              <ValueChip label={meta.bet.label} odd={meta.bet.odd} />
-            </div>
-          ) : null}
-          {arrows('order-3 ml-auto flex shrink-0')}
-        </div>
-      </article>
-    </div>
+      {/* на телефоне и планшете — под лентой: «Выгодно» и разбор матча, который на экране.
+          На компьютере эти кнопки — под табло в самом слайде */}
+      <div className="mt-4 flex flex-wrap items-center gap-2 px-[18px] lg:hidden">
+        {meta?.bet ? (
+          <div className="flex w-full min-w-0">
+            <ValueChip label={meta.bet.label} odd={meta.bet.odd} />
+          </div>
+        ) : null}
+        {meta ? (
+          <button type="button" onClick={(e) => openStory({ id: meta.id, href: meta.href, opener: e.currentTarget })} className={`${CHIP} shrink-0 gap-2 pl-1 pr-3.5`}>
+            <StoryChipFace />
+          </button>
+        ) : null}
+      </div>
+    </article>
   )
 }

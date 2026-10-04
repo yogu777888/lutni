@@ -343,8 +343,7 @@ export function DaySummary({
         days={shown.map((day) => ({ key: day.key, label: day.label, slides: day.items.map(slideMeta) }))}
         panels={shown.map((day) => day.items.map((it) => <TopSlide key={it.match.id} it={it} />))}
         initial={initial}
-        className="lg:flex-1"
-        cardClassName={CARD}
+        className={`lg:flex-1 ${CARD}`}
       />
       {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг */}
       <h2 className="mb-2.5 mt-5 text-[13px] font-medium text-mute lg:[@media(max-height:739px)]:mt-3">Цифры дня</h2>
