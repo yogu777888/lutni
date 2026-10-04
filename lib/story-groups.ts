@@ -97,6 +97,15 @@ export function statFor(slug: string, reason: string): string {
 
 type Entry = { it: FeedItem; tag: TagHit | null }
 
+/**
+ * Подпись истории — без решётки и с большой буквы («Кэф упал», «50 на 50»): так решил владелец.
+ * У тегов в строках матчей и на страницах тегов решётка остаётся.
+ */
+const storyLabel = (label: string) => {
+  const s = label.replace(/^#/, '')
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
 export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
   const open = items.filter((i) => i.match.status === 'scheduled' || isLive(i.match))
   const groups: StoryGroup[] = []
@@ -115,7 +124,7 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
     .filter((i) => isLive(i.match))
     .sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts)
   add(
-    { key: 'live', label: '#в игре', kind: 'live', hint: `Сейчас идут: ${pluralN(live.length, MATCHES)}`, stat: String(live.length) },
+    { key: 'live', label: 'В игре', kind: 'live', hint: `Сейчас идут: ${pluralN(live.length, MATCHES)}`, stat: String(live.length) },
     live.slice(0, LIVE_LIMIT).map((it) => ({ it, tag: null })),
   )
 
@@ -125,7 +134,7 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
     .sort((a, b) => b.score - a.score || a.it.match.ts - b.it.match.ts)
     .slice(0, TOP_LIMIT)
   add(
-    { key: 'top', label: '#топ дня', kind: 'top', hint: 'Самые интересные матчи дня', stat: '#' },
+    { key: 'top', label: 'Топ дня', kind: 'top', hint: 'Самые интересные матчи дня', stat: '#' },
     top.map(({ it }) => ({ it, tag: bestTag(it.tags) })),
   )
 
@@ -150,7 +159,7 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
       .sort((a, b) => b.tag.score - a.tag.score || b.i - a.i)
       .slice(0, TAG_LIMIT)
     add(
-      { key: slug, label: def.label, kind: def.kind, hint: `${def.title}: ${pluralN(list.length, MATCHES)}`, href: `/tag/${slug}` },
+      { key: slug, label: storyLabel(def.label), kind: def.kind, hint: `${def.title}: ${pluralN(list.length, MATCHES)}`, href: `/tag/${slug}` },
       sorted.map(({ it, tag }) => ({ it, tag })),
     )
   }

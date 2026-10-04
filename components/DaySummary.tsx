@@ -9,6 +9,7 @@ import { isLive } from '@/lib/rank'
 import { artFor, type ArtIcon as IconName } from '@/lib/story-art'
 import type { League, Match } from '@/lib/types'
 import { buildVerdict, split100, type Verdict } from '@/lib/verdict'
+import { CHIP, StoryChipFace, ValueChip } from './Chips'
 import { ArtIcon } from './story/ArtIcon'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
@@ -154,6 +155,7 @@ function TopSlide({ it }: { it: FeedItem }) {
   const finished = m.status === 'finished'
   const played = Boolean(m.score) && (live || finished)
   const v = verdictOf(it)
+  const bet = slideMeta(it).bet
   // факты о командах полезны и во время игры; после матча — уже нет
   const reasons = finished ? [] : reasonsFor(it, v)
   const headline = v?.headline ?? (finished ? resultLine(m) : null)
@@ -173,7 +175,7 @@ function TopSlide({ it }: { it: FeedItem }) {
 
   return (
     <div className={`relative flex min-w-0 flex-1 flex-col justify-center gap-4 ${wide ? 'lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-10' : ''}`}>
-      <div className="flex min-w-0 flex-col items-center gap-3 lg:gap-[clamp(12px,1.8vh,20px)]">
+      <div className="flex min-w-0 flex-col items-center gap-3 lg:gap-[clamp(12px,1.8vh,20px)] lg:[@media(max-height:739px)]:gap-2">
         <p className="text-[13px] text-dim">
           {leagueShort(m.league)}
           {m.round ? ` · ${m.round}` : ''}
@@ -183,7 +185,7 @@ function TopSlide({ it }: { it: FeedItem }) {
         <StoryLink
           id={m.id}
           href={matchHref(m)}
-          className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3 [--logo:56px] lg:[--logo:clamp(56px,7vh,76px)] ${COVER}`}
+          className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3 [--logo:56px] lg:[--logo:clamp(56px,7vh,76px)] lg:[@media(max-height:739px)]:[--logo:44px] ${COVER}`}
         >
           {side(m.home, 'home')}
           <span className="flex flex-col items-center pt-3">
@@ -198,6 +200,14 @@ function TopSlide({ it }: { it: FeedItem }) {
           </span>
           {side(m.away, 'away')}
         </StoryLink>
+        {/* на компьютере «Разбор за минуту» и «Выгодно» — под табло (на телефоне — под лентой, в TopCarousel);
+            вся карточка — ссылка на сторис, поэтому здесь это подписи, а не отдельные кнопки */}
+        <div aria-hidden className="mt-1 hidden flex-wrap items-center justify-center gap-2 lg:flex lg:[@media(max-height:739px)]:mt-0">
+          <span className={`${CHIP} shrink-0 gap-2 pl-1 pr-3.5`}>
+            <StoryChipFace />
+          </span>
+          {bet ? <ValueChip label={bet.label} odd={bet.odd} /> : null}
+        </div>
       </div>
 
       {wide ? (
@@ -328,13 +338,16 @@ export function DaySummary({
   const when = (it: FeedItem) => (isLive(it.match) ? 'идёт' : it.match.status === 'finished' ? 'сыгран' : formatTime(it.match.ts))
   const pair = (it: FeedItem) => `${it.match.home.name} — ${it.match.away.name}`
   return (
-    <section aria-label="Сводка дня" className={`flex flex-col gap-3 ${className}`}>
+    <section aria-label="Сводка дня" className={`flex flex-col ${className}`}>
       <TopCarousel
         days={shown.map((day) => ({ key: day.key, label: day.label, slides: day.items.map(slideMeta) }))}
         panels={shown.map((day) => day.items.map((it) => <TopSlide key={it.match.id} it={it} />))}
         initial={initial}
-        className={`lg:flex-1 ${CARD}`}
+        className="lg:flex-1"
+        cardClassName={CARD}
       />
+      {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг */}
+      <h2 className="mb-2.5 mt-5 text-[13px] font-medium text-mute lg:[@media(max-height:739px)]:mt-3">Цифры дня</h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <NavTile
           title="Все матчи"

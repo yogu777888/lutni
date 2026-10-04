@@ -47,17 +47,8 @@ function Ring({ kind, n, seen }: { kind: CircleKind; n: number; seen: number }) 
 }
 
 function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
-  const text = dim ? 'text-dim' : 'text-fg'
-  // подпись в одну строку: кружок шире подписи «#идут деньги», ряд ровный
-  if (g.label.startsWith('#')) {
-    return (
-      <span className={`block truncate ${text}`}>
-        <span className="text-mute">#</span>
-        {g.label.slice(1)}
-      </span>
-    )
-  }
-  return <span className={`block truncate ${text}`}>{g.label}</span>
+  // подпись в одну строку, без решётки и с большой буквы («Кэф упал»): кружок шире подписи, ряд ровный
+  return <span className={`block truncate ${dim ? 'text-dim' : 'text-fg'}`}>{g.label}</span>
 }
 
 /**

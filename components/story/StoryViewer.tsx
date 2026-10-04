@@ -58,17 +58,9 @@ function focusFor(item: Item | null, story: StoryData | null) {
 }
 
 /** «#прогруз», «Топ дня», «В игре» — подпись кружка в шапке сторис. */
+/** Название истории в шапке просмотрщика — как подпись кружка («Кэф упал»); красным — только «В игре». */
 function GroupLabel({ label, kind }: { label: string; kind: NonNullable<Item['group']>['kind'] }) {
-  if (kind === 'live') return <span className="font-bold text-live">{label}</span>
-  if (label.startsWith('#')) {
-    return (
-      <span className="font-bold text-fg">
-        <span className={kind === 'hot' ? 'text-hot' : 'text-acid'}>#</span>
-        {label.slice(1)}
-      </span>
-    )
-  }
-  return <span className="font-bold text-acid">{label}</span>
+  return <span className={`font-bold ${kind === 'live' ? 'text-live' : 'text-fg'}`}>{label}</span>
 }
 
 const btn = 'flex h-9 w-9 items-center justify-center rounded-full text-fg/90 transition hover:bg-white/10 active:scale-95'
