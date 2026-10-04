@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { featuredInfo } from '@/config/leagues'
 import type { FeedItem } from '@/lib/data'
 import { goalsChance, navExamples, parseProgruz, type DaySummary as Summary, type ProgruzInfo } from '@/lib/day-summary'
-import { appNow, formatDayMonth, formatTime, pct, pluralN, todayYmd, ymdInTz } from '@/lib/format'
+import { appNow, formatDayMonth, formatTime, pct, plural, pluralN, todayYmd, ymdInTz } from '@/lib/format'
 import { matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
 import { isLive } from '@/lib/rank'
@@ -381,41 +381,47 @@ function TopSlide({ it }: { it: FeedItem }) {
 // ─── Переходы под блоком ─────────────────────────────────────────────────────
 
 /**
- * Компактный переход в раздел: название, строка с цифрой и строка с матчем, стрелка. Списков матчей
- * внутри нет — они ниже, по прокрутке, и на страницах тегов. Все одной высоты; широкий («Кэф упал») — с графиком.
+ * Переход в раздел — плитка «Цифр дня»: название и стрелка, крупная цифра со словами рядом («31 матч · 4 турнира»,
+ * «54% шанс 3+ голов», «−17% на победу «X»») и строка с матчем. Цифры всех плиток — на одной линии, слова
+ * не мельче 14px; широкая плитка («Кэф упал») — с графиком справа. Нет цифры — только простые слова, без
+ * выдуманных чисел. Списков матчей внутри нет — они ниже, по прокрутке, и на страницах тегов.
  */
 function NavTile({
   title,
-  hint,
-  lead,
-  note,
   href,
-  live = false,
+  num,
+  tone = 'text-fg',
+  unit,
+  note,
   aside,
 }: {
   title: string
-  hint?: string
-  lead: React.ReactNode
-  note?: React.ReactNode
   href: string
-  live?: boolean
+  /** крупная цифра; нет — вместо неё простые слова (`unit`) */
+  num?: string | null
+  tone?: string
+  unit: React.ReactNode
+  note?: React.ReactNode
   aside?: React.ReactNode
 }) {
   return (
     <Link href={href} prefetch={false} className={`group flex h-full min-w-0 flex-col p-[18px] transition-colors hover:border-edge-2 ${CARD}`}>
-      {/* стрелка — в строке названия (в углу: сверху и справа поровну): так строкам с цифрой и матчем достаётся вся ширина */}
+      {/* стрелка — в строке названия (в углу: сверху и справа поровну); название тише цифры — главное в плитке цифра */}
       <span className="flex items-center justify-between gap-3">
-        <span className="flex min-w-0 items-center gap-1.5 text-[15px] font-semibold text-fg">
-          {live ? <span className="h-1.5 w-1.5 shrink-0 animate-pulse-live rounded-full bg-live" aria-hidden /> : null}
-          <span className="shrink-0">{title}</span>
-          {hint ? <span className="truncate text-[13px] font-normal text-mute">· {hint}</span> : null}
-        </span>
+        <span className="truncate text-[14px] font-medium text-chalk">{title}</span>
         <Go />
       </span>
-      <span className="mt-auto flex items-end gap-4 pt-1">
+      {/* цифра растёт с высотой окна (на большом мониторе у первого экрана есть запас), но в 1280×720 сводка
+          должна влезать целиком — отсюда плотные строки. Цифры без моноширинных начертаний: так «31 матч» плотнее */}
+      <span className="mt-auto flex flex-col gap-3 pt-0.5 sm:flex-row sm:items-center sm:gap-6">
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[14px] text-chalk">{lead}</span>
-          {note ? <span className="mt-0.5 block truncate text-[13px] text-dim">{note}</span> : null}
+          <span className="flex min-w-0 items-baseline gap-2">
+            {num ? (
+              <span className={`shrink-0 text-[28px] font-semibold leading-none tracking-[-0.03em] lg:text-[clamp(26px,3.5vh,34px)] ${tone}`}>{num}</span>
+            ) : null}
+            <span className="truncate text-[14px] leading-[18px] text-chalk">{unit}</span>
+          </span>
+          {note ? <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[13px] leading-[18px] text-dim">{note}</span> : null}
         </span>
         {aside}
       </span>
@@ -424,28 +430,39 @@ function NavTile({
 }
 
 /**
- * «Было → стало» одного исхода: две точки — открытие линии и последнее значение. Истории по часам у нас
- * пока нет, поэтому кривой не рисуем: прямая между двумя честными точками, круче — сильнее падение.
- * Янтарь — цвет «кэф упал».
+ * «Было → стало» одного исхода: открытие линии и последнее значение, подписаны у самих точек. Истории по часам
+ * у нас пока нет, поэтому кривой не рисуем: прямая между двумя честными точками, круче — сильнее падение.
+ * Янтарь — цвет «кэф упал». На телефоне — под цифрой во всю ширину.
  */
-function DropChart({ drop }: { drop: number }) {
-  const y2 = 6 + Math.min(1, Math.max(0.25, drop / 0.35)) * 28
+function DropChart({ d }: { d: ProgruzInfo }) {
+  // высота графика и есть перепад: от 25% «шкалы» до полной при падении на 35% и больше
+  const h = 10 + Math.round(Math.min(1, Math.max(0.25, d.drop / 0.35)) * 30)
   return (
-    <span className="-mt-1 hidden shrink-0 items-center gap-3 sm:flex" aria-hidden>
-      <svg viewBox="0 0 96 40" className="h-9 w-24 overflow-visible">
-        <line x1="5" y1="6" x2="91" y2={y2} stroke="var(--color-hot)" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="5" cy="6" r="3.5" fill="var(--color-panel)" stroke="var(--color-hot)" strokeWidth="2" />
-        <circle cx="91" cy={y2} r="4" fill="var(--color-hot)" />
-      </svg>
-      <span className="num text-[22px] font-semibold tracking-[-0.03em] text-hot">−{Math.round(drop * 100)}%</span>
+    <span
+      role="img"
+      aria-label={`Кэф был ${d.from.toFixed(2)}, стал ${d.to.toFixed(2)}`}
+      className="flex w-full shrink-0 items-stretch gap-2.5 sm:w-[min(15rem,40%)]"
+      style={{ height: h }}
+    >
+      <span className="num -mt-[5px] self-start text-[13px] leading-[18px] text-chalk">{d.from.toFixed(2)}</span>
+      <span className="relative min-w-0 flex-1" aria-hidden>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-x-1 inset-y-1 h-[calc(100%-8px)] w-[calc(100%-8px)] overflow-visible">
+          {/* пунктир — уровень открытия: насколько ниже него кэф сейчас, видно и при небольшом падении */}
+          <line x1="0" y1="0" x2="100" y2="0" stroke="rgb(255 255 255 / 0.16)" strokeWidth="1" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
+          <line x1="0" y1="0" x2="100" y2="100" stroke="var(--color-hot)" strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        </svg>
+        <span className="absolute left-0 top-0 h-2 w-2 rounded-full border-[1.5px] border-hot bg-panel" />
+        <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-hot" />
+      </span>
+      <span className="num -mb-[5px] self-end text-[13px] font-semibold leading-[18px] text-hot">{d.to.toFixed(2)}</span>
     </span>
   )
 }
 
 /**
- * «Сводка дня» — первый экран: сверху «Главные матчи» (до пяти важных встреч, стрелки «1 из 4», чип дня
- * меняет только этот блок), под ним три перехода 1:1:2 — «Все матчи», «Ждём голов» и широкий «Кэф упал».
- * Кнопки и цифры под блоком — про день страницы.
+ * «Сводка дня» — первый экран: сверху «Главные матчи» (до пяти важных встреч, стрелки «1 из 5», чип дня
+ * меняет только этот блок), под ним «Цифры дня» — три перехода 1:1:2 с крупной цифрой: «Все матчи», «Ждём голов»
+ * и широкий «Кэф упал» с графиком. Кнопки и цифры под блоком — про день страницы.
  */
 export function DaySummary({
   s,
@@ -471,53 +488,43 @@ export function DaySummary({
         initial={initial}
         className={`lg:flex-1 ${CARD}`}
       />
-      {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг */}
-      <h2 className="mb-2.5 mt-5 text-[13px] font-medium text-mute lg:[@media(min-height:740px)_and_(max-height:799px)]:mt-4 lg:[@media(max-height:739px)]:mt-3">Цифры дня</h2>
+      {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг; к плиткам ближе, чем к блоку сверху */}
+      <h2 className="mb-2.5 mt-4 text-[13px] font-medium text-mute lg:[@media(min-height:740px)_and_(max-height:799px)]:mb-2 lg:[@media(min-height:740px)_and_(max-height:799px)]:mt-3 lg:[@media(max-height:739px)]:mt-3">
+        Цифры дня
+      </h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <NavTile
           title="Все матчи"
           href="#matches"
-          live={s.liveCount > 0}
-          lead={s.liveCount > 0 ? `${pluralN(s.liveCount, ['идёт', 'идут', 'идут'])} сейчас` : `${pluralN(s.total, MATCHES)} · ${pluralN(s.leagues, TOURNEYS)}`}
+          num={String(s.total)}
+          unit={`${plural(s.total, MATCHES)} · ${pluralN(s.leagues, TOURNEYS)}`}
           note={
-            s.liveCount > 0
-              ? `всего ${pluralN(s.total, MATCHES)} · ${pluralN(s.leagues, TOURNEYS)}`
-              : s.next
-                ? `ближайший в ${formatTime(s.next.match.ts)}`
-                : 'все сыграны — итоги в списке'
+            s.liveCount > 0 ? (
+              <>
+                <span className="h-1.5 w-1.5 shrink-0 animate-pulse-live rounded-full bg-live" aria-hidden />
+                <span className="truncate text-chalk">{pluralN(s.liveCount, ['идёт', 'идут', 'идут'])} сейчас</span>
+              </>
+            ) : (
+              <span className="truncate">{s.next ? `ближайший в ${formatTime(s.next.match.ts)}` : 'все сыграны — итоги в списке'}</span>
+            )
           }
         />
         <NavTile
           title="Ждём голов"
           href="/tag/tb-2-5"
-          lead={
-            g ? (
-              <>
-                <span className="num font-semibold text-fg">{pct(g.p)}</span> — шанс 3+ голов
-              </>
-            ) : (
-              'Подборка матчей на 3+ гола'
-            )
-          }
-          note={g ? pair(g.item) : undefined}
+          num={g ? pct(g.p) : null}
+          unit={g ? 'шанс 3+ голов' : 'Подборка матчей на 3+ гола'}
+          note={g ? <span className="truncate">{pair(g.item)}</span> : undefined}
         />
         <div className="min-w-0 sm:col-span-2">
           <NavTile
             title="Кэф упал"
-            hint="с открытия линии"
             href="/tag/progruz"
-            lead={
-              d ? (
-                <>
-                  на победу {team(d.item.match, d.side)}: <span className="num">{d.from.toFixed(2)}</span> →{' '}
-                  <span className="num font-semibold text-hot">{d.to.toFixed(2)}</span>
-                </>
-              ) : (
-                'Заметных падений кэфа нет'
-              )
-            }
-            note={d ? `${pair(d.item)} · ${when(d.item)}` : undefined}
-            aside={d ? <DropChart drop={d.drop} /> : null}
+            num={d ? `−${Math.round(d.drop * 100)}%` : null}
+            tone="text-hot"
+            unit={d ? `на победу ${team(d.item.match, d.side)}` : 'Заметных падений кэфа нет'}
+            note={d ? <span className="truncate">{`${pair(d.item)} · ${when(d.item)}`}</span> : undefined}
+            aside={d ? <DropChart d={d} /> : null}
           />
         </div>
       </div>
