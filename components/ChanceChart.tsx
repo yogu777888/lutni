@@ -59,24 +59,12 @@ export function ChanceChart({ bins, className = '' }: { bins: ChanceBin[]; class
         </div>
       ) : null}
 
-      {/* легенда: черта и столбик — как на графике */}
-      <p className="flex items-center gap-3 text-[13px] leading-none text-dim" aria-hidden>
-        <span className="flex items-center gap-1.5">
-          <span className="h-0.5 w-3.5 rounded-full bg-fg" />
-          давали
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2 rounded-t-[2px] bg-chalk/45" />
-          сбылось
-        </span>
-      </p>
-
       <div
         ref={plot}
         tabIndex={0}
         role="group"
         aria-label={`Давали и сбылось по шансам: ${bins.map((x) => `около ${x.at}% — сбылось ${pc(x.hit)}`).join(', ')}. Стрелками — по корзинам.`}
-        className="relative mt-3 min-h-0 flex-1 touch-pan-y rounded-md outline-none focus-visible:ring-2 focus-visible:ring-acid/50"
+        className="relative min-h-0 flex-1 touch-pan-y rounded-md outline-none focus-visible:ring-2 focus-visible:ring-acid/50"
         onPointerMove={(e) => pick(e.clientX)}
         onPointerDown={(e) => pick(e.clientX)}
         // палец «уходит» с графика сразу после касания — подсказку с тапа убирает только тап мимо (blur)
@@ -89,6 +77,17 @@ export function ChanceChart({ bins, className = '' }: { bins: ChanceBin[]; class
           } else if (e.key === 'Escape') setCur(null)
         }}
       >
+        {/* легенда — в левом верхнем углу: там низкие столбики (шансы 10–30%), места хватает */}
+        <p className="pointer-events-none absolute left-0 top-0 flex items-center gap-3 text-[13px] leading-none text-dim" aria-hidden>
+          <span className="flex items-center gap-1.5">
+            <span className="h-0.5 w-3.5 rounded-full bg-fg" />
+            давали
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2 rounded-t-[2px] bg-chalk/45" />
+            сбылось
+          </span>
+        </p>
         <span className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-white/[0.14]" />
         {slots.map((at, k) => {
           const x = byAt.get(at)

@@ -59,10 +59,10 @@ type ListCard = { title: string; hint?: string; href: string; live?: boolean; ro
 
 const ROW = '-mx-2 flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-2 text-[14px] text-chalk transition-colors hover:bg-white/[0.04]'
 
-/**
- * Строки делят высоту плитки поровну — плитка заполнена, сколько бы места ни дал экран.
- * Четвёртая строка — только на компьютере с высоким окном: на телефоне и ноутбуке пониже хватает трёх.
- */
+/** Строк в плитке: ряд плиток под «Матчем дня» одной высоты, лишняя высота экрана уходит «Матчу дня». */
+const TILE_ROWS = 3
+
+/** Строки делят высоту плитки поровну — плитка заполнена, даже если соседняя в ряду выше. */
 function ListTile({ title, hint, href, live = false, rows }: ListCard) {
   return (
     <article className={`flex h-full min-w-0 flex-col px-[18px] pb-2 pt-[18px] ${CARD}`}>
@@ -75,7 +75,7 @@ function ListTile({ title, hint, href, live = false, rows }: ListCard) {
         <Go />
       </Link>
       <ol className="mt-1.5 flex flex-1 flex-col">
-        {rows.map((r, i) => {
+        {rows.slice(0, TILE_ROWS).map((r) => {
           const body = (
             <>
               <span className="min-w-0 truncate">{r.left}</span>
@@ -83,7 +83,7 @@ function ListTile({ title, hint, href, live = false, rows }: ListCard) {
             </>
           )
           return (
-            <li key={r.key} className={`flex min-h-[36px] flex-1 border-t border-edge first:border-t-0 ${i >= 3 ? 'hidden lg:flex lg:[@media(max-height:759px)]:hidden' : ''}`}>
+            <li key={r.key} className="flex min-h-[36px] flex-1 border-t border-edge first:border-t-0">
               {r.it ? (
                 <StoryLink id={r.it.match.id} href={matchHref(r.it.match)} className={ROW}>
                   {body}
@@ -259,7 +259,7 @@ function ChanceBar({ m }: { m: Match }) {
         ))}
       </div>
       {/* на невысоком ноутбуке подпись прячем — карточка должна влезать в экран */}
-      <p className="mt-1.5 text-center text-[13px] text-mute lg:[@media(max-height:779px)]:hidden" aria-hidden>
+      <p className="mt-1.5 text-center text-[13px] text-mute lg:text-left lg:[@media(max-height:779px)]:hidden" aria-hidden>
         шансы по кэфам букмекеров · в середине — ничья
       </p>
     </div>
@@ -288,8 +288,9 @@ function reasonsFor(it: FeedItem, v: Verdict | null): Reason[] {
 
 /**
  * Слайд «Матча дня» — как карточка матча в спортивных приложениях: табло (хозяева · время или счёт · гости),
- * под ним вывод словами и полоса шансов, ниже — факты «почему» одной панелью и кнопки.
- * Шапка с выбором лиги — у карусели (TopCarousel); лишняя высота делится поровну между блоками.
+ * вывод словами и полоса шансов, факты «почему» одной панелью и кнопки. На телефоне — столбиком;
+ * на компьютере карточка во всю ширину и в две колонки: слева табло и кнопки, справа вывод, шансы
+ * и факты — без пустой середины. Шапка с выбором лиги — у карусели (TopCarousel).
  */
 function TopSlide({ it }: { it: FeedItem }) {
   const m = it.match
@@ -307,20 +308,44 @@ function TopSlide({ it }: { it: FeedItem }) {
     <span className="flex min-w-0 flex-col items-center gap-2 text-center">
       <TeamLogo name={t.name} src={t.logo} size={48} />
       <span
-        className={`line-clamp-2 text-[16px] font-semibold leading-tight tracking-[-0.015em] sm:text-[18px] lg:text-[clamp(17px,2.5vh,21px)] ${v?.side && v.side !== k ? 'text-chalk' : 'text-fg'}`}
+        className={`line-clamp-2 text-[16px] font-semibold leading-tight tracking-[-0.015em] sm:text-[18px] lg:text-[clamp(17px,2.5vh,22px)] ${v?.side && v.side !== k ? 'text-chalk' : 'text-fg'}`}
       >
         {t.name}
       </span>
     </span>
   )
+
+  const state = played ? (
+    live ? (
+      // идёт матч: сколько сыграно — тонкой полосой; вывода до матча здесь уже нет
+      <div>
+        <div className="h-1.5 rounded-full bg-white/[0.08]" aria-hidden>
+          <div className="h-full rounded-full bg-live" style={{ width: `${Math.min(100, ((m.elapsed ?? 45) / 90) * 100)}%` }} />
+        </div>
+        <p className="mt-2 text-center text-[13px] text-mute lg:text-left">сыграно {Math.min(90, m.elapsed ?? 45)} из 90 минут</p>
+      </div>
+    ) : null
+  ) : (
+    // вывод → на чём он основан (полоса шансов по кэфам)
+    <div>
+      {v ? (
+        <p className="mb-2.5 text-center text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-left lg:text-[clamp(17px,2.5vh,22px)]">{v.headline}</p>
+      ) : null}
+      <ChanceBar m={m} />
+    </div>
+  )
+  const wide = Boolean(state) || reasons.length > 0
+
   return (
-    <div className="relative flex min-w-0 flex-1 flex-col justify-between gap-4 lg:[@media(max-height:779px)]:gap-3">
+    <div
+      className={`relative flex min-w-0 flex-1 flex-col justify-between gap-4 ${wide ? 'lg:grid lg:grid-cols-2 lg:grid-rows-[minmax(0,1fr)_auto] lg:gap-x-10 lg:gap-y-3' : ''}`}
+    >
       {/* табло: хозяева — время (после свистка — счёт) — гости; вся карточка открывает сторис */}
-      <StoryLink id={m.id} href={matchHref(m)} className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3 ${COVER}`}>
+      <StoryLink id={m.id} href={matchHref(m)} className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3 lg:self-center ${COVER}`}>
         {side(m.home, 'home')}
         <span className="flex flex-col items-center pt-2">
           <span
-            className={`num whitespace-nowrap text-[30px] font-semibold leading-none tracking-[-0.03em] sm:text-[34px] lg:text-[clamp(32px,4.6vh,44px)] ${live ? 'text-live' : ''}`}
+            className={`num whitespace-nowrap text-[30px] font-semibold leading-none tracking-[-0.03em] sm:text-[34px] lg:text-[clamp(32px,4.8vh,46px)] ${live ? 'text-live' : ''}`}
           >
             {played && m.score ? `${m.score.home} : ${m.score.away}` : formatTime(m.ts)}
           </span>
@@ -331,42 +356,32 @@ function TopSlide({ it }: { it: FeedItem }) {
         {side(m.away, 'away')}
       </StoryLink>
 
-      {played ? (
-        live ? (
-          // идёт матч: сколько сыграно — тонкой полосой; вывода до матча здесь уже нет
-          <div>
-            <div className="h-1.5 rounded-full bg-white/[0.08]" aria-hidden>
-              <div className="h-full rounded-full bg-live" style={{ width: `${Math.min(100, ((m.elapsed ?? 45) / 90) * 100)}%` }} />
-            </div>
-            <p className="mt-2 text-center text-[13px] text-mute">сыграно {Math.min(90, m.elapsed ?? 45)} из 90 минут</p>
-          </div>
-        ) : null
-      ) : (
-        // вывод → на чём он основан (полоса шансов по кэфам)
-        <div>
-          {v ? <p className="mb-2.5 text-center text-[17px] font-semibold leading-snug tracking-[-0.01em] lg:text-[clamp(17px,2.5vh,21px)]">{v.headline}</p> : null}
-          <ChanceBar m={m} />
+      {wide ? (
+        // справа на компьютере: вывод, шансы и факты; разделитель — тонкая линия
+        <div className="flex min-w-0 flex-col justify-between gap-4 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:justify-center lg:gap-3.5 lg:border-l lg:border-edge lg:pl-10">
+          {state}
+          {reasons.length ? (
+            // факты «почему» — одной панелью; второй и третий — только где хватает высоты окна
+            <ul className="rounded-[14px] bg-white/[0.035] px-3.5">
+              {reasons.map((r, i) => (
+                <li
+                  key={i}
+                  className={`flex items-center gap-3 border-t border-edge py-2 text-[14px] leading-snug text-chalk first:border-t-0 ${
+                    i === 1 ? 'lg:[@media(max-height:739px)]:hidden' : i === 2 ? 'lg:[@media(max-height:859px)]:hidden' : ''
+                  }`}
+                >
+                  <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-[7px] ${r.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.06] text-chalk'}`}>
+                    <ArtIcon name={r.icon} className="h-[13px] w-[13px]" />
+                  </span>
+                  <span className="line-clamp-2">{r.text}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
-      )}
-
-      {reasons.length ? (
-        // факты «почему» — одной панелью; третий — только где хватает высоты (невысокий ноутбук)
-        <ul className="rounded-[14px] bg-white/[0.035] px-3.5">
-          {reasons.map((r, i) => (
-            <li
-              key={i}
-              className={`flex items-center gap-3 border-t border-edge py-2 text-[14px] leading-snug text-chalk first:border-t-0 ${i === 2 ? 'lg:[@media(max-height:779px)]:hidden' : ''}`}
-            >
-              <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-[7px] ${r.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.06] text-chalk'}`}>
-                <ArtIcon name={r.icon} className="h-[13px] w-[13px]" />
-              </span>
-              <span className="line-clamp-2">{r.text}</span>
-            </li>
-          ))}
-        </ul>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[13px]">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[13px] lg:col-start-1 lg:row-start-2 lg:justify-center lg:gap-x-2.5">
         <span aria-hidden className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[10px] bg-white/[0.06] py-1.5 pl-1.5 pr-3.5 font-medium text-fg">
           <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-acid text-acid-ink">
             <svg viewBox="0 0 12 12" className="ml-px h-2.5 w-2.5" fill="currentColor">
@@ -391,9 +406,9 @@ function TopSlide({ it }: { it: FeedItem }) {
 const B = ({ children }: { children: React.ReactNode }) => <b className="font-semibold text-fg">{children}</b>
 
 /**
- * Аналитика: сбываются ли проценты, которые показывает сайт. Крупно — пример по корзине «около 60%»
- * (порог тега #фаворит): «58% сбылось там, где давали 60%», ниже — средняя разница по всем шансам
- * и график «давали — сбылось» (lib/chance-check.ts). Без денег и обещаний.
+ * Аналитика: сбываются ли проценты, которые показывает сайт. В ряду плиток — шириной в две:
+ * слева крупно пример по корзине «около 60%» (порог тега #фаворит) — «58% сбылось там, где давали 60%»
+ * и среднее расхождение, справа график «давали — сбылось» (lib/chance-check.ts). Без денег и обещаний.
  */
 function ChanceTile({ c }: { c: ChanceCheck }) {
   return (
@@ -404,68 +419,65 @@ function ChanceTile({ c }: { c: ChanceCheck }) {
         </span>
         <Go />
       </Link>
-      <div className="mt-4 flex items-end gap-3">
-        <p className="text-[44px] font-semibold leading-none tracking-[-0.04em] lg:text-[clamp(40px,6.4vh,54px)]">{pct(c.lead.hit)}</p>
-        <p className="pb-0.5 text-[13px] leading-snug text-dim">
-          сбылось там,
-          <br />
-          где давали {pct(c.lead.p)}
-        </p>
+      <div className="mt-3 grid flex-1 gap-4 sm:grid-cols-2">
+        <div className="flex min-w-0 flex-col">
+          <div className="flex items-end gap-3">
+            <p className="text-[40px] font-semibold leading-none tracking-[-0.04em] lg:text-[clamp(34px,4.6vh,44px)]">{pct(c.lead.hit)}</p>
+            <p className="text-[13px] leading-snug text-dim">
+              сбылось там,
+              <br />
+              где давали {pct(c.lead.p)}
+            </p>
+          </div>
+          <p className="mt-2.5 text-[13px] leading-snug text-chalk">
+            среднее расхождение — <B>{c.gap.toFixed(1).replace('.', ',')} пункта</B>
+          </p>
+          <p className="text-[13px] leading-snug text-dim">
+            по {new Intl.NumberFormat('ru-RU').format(c.outcomes)} {plural(c.outcomes, ['исходу', 'исходам', 'исходам'])} · кэфы без маржи
+          </p>
+        </div>
+        <ChanceChart className="h-[150px] sm:h-auto sm:min-h-[90px]" bins={c.bins} />
       </div>
-      <p className="mt-3 text-[15px] leading-snug text-chalk">
-        В среднем шансы и итог расходятся на <B>{c.gap.toFixed(1).replace('.', ',')} пункта</B>: проверили{' '}
-        <B>
-          {new Intl.NumberFormat('ru-RU').format(c.outcomes)} {plural(c.outcomes, ['исход', 'исхода', 'исходов'])}
-        </B>
-        .
-      </p>
-      <ChanceChart className="mt-4 h-[180px] lg:h-auto lg:min-h-[120px] lg:flex-1" bins={c.bins} />
-      <p className="mt-3 text-[13px] text-mute">по кэфам перед матчем, без маржи</p>
     </article>
   )
 }
 
 /**
- * «Сводка дня» — первый экран главной: слева высокий «Матч дня» (карусель по топ-лигам), справа до четырёх плиток-подборок (2×2).
- * На телефоне — всё столбиком, на планшете — подборки по две в ряд. Сводка тянется до низа окна
- * (см. DayView): строки подборок делят высоту поровну, пустых мест в плитках нет.
+ * «Сводка дня» — первый экран главной: сверху во всю ширину «Матч дня» (карусель по топ-лигам),
+ * под ним ряд плиток одной высоты — подборки со списками матчей и «Проверка шансов» шириной в две.
+ * Порядок «главное сверху, детали рядом снизу» владелец счёл спокойнее, чем высокий «Матч дня» сбоку.
+ * На компьютере сводка тянется до низа окна (см. DayView): лишняя высота уходит «Матчу дня»,
+ * ряд плиток — по содержимому (три строки в подборке).
  */
 export function DaySummary({ s, check = null, className = '' }: { s: Summary; check?: ChanceCheck | null; className?: string }) {
   if (!s.top) return null
-  // с «Проверкой шансов» — она на месте двух плиток: справа остаются две подборки
+  // «Проверка шансов» занимает две колонки ряда: подборок тогда две
   const cards = summaryCards(s).slice(0, check ? 2 : 4)
-  const n = cards.length
-  // плиток меньше, чем мест, — растягиваем последние, чтобы в сетке не было дыр
-  const span = (i: number) =>
-    check
-      ? n === 1
-        ? 'lg:row-span-2'
-        : ''
-      : n === 1
-        ? 'sm:col-span-2 lg:row-span-2'
-        : n === 2 || (n === 3 && i === 2)
-          ? 'sm:col-span-2'
-          : ''
+  const cols = cards.length + (check ? 2 : 0)
+  const lgCols = cols >= 4 ? 'lg:grid-cols-4' : cols === 3 ? 'lg:grid-cols-3' : cols === 2 ? 'lg:grid-cols-2' : ''
+  // на планшете по две в ряд: одинокая последняя подборка — во всю ширину
+  const wideLast = !check && cards.length % 2 === 1
   return (
-    <section aria-label="Сводка дня" className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-4 ${className}`}>
-      <TopCarousel
-        heads={s.tops.map((t) => ({ league: leagueShort(t.match.league), live: isLive(t.match) }))}
-        className={`sm:col-span-2 lg:row-span-2 ${n === 0 && !check ? 'lg:col-span-4' : ''} ${CARD}`}
-      >
+    <section aria-label="Сводка дня" className={`flex flex-col gap-3 ${className}`}>
+      <TopCarousel heads={s.tops.map((t) => ({ league: leagueShort(t.match.league), live: isLive(t.match) }))} className={`lg:flex-1 ${CARD}`}>
         {s.tops.map((t) => (
           <TopSlide key={t.match.id} it={t} />
         ))}
       </TopCarousel>
-      {check ? (
-        <div className={`min-w-0 lg:row-span-2 ${n === 0 ? 'sm:col-span-2' : ''}`}>
-          <ChanceTile c={check} />
+      {cols ? (
+        <div className={`grid gap-3 sm:grid-cols-2 ${lgCols}`}>
+          {cards.map((k, i) => (
+            <div key={k} className={`min-w-0 ${(wideLast && i === cards.length - 1) || (check && cards.length === 1) ? 'sm:col-span-2 lg:col-span-1' : ''}`}>
+              <ListTile {...cardFor(k, s)} />
+            </div>
+          ))}
+          {check ? (
+            <div className="min-w-0 sm:col-span-2">
+              <ChanceTile c={check} />
+            </div>
+          ) : null}
         </div>
       ) : null}
-      {cards.map((k, i) => (
-        <div key={k} className={`min-w-0 ${span(i)}`}>
-          <ListTile {...cardFor(k, s)} />
-        </div>
-      ))}
     </section>
   )
 }
