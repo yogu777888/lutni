@@ -91,9 +91,10 @@ export function TopCarousel({
       </div>
     ) : null
   return (
-    <article aria-label="Главные матчи" className={`relative flex min-w-0 flex-col py-[18px] ${className}`}>
-      {/* шапка: слева турнир матча на экране, справа стрелки и чип дня (в углу — сверху и справа поровну) */}
-      <div className="flex items-center justify-between gap-3 px-[18px]">
+    <article aria-label="Главные матчи" className={`relative flex min-w-0 flex-col py-[18px] lg:py-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:py-6 lg:[@media(max-height:739px)]:py-5 ${className}`}>
+      {/* шапка: слева турнир матча на экране, справа стрелки и чип дня (в углу — сверху и справа поровну);
+          на компьютере отступы карточки больше — 28px (на окне ниже 800px — 24px, ниже 740px — 20px): так табло не жмётся к краю */}
+      <div className="flex items-center justify-between gap-3 px-[18px] lg:px-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:px-6 lg:[@media(max-height:739px)]:px-5">
         <p className="min-w-0 truncate text-[13px] text-dim">
           {meta?.live ? <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse-live rounded-full bg-live align-middle" aria-label="идёт" /> : null}
           {meta?.caption}
@@ -140,7 +141,7 @@ export function TopCarousel({
       <div
         key={current?.key}
         ref={track}
-        className="scrollbar-none mt-3 flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain lg:[@media(max-height:739px)]:mt-2"
+        className="scrollbar-none mt-3 flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain lg:[@media(max-height:799px)]:mt-2"
         onScroll={(e) => {
           const el = e.currentTarget
           const k = Math.round(el.scrollLeft / Math.max(1, el.clientWidth))
@@ -148,7 +149,7 @@ export function TopCarousel({
         }}
       >
         {slides.map((c, k) => (
-          <div key={k} className="flex w-full shrink-0 snap-start px-[18px]">
+          <div key={k} className="flex w-full shrink-0 snap-start px-[18px] lg:px-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:px-6 lg:[@media(max-height:739px)]:px-5">
             {c}
           </div>
         ))}

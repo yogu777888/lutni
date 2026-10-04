@@ -66,10 +66,10 @@ export function parseProgruz(it: FeedItem): ProgruzInfo | null {
 }
 
 /**
- * Шанс 3+ голов для плитки: цифра тега, а у матчей без тега — из пары кэфов «больше/меньше 2.5»
- * одного снимка линии без маржи. Меньше 50% — не «ждём голов», такие матчи в плитку не берём.
+ * Шанс 3+ голов: цифра тега, а у матчей без тега — из пары кэфов «больше/меньше 2.5» одного снимка линии
+ * без маржи. Для плитки «Ждём голов» меньше 50% не берём; в «Главных матчах» — график шанса.
  */
-function goalsChance(it: FeedItem): number | null {
+export function goalsChance(it: FeedItem): number | null {
   const tagged = overPct(it)
   if (tagged !== null) return tagged
   const t = totalAt(it.match.odds, 2.5)

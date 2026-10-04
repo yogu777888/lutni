@@ -22,7 +22,7 @@ import type {
   RawLeagueWithSeasons,
   RawStandings,
 } from './sstats/types'
-import { buildForm, buildH2H, type H2H, type TeamForm } from './stats'
+import { buildForm, buildH2H, type H2H, type Res, type TeamForm } from './stats'
 import { computeTags, type TagHit } from './tags'
 import type { Glicko, Injury, LeagueInfo, Match, MatchFull, Standings, Team } from './types'
 
@@ -232,6 +232,8 @@ export async function getStandings(leagueId: number, year: number, opts: Opts = 
 export type MatchSummary = {
   id: number
   tags: TagHit[]
+  /** последние 5 результатов команд (свежие первыми) — для графика «Форма» в «Главных матчах» */
+  form?: { home: Res[]; away: Res[] } | null
   pick: {
     key: string
     label: string
@@ -329,7 +331,8 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
   })
   const preview = buildPreview({ full, cons, model, pick, glicko, homeForm, awayForm, h2h, injuries, standings, tags })
 
-  const summary: MatchSummary = { id, tags, pick: summaryPick(pick), at: Date.now() }
+  const form = homeForm && awayForm ? { home: homeForm.last5, away: awayForm.last5 } : null
+  const summary: MatchSummary = { id, tags, form, pick: summaryPick(pick), at: Date.now() }
   cache.set(`summary:${id}`, summary, { ttl: 3 * H, stale: 9 * H, persist: false })
 
   return { full, match: m, books, cons, glicko, model, candidates, pick, homeForm, awayForm, h2h, injuries, standings, tags, preview }

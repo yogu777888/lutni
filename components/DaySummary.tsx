@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import { featuredInfo } from '@/config/leagues'
 import type { FeedItem } from '@/lib/data'
-import { navExamples, parseProgruz, type DaySummary as Summary } from '@/lib/day-summary'
+import { goalsChance, navExamples, parseProgruz, type DaySummary as Summary, type ProgruzInfo } from '@/lib/day-summary'
 import { formatDayMonth, formatTime, pct, pluralN, todayYmd, ymdInTz } from '@/lib/format'
 import { matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
 import { isLive } from '@/lib/rank'
+import type { Res } from '@/lib/stats'
 import { artFor, type ArtIcon as IconName } from '@/lib/story-art'
 import type { League, Match } from '@/lib/types'
 import { buildVerdict, split100, type Verdict } from '@/lib/verdict'
@@ -134,6 +135,112 @@ function playedLine(m: Match): string | null {
   return diff > 0 ? `Фаворит ${fav} ведёт` : diff === 0 ? `Пока ничья, фаворит — ${fav}` : `Ведёт ${team(m, side === 'home' ? 'away' : 'home')}, хотя фаворит — ${fav}`
 }
 
+// ─── Мини-графики справа в «Главных матчах» ──────────────────────────────────
+
+/** Результат матча квадратом: монохромно, без светофора — победа светлая, ничья серая, поражение пустое. */
+const RES: Record<Res, { l: string; cls: string; word: string }> = {
+  W: { l: 'В', cls: 'bg-chalk text-ink', word: 'победа' },
+  D: { l: 'Н', cls: 'bg-white/[0.14] text-chalk', word: 'ничья' },
+  L: { l: 'П', cls: 'text-mute ring-1 ring-inset ring-white/[0.16]', word: 'поражение' },
+}
+
+/** Мини-панель: подпись сверху, график под ней; одна в ряду — во всю ширину (на телефоне — всегда столбиком). */
+function Panel({ title, wide = false, children }: { title: string; wide?: boolean; children: React.ReactNode }) {
+  return (
+    <div className={`min-w-0 rounded-[14px] bg-white/[0.035] px-3.5 py-3 lg:[@media(max-height:799px)]:py-2.5 ${wide ? 'sm:col-span-2' : ''}`}>
+      <p className="truncate text-[13px] text-dim">{title}</p>
+      <div className="mt-2 lg:[@media(max-height:799px)]:mt-1.5">{children}</div>
+    </div>
+  )
+}
+
+/** Форма — последние 5 матчей каждой команды, свежий справа; команда — эмблемой, как в табло слева. */
+function FormChart({ m, form }: { m: Match; form: { home: Res[]; away: Res[] } }) {
+  const row = (t: Match['home'], rs: Res[]) => (
+    <div className="flex items-center gap-2.5" role="img" aria-label={`«${t.name}»: ${[...rs].reverse().map((r) => RES[r].word).join(', ')}`}>
+      <span aria-hidden className="flex shrink-0">
+        <TeamLogo name={t.name} src={t.logo} size={22} />
+      </span>
+      <span className="flex shrink-0 gap-1" aria-hidden>
+        {[...rs].reverse().map((r, i) => (
+          <span key={i} className={`grid h-[22px] w-[22px] place-items-center rounded-[6px] text-[13px] font-semibold lg:[@media(max-height:799px)]:h-5 lg:[@media(max-height:799px)]:w-5 ${RES[r].cls}`}>
+            {RES[r].l}
+          </span>
+        ))}
+      </span>
+    </div>
+  )
+  return (
+    <div className="space-y-1.5 lg:[@media(max-height:799px)]:space-y-1">
+      {row(m.home, form.home)}
+      {row(m.away, form.away)}
+    </div>
+  )
+}
+
+/** Голы — шанс 3+ голов крупной цифрой и полоской «сколько из 100». */
+function GoalsChart({ p }: { p: number }) {
+  return (
+    <div>
+      <p className="flex items-baseline gap-2">
+        <span className="num text-[22px] font-semibold leading-none text-fg">{pct(p)}</span>
+        <span className="truncate text-[13px] text-dim">шанс 3+ голов</span>
+      </p>
+      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/[0.08]" aria-hidden>
+        <div className="h-full rounded-full bg-chalk" style={{ width: `${Math.round(p * 100)}%` }} />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Кэф упал — «было → стало» с открытия линии: процент янтарём, под ним наклонная линия из двух точек во всю
+ * ширину (как у плитки «Кэф упал»; круче — сильнее падение). Та же схема, что у «Голов»: цифра, под ней линия.
+ */
+function DropMini({ d }: { d: ProgruzInfo }) {
+  const y2 = 2 + Math.min(1, Math.max(0.25, d.drop / 0.35)) * 8
+  return (
+    <div>
+      <p className="flex min-w-0 items-baseline gap-2">
+        <span className="num text-[22px] font-semibold leading-none text-hot">−{Math.round(d.drop * 100)}%</span>
+        <span className="num truncate text-[13px] text-dim">
+          {d.from.toFixed(2)} → {d.to.toFixed(2)}
+        </span>
+      </p>
+      {/* линия тянется во всю ширину панели, точки — отдельными кружками, чтобы не сплющивались */}
+      <div className="relative mx-1 mt-2 h-3" aria-hidden>
+        <svg viewBox="0 0 100 12" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
+          <line x1="0" y1="2" x2="100" y2={y2} stroke="var(--color-hot)" strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        </svg>
+        <span className="absolute -left-1 top-[-2px] h-2 w-2 rounded-full border-[1.5px] border-hot bg-panel" />
+        <span className="absolute -right-1 h-2 w-2 rounded-full bg-hot" style={{ top: y2 - 4 }} />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Графики справа под полосой шансов: форма, голы, падение кэфа — что есть по данным, не больше двух
+ * (форма — только у разобранных матчей). Нет ни одного — остаются факты словами. После матча — ничего.
+ */
+function chartsFor(it: FeedItem): React.ReactNode[] {
+  const m = it.match
+  if (m.status === 'finished') return []
+  const form = it.summary?.form
+  const goals = goalsChance(it)
+  const drop = parseProgruz(it)
+  const out: { key: string; title: string; node: React.ReactNode }[] = []
+  if (form?.home.length && form.away.length) out.push({ key: 'form', title: 'Форма · 5 матчей', node: <FormChart m={m} form={form} /> })
+  if (goals !== null) out.push({ key: 'goals', title: 'Голы', node: <GoalsChart p={goals} /> })
+  if (drop) out.push({ key: 'drop', title: `Кэф на ${team(m, drop.side)} упал`, node: <DropMini d={drop} /> })
+  const shown = out.slice(0, 2)
+  return shown.map((c) => (
+    <Panel key={c.key} title={c.title} wide={shown.length === 1}>
+      {c.node}
+    </Panel>
+  ))
+}
+
 /** Вывод до матча — только с выгодной ставкой: обычный прогноз модели бывает «против» главной фразы и путает. */
 const verdictOf = (it: FeedItem) => {
   const m = it.match
@@ -150,6 +257,28 @@ function slideMeta(it: FeedItem): MainSlide {
   const bet = v?.bet && pick ? { label: pick.key === v.side ? 'Выгодно' : `Выгодно: ${v.bet.text}`, odd: v.bet.odd } : null
   const caption = `${leagueShort(m.league)}${m.round ? ` · ${m.round}` : ''}`
   return { id: m.id, href: matchHref(m), live: isLive(m), caption, bet }
+}
+
+/**
+ * Факты «почему» одной панелью; на компьютере второй — от 800px высоты окна: факт бывает в две строки,
+ * и на окне 720–800px сводка иначе не влезает целиком.
+ */
+function Facts({ reasons, className = '' }: { reasons: Reason[]; className?: string }) {
+  return (
+    <ul className={`rounded-[14px] bg-white/[0.035] px-3.5 ${className}`}>
+      {reasons.map((r, i) => (
+        <li
+          key={i}
+          className={`flex items-center gap-3 border-t border-edge py-2 text-[14px] leading-snug text-chalk first:border-t-0 ${i === 1 ? 'lg:[@media(max-height:799px)]:hidden' : ''}`}
+        >
+          <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-[7px] ${r.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.06] text-chalk'}`}>
+            <ArtIcon name={r.icon} className="h-[13px] w-[13px]" />
+          </span>
+          <span className="line-clamp-2">{r.text}</span>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 /**
@@ -170,8 +299,9 @@ function TopSlide({ it }: { it: FeedItem }) {
   // до матча — вывод; в игре и после — счёт глазами шансов до матча: у всех слайдов одна схема «фраза → полоса»
   const headline = v?.headline ?? (played ? playedLine(m) : null)
   const odds = Boolean(fair1x2(m.odds?.x12))
+  const charts = chartsFor(it)
   const minute = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'
-  const wide = odds || reasons.length > 0
+  const wide = odds || charts.length > 0 || reasons.length > 0
   const score = played ? m.score : null
   // ярче — фаворит до матча, в игре и после — кто ведёт или победил; равные силы или ничья — обе команды яркие
   const lead = score ? (score.home === score.away ? null : score.home > score.away ? 'home' : 'away') : (v?.side ?? null)
@@ -222,7 +352,7 @@ function TopSlide({ it }: { it: FeedItem }) {
       </div>
 
       {wide ? (
-        <div className="flex min-w-0 flex-col gap-4 lg:gap-3.5 lg:border-l lg:border-edge lg:pl-10">
+        <div className="flex min-w-0 flex-col gap-4 lg:gap-3.5 lg:border-l lg:border-edge lg:pl-10 lg:[@media(max-height:799px)]:gap-3">
           {odds ? (
             // фраза → на чём она основана: шансы по кэфам перед матчем (и у идущего, и у сыгранного)
             <div>
@@ -232,22 +362,15 @@ function TopSlide({ it }: { it: FeedItem }) {
               <ChanceBar m={m} />
             </div>
           ) : null}
-          {reasons.length ? (
-            // два факта — одной панелью; на компьютере второй — от 800px высоты окна: факт бывает в две строки,
-            // и на окне 720–800px сводка иначе не влезает целиком
-            <ul className="rounded-[14px] bg-white/[0.035] px-3.5">
-              {reasons.map((r, i) => (
-                <li
-                  key={i}
-                  className={`flex items-center gap-3 border-t border-edge py-2 text-[14px] leading-snug text-chalk first:border-t-0 ${i === 1 ? 'lg:[@media(max-height:799px)]:hidden' : ''}`}
-                >
-                  <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-[7px] ${r.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.06] text-chalk'}`}>
-                    <ArtIcon name={r.icon} className="h-[13px] w-[13px]" />
-                  </span>
-                  <span className="line-clamp-2">{r.text}</span>
-                </li>
-              ))}
-            </ul>
+          {charts.length ? (
+            <>
+              {/* графики вместо фактов словами: форма, голы, падение кэфа — что есть по данным. На невысоком окне
+                  (ниже 740px) на них нет места — там, как раньше, один факт словами */}
+              <div className="grid gap-3 sm:grid-cols-2 lg:[@media(max-height:739px)]:hidden">{charts}</div>
+              {reasons.length ? <Facts reasons={reasons.slice(0, 1)} className="hidden lg:[@media(max-height:739px)]:block" /> : null}
+            </>
+          ) : reasons.length ? (
+            <Facts reasons={reasons} />
           ) : null}
         </div>
       ) : null}
@@ -349,7 +472,7 @@ export function DaySummary({
         className={`lg:flex-1 ${CARD}`}
       />
       {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг */}
-      <h2 className="mb-2.5 mt-5 text-[13px] font-medium text-mute lg:[@media(max-height:739px)]:mt-3">Цифры дня</h2>
+      <h2 className="mb-2.5 mt-5 text-[13px] font-medium text-mute lg:[@media(min-height:740px)_and_(max-height:799px)]:mt-4 lg:[@media(max-height:739px)]:mt-3">Цифры дня</h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <NavTile
           title="Все матчи"

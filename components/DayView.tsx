@@ -170,8 +170,8 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
           </section>
         ) : null}
 
-        {/* на невысоком экране (720px) отступ над сводкой меньше — так она влезает целиком */}
-        {hasSummary ? <DaySummary s={daySummary} days={mainDays} className="mt-5 lg:flex-1 lg:[@media(max-height:739px)]:mt-4" /> : null}
+        {/* на невысоком окне (ниже 800px) отступ над сводкой меньше — так она влезает целиком */}
+        {hasSummary ? <DaySummary s={daySummary} days={mainDays} className="mt-5 lg:flex-1 lg:[@media(min-height:740px)_and_(max-height:799px)]:mt-4 lg:[@media(max-height:739px)]:mt-3" /> : null}
       </div>
 
       <ValueBoard items={values} />
