@@ -1,9 +1,12 @@
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { countryRank, featuredRank } from '@/config/leagues'
 import { daySnaps, getMatchesByDate, peekOddsSnap, tagsFor, waitMatchFull, waitOddsSnap, type FeedItem } from '@/lib/data'
 import { dayHref } from '@/lib/links'
 import { addDays, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { lineMoves, type OddsSnap } from '@/lib/lines'
+import { LOOK_COOKIE, parseLook } from '@/lib/looks'
+import { IS_MOCK } from '@/lib/sstats/client'
 import { isLive, liveRank } from '@/lib/rank'
 import { dayCounts, goalsPicks, mainMatches, moveExample } from '@/lib/day-summary'
 import { storyCovers } from '@/lib/story-covers'
@@ -11,6 +14,7 @@ import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { DaySummary, type MainItem } from './DaySummary'
+import { LookSwitcher } from './LookSwitcher'
 import type { DayLink } from './TopCarousel'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
@@ -112,6 +116,9 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
 
   const heading = dayHeading(ymd, today)
   const past = diffDays(ymd, today) < 0
+  // вид виджетов сводки — пока владелец выбирает подачу (переключатель — только в демо и при разработке)
+  const look = parseLook((await cookies()).get(LOOK_COOKIE)?.value)
+  const showLooks = IS_MOCK || process.env.NODE_ENV !== 'production'
   // «Главные матчи» — в любой день: впереди — анонсы и идущие, на прошедших днях — итоги главных матчей.
   // До начала — линия одного букмекера, в игре и после — статистика матча; на холодном старте ждём их недолго
   // линия для подборок: топ-турниры без снимка догружаются (не дольше 1,2 с, остальное — в фоне, к следующему открытию)
@@ -167,6 +174,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
           заходишь и сразу видишь всё нужное, а «Все матчи дня» начинаются ниже, по прокрутке.
           На очень высоких мониторах — не выше 50rem (хватает на обычное окно браузера на экране 1080p), чтобы плитки не раздувались. */}
       <div className={hasSummary ? 'flex flex-col lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <section className="min-w-0 pt-1 sm:pt-0">
           <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
           <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px]">
@@ -179,6 +187,8 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
             </span>
           </h1>
         </section>
+        {hasSummary && showLooks ? <LookSwitcher current={look} /> : null}
+        </div>
 
         {storyGroups.length ? (
           // кружки понятны и без подписи «Истории дня» — так первый экран влезает целиком;
@@ -193,6 +203,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
           <DaySummary
             mains={mains}
             days={dayLinks}
+            look={look}
             picks={{
               ymd,
               dayHref: base,

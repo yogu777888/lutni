@@ -7,6 +7,7 @@ import { appNow, formatDayMonth, formatTime, pct, plural, pluralN, todayYmd, ymd
 import { biggestMove, lineMoves, moveOutcome, periodEndLabel, x12Line, type LineMove, type OddsSnap } from '@/lib/lines'
 import { matchHref } from '@/lib/links'
 import { isLive } from '@/lib/rank'
+import type { Look } from '@/lib/looks'
 import type { League, Match, MatchFull, StatPair } from '@/lib/types'
 import { CHIP, StoryChipFace } from './Chips'
 import { StoryLink } from './story/StoryLink'
@@ -16,6 +17,13 @@ import { TopCarousel, type DayLink, type MainSlide } from './TopCarousel'
 /** Ссылка-накладка: вся карточка кликабельна, а текст ссылки — понятное название. */
 const COVER = "after:absolute after:inset-0 after:rounded-[22px] after:content-['']"
 const CARD = 'rounded-[22px] border border-edge bg-panel shadow-[inset_0_1px_0_rgb(255_255_255/0.035)]'
+/** Поверхность карточек по виду: «Полосы» — панель с рамкой, «Точки» — мягкая плитка без рамки, «Цифры» — только контур. */
+const SURFACE: Record<Look, string> = {
+  bars: CARD,
+  dots: 'rounded-[24px] bg-panel',
+  digits: 'rounded-[22px] border border-edge',
+}
+const HOVER: Record<Look, string> = { bars: 'hover:border-edge-2', dots: 'hover:bg-panel-2', digits: 'hover:bg-white/[0.02]' }
 
 const MATCHES = ['матч', 'матча', 'матчей'] as const
 const TOURNEYS = ['турнир', 'турнира', 'турниров'] as const
@@ -58,8 +66,16 @@ export type MainItem = { it: FeedItem; snap: OddsSnap | null; full: MatchFull | 
  * До начала: строка кэфов одного букмекера с временем снимка («Фонбет, линия на 19:25») и два факта с выборкой
  * — о командах или движении линии. Вероятностей и выводов здесь нет: они — в подробностях матча.
  */
-function PreMatch({ m, snap, facts }: { m: Match; snap: OddsSnap | null; facts: string[] }) {
+function PreMatch({ m, snap, facts, look }: { m: Match; snap: OddsSnap | null; facts: string[]; look: Look }) {
   const line = x12Line(snap)
+  const odds = line
+    ? ([
+        ['Хозяева', line.home],
+        ['Ничья', line.draw],
+        ['Гости', line.away],
+      ] as const)
+    : []
+  const ODD = 'num font-semibold tracking-[-0.02em] text-fg'
   return (
     <div className="flex min-w-0 flex-col gap-5 lg:gap-[clamp(16px,2.4vh,24px)]">
       {line ? (
@@ -67,30 +83,49 @@ function PreMatch({ m, snap, facts }: { m: Match; snap: OddsSnap | null; facts: 
           <p className="text-[13px] text-dim">
             Коэффициенты · {line.bookmaker}, линия на {snapTime(line.at)}
           </p>
-          <p className="mt-1.5 flex flex-wrap items-baseline gap-x-6 gap-y-1">
-            {(
-              [
-                ['Хозяева', line.home],
-                ['Ничья', line.draw],
-                ['Гости', line.away],
-              ] as const
-            ).map(([label, odd]) => (
-              <span key={label} className="flex items-baseline gap-2">
-                <span className="text-[14px] text-dim">{label}</span>
-                <span className="num text-[20px] font-semibold tracking-[-0.02em] text-fg lg:text-[clamp(20px,2.6vh,24px)]">{odd.toFixed(2)}</span>
-              </span>
-            ))}
-          </p>
+          {look === 'dots' ? (
+            // «Точки»: три мягкие кнопки, как в линии букмекера — исход сверху, кэф под ним
+            <p className="mt-2 grid grid-cols-3 gap-2">
+              {odds.map(([label, odd]) => (
+                <span key={label} className="flex min-w-0 flex-col rounded-[12px] bg-white/[0.05] px-3 py-2">
+                  <span className="truncate text-[13px] text-dim">{label}</span>
+                  <span className={`${ODD} text-[19px] leading-tight`}>{odd.toFixed(2)}</span>
+                </span>
+              ))}
+            </p>
+          ) : look === 'digits' ? (
+            // «Цифры»: три колонки, подпись над кэфом, без подложек
+            <p className="mt-2 grid grid-cols-3 gap-4">
+              {odds.map(([label, odd]) => (
+                <span key={label} className="flex min-w-0 flex-col">
+                  <span className="truncate text-[13px] text-mute">{label}</span>
+                  <span className={`${ODD} text-[22px] leading-tight lg:text-[clamp(22px,2.8vh,26px)]`}>{odd.toFixed(2)}</span>
+                </span>
+              ))}
+            </p>
+          ) : (
+            <p className="mt-1.5 flex flex-wrap items-baseline gap-x-6 gap-y-1">
+              {odds.map(([label, odd]) => (
+                <span key={label} className="flex items-baseline gap-2">
+                  <span className="text-[14px] text-dim">{label}</span>
+                  <span className={`${ODD} text-[20px] lg:text-[clamp(20px,2.6vh,24px)]`}>{odd.toFixed(2)}</span>
+                </span>
+              ))}
+            </p>
+          )}
         </div>
       ) : (
         <p className="text-[14px] text-dim">Линии легального букмекера на матч пока нет</p>
       )}
       {facts.length ? (
-        <ul className="space-y-2.5" aria-label={`Факты о матче ${pair(m)}`}>
+        <ul className={look === 'digits' ? 'divide-y divide-edge' : 'space-y-2.5'} aria-label={`Факты о матче ${pair(m)}`}>
           {facts.map((f, k) => (
             // второй факт — от 740px высоты окна: на невысоком окне сводка иначе не влезает
-            <li key={f} className={`flex gap-3 text-[15px] leading-snug text-chalk ${k ? 'lg:[@media(max-height:739px)]:hidden' : ''}`}>
-              <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-mute" aria-hidden />
+            <li
+              key={f}
+              className={`flex gap-3 text-[15px] leading-snug text-chalk ${look === 'digits' ? 'py-2 first:pt-0 last:pb-0' : ''} ${look === 'dots' ? 'border-l-2 border-white/[0.12] pl-3' : ''} ${k ? 'lg:[@media(max-height:739px)]:hidden' : ''}`}
+            >
+              {look === 'bars' ? <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-mute" aria-hidden /> : null}
               <span className="line-clamp-2">{f}</span>
             </li>
           ))}
@@ -100,24 +135,53 @@ function PreMatch({ m, snap, facts }: { m: Match; snap: OddsSnap | null; facts: 
   )
 }
 
-/** Строка сравнения: значения команд по краям, показатель посередине, под ними тонкая полоса долей. */
-function StatRow({ s, className = '' }: { s: StatPair; className?: string }) {
+/** Сколько точек показываем в «Точках»: больше — уже не счёт глазами, а рябь; там — только цифры. */
+const MAX_DOTS = 12
+
+/**
+ * Строка сравнения: значения команд по краям, показатель посередине. Под ними — по виду: «Полосы» — две
+ * полосы от центра к краям (у кого больше — полная и светлая), «Точки» — столько точек, сколько ударов или
+ * угловых (дробные значения — только цифрами), «Цифры» — без графики, строки через тонкую линию.
+ */
+function StatRow({ s, look, className = '' }: { s: StatPair; look: Look; className?: string }) {
   const fmt = (v: number) => `${Number.isInteger(v) ? v : v.toFixed(2)}${s.suffix ?? ''}`
-  const total = s.home + s.away
-  const share = total > 0 ? s.home / total : 0.5
   const lead = s.home === s.away ? null : s.home > s.away ? 'home' : 'away'
   const label = s.key === 'expectedGoals' ? 'xG — ожидаемые голы' : s.label
+  const max = Math.max(s.home, s.away) || 1
+  // у кого больше — светлая, у соперника — приглушённая; поровну — обе одинаковые
+  const fill = (k: 'home' | 'away') => (lead === k ? 'bg-chalk' : lead ? 'bg-white/[0.28]' : 'bg-chalk/70')
+  const big = look === 'digits' ? 'text-[22px]' : 'text-[20px]'
+  const dots = look === 'dots' && Number.isInteger(s.home) && Number.isInteger(s.away) && max <= MAX_DOTS
   return (
-    <li role="group" aria-label={`${label}: ${fmt(s.home)} — ${fmt(s.away)}`} className={className}>
+    <li role="group" aria-label={`${label}: ${fmt(s.home)} — ${fmt(s.away)}`} className={`${look === 'digits' ? 'py-2.5 first:pt-0 last:pb-0' : ''} ${className}`}>
       <div className="grid grid-cols-[minmax(3rem,auto)_minmax(0,1fr)_minmax(3rem,auto)] items-baseline gap-3" aria-hidden>
-        <span className={`num text-[20px] font-semibold leading-none ${lead === 'away' ? 'text-dim' : 'text-fg'}`}>{fmt(s.home)}</span>
+        <span className={`num ${big} font-semibold leading-none ${lead === 'away' ? 'text-dim' : 'text-fg'}`}>{fmt(s.home)}</span>
         <span className="truncate text-center text-[13px] text-dim">{label}</span>
-        <span className={`num text-right text-[20px] font-semibold leading-none ${lead === 'home' ? 'text-dim' : 'text-fg'}`}>{fmt(s.away)}</span>
+        <span className={`num text-right ${big} font-semibold leading-none ${lead === 'home' ? 'text-dim' : 'text-fg'}`}>{fmt(s.away)}</span>
       </div>
-      <div className="mt-2 flex h-[3px] gap-0.5" aria-hidden>
-        <span className={`rounded-full ${lead === 'home' ? 'bg-chalk' : 'bg-white/[0.16]'}`} style={{ width: `${share * 100}%` }} />
-        <span className={`flex-1 rounded-full ${lead === 'away' ? 'bg-chalk' : 'bg-white/[0.16]'}`} />
-      </div>
+      {look === 'bars' ? (
+        <div className="mt-2.5 grid grid-cols-2 gap-1.5" aria-hidden>
+          <span className="flex h-1.5 justify-end overflow-hidden rounded-full bg-white/[0.06]">
+            <span className={`h-full rounded-full ${fill('home')}`} style={{ width: `${(s.home / max) * 100}%` }} />
+          </span>
+          <span className="flex h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+            <span className={`h-full rounded-full ${fill('away')}`} style={{ width: `${(s.away / max) * 100}%` }} />
+          </span>
+        </div>
+      ) : dots ? (
+        <div className="mt-2.5 grid grid-cols-2 gap-6" aria-hidden>
+          <span className="flex h-[7px] gap-[5px]">
+            {Array.from({ length: s.home }, (_, i) => (
+              <span key={i} className={`h-[7px] w-[7px] rounded-full ${fill('home')}`} />
+            ))}
+          </span>
+          <span className="flex h-[7px] justify-end gap-[5px]">
+            {Array.from({ length: s.away }, (_, i) => (
+              <span key={i} className={`h-[7px] w-[7px] rounded-full ${fill('away')}`} />
+            ))}
+          </span>
+        </div>
+      ) : null}
     </li>
   )
 }
@@ -129,7 +193,7 @@ const LIVE_KEYS = ['shotsOnGoal', 'cornerKicks']
  * показатели и xG (если он настоящий, из статистики матча) и переход к подробностям. Нет данных — так и
  * пишем, нулями не заменяем. Доматчевых цифр здесь нет: при счёте на табло они путают.
  */
-function PlayStats({ m, full }: { m: Match; full: MatchFull | null }) {
+function PlayStats({ m, full, look }: { m: Match; full: MatchFull | null; look: Look }) {
   const live = isLive(m)
   const by = (k: string) => full?.stats.find((s) => s.key === k)
   const done = by('expectedGoals') ? [...LIVE_KEYS, 'expectedGoals'] : [...LIVE_KEYS, 'ballPossession']
@@ -144,10 +208,10 @@ function PlayStats({ m, full }: { m: Match; full: MatchFull | null }) {
             <span className="truncate">{m.home.name}</span>
             <span className="truncate text-right">{m.away.name}</span>
           </p>
-          <ul className="mt-2.5 space-y-3 lg:[@media(max-height:799px)]:space-y-2.5">
+          <ul className={look === 'digits' ? 'mt-2.5 divide-y divide-edge' : 'mt-2.5 space-y-3 lg:[@media(max-height:799px)]:space-y-2.5'}>
             {rows.map((s, k) => (
               // третья строка — от 740px высоты окна: на невысоком окне сводка иначе не влезает
-              <StatRow key={s.key} s={s} className={k >= 2 ? 'lg:[@media(max-height:739px)]:hidden' : ''} />
+              <StatRow key={s.key} s={s} look={look} className={k >= 2 ? 'lg:[@media(max-height:739px)]:hidden' : ''} />
             ))}
           </ul>
         </>
@@ -181,7 +245,7 @@ function factsFor(it: FeedItem, snap: OddsSnap | null): string[] {
  * за минуту». Справа — одна открытая область без внутренних карточек: до начала — кэфы одного букмекера и два
  * факта, в игре — «Сейчас в матче», после — статистика и подробности. На телефоне — столбиком.
  */
-function TopSlide({ item }: { item: MainItem }) {
+function TopSlide({ item, look }: { item: MainItem; look: Look }) {
   const { it, snap, full } = item
   const m = it.match
   const live = isLive(m)
@@ -200,7 +264,7 @@ function TopSlide({ item }: { item: MainItem }) {
     </span>
   )
   const facts = live || finished ? [] : factsFor(it, snap)
-  const right = live || finished ? <PlayStats m={m} full={full} /> : <PreMatch m={m} snap={snap} facts={facts} />
+  const right = live || finished ? <PlayStats m={m} full={full} look={look} /> : <PreMatch m={m} snap={snap} facts={facts} look={look} />
 
   return (
     <div className="relative flex min-w-0 flex-1 flex-col justify-center gap-5 lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-10">
@@ -249,9 +313,24 @@ function TopSlide({ item }: { item: MainItem }) {
  * Переход к подборке — компактный, с полезным превью и без крупных цифр: название и подпись, стрелка в углу
  * (сверху и справа поровну), ниже одна-две строки превью; широкий — с мини-графиком справа. Вся плитка — ссылка.
  */
-function NavTile({ title, caption, href, lines, aside }: { title: string; caption: string; href: string; lines: React.ReactNode[]; aside?: React.ReactNode }) {
+function NavTile({
+  title,
+  caption,
+  href,
+  lines,
+  aside,
+  surface,
+}: {
+  title: string
+  caption: string
+  href: string
+  lines: React.ReactNode[]
+  aside?: React.ReactNode
+  /** поверхность плитки по виду; у «Цифр» плитки — секции одной полосы, без своей рамки */
+  surface: string
+}) {
   return (
-    <Link href={href} prefetch={false} className={`group flex h-full min-w-0 flex-col p-[18px] transition-colors hover:border-edge-2 ${CARD}`}>
+    <Link href={href} prefetch={false} className={`group flex h-full min-w-0 flex-col p-[18px] transition-colors ${surface}`}>
       <span className="flex items-start justify-between gap-3">
         <span className="min-w-0">
           <span className="block truncate text-[15px] font-semibold leading-5 text-fg">{title}</span>
@@ -275,24 +354,57 @@ function NavTile({ title, caption, href, lines, aside }: { title: string; captio
 
 /**
  * Мини-график одного исхода одного букмекера: открытие линии → последнее значение, две честные точки без кривой.
- * Подписи по краям — период сравнения («открытие» … «19:25» или «начала матча»). Упал — янтарь, вырос — серый.
+ * По виду: «Полосы» — две полосы «открытие / конец периода» от нуля, «Точки» — две точки и пунктир из точек между
+ * ними, подписи периода по краям; «Цифры» — без графика, плашка «−17% с открытия». Упал — янтарь, вырос — светлый.
  */
-function MoveChart({ mv, kickoff }: { mv: LineMove; kickoff: number }) {
-  const k = Math.min(1, Math.max(0.25, Math.abs(mv.change) / 0.35))
+function MoveChart({ mv, kickoff, look }: { mv: LineMove; kickoff: number; look: Look }) {
   const down = mv.change < 0
   const end = periodEndLabel(mv.at, kickoff)
-  const color = down ? 'var(--color-hot)' : 'var(--color-chalk)'
-  // точка «стало»: при падении — ниже открытия на долю высоты, при росте — выше
+  const pctText = `${down ? '−' : '+'}${Math.abs(Math.round(mv.change * 100))}%`
+  const box = 'block w-full shrink-0 sm:w-[min(14rem,44%)]'
+  if (look === 'digits') {
+    return (
+      <span className="flex shrink-0 sm:justify-end" aria-hidden>
+        <span className={`inline-flex h-8 items-baseline gap-1.5 rounded-[10px] px-3 pt-[5px] ${down ? 'bg-hot/[0.12] text-hot' : 'bg-white/[0.07] text-fg'}`}>
+          <span className="num text-[17px] font-semibold leading-none">{pctText}</span>
+          <span className="text-[13px] leading-none opacity-80">с открытия</span>
+        </span>
+      </span>
+    )
+  }
+  if (look === 'bars') {
+    const max = Math.max(mv.from, mv.to)
+    const row = (label: string, v: number, now: boolean) => (
+      <span className="flex items-center gap-3">
+        <span className="w-[5.5rem] shrink-0 truncate text-[13px] leading-[18px] text-mute">{label}</span>
+        <span className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+          <span className={`block h-full rounded-full ${now ? (down ? 'bg-hot' : 'bg-chalk') : 'bg-white/[0.26]'}`} style={{ width: `${(v / max) * 100}%` }} />
+        </span>
+        <span className={`num w-9 shrink-0 text-right text-[13px] leading-[18px] ${now ? (down ? 'font-semibold text-hot' : 'font-semibold text-fg') : 'text-dim'}`}>{v.toFixed(2)}</span>
+      </span>
+    )
+    return (
+      <span className={`${box} space-y-1.5`} aria-hidden>
+        {row('открытие', mv.from, false)}
+        {row(end, mv.to, true)}
+      </span>
+    )
+  }
+  // «Точки»: начало и конец — точки, между ними — пунктир из точек; круче — сильнее изменение
+  const k = Math.min(1, Math.max(0.3, Math.abs(mv.change) / 0.35))
+  const y1 = down ? 0 : 1
   const y2 = down ? k : 1 - k
+  const color = down ? 'bg-hot' : 'bg-chalk'
+  const STEPS = 13
   return (
-    <span className="block w-full shrink-0 sm:w-[min(13rem,42%)]" aria-hidden>
-      <span className="relative block h-5">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-x-1 inset-y-1 h-[calc(100%-8px)] w-[calc(100%-8px)] overflow-visible">
-          <line x1="0" y1={down ? 0 : 100} x2="100" y2={down ? 0 : 100} stroke="rgb(255 255 255 / 0.16)" strokeWidth="1" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
-          <line x1="0" y1={down ? 0 : 100} x2="100" y2={y2 * 100} stroke={color} strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        </svg>
-        <span className="absolute left-0 h-2 w-2 rounded-full border-[1.5px] bg-panel" style={{ borderColor: color, top: down ? 0 : 'auto', bottom: down ? 'auto' : 0 }} />
-        <span className="absolute right-0 h-2 w-2 rounded-full" style={{ background: color, top: `calc(${y2 * 100}% - ${y2 * 8}px)` }} />
+    <span className={box} aria-hidden>
+      <span className="relative mx-1 block h-[22px]">
+        {Array.from({ length: STEPS - 1 }, (_, i) => {
+          const t = (i + 1) / STEPS
+          return <span key={i} className={`absolute h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full ${color} opacity-60`} style={{ left: `${t * 100}%`, top: `${(y1 + (y2 - y1) * t) * 100}%` }} />
+        })}
+        <span className={`absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] bg-panel ${down ? 'border-hot' : 'border-chalk'}`} style={{ left: 0, top: `${y1 * 100}%` }} />
+        <span className={`absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ${color}`} style={{ left: '100%', top: `${y2 * 100}%` }} />
       </span>
       <span className="mt-1 flex justify-between gap-3 text-[13px] leading-[18px] text-mute">
         <span>открытие</span>
@@ -314,7 +426,7 @@ export type DayPicks = {
   movesCovered: number
 }
 
-function Picks({ p }: { p: DayPicks }) {
+function Picks({ p, look }: { p: DayPicks; look: Look }) {
   const c = p.counts
   const g = p.goals
   const allLines: React.ReactNode[] =
@@ -339,27 +451,48 @@ function Picks({ p }: { p: DayPicks }) {
   const moveLines: React.ReactNode[] = mv
     ? [
         `${pair(mv.it.match)} · ${moveOutcome(mv.mv.key, { home: mv.it.match.home.name, away: mv.it.match.away.name })}`,
-        <>
-          {mv.mv.bookmaker}, до матча: <span className="num">{mv.mv.from.toFixed(2)}</span> →{' '}
-          <span className={`num font-semibold ${mv.mv.change < 0 ? 'text-hot' : 'text-fg'}`}>{mv.mv.to.toFixed(2)}</span>
-        </>,
+        // в «Полосах» оба значения — на самом графике, здесь не повторяем
+        look === 'bars' ? (
+          `${mv.mv.bookmaker} · доматчевая линия`
+        ) : (
+          <>
+            {mv.mv.bookmaker}, до матча: <span className="num">{mv.mv.from.toFixed(2)}</span> →{' '}
+            <span className={`num font-semibold ${mv.mv.change < 0 ? 'text-hot' : 'text-fg'}`}>{mv.mv.to.toFixed(2)}</span>
+          </>
+        ),
       ]
     : p.movesCovered
       ? ['Заметных изменений линии нет', `кэфы открытия есть у ${pluralN(p.movesCovered, MATCHES)}`]
       : ['Линия букмекеров ещё загружается']
+  // «Цифры» — одна полоса с тонкими разделителями, у остальных — отдельные плитки
+  const strip = look === 'digits'
+  const surface = strip ? HOVER.digits : `${SURFACE[look]} ${HOVER[look]}`
+  const all = <NavTile title="Все матчи" caption="Расписание и результаты" href={`${p.dayHref}#matches`} lines={allLines} surface={surface} />
+  const goals = <NavTile title="Голевые матчи" caption="Полная подборка на 3+ гола" href={`/matches/${p.ymd}/goals`} lines={goalLines} surface={surface} />
+  const moves = (
+    <NavTile
+      title="Движение коэффициентов"
+      caption="Изменения линии за день"
+      href={`/matches/${p.ymd}/odds`}
+      lines={moveLines}
+      aside={mv ? <MoveChart mv={mv.mv} kickoff={mv.it.match.ts} look={look} /> : null}
+      surface={surface}
+    />
+  )
+  if (strip) {
+    return (
+      <div className={`grid overflow-hidden sm:grid-cols-2 lg:grid-cols-4 ${SURFACE.digits}`}>
+        <div className="min-w-0">{all}</div>
+        <div className="min-w-0 border-t border-edge sm:border-l sm:border-t-0">{goals}</div>
+        <div className="min-w-0 border-t border-edge sm:col-span-2 lg:border-l lg:border-t-0">{moves}</div>
+      </div>
+    )
+  }
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <NavTile title="Все матчи" caption="Расписание и результаты" href={`${p.dayHref}#matches`} lines={allLines} />
-      <NavTile title="Голевые матчи" caption="Полная подборка на 3+ гола" href={`/matches/${p.ymd}/goals`} lines={goalLines} />
-      <div className="min-w-0 sm:col-span-2">
-        <NavTile
-          title="Движение коэффициентов"
-          caption="Изменения линии за день"
-          href={`/matches/${p.ymd}/odds`}
-          lines={moveLines}
-          aside={mv ? <MoveChart mv={mv.mv} kickoff={mv.it.match.ts} /> : null}
-        />
-      </div>
+      {all}
+      {goals}
+      <div className="min-w-0 sm:col-span-2">{moves}</div>
     </div>
   )
 }
@@ -370,21 +503,34 @@ function Picks({ p }: { p: DayPicks }) {
  * «Голевые матчи» и широкий «Движение коэффициентов» с мини-графиком. Истории — короткий просмотр матчей,
  * подборки — полные списки дня со сравнением и фильтрами.
  */
-export function DaySummary({ mains, days, picks, className = '' }: { mains: MainItem[]; days: DayLink[]; picks: DayPicks; className?: string }) {
+export function DaySummary({
+  mains,
+  days,
+  picks,
+  look = 'bars',
+  className = '',
+}: {
+  mains: MainItem[]
+  days: DayLink[]
+  picks: DayPicks
+  /** вид виджетов (lib/looks.ts) — пока владелец выбирает подачу */
+  look?: Look
+  className?: string
+}) {
   if (!mains.length) return null
   return (
     <section aria-label="Сводка дня" className={`flex flex-col ${className}`}>
       <TopCarousel
         slides={mains.map((x) => slideMeta(x.it))}
-        panels={mains.map((x) => <TopSlide key={x.it.match.id} item={x} />)}
+        panels={mains.map((x) => <TopSlide key={x.it.match.id} item={x} look={look} />)}
         days={days}
-        className={`lg:flex-1 ${CARD}`}
+        className={`lg:flex-1 ${SURFACE[look]}`}
       />
       {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг; к плиткам ближе, чем к блоку сверху */}
       <h2 className="mb-2.5 mt-4 text-[13px] font-medium text-mute lg:[@media(min-height:740px)_and_(max-height:799px)]:mb-2 lg:[@media(min-height:740px)_and_(max-height:799px)]:mt-3 lg:[@media(max-height:739px)]:mt-3">
         Подборки
       </h2>
-      <Picks p={picks} />
+      <Picks p={picks} look={look} />
     </section>
   )
 }
