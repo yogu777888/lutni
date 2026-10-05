@@ -75,7 +75,7 @@ export type MainItem = {
   snap: OddsSnap | null
   full: MatchFull | null
   /** «Афиша»: цвета клубов из эмблем (lib/team-colors.ts) — только для этого вида */
-  colors?: { home: string; away: string } | null
+  colors?: { home: string; away: string; home2?: string; away2?: string } | null
 }
 
 /**

@@ -11,11 +11,15 @@ import type { Match } from './types'
 
 type Hsl = { h: number; s: number; l: number }
 
-/** Цвета фона «Афиши»: хозяева слева, гости справа. */
-export type MatchColors = { home: string; away: string }
+/** Цвета фона «Афиши»: хозяева слева, гости справа; у каждого — главный и второй (для второго пятна). */
+export type MatchColors = { home: string; away: string; home2: string; away2: string }
 
 /** Если у эмблемы нет своего цвета — графит (как есть: пределы насыщенности для клубных цветов к нему не применяем). */
 const GRAPHITE = 'hsl(40 6% 30%)'
+const GRAPHITE_2 = 'hsl(40 6% 38%)'
+
+/** Второй цвет, если у эмблемы он один: соседний оттенок, светлее — пятна разные, а фон остаётся «своим». */
+const accent = (c: Hsl): Hsl => ({ h: (c.h + 22) % 360, s: Math.min(1, c.s * 1.1), l: c.l + 0.1 })
 
 function rgbToHsl(r: number, g: number, b: number): Hsl {
   const R = r / 255
@@ -57,18 +61,20 @@ const isGold = (i: number) => i >= 2 && i <= 4
 type Bin = { w: number; x: number; y: number; s: number; l: number }
 
 /**
- * Главный цвет эмблемы или null, если цветных пикселей почти нет (чёрно-белые эмблемы). Золото берём, только
- * если других заметных цветов почти нет (меньше трети от золота): у «Барселоны», «Леванте», «Бетиса» оно —
- * окантовка или корона, а клубный цвет другой; у «Боруссии» Дортмунд, кроме жёлтого, только чёрный — она жёлтая.
+ * Цвета эмблемы: главный и, если есть, второй — заметный другой оттенок (не ближе 45° к главному и весом от
+ * четверти главного; золото тут можно — это акцент). Пусто, если цветных пикселей почти нет (чёрно-белые эмблемы).
+ * Главным золото берём, только если других заметных цветов почти нет (меньше трети от золота): у «Барселоны»,
+ * «Леванте», «Бетиса» оно — окантовка или корона, а клубный цвет другой; у «Боруссии» Дортмунд, кроме жёлтого,
+ * только чёрный — она жёлтая.
  */
-export function logoColor(src: string | null | undefined): Promise<Hsl | null> {
-  if (!src) return Promise.resolve(null)
-  const key = `logo-color:v3:${createHash('sha1').update(src).digest('hex')}`
+export function logoPalette(src: string | null | undefined): Promise<Hsl[]> {
+  if (!src) return Promise.resolve([])
+  const key = `logo-palette:v4:${createHash('sha1').update(src).digest('hex')}`
   return cache.get(
     key,
     async () => {
       const buf = await loadImage(src)
-      if (!buf) return null
+      if (!buf) return []
       const { data } = await sharp(buf, { density: 72 }).resize(32, 32, { fit: 'inside' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
       // оттенки по 15°: вес — насыщенность, чтобы яркий клубный цвет перевешивал бледные тени
       const bins: Bin[] = Array.from({ length: 24 }, () => ({ w: 0, x: 0, y: 0, s: 0, l: 0 }))
@@ -94,6 +100,13 @@ export function logoColor(src: string | null | undefined): Promise<Hsl | null> {
           ] as const
         ).filter(([j]) => !(noGold && isGold(j)))
       const score = (i: number, noGold = false) => near(i, noGold).reduce((sum, [j, f]) => sum + bins[j].w * f, 0)
+      const mean = (i: number, noGold: boolean): Hsl => {
+        const m = near(i, noGold).reduce(
+          (a, [j, f]) => ({ w: a.w + bins[j].w * f, x: a.x + bins[j].x * f, y: a.y + bins[j].y * f, s: a.s + bins[j].s * f, l: a.l + bins[j].l * f }),
+          { w: 0, x: 0, y: 0, s: 0, l: 0 },
+        )
+        return { h: ((Math.atan2(m.y, m.x) * 180) / Math.PI + 360) % 360, s: m.s / m.w, l: m.l / m.w }
+      }
       let best = 0
       for (let i = 1; i < 24; i++) if (score(i) > score(best)) best = i
       let noGold = false
@@ -105,32 +118,47 @@ export function logoColor(src: string | null | undefined): Promise<Hsl | null> {
           noGold = true
         }
       }
-      if (score(best, noGold) < 4) return null
-      const m = near(best, noGold).reduce(
-        (a, [j, f]) => ({ w: a.w + bins[j].w * f, x: a.x + bins[j].x * f, y: a.y + bins[j].y * f, s: a.s + bins[j].s * f, l: a.l + bins[j].l * f }),
-        { w: 0, x: 0, y: 0, s: 0, l: 0 },
-      )
-      return { h: ((Math.atan2(m.y, m.x) * 180) / Math.PI + 360) % 360, s: m.s / m.w, l: m.l / m.w }
+      const top = score(best, noGold)
+      if (top < 4) return []
+      const out = [mean(best, noGold)]
+      let second = -1
+      for (let i = 0; i < 24; i++) {
+        const d = Math.min(Math.abs(i - best), 24 - Math.abs(i - best))
+        if (d >= 3 && (second < 0 || score(i) > score(second))) second = i
+      }
+      if (second >= 0 && score(second) >= Math.max(3, top / 4)) out.push(mean(second, false))
+      return out
     },
     { ttl: 30 * 24 * 3600 },
   )
 }
 
+/** Главный цвет эмблемы или null (чёрно-белые эмблемы, нет эмблемы). */
+export async function logoColor(src: string | null | undefined): Promise<Hsl | null> {
+  return (await logoPalette(src))[0] ?? null
+}
+
 /** Цвет для фона: без неона и без «грязи» — насыщенность и светлота в спокойных пределах. */
-const css = (c: Hsl, darker = 0) => {
-  // жёлтые и лаймовые оттенки темнее: на них белый текст иначе не читается
-  const top = c.h >= 40 && c.h <= 90 ? 0.4 : 0.48
+const css = (c: Hsl, darker = 0, accent = false) => {
+  // жёлтые и лаймовые оттенки темнее: на них белый текст иначе не читается; второму цвету (пятну) можно светлее —
+  // иначе золото эмблемы превращается в грязно-оливковое
+  const top = c.h >= 40 && c.h <= 90 ? (accent ? 0.47 : 0.4) : accent ? 0.52 : 0.48
   return `hsl(${Math.round(c.h)} ${Math.round(Math.min(0.8, Math.max(0.45, c.s)) * 100)}% ${Math.round((Math.min(top, Math.max(0.32, c.l)) - darker) * 100)}%)`
 }
 
 /**
- * Цвета матча для «Афиши». Похожие оттенки у соперников (разница меньше 25°) — гостей темнее, чтобы цвета
- * не слились в одно пятно. У команды без цвета — графит.
+ * Цвета матча для «Афиши»: у каждого клуба главный и второй (с эмблемы или соседний оттенок). Похожие оттенки у
+ * соперников (разница меньше 25°) — гостей темнее, чтобы цвета не слились в одно пятно. У команды без цвета — графит.
  */
 export async function matchColors(m: Match): Promise<MatchColors | null> {
-  const [a, b] = await Promise.all([logoColor(m.home.logo).catch(() => null), logoColor(m.away.logo).catch(() => null)])
-  if (!a && !b) return null
-  const dh = a && b ? Math.abs(a.h - b.h) : 180
-  const close = Math.min(dh, 360 - dh) < 25
-  return { home: a ? css(a) : GRAPHITE, away: b ? css(b, close ? 0.14 : 0) : GRAPHITE }
+  const [a, b] = await Promise.all([logoPalette(m.home.logo).catch(() => []), logoPalette(m.away.logo).catch(() => [])])
+  if (!a.length && !b.length) return null
+  const dh = a.length && b.length ? Math.abs(a[0].h - b[0].h) : 180
+  const d = Math.min(dh, 360 - dh) < 25 ? 0.14 : 0
+  return {
+    home: a.length ? css(a[0]) : GRAPHITE,
+    away: b.length ? css(b[0], d) : GRAPHITE,
+    home2: a.length ? css(a[1] ?? accent(a[0]), 0, true) : GRAPHITE_2,
+    away2: b.length ? css(b[1] ?? accent(b[0]), d, true) : GRAPHITE_2,
+  }
 }

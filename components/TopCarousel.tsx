@@ -11,7 +11,7 @@ export type MainSlide = { id: number; href: string; live: boolean; caption: stri
  * Фон «Афиши» одного матча: цвета клубов (хозяева слева, гости справа; нет — графит) и в «Эмблемах» — эмблемы
  * команд для крупного тиснения за ними.
  */
-export type Backdrop = { home?: string; away?: string; marks?: { home: string | null; away: string | null } }
+export type Backdrop = { home?: string; away?: string; home2?: string; away2?: string; marks?: { home: string | null; away: string | null } }
 /** День в чипе: переход на страницу дня — вся страница (блок, подборки, список) про один и тот же день. */
 export type DayLink = { key: string; label: string; href: string; current: boolean; live?: boolean }
 
@@ -27,17 +27,24 @@ function Arrow({ dir }: { dir: 'left' | 'right' }) {
 const SCRIM = 'absolute inset-0 bg-[linear-gradient(to_top,rgb(11_11_9/0.55),rgb(11_11_9/0.12)_45%,rgb(11_11_9/0.08))]'
 
 /**
- * Фон «Афиши» одного матча: заливка цветами клубов (хозяева слева, гости справа), пятна тех же цветов и светлый
- * блик. В карточке пятна медленно плывут (`drift`), в свечении вокруг неё — стоят.
+ * Фон «Афиши» одного матча, как живые обои Apple: заливка цветами клубов (хозяева слева, гости справа) и четыре
+ * пятна — по два цвета на клуб (главный и второй: с эмблемы или соседний оттенок), плюс светлый блик. В карточке
+ * пятна плывут каждое своим путём (`drift-a…d`, 19–27 с) и смешиваются — фон переливается; в свечении — стоят.
+ * Пятна других цветов, чем заливка под ними, — иначе движения не видно.
  */
 function Paint({ b, drift = false, marks = false }: { b: Backdrop | null; drift?: boolean; marks?: boolean }) {
   const home = b?.home ?? 'hsl(40 6% 30%)'
   const away = b?.away ?? 'hsl(40 6% 24%)'
+  const home2 = b?.home2 ?? 'hsl(40 6% 38%)'
+  const away2 = b?.away2 ?? 'hsl(40 6% 32%)'
+  const blob = (c: string) => ({ background: `radial-gradient(closest-side, ${c}, transparent)` })
   return (
     <>
       <div className="absolute inset-0" style={{ background: `linear-gradient(in oklch 100deg, ${home} 8%, ${away} 92%)` }} />
-      <div className={`absolute -left-[15%] -top-[40%] h-[140%] w-[70%] rounded-full ${drift ? 'drift-a' : ''}`} style={{ background: `radial-gradient(closest-side, ${home}, transparent)` }} />
-      <div className={`absolute -bottom-[40%] -right-[15%] h-[140%] w-[70%] rounded-full ${drift ? 'drift-b' : ''}`} style={{ background: `radial-gradient(closest-side, ${away}, transparent)` }} />
+      <div className={`absolute -left-[15%] -top-[40%] h-[140%] w-[70%] rounded-full ${drift ? 'drift-a' : ''}`} style={blob(home)} />
+      <div className={`absolute -bottom-[55%] left-[4%] h-[125%] w-[52%] rounded-full opacity-90 ${drift ? 'drift-c' : ''}`} style={blob(home2)} />
+      <div className={`absolute -bottom-[40%] -right-[15%] h-[140%] w-[70%] rounded-full ${drift ? 'drift-b' : ''}`} style={blob(away)} />
+      <div className={`absolute -top-[55%] right-[4%] h-[125%] w-[52%] rounded-full opacity-90 ${drift ? 'drift-d' : ''}`} style={blob(away2)} />
       <div className={`absolute -top-[30%] left-[25%] h-[110%] w-[50%] rounded-full bg-[radial-gradient(closest-side,rgb(255_255_255/0.13),transparent)] ${drift ? 'drift-b' : ''}`} />
       {marks && b?.marks?.home ? <Mark src={b.marks.home} side="left" drift={drift} /> : null}
       {marks && b?.marks?.away ? <Mark src={b.marks.away} side="right" drift={drift} /> : null}
@@ -48,8 +55,10 @@ function Paint({ b, drift = false, marks = false }: { b: Backdrop | null; drift?
 /**
  * «Эмблемы»: эмблема команды крупно за ней — чуть выше карточки (обрезана сверху и снизу едва-едва), а сбоку
  * наполовину за краем: видна часть, обращённая к центру. Серая, в режиме «мягкий свет» — окрашивается в цвет
- * фона, как тиснение, а не вторая картинка; едва плывёт. Смешивание — у обёртки: она и сдвинута (transform),
- * и смешивается с фоном целиком. На телефоне эмблемы меньше — иначе сходятся в середине, под временем.
+ * фона, как тиснение. Размыта, как за матовым стеклом: настоящие эмблемы маленькие, и без размытия при таком
+ * увеличении видны пиксели — владелец счёл это плохим качеством. Едва покачивается (`drift-mark`, правая —
+ * со сдвигом по времени, не в такт левой). Смешивание — у обёртки: она и сдвинута (transform), и смешивается с
+ * фоном целиком. На телефоне эмблемы меньше — иначе сходятся в середине, под временем.
  */
 function Mark({ src, side, drift }: { src: string; side: 'left' | 'right'; drift: boolean }) {
   return (
@@ -59,7 +68,13 @@ function Mark({ src, side, drift }: { src: string; side: 'left' | 'right'; drift
       }`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="" aria-hidden decoding="async" className={`h-full w-full object-contain opacity-30 grayscale ${drift ? 'drift-mark' : ''}`} />
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        decoding="async"
+        className={`h-full w-full object-contain opacity-45 blur-[6px] contrast-125 grayscale ${drift ? `drift-mark ${side === 'right' ? '[animation-delay:-9s]' : ''}` : ''}`}
+      />
     </div>
   )
 }
