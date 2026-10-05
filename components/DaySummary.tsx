@@ -258,33 +258,30 @@ function PosterSlide({ it }: { it: FeedItem }) {
   const finished = m.status === 'finished'
   const score = (live || finished) && m.score ? m.score : null
   const minute = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'
-  const BIG = 'num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[40px] lg:text-[clamp(40px,5.6vh,60px)]'
+  // после свистка проигравший чуть тусклее; до матча и при ничьей — обе одинаково
+  const lead = score && score.home !== score.away ? (score.home > score.away ? 'home' : 'away') : null
+  const BIG = 'num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[36px] sm:text-[44px] lg:text-[clamp(44px,6.4vh,68px)] lg:[@media(max-height:739px)]:text-[40px]'
+  // эмблема на матовом светлом круге, как в Apple Sports: тёмные эмблемы не тонут в цвете фона
+  const team = (t: Match['home'], k: 'home' | 'away') => (
+    <span className={`flex min-w-0 flex-col items-center gap-3 text-center lg:gap-4 ${lead && lead !== k ? 'opacity-70' : ''}`}>
+      <span className="grid h-[var(--disc)] w-[var(--disc)] shrink-0 place-items-center rounded-full bg-white/[0.16] ring-1 ring-white/25 backdrop-blur-md">
+        <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
+      </span>
+      <span className="line-clamp-2 max-w-full text-balance text-[17px] font-semibold leading-tight tracking-[-0.02em] text-fg sm:text-[20px] lg:text-[clamp(22px,3.1vh,30px)]">{t.name}</span>
+    </span>
+  )
   return (
-    <div className="relative flex min-w-0 flex-1 flex-col justify-end">
+    <div className="relative flex min-w-0 flex-1 flex-col justify-center">
+      {/* табло по центру: хозяева — на своём цвете слева, гости — справа, между ними время или счёт */}
       <StoryLink
         id={m.id}
         href={matchHref(m)}
-        className={`flex min-w-0 flex-col gap-5 [--logo:34px] lg:flex-row lg:items-end lg:justify-between lg:gap-10 lg:[--logo:clamp(40px,5.4vh,56px)] ${COVER}`}
+        className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 py-2 [--disc:64px] sm:gap-x-6 sm:[--disc:80px] lg:gap-x-10 lg:[--disc:clamp(76px,11vh,112px)] lg:[@media(max-height:739px)]:[--disc:60px] ${COVER}`}
       >
-        {/* на компьютере — одной строкой «Хозяева — Гости» с эмблемами по краям, на телефоне — строками друг под другом */}
-        <span className="hidden min-w-0 items-center gap-5 lg:flex">
-          <TeamLogo name={m.home.name} src={m.home.logo} size="var(--logo)" />
-          <span className="min-w-0 text-balance text-[clamp(32px,4.6vh,52px)] font-semibold leading-[1.12] tracking-[-0.03em] text-fg">
-            {m.home.name} <span className="text-fg/55">—</span> {m.away.name}
-          </span>
-          <TeamLogo name={m.away.name} src={m.away.logo} size="var(--logo)" />
-        </span>
-        <span className="flex min-w-0 flex-col gap-3 lg:hidden">
-          {[m.home, m.away].map((t) => (
-            <span key={t.id} className="flex min-w-0 items-center gap-3">
-              <TeamLogo name={t.name} src={t.logo} size="var(--logo)" />
-              <span className="line-clamp-2 text-[24px] font-semibold leading-tight tracking-[-0.02em] text-fg sm:text-[28px]">{t.name}</span>
-            </span>
-          ))}
-        </span>
-        <span className="flex shrink-0 items-end justify-between gap-6 lg:justify-end">
+        {team(m.home, 'home')}
+        <span className="flex flex-col items-center text-center">
           {score ? (
-            <span className="flex flex-col lg:items-end">
+            <>
               <span className={BIG}>
                 {score.home} : {score.away}
               </span>
@@ -292,18 +289,16 @@ function PosterSlide({ it }: { it: FeedItem }) {
                 {live ? <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" aria-hidden /> : null}
                 {live ? minute : 'итог'}
               </span>
-            </span>
+            </>
           ) : (
-            <span className="flex flex-col lg:items-end">
+            <>
               <span className="text-[13px] text-fg/75">Начало</span>
-              <span className="mt-1 flex items-baseline gap-1.5">
-                <span className={BIG}>{formatTime(m.ts)}</span>
-                <span className="text-[14px] text-fg/75">мск</span>
-              </span>
-            </span>
+              <span className={`${BIG} mt-1.5`}>{formatTime(m.ts)}</span>
+              <span className="mt-1.5 text-[13px] text-fg/75">мск</span>
+            </>
           )}
           {/* вся карточка — ссылка на сторис, поэтому это подпись, а не отдельная кнопка; на телефоне — кнопка под лентой */}
-          <span aria-hidden className="hidden h-11 shrink-0 items-center gap-2 rounded-[12px] bg-acid px-5 text-[15px] font-semibold text-acid-ink lg:inline-flex">
+          <span aria-hidden className="mt-5 hidden h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-[12px] bg-acid px-5 text-[15px] font-semibold text-acid-ink lg:inline-flex lg:[@media(max-height:739px)]:mt-3">
             Разбор матча
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M7 17 17 7" />
@@ -311,6 +306,7 @@ function PosterSlide({ it }: { it: FeedItem }) {
             </svg>
           </span>
         </span>
+        {team(m.away, 'away')}
       </StoryLink>
     </div>
   )

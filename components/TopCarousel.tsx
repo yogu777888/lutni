@@ -91,21 +91,25 @@ export function TopCarousel({
     >
       {backdrops ? (
         // «Афиша»: у каждого матча свой фон — два больших мягких пятна цветов клубов медленно плывут (CSS),
-        // при листании фоны плавно сменяют друг друга; снизу затемнение — под белый текст
+        // при листании фоны плавно сменяют друг друга; снизу лёгкое затемнение
         <div aria-hidden className="pointer-events-none absolute inset-0">
           {backdrops.map((b, k) => (
             <div key={k} className={`absolute inset-0 transition-opacity duration-700 ${k === cur ? 'opacity-100' : 'opacity-0'}`}>
+              {/* заливка на всю карточку: цвет хозяев слева плавно переходит в цвет гостей справа */}
+              <div className="absolute inset-0" style={{ background: `linear-gradient(in oklch 100deg, ${b?.home ?? 'hsl(40 6% 30%)'} 8%, ${b?.away ?? 'hsl(40 6% 24%)'} 92%)` }} />
               <div
-                className="drift-a absolute -left-[18%] -top-[35%] h-[150%] w-[80%] rounded-full opacity-90"
+                className="drift-a absolute -left-[15%] -top-[40%] h-[140%] w-[70%] rounded-full"
                 style={{ background: `radial-gradient(closest-side, ${b?.home ?? 'hsl(40 6% 30%)'}, transparent)` }}
               />
               <div
-                className="drift-b absolute -bottom-[45%] -right-[18%] h-[150%] w-[80%] rounded-full opacity-90"
+                className="drift-b absolute -bottom-[40%] -right-[15%] h-[140%] w-[70%] rounded-full"
                 style={{ background: `radial-gradient(closest-side, ${b?.away ?? 'hsl(40 6% 26%)'}, transparent)` }}
               />
+              {/* светлый блик медленно плывёт поверх — фон «живой», как баннеры в App Store */}
+              <div className="drift-b absolute -top-[30%] left-[25%] h-[110%] w-[50%] rounded-full bg-[radial-gradient(closest-side,rgb(255_255_255/0.13),transparent)]" />
             </div>
           ))}
-          <div className="absolute inset-0 bg-[linear-gradient(to_top,rgb(11_11_9/0.78),rgb(11_11_9/0.2)_55%,rgb(11_11_9/0.1))]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_top,rgb(11_11_9/0.55),rgb(11_11_9/0.12)_45%,rgb(11_11_9/0.08))]" />
         </div>
       ) : null}
       {/* шапка: слева турнир матча на экране, справа стрелки и чип дня (в углу — сверху и справа поровну);

@@ -82,8 +82,11 @@ export function logoColor(src: string | null | undefined): Promise<Hsl | null> {
 }
 
 /** Цвет для фона: без неона и без «грязи» — насыщенность и светлота в спокойных пределах. */
-const css = (c: Hsl, darker = 0) =>
-  `hsl(${Math.round(c.h)} ${Math.round(Math.min(0.8, Math.max(0.35, c.s)) * 100)}% ${Math.round((Math.min(0.5, Math.max(0.34, c.l)) - darker) * 100)}%)`
+const css = (c: Hsl, darker = 0) => {
+  // жёлтые и лаймовые оттенки темнее: на них белый текст иначе не читается
+  const top = c.h >= 40 && c.h <= 90 ? 0.4 : 0.48
+  return `hsl(${Math.round(c.h)} ${Math.round(Math.min(0.8, Math.max(0.45, c.s)) * 100)}% ${Math.round((Math.min(top, Math.max(0.32, c.l)) - darker) * 100)}%)`
+}
 
 /**
  * Цвета матча для «Афиши». Похожие оттенки у соперников (разница меньше 25°) — гостей темнее, чтобы цвета
