@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react'
 import { artFor, CIRCLE_BG } from '@/lib/story-art'
 import type { CircleArt, CircleKind, StoryGroup } from '@/lib/story-groups'
-import { initials } from '../Monogram'
-import { TeamLogo } from '../TeamLogo'
 import { ArtIcon } from './ArtIcon'
 import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
@@ -55,37 +53,42 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
 }
 
 /**
- * Эмблема клуба на светлом кружке — пара клубов внахлёст, как в главном блоке: на цветной заливке тёмные эмблемы
- * не тонут, а светлые не выглядят наклейками. Кружок плотный на 85% (матовый): цвет клуба чуть просвечивает, как у
- * подложек в главной карточке, но эмблема читается и на 30 пикселях. Без эмблемы — буквы клуба тёмным.
+ * Эмблема клуба на обложке кружка — увеличенная и сильно размытая: от неё остаются только цвета клуба, как фон из
+ * обложки альбома в Apple Music. Детали не нужны, поэтому маленькие эмблемы из API здесь не выглядят мутными.
  */
-function Plate({ team, className }: { team: CircleArt['home']; className: string }) {
+function Smear({ src, side }: { src: string; side: 'left' | 'right' }) {
   return (
-    <span className={`absolute grid h-[30px] w-[30px] place-items-center rounded-full bg-fg/85 shadow-[0_1px_6px_rgb(0_0_0/0.35)] backdrop-blur-sm ${className}`}>
-      {team.logo ? (
-        <TeamLogo name={team.name} src={team.logo} size={20} />
-      ) : (
-        <span aria-hidden className="text-[10px] font-bold leading-none tracking-[-0.01em] text-ink">
-          {initials(team.name)}
-        </span>
-      )}
-    </span>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      aria-hidden
+      decoding="async"
+      className={`absolute top-1/2 h-[95%] w-[95%] -translate-y-1/2 object-contain blur-[7px] saturate-150 ${side === 'left' ? '-left-[20%]' : '-right-[20%]'}`}
+    />
   )
 }
 
 /**
- * Обложка кружка: своя картинка из public/stories/<ключ>.*; в «Афише» — эмблемы матча на заливке цветами клубов
- * (видно, что внутри истории); иначе — плоский кружок с иконкой тега (lib/story-art.ts).
+ * Обложка кружка: своя картинка из public/stories/<ключ>.*; в «Афише» и «Эмблемах» — значок темы поверх сильно
+ * размытых эмблем матча этой истории (цвета клубов: хозяева слева, гости справа) — видно и тему, и что кружок
+ * «живой», как история; иначе — плоский кружок со значком (lib/story-art.ts).
  */
 function CoverArt({ k, cover, match, children }: { k: string; cover?: string; match?: CircleArt; children?: React.ReactNode }) {
   const art = artFor(k)
   if (!cover && match) {
-    const home = match.colors?.home ?? 'hsl(40 6% 36%)'
+    const home = match.colors?.home ?? 'hsl(40 6% 34%)'
     const away = match.colors?.away ?? 'hsl(40 6% 24%)'
     return (
-      <span className="absolute inset-[5.5px] overflow-hidden rounded-full" style={{ background: `linear-gradient(in oklch 135deg, ${home} 20%, ${away} 80%)` }}>
-        <Plate team={match.home} className="left-1.5 top-1.5" />
-        <Plate team={match.away} className="bottom-1.5 right-1.5" />
+      <span
+        className="absolute inset-[5.5px] grid place-items-center overflow-hidden rounded-full"
+        style={{ background: `linear-gradient(in oklch 135deg, ${home} 20%, ${away} 80%)` }}
+      >
+        {match.home.logo ? <Smear src={match.home.logo} side="left" /> : null}
+        {match.away.logo ? <Smear src={match.away.logo} side="right" /> : null}
+        {/* затемнение к центру — под белый значок на любых цветах */}
+        <span className="absolute inset-0 bg-[radial-gradient(circle,rgb(0_0_0/0.42),rgb(0_0_0/0.14)_75%)]" />
+        <ArtIcon name={art.icon} className="relative h-[26px] w-[26px] text-fg" />
       </span>
     )
   }
