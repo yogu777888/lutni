@@ -90,9 +90,10 @@ export function TopCarousel({
       className={`relative flex min-w-0 flex-col py-[18px] lg:py-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:py-6 lg:[@media(max-height:739px)]:py-5 ${className}`}
     >
       {backdrops ? (
-        // «Афиша»: у каждого матча свой фон — два больших мягких пятна цветов клубов медленно плывут (CSS),
-        // при листании фоны плавно сменяют друг друга; снизу лёгкое затемнение
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]">
+        // «Афиша»: у каждого матча свой фон — заливка цветами клубов, поверх медленно плывут пятна и блик (CSS),
+        // при листании фоны плавно сменяют друг друга; снизу лёгкое затемнение.
+        // Фон заходит и под прозрачную рамку карточки — иначе по краю видна тёмная полоска
+        <div aria-hidden className="pointer-events-none absolute -inset-px overflow-hidden rounded-[inherit]">
           {backdrops.map((b, k) => (
             <div key={k} className={`absolute inset-0 transition-opacity duration-700 ${k === cur ? 'opacity-100' : 'opacity-0'}`}>
               {/* заливка на всю карточку: цвет хозяев слева плавно переходит в цвет гостей справа */}

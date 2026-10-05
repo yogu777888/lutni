@@ -22,9 +22,10 @@ const SURFACE: Record<Look, string> = {
   bars: CARD,
   dots: 'rounded-[24px] bg-panel',
   digits: 'rounded-[22px] border border-edge',
-  poster: 'rounded-[22px] border border-white/[0.06] bg-panel',
+  // без обводки: плитки светлее фона страницы; прозрачная рамка видна только в режиме высокой контрастности
+  poster: 'rounded-[22px] border border-transparent bg-panel-2',
 }
-const HOVER: Record<Look, string> = { bars: 'hover:border-edge-2', dots: 'hover:bg-panel-2', digits: 'hover:bg-white/[0.02]', poster: 'hover:border-edge-2' }
+const HOVER: Record<Look, string> = { bars: 'hover:border-edge-2', dots: 'hover:bg-panel-2', digits: 'hover:bg-white/[0.02]', poster: 'hover:bg-panel-3' }
 
 const MATCHES = ['матч', 'матча', 'матчей'] as const
 const TOURNEYS = ['турнир', 'турнира', 'турниров'] as const
@@ -501,7 +502,7 @@ export type DayPicks = {
 }
 
 function Picks({ p, look: pageLook }: { p: DayPicks; look: Look }) {
-  // «Афиша» меняет только «Главные матчи» — подборки как в «Полосах»
+  // «Афиша»: графики подборок — как в «Полосах», а плитки — свои, без обводки
   const look: Look = pageLook === 'poster' ? 'bars' : pageLook
   const c = p.counts
   const g = p.goals
@@ -542,7 +543,7 @@ function Picks({ p, look: pageLook }: { p: DayPicks; look: Look }) {
       : ['Линия букмекеров ещё загружается']
   // «Цифры» — одна полоса с тонкими разделителями, у остальных — отдельные плитки
   const strip = look === 'digits'
-  const surface = strip ? HOVER.digits : `${SURFACE[look]} ${HOVER[look]}`
+  const surface = strip ? HOVER.digits : `${SURFACE[pageLook]} ${HOVER[pageLook]}`
   const all = <NavTile title="Все матчи" caption="Расписание и результаты" href={`${p.dayHref}#matches`} lines={allLines} surface={surface} />
   const goals = <NavTile title="Голевые матчи" caption="Полная подборка на 3+ гола" href={`/matches/${p.ymd}/goals`} lines={goalLines} surface={surface} />
   const moves = (
