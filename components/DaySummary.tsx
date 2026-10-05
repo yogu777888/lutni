@@ -4,12 +4,14 @@ import type { FeedItem } from '@/lib/data'
 import { GOALS_PICK, type DayCounts, type GoalsPick, type MovePick } from '@/lib/day-summary'
 import { lineFact, pickFacts } from '@/lib/facts'
 import { appNow, formatDayMonth, formatTime, pct, plural, pluralN, todayYmd, ymdInTz } from '@/lib/format'
-import { biggestMove, lineMoves, moveOutcome, periodEndLabel, x12Line, type LineMove, type OddsSnap } from '@/lib/lines'
+import { biggestMove, lineMoves, moveOutcome, periodEndLabel, periodText, x12Line, type LineMove, type OddsSnap } from '@/lib/lines'
 import { matchHref } from '@/lib/links'
 import { isLive } from '@/lib/rank'
 import { posterLike, type Look } from '@/lib/looks'
+import type { ArtIcon as IconName } from '@/lib/story-art'
 import type { League, Match, MatchFull, StatPair } from '@/lib/types'
 import { CHIP, StoryChipFace } from './Chips'
+import { ArtIcon } from './story/ArtIcon'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
 import { TopCarousel, type Backdrop, type DayLink, type MainSlide } from './TopCarousel'
@@ -509,6 +511,130 @@ function MoveChart({ mv, kickoff, look }: { mv: LineMove; kickoff: number; look:
   )
 }
 
+/** Тихая стрелка рядом с названием плитки: вся плитка — ссылка, отдельная кнопка не нужна. */
+function Chevron() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-dim transition duration-300 group-hover:translate-x-0.5 group-hover:text-fg" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="m9 6 6 6-6 6" />
+    </svg>
+  )
+}
+
+/**
+ * Плитка подборки в «Афише» и «Эмблемах»: значок темы на мягком кружке (тот же набор, что у кружков историй), название
+ * с тихой стрелкой и одна строка по делу. `aside` — справа от названия (на телефоне — третьей строкой), строка под
+ * названием — на всю ширину.
+ */
+function IconTile({
+  icon,
+  title,
+  href,
+  line,
+  aside,
+  hint,
+  surface,
+}: {
+  icon: IconName
+  title: string
+  href: string
+  line: React.ReactNode
+  aside?: React.ReactNode
+  /** подсказка при наведении — полная фраза, если строка обрезана */
+  hint?: string
+  surface: string
+}) {
+  return (
+    <Link
+      href={href}
+      prefetch={false}
+      title={hint}
+      className={`group grid h-full min-w-0 grid-cols-[40px_minmax(0,1fr)] content-center items-center gap-x-3 p-[18px] transition-colors ${aside ? 'sm:grid-cols-[40px_minmax(0,1fr)_auto]' : ''} ${surface}`}
+    >
+      <span
+        className={`col-start-1 grid h-10 w-10 place-items-center rounded-full bg-white/[0.06] text-fg transition-colors duration-300 group-hover:bg-white/[0.1] ${aside ? 'row-[1/span_3] sm:row-[1/span_2]' : 'row-[1/span_2]'}`}
+      >
+        <ArtIcon name={icon} className="h-5 w-5" />
+      </span>
+      <span className="col-start-2 row-start-1 flex min-w-0 items-center gap-1">
+        <span className="truncate text-[15px] font-semibold leading-5 text-fg">{title}</span>
+        <Chevron />
+      </span>
+      {/* начало и размах — одним значением: «sm:col-span-2» перебил бы col-start (grid-column пишется целиком) */}
+      <span className={`col-start-2 row-start-2 block min-w-0 truncate text-[14px] leading-5 text-dim ${aside ? 'sm:col-[2/span_2]' : ''}`}>{line}</span>
+      {aside ? <span className="col-start-2 row-start-3 mt-1 sm:col-start-3 sm:row-start-1 sm:mt-0 sm:justify-self-end">{aside}</span> : null}
+    </Link>
+  )
+}
+
+/**
+ * «Афиша» и «Эмблемы»: подборки без подписи-повтора, квадрата со стрелкой и графика. У «Движения коэффициентов» —
+ * эмблемы матча и исход, справа от названия — «1.28 → 1.51» и метка «+18%» (упал — янтарь, вырос — серый); букмекер
+ * и период («с открытия линии до 19:30») — в подсказке.
+ */
+function IconPicks({ p, surface }: { p: DayPicks; surface: string }) {
+  const c = p.counts
+  const g = p.goals
+  const total = pluralN(c.total, MATCHES)
+  const all: React.ReactNode =
+    c.live > 0 ? (
+      <>
+        {total} · <span className="text-live">{c.live} LIVE</span>
+      </>
+    ) : p.past || !c.next ? (
+      `${total} · ${c.finished ? 'все сыграны' : 'итоги в списке'}`
+    ) : (
+      `${total} · ${c.finished ? 'следующий' : 'первый'} в ${formatTime(c.next.match.ts)}`
+    )
+  const goals = g.picks.length
+    ? `${pluralN(g.picks.length, MATCHES)} с шансом от ${pct(GOALS_PICK)}`
+    : g.covered
+      ? `Матчей с шансом от ${pct(GOALS_PICK)} нет`
+      : 'Линия ещё загружается'
+  const mv = p.move
+  let move: React.ReactNode = p.movesCovered ? 'Заметных изменений линии нет' : 'Линия ещё загружается'
+  let aside: React.ReactNode = null
+  let hint: string | undefined
+  if (mv) {
+    const m = mv.it.match
+    const { from, to, change, bookmaker } = mv.mv
+    const down = change < 0
+    const outcome = moveOutcome(mv.mv.key, { home: m.home.name, away: m.away.name })
+    move = (
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="flex shrink-0 gap-1">
+          <TeamLogo name={m.home.name} src={m.home.logo} size={18} />
+          <TeamLogo name={m.away.name} src={m.away.logo} size={18} />
+        </span>
+        <span className="truncate">
+          {pair(m)} · {outcome}
+        </span>
+      </span>
+    )
+    aside = (
+      <span className="flex items-center gap-2">
+        <span className="num whitespace-nowrap text-[15px] leading-5 text-dim">
+          {from.toFixed(2)} <span className="text-mute">→</span> <span className={`font-semibold ${down ? 'text-hot' : 'text-fg'}`}>{to.toFixed(2)}</span>
+        </span>
+        <span className={`num inline-flex h-5 items-center whitespace-nowrap rounded-[6px] px-1.5 text-[13px] font-medium ${down ? 'bg-hot/[0.12] text-hot' : 'bg-white/[0.06] text-chalk'}`}>
+          {down ? '−' : '+'}
+          {Math.abs(Math.round(change * 100))}%
+        </span>
+      </span>
+    )
+    hint = `${pair(m)}, ${outcome}. ${bookmaker}: ${from.toFixed(2)} → ${to.toFixed(2)} ${periodText(mv.mv.at, m.ts)}`
+  }
+  return (
+    // 1 : 1 : 1.6, а не 1 : 1 : 2: строке маленьких плиток нужно место, а у широкой середина пустовала
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)]">
+      <IconTile icon="calendar-dots" title="Все матчи" href={`${p.dayHref}#matches`} line={all} surface={surface} />
+      <IconTile icon="soccer-ball" title="Голевые матчи" href={`/matches/${p.ymd}/goals`} line={goals} surface={surface} />
+      <div className="min-w-0 sm:col-span-2 lg:col-span-1">
+        <IconTile icon="arrows-down-up" title="Движение коэффициентов" href={`/matches/${p.ymd}/odds`} line={move} aside={aside} hint={hint} surface={surface} />
+      </div>
+    </div>
+  )
+}
+
 /** Превью и ссылки подборок — про день страницы. */
 export type DayPicks = {
   ymd: string
@@ -521,9 +647,8 @@ export type DayPicks = {
   movesCovered: number
 }
 
-function Picks({ p, look: pageLook }: { p: DayPicks; look: Look }) {
-  // «Афиша»: графики подборок — как в «Полосах», а плитки — свои, без обводки
-  const look: Look = posterLike(pageLook) ? 'bars' : pageLook
+function Picks({ p, look }: { p: DayPicks; look: Look }) {
+  if (posterLike(look)) return <IconPicks p={p} surface={`${SURFACE[look]} ${HOVER[look]}`} />
   const c = p.counts
   const g = p.goals
   const allLines: React.ReactNode[] =
@@ -563,7 +688,7 @@ function Picks({ p, look: pageLook }: { p: DayPicks; look: Look }) {
       : ['Линия букмекеров ещё загружается']
   // «Цифры» — одна полоса с тонкими разделителями, у остальных — отдельные плитки
   const strip = look === 'digits'
-  const surface = strip ? HOVER.digits : `${SURFACE[pageLook]} ${HOVER[pageLook]}`
+  const surface = strip ? HOVER.digits : `${SURFACE[look]} ${HOVER[look]}`
   const all = <NavTile title="Все матчи" caption="Расписание и результаты" href={`${p.dayHref}#matches`} lines={allLines} surface={surface} />
   const goals = <NavTile title="Голевые матчи" caption="Полная подборка на 3+ гола" href={`/matches/${p.ymd}/goals`} lines={goalLines} surface={surface} />
   const moves = (

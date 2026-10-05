@@ -4,7 +4,7 @@
  * Свою картинку можно подложить файлом public/stories/<ключ>.(webp|jpg|png):
  * ключ — slug тега, «live», «top» или «all» (см. lib/story-covers.ts).
  */
-/** Значок темы — имя из Phosphor Icons (components/story/ArtIcon.tsx). */
+/** Значок темы (и плиток «Подборок») — имя из Phosphor Icons (components/story/ArtIcon.tsx). */
 export type ArtIcon =
   | 'broadcast'
   | 'star'
@@ -22,6 +22,8 @@ export type ArtIcon =
   | 'arrows-in-line-horizontal'
   | 'trophy'
   | 'hash'
+  | 'calendar-dots'
+  | 'arrows-down-up'
 
 /** a — свечение сверху слева, b — снизу справа, base — тёмная основа. */
 export type Art = { a: string; b: string; base: string; icon: ArtIcon }
