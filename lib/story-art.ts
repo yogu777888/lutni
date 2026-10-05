@@ -4,21 +4,22 @@
  * Свою картинку можно подложить файлом public/stories/<ключ>.(webp|jpg|png):
  * ключ — slug тега, «live», «top» или «all» (см. lib/story-covers.ts).
  */
+/** Значок темы — имя из Phosphor Icons (components/story/ArtIcon.tsx). */
 export type ArtIcon =
-  | 'live'
-  | 'flame'
-  | 'percent'
-  | 'down'
-  | 'ball'
+  | 'broadcast'
+  | 'star'
+  | 'seal-percent'
+  | 'trend-down'
+  | 'soccer-ball'
   | 'shield'
-  | 'swap'
+  | 'arrows-left-right'
   | 'crown'
-  | 'scale'
-  | 'up'
-  | 'zap'
-  | 'home'
-  | 'cross'
-  | 'swords'
+  | 'circle-half'
+  | 'lightning'
+  | 'fire'
+  | 'castle-turret'
+  | 'bandaids'
+  | 'arrows-in-line-horizontal'
   | 'trophy'
   | 'hash'
 
@@ -26,21 +27,21 @@ export type ArtIcon =
 export type Art = { a: string; b: string; base: string; icon: ArtIcon }
 
 const ART: Record<string, Art> = {
-  live: { a: '#ff5c5c', b: '#ff2d75', base: '#1c0709', icon: 'live' },
-  top: { a: '#c8ff2e', b: '#f4f1e6', base: '#121604', icon: 'flame' },
+  live: { a: '#ff5c5c', b: '#ff2d75', base: '#1c0709', icon: 'broadcast' },
+  top: { a: '#c8ff2e', b: '#f4f1e6', base: '#121604', icon: 'star' },
   all: { a: '#c8ff2e', b: '#34332b', base: '#121210', icon: 'hash' },
-  value: { a: '#c8ff2e', b: '#3fd17a', base: '#0f1702', icon: 'percent' },
-  progruz: { a: '#ffb020', b: '#ff6a3d', base: '#1c1000', icon: 'down' },
-  'tb-2-5': { a: '#2ee6c9', b: '#3987e5', base: '#04161a', icon: 'ball' },
+  value: { a: '#c8ff2e', b: '#3fd17a', base: '#0f1702', icon: 'seal-percent' },
+  progruz: { a: '#ffb020', b: '#ff6a3d', base: '#1c1000', icon: 'trend-down' },
+  'tb-2-5': { a: '#2ee6c9', b: '#3987e5', base: '#04161a', icon: 'soccer-ball' },
   'tm-2-5': { a: '#5b7bff', b: '#2ee6c9', base: '#070c1e', icon: 'shield' },
-  'obe-zabyut': { a: '#2ee6a6', b: '#c8ff2e', base: '#031612', icon: 'swap' },
+  'obe-zabyut': { a: '#2ee6a6', b: '#c8ff2e', base: '#031612', icon: 'arrows-left-right' },
   favorit: { a: '#ffd84d', b: '#ff9f1c', base: '#1c1500', icon: 'crown' },
-  ravnye: { a: '#9b7bff', b: '#4cc9f0', base: '#0f0b1e', icon: 'scale' },
-  andedog: { a: '#ff4fd8', b: '#9b7bff', base: '#190a1c', icon: 'up' },
-  seriya: { a: '#ff7a1a', b: '#ff3d6e', base: '#1c0b03', icon: 'zap' },
-  krepost: { a: '#4c8dff', b: '#9bd0ff', base: '#06111e', icon: 'home' },
-  kadry: { a: '#ff4d6d', b: '#ffb3c1', base: '#1c060d', icon: 'cross' },
-  h2h: { a: '#4cc9f0', b: '#c8ff2e', base: '#061417', icon: 'swords' },
+  ravnye: { a: '#9b7bff', b: '#4cc9f0', base: '#0f0b1e', icon: 'circle-half' },
+  andedog: { a: '#ff4fd8', b: '#9b7bff', base: '#190a1c', icon: 'lightning' },
+  seriya: { a: '#ff7a1a', b: '#ff3d6e', base: '#1c0b03', icon: 'fire' },
+  krepost: { a: '#4c8dff', b: '#9bd0ff', base: '#06111e', icon: 'castle-turret' },
+  kadry: { a: '#ff4d6d', b: '#ffb3c1', base: '#1c060d', icon: 'bandaids' },
+  h2h: { a: '#4cc9f0', b: '#c8ff2e', base: '#061417', icon: 'arrows-in-line-horizontal' },
   'top-match': { a: '#ffd84d', b: '#c8ff2e', base: '#161203', icon: 'trophy' },
 }
 
