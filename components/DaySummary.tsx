@@ -63,11 +63,14 @@ const snapTime = (at: number) => (ymdInTz(at) === todayYmd() ? formatTime(at) : 
 // ─── Главные матчи ───────────────────────────────────────────────────────────
 
 /** Матч главного блока: линия одного букмекера (до начала) и статистика (в игре и после) — что успели получить. */
-/** Фон «Афиши»: цвета клубов; в «Эмблемах» — ещё и эмблемы команд для крупного тиснения за ними. */
+/**
+ * Фон «Афиши»: цвета клубов. «Эмблемы» — монохром: графит без цветов клубов и эмблемы команд крупным тиснением
+ * (владелец увидел вид до того, как догрузились цвета, и выбрал так).
+ */
 function backdropOf(x: MainItem, marks: boolean): Backdrop | null {
   if (!marks) return x.colors ?? null
   const m = x.it.match
-  return { ...(x.colors ?? {}), marks: { home: m.home.logo, away: m.away.logo } }
+  return { marks: { home: m.home.logo, away: m.away.logo } }
 }
 
 export type MainItem = {

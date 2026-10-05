@@ -135,8 +135,9 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
     daySnaps(matches, 1200),
   ])
   const hasSummary = mains.length > 0
-  // «Афиша»: цвета клубов из эмблем — для «Главных матчей» и обложек кружков историй, только в этом виде; на холодном
-  // старте ждём не дольше 1,5 с (дальше — графит, а цвет досчитается и запомнится к следующему открытию)
+  // «Афиша»: цвета клубов из эмблем — для «Главных матчей» и обложек кружков историй; на холодном старте ждём не
+  // дольше 1,5 с (дальше — графит, а цвет досчитается и запомнится к следующему открытию). «Эмблемы» — без цветов,
+  // графит: владелец увидел этот вид до того, как цвета догрузились, и выбрал так — их и не считаем
   let circleArt: Record<string, CircleArt> | undefined
   if (posterLike(look)) {
     const byId = new Map(items.map((it) => [it.match.id, it.match]))
@@ -150,8 +151,13 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
       return memo.get(m.id)!
     }
     const want = [...mains.map((x) => x.it.match), ...covers.map((c) => c.m)]
-    const all = Promise.all(want.map(colorsOf))
-    const colors = await Promise.race([all, new Promise<(MatchColors | null)[]>((r) => setTimeout(() => r(want.map(() => null)), 1500).unref?.())])
+    const colors =
+      look === 'poster'
+        ? await Promise.race([
+            Promise.all(want.map(colorsOf)),
+            new Promise<(MatchColors | null)[]>((r) => setTimeout(() => r(want.map(() => null)), 1500).unref?.()),
+          ])
+        : want.map(() => null)
     mains.forEach((x, k) => (x.colors = colors[k]))
     circleArt = Object.fromEntries(
       covers.map(({ key, m }, k) => [
