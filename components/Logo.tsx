@@ -1,13 +1,20 @@
-import { MARK_ASPECT, MARK_D, MARK_VIEWBOX } from './logo-paths'
-
 /**
- * Логотип tag.bet — одна наклонная лаймовая решётка, без надписи (в шапке, подвале, на иконках).
+ * Логотип tag.bet — переплетённая наклонная решётка, без надписи (шапка, подвал). Пока картинкой
+ * (public/brand/mark-weave.png — белая на прозрачном), а не вектором: владелец попросил «пока просто картинку».
+ * Красим в лайм маской — цвет задаёт CSS. Во вкладке браузера и на картинке для соцсетей — прежняя простая
+ * решётка (public/brand/mark.svg, logo-paths.ts): тонкие стыки нового знака на 16 px сливаются.
  * size — высота в px. Название сайта — в подписи ссылки и заголовке вкладки.
  */
+const MARK = 'url(/brand/mark-weave.png) center / contain no-repeat'
+/** Ширина к высоте у картинки знака (275×256). */
+const MARK_ASPECT = 275 / 256
+
 export function LogoMark({ size = 28, className = '' }: { size?: number; className?: string }) {
   return (
-    <svg viewBox={MARK_VIEWBOX} height={size} width={Math.round(size * MARK_ASPECT)} className={`shrink-0 ${className}`} aria-hidden>
-      <path className="fill-acid" d={MARK_D} />
-    </svg>
+    <span
+      aria-hidden
+      className={`inline-block shrink-0 bg-acid ${className}`}
+      style={{ height: size, width: Math.round(size * MARK_ASPECT), mask: MARK, WebkitMask: MARK }}
+    />
   )
 }
