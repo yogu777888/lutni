@@ -19,7 +19,7 @@ export function InjuriesBlock({ injuries, home, away }: { injuries: Injury[]; ho
             {list.length ? (
               <ul className="space-y-1 text-[13px]">
                 {list.map((i, k) => (
-                  <li key={k} className="flex justify-between gap-2 rounded-xl bg-panel-2 px-3 py-2">
+                  <li key={k} className="flex justify-between gap-2 rounded-xl bg-white/[0.04] px-3 py-2">
                     <span className="truncate font-medium">{i.player}</span>
                     <span className="shrink-0 text-xs text-dim">{i.reason}</span>
                   </li>

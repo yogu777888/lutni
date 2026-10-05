@@ -76,7 +76,7 @@ function Odds({ m, hotKey, hotOdd = null }: { m: Match; hotKey: string | null; h
           <span
             key={k}
             className={`num rounded-[9px] border py-1.5 text-center text-[15px] font-semibold ${
-              hot ? 'border-acid bg-acid text-acid-ink' : `border-edge bg-panel-2 ${done ? 'text-mute' : 'text-fg/90'}`
+              hot ? 'border-acid bg-acid text-acid-ink' : `border-transparent bg-white/[0.05] ${done ? 'text-mute' : 'text-fg/90'}`
             }`}
             title={q?.opening ? `Открытие ${q.opening.toFixed(2)}` : undefined}
           >

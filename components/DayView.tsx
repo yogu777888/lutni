@@ -243,7 +243,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
           </div>
           {past || !matches.length ? null : (
             // порядок списка — обычными ссылками (?sort=time): работает без JS, у страницы один canonical
-            <nav aria-label="Порядок матчей" className="flex items-center gap-1 rounded-full border border-edge p-1 text-[14px] font-medium">
+            <nav aria-label="Порядок матчей" className="flex items-center gap-1 rounded-full bg-white/[0.04] p-1 text-[14px] font-medium">
               {(
                 [
                   ['league', 'По турнирам', `${base}#matches`],
@@ -285,7 +285,8 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
                     <span className="transition group-open:rotate-180">▾</span>
                   </span>
                 </summary>
-                <div className="space-y-4 border-t border-edge p-3 sm:p-4">
+                {/* карточки турниров внутри общей — на тон темнее, иначе без обводки они сольются с ней */}
+                <div className="space-y-4 border-t border-edge p-3 sm:p-4 [&_.card]:bg-panel">
                   {others.map((g) => (
                     <LeagueBlock key={g.league.id} league={g.league} items={g.items} />
                   ))}

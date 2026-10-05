@@ -48,7 +48,7 @@ export default async function BookmakerPage({ params }: Props) {
             </div>
           </div>
         </div>
-        <div className="mt-6 rounded-2xl bg-panel-2 p-5">
+        <div className="mt-6 rounded-2xl bg-white/[0.04] p-5">
           <p className="text-[18px] font-semibold tracking-tight">{p.bonus}</p>
           <p className="mt-1 text-[12px] text-mute">{p.bonusNote}</p>
           <CtaLink href={goHref(p, 'review')} className="mt-4 w-full py-3 text-[15px] sm:w-auto">

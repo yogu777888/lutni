@@ -33,15 +33,15 @@ export function PickCard({ pick, match }: { pick: Pick; match: Match }) {
         </div>
       </div>
       <dl className="mt-5 grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-edge bg-panel-2 px-3 py-3.5">
+        <div className="rounded-xl bg-white/[0.04] px-3 py-3.5">
           <dt className="text-[12px] text-dim">Шанс</dt>
           <dd className="num mt-1 whitespace-nowrap text-[24px] font-extrabold tracking-[-0.03em] sm:text-[30px]">{pct(c.prob)}</dd>
         </div>
-        <div className="rounded-xl border border-edge bg-panel-2 px-3 py-3.5">
+        <div className="rounded-xl bg-white/[0.04] px-3 py-3.5">
           <dt className="text-[12px] text-dim">Честная цена</dt>
           <dd className="num mt-1 text-[24px] font-extrabold tracking-[-0.03em] sm:text-[30px]">{c.fairOdd.toFixed(2)}</dd>
         </div>
-        <div className="rounded-xl border border-edge bg-panel-2 px-3 py-3.5">
+        <div className="rounded-xl bg-white/[0.04] px-3 py-3.5">
           <dt className="text-[12px] text-dim">Выгода</dt>
           <dd className={`num mt-1 text-[24px] font-extrabold tracking-[-0.03em] sm:text-[30px] ${ev != null && ev > 0 ? 'text-acid' : 'text-dim'}`}>
             {ev != null ? signedPct(ev) : '—'}

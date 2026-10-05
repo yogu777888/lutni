@@ -49,7 +49,7 @@ export function OddsTable({
       <table className="w-full min-w-[560px] border-separate border-spacing-0 text-sm">
         <thead>
           <tr className="text-[11px] font-medium text-mute">
-            <th className="sticky left-0 z-10 bg-panel py-2 pl-4 pr-2 text-left font-medium sm:pl-0">Букмекер</th>
+            <th className="sticky left-0 z-10 bg-panel-2 py-2 pl-4 pr-2 text-left font-medium sm:pl-0">Букмекер</th>
             {cols.map((c) => (
               <th key={c.key} className="px-1 py-2 text-center font-medium">
                 {c.label}
@@ -63,7 +63,7 @@ export function OddsTable({
             const partner = partnerForApiBookmaker(b.bookmakerId, b.bookmakerName)
             return (
               <tr key={`${b.bookmakerId}-${b.bookmakerName}`}>
-                <td className="sticky left-0 z-10 border-t border-edge bg-panel py-2.5 pl-4 pr-2 sm:pl-0">
+                <td className="sticky left-0 z-10 border-t border-edge bg-panel-2 py-2.5 pl-4 pr-2 sm:pl-0">
                   <span className="flex items-center gap-2.5">
                     {partner ? <PartnerBadge partner={partner} size={22} /> : <span className="h-[22px] w-[22px] rounded-[6px] bg-white/[0.06]" />}
                     <span className={`whitespace-nowrap ${partner ? 'font-medium' : 'text-dim'}`}>{partner?.name ?? b.bookmakerName}</span>
@@ -118,7 +118,7 @@ export function OddsTable({
           })}
           {model ? (
             <tr className="text-mute">
-              <td className="sticky left-0 z-10 border-t border-edge-2 bg-panel py-2.5 pl-4 pr-2 text-[12px] font-medium sm:pl-0">
+              <td className="sticky left-0 z-10 border-t border-edge-2 bg-panel-2 py-2.5 pl-4 pr-2 text-[12px] font-medium sm:pl-0">
                 Справедливый (tag.bet)
               </td>
               {cols.map((c) => {

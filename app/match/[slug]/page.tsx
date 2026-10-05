@@ -189,13 +189,13 @@ export default async function MatchPage({ params }: Props) {
                 {btts != null ? <SplitBar left={btts} leftLabel="Обе забьют" rightLabel="Кто-то не забьёт" /> : null}
                 {model ? (
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-panel-2 p-4">
+                    <div className="rounded-2xl bg-white/[0.04] p-4">
                       <div className="text-[11px] text-mute">Ожидаемые голы (xG)</div>
                       <div className="num mt-1.5 text-[22px] font-semibold tracking-tight">
                         {model.lambdas.home.toFixed(2)} <span className="text-mute">:</span> {model.lambdas.away.toFixed(2)}
                       </div>
                     </div>
-                    <div className="rounded-2xl bg-panel-2 p-4">
+                    <div className="rounded-2xl bg-white/[0.04] p-4">
                       <div className="text-[11px] text-mute">Вероятный счёт</div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {model.topScores.slice(0, 4).map((s) => (

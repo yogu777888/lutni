@@ -24,7 +24,7 @@ export function ResBadge({ r, size = 'sm' }: { r: Res; size?: 'sm' | 'xs' }) {
 
 function TeamFormCard({ team, form }: { team: Team; form: TeamForm }) {
   return (
-    <div className="rounded-2xl bg-panel-2 p-4">
+    <div className="rounded-2xl bg-white/[0.04] p-4">
       <div className="flex items-center gap-2">
         <TeamLogo name={team.name} src={team.logo} size={22} />
         <span className="truncate font-semibold">{team.name}</span>

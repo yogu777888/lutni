@@ -51,7 +51,7 @@ export function MatchHero({
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[13px] text-dim">
         <Link
           href={leagueHref(m.league)}
-          className="inline-flex items-center gap-2 rounded-md border border-edge bg-panel-2 px-2.5 py-1 font-semibold text-fg transition-colors hover:border-edge-2"
+          className="inline-flex items-center gap-2 rounded-md border border-transparent bg-white/[0.07] px-2.5 py-1 font-semibold text-fg transition-colors hover:bg-white/[0.11]"
         >
           <span className={`h-1.5 w-1.5 rounded-full ${live ? 'animate-pulse-live bg-live' : 'bg-acid'}`} />
           {m.league.name}
@@ -90,7 +90,7 @@ export function MatchHero({
           {played ? <p className="eyebrow mt-6">До матча · шансы на исход</p> : null}
           <div className={`grid grid-cols-3 gap-2 sm:gap-3 ${played ? 'mt-3' : 'mt-5'}`}>
             {cells.map((c) => (
-              <div key={c.key} className="min-w-0 rounded-xl border border-edge bg-panel-2 px-2 pb-3 pt-3 text-center">
+              <div key={c.key} className="min-w-0 rounded-xl bg-white/[0.04] px-2 pb-3 pt-3 text-center">
                 <div
                   className={`num font-extrabold leading-[0.95] tracking-[-0.045em] ${played ? 'text-[34px] sm:text-[48px]' : 'text-[46px] sm:text-[88px]'} ${
                     c.key === 'draw' ? 'text-chalk' : 'text-fg'
@@ -122,7 +122,7 @@ export function MatchHero({
               {cells.map((c) => (
                 <div
                   key={c.key}
-                  className={`rounded-xl border px-1 py-2.5 text-center ${c.hot ? 'border-acid bg-acid text-acid-ink' : 'border-edge bg-panel-2'}`}
+                  className={`rounded-xl border px-1 py-2.5 text-center ${c.hot ? 'border-acid bg-acid text-acid-ink' : 'border-transparent bg-white/[0.05]'}`}
                   title={c.hot ? 'Коэффициент выше честного' : undefined}
                 >
                   <div className="num text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[30px]">{c.odd ? c.odd.toFixed(2) : '—'}</div>

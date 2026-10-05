@@ -84,9 +84,11 @@
 }
 
 @layer components {
+  /* карточка без обводки: держится на фоне светлее страницы. Прозрачная рамка видна только в режиме высокой
+     контрастности (Windows) — там карточки не сливаются. Плашки внутри карточки — bg-white/[0.04], не panel-2 */
   .card {
-    background: var(--color-panel);
-    border: 1px solid var(--color-edge);
+    background: var(--color-panel-2);
+    border: 1px solid transparent;
     border-radius: 18px;
   }
   /* моноширинные цифры: коэффициенты и счёт не «прыгают» */

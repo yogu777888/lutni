@@ -32,7 +32,7 @@ export default async function TagsPage() {
         {TAGS.map((t) => {
           const n = counts.get(t.slug) ?? 0
           return (
-            <Link key={t.slug} href={`/tag/${t.slug}`} className="card group flex flex-col p-5 transition-colors hover:bg-panel-2">
+            <Link key={t.slug} href={`/tag/${t.slug}`} className="card group flex flex-col p-5 transition-colors hover:bg-panel-3">
               <div className="flex items-center justify-between">
                 <span className={tagChipClass(t.kind, 'md')}>
                   <TagLabel tag={t} />

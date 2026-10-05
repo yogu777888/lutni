@@ -12,7 +12,7 @@ export function FeedCard({ item, tagSlug }: { item: FeedItem; tagSlug: string })
   const x = m.odds?.x12
   const live = m.status === 'live'
   return (
-    <article className="card relative flex flex-col p-4 transition-colors hover:bg-panel-2">
+    <article className="card relative flex flex-col p-4 transition-colors hover:bg-panel-3">
       <div className="flex items-center justify-between gap-2 text-[12px] text-mute">
         <span className={`shrink-0 font-medium ${live ? 'text-live' : 'text-dim'}`}>
           {live ? `LIVE ${m.elapsed ?? ''}′` : `${dayLabel(ymdInTz(m.ts), todayYmd()).split(',')[0]} · ${formatTime(m.ts)}`}

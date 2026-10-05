@@ -82,7 +82,7 @@ export default async function AdminPage({ searchParams }: Props) {
         <Section title="Партнёры">
           <ul className="space-y-2 text-sm">
             {PARTNERS.map((p) => (
-              <li key={p.slug} className="rounded-lg bg-panel-2 px-3 py-2">
+              <li key={p.slug} className="rounded-lg bg-white/[0.04] px-3 py-2">
                 <div className="flex justify-between gap-2">
                   <span className="font-bold">{p.name}</span>
                   <span className="text-xs">

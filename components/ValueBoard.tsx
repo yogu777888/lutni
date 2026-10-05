@@ -75,7 +75,7 @@ export function ValueBoard({ items }: { items: FeedItem[] }) {
             </div>
           )
         })}
-        <div className="flex flex-wrap justify-between gap-2 border-t border-edge bg-[#0e0e0c] px-4 py-3 text-[12px] text-mute sm:px-6">
+        <div className="flex flex-wrap justify-between gap-2 border-t border-edge bg-black/[0.18] px-4 py-3 text-[12px] text-mute sm:px-6">
           <span>Выгода — насколько букмекер платит больше, чем стоит исход: чем больше, тем ярче. Это оценка, а не гарантия.</span>
           <span>Ссылки на букмекеров — реклама · 18+</span>
         </div>
