@@ -284,9 +284,20 @@
 .drift-b {
   animation: drift-b 32s ease-in-out infinite;
 }
+/* свечение вокруг карточки «включается» не сразу, как подсветка на YouTube: после небольшой паузы плавно
+   проявляется до своей прозрачности (opacity элемента); один раз — когда карточка появилась на странице */
+@keyframes glow-in {
+  from {
+    opacity: 0;
+  }
+}
+.glow-in {
+  animation: glow-in 1.5s ease-out 0.3s backwards;
+}
 @media (prefers-reduced-motion: reduce) {
   .drift-a,
-  .drift-b {
+  .drift-b,
+  .glow-in {
     animation: none;
   }
 }
