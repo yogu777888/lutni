@@ -5,7 +5,7 @@ import { daySnaps, getMatchesByDate, peekOddsSnap, tagsFor, waitMatchFull, waitO
 import { dayHref } from '@/lib/links'
 import { addDays, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { lineMoves, type OddsSnap } from '@/lib/lines'
-import { LOOK_COOKIE, parseLook } from '@/lib/looks'
+import { LOOK_COOKIE, parseLook, posterLike } from '@/lib/looks'
 import { matchColors, type MatchColors } from '@/lib/team-colors'
 import { IS_MOCK } from '@/lib/sstats/client'
 import { isLive, liveRank } from '@/lib/rank'
@@ -138,7 +138,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
   // «Афиша»: цвета клубов из эмблем — для «Главных матчей» и обложек кружков историй, только в этом виде; на холодном
   // старте ждём не дольше 1,5 с (дальше — графит, а цвет досчитается и запомнится к следующему открытию)
   let circleArt: Record<string, CircleArt> | undefined
-  if (look === 'poster') {
+  if (posterLike(look)) {
     const byId = new Map(items.map((it) => [it.match.id, it.match]))
     const covers = Object.entries(coverMatches(storyGroups)).flatMap(([key, id]) => {
       const m = byId.get(id)

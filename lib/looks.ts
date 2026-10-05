@@ -9,6 +9,8 @@ export const LOOKS = [
   { key: 'digits', label: 'Цифры' },
   // «Афиша» — меняет только «Главные матчи»: градиент из цветов клубов, без статистики; подборки — как в «Полосах»
   { key: 'poster', label: 'Афиша' },
+  // «Эмблемы» — та же «Афиша», а за командами — их эмблемы крупно, полупрозрачным тиснением в цвет фона
+  { key: 'crest', label: 'Эмблемы' },
 ] as const
 
 export type Look = (typeof LOOKS)[number]['key']
@@ -16,3 +18,6 @@ export type Look = (typeof LOOKS)[number]['key']
 export const LOOK_COOKIE = 'tb-look'
 
 export const parseLook = (v: string | undefined): Look => (LOOKS.some((l) => l.key === v) ? (v as Look) : 'bars')
+
+/** «Афиша» и «Эмблемы»: цвета клубов, табло по центру, кружки историй с эмблемами — всё общее. */
+export const posterLike = (l: Look): boolean => l === 'poster' || l === 'crest'

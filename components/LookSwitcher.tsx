@@ -30,7 +30,7 @@ export function LookSwitcher({ current }: { current: Look }) {
           role="radio"
           aria-checked={l.key === current}
           onClick={() => pick(l.key)}
-          className={`h-8 whitespace-nowrap rounded-[10px] px-3 text-[13px] font-medium transition-colors ${l.key === current ? 'bg-white/[0.12] text-fg' : 'text-dim hover:text-fg'}`}
+          className={`h-8 whitespace-nowrap rounded-[10px] px-2 text-[13px] font-medium transition-colors sm:px-3 ${l.key === current ? 'bg-white/[0.12] text-fg' : 'text-dim hover:text-fg'}`}
         >
           {l.label}
         </button>

@@ -7,12 +7,12 @@ import { appNow, formatDayMonth, formatTime, pct, plural, pluralN, todayYmd, ymd
 import { biggestMove, lineMoves, moveOutcome, periodEndLabel, x12Line, type LineMove, type OddsSnap } from '@/lib/lines'
 import { matchHref } from '@/lib/links'
 import { isLive } from '@/lib/rank'
-import type { Look } from '@/lib/looks'
+import { posterLike, type Look } from '@/lib/looks'
 import type { League, Match, MatchFull, StatPair } from '@/lib/types'
 import { CHIP, StoryChipFace } from './Chips'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
-import { TopCarousel, type DayLink, type MainSlide } from './TopCarousel'
+import { TopCarousel, type Backdrop, type DayLink, type MainSlide } from './TopCarousel'
 
 /** Ссылка-накладка: вся карточка кликабельна, а текст ссылки — понятное название. */
 const COVER = "after:absolute after:inset-0 after:rounded-[22px] after:content-['']"
@@ -24,8 +24,9 @@ const SURFACE: Record<Look, string> = {
   digits: 'rounded-[22px] border border-edge',
   // без обводки: плитки светлее фона страницы; прозрачная рамка видна только в режиме высокой контрастности
   poster: 'rounded-[22px] border border-transparent bg-panel-2',
+  crest: 'rounded-[22px] border border-transparent bg-panel-2',
 }
-const HOVER: Record<Look, string> = { bars: 'hover:border-edge-2', dots: 'hover:bg-panel-2', digits: 'hover:bg-white/[0.02]', poster: 'hover:bg-panel-3' }
+const HOVER: Record<Look, string> = { bars: 'hover:border-edge-2', dots: 'hover:bg-panel-2', digits: 'hover:bg-white/[0.02]', poster: 'hover:bg-panel-3', crest: 'hover:bg-panel-3' }
 
 const MATCHES = ['матч', 'матча', 'матчей'] as const
 const TOURNEYS = ['турнир', 'турнира', 'турниров'] as const
@@ -62,6 +63,13 @@ const snapTime = (at: number) => (ymdInTz(at) === todayYmd() ? formatTime(at) : 
 // ─── Главные матчи ───────────────────────────────────────────────────────────
 
 /** Матч главного блока: линия одного букмекера (до начала) и статистика (в игре и после) — что успели получить. */
+/** Фон «Афиши»: цвета клубов; в «Эмблемах» — ещё и эмблемы команд для крупного тиснения за ними. */
+function backdropOf(x: MainItem, marks: boolean): Backdrop | null {
+  if (!marks) return x.colors ?? null
+  const m = x.it.match
+  return { ...(x.colors ?? {}), marks: { home: m.home.logo, away: m.away.logo } }
+}
+
 export type MainItem = {
   it: FeedItem
   snap: OddsSnap | null
@@ -329,7 +337,7 @@ function PosterSlide({ it }: { it: FeedItem }) {
  */
 function TopSlide({ item, look }: { item: MainItem; look: Look }) {
   const { it, snap, full } = item
-  if (look === 'poster') return <PosterSlide it={it} />
+  if (posterLike(look)) return <PosterSlide it={it} />
   const m = it.match
   const live = isLive(m)
   const finished = m.status === 'finished'
@@ -512,7 +520,7 @@ export type DayPicks = {
 
 function Picks({ p, look: pageLook }: { p: DayPicks; look: Look }) {
   // «Афиша»: графики подборок — как в «Полосах», а плитки — свои, без обводки
-  const look: Look = pageLook === 'poster' ? 'bars' : pageLook
+  const look: Look = posterLike(pageLook) ? 'bars' : pageLook
   const c = p.counts
   const g = p.goals
   const allLines: React.ReactNode[] =
@@ -610,7 +618,7 @@ export function DaySummary({
         slides={mains.map((x) => slideMeta(x.it))}
         panels={mains.map((x) => <TopSlide key={x.it.match.id} item={x} look={look} />)}
         days={days}
-        backdrops={look === 'poster' ? mains.map((x) => x.colors ?? null) : undefined}
+        backdrops={posterLike(look) ? mains.map((x) => backdropOf(x, look === 'crest')) : undefined}
         className={`lg:flex-1 ${SURFACE[look]}`}
       />
       {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг; к плиткам ближе, чем к блоку сверху */}

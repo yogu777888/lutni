@@ -7,6 +7,11 @@ import { openStory } from './story/events'
 
 /** Матч слайда — для шапки и кнопки разбора: турнир и разбор — про матч, который сейчас на экране. */
 export type MainSlide = { id: number; href: string; live: boolean; caption: string; title: string }
+/**
+ * Фон «Афиши» одного матча: цвета клубов (хозяева слева, гости справа; нет — графит) и в «Эмблемах» — эмблемы
+ * команд для крупного тиснения за ними.
+ */
+export type Backdrop = { home?: string; away?: string; marks?: { home: string | null; away: string | null } }
 /** День в чипе: переход на страницу дня — вся страница (блок, подборки, список) про один и тот же день. */
 export type DayLink = { key: string; label: string; href: string; current: boolean; live?: boolean }
 
@@ -25,7 +30,7 @@ const SCRIM = 'absolute inset-0 bg-[linear-gradient(to_top,rgb(11_11_9/0.55),rgb
  * Фон «Афиши» одного матча: заливка цветами клубов (хозяева слева, гости справа), пятна тех же цветов и светлый
  * блик. В карточке пятна медленно плывут (`drift`), в свечении вокруг неё — стоят.
  */
-function Paint({ b, drift = false }: { b: { home: string; away: string } | null; drift?: boolean }) {
+function Paint({ b, drift = false, marks = false }: { b: Backdrop | null; drift?: boolean; marks?: boolean }) {
   const home = b?.home ?? 'hsl(40 6% 30%)'
   const away = b?.away ?? 'hsl(40 6% 24%)'
   return (
@@ -34,7 +39,28 @@ function Paint({ b, drift = false }: { b: { home: string; away: string } | null;
       <div className={`absolute -left-[15%] -top-[40%] h-[140%] w-[70%] rounded-full ${drift ? 'drift-a' : ''}`} style={{ background: `radial-gradient(closest-side, ${home}, transparent)` }} />
       <div className={`absolute -bottom-[40%] -right-[15%] h-[140%] w-[70%] rounded-full ${drift ? 'drift-b' : ''}`} style={{ background: `radial-gradient(closest-side, ${away}, transparent)` }} />
       <div className={`absolute -top-[30%] left-[25%] h-[110%] w-[50%] rounded-full bg-[radial-gradient(closest-side,rgb(255_255_255/0.13),transparent)] ${drift ? 'drift-b' : ''}`} />
+      {marks && b?.marks?.home ? <Mark src={b.marks.home} side="left" drift={drift} /> : null}
+      {marks && b?.marks?.away ? <Mark src={b.marks.away} side="right" drift={drift} /> : null}
     </>
+  )
+}
+
+/**
+ * «Эмблемы»: эмблема команды крупно за ней — чуть выше карточки (обрезана сверху и снизу едва-едва), а сбоку
+ * наполовину за краем: видна часть, обращённая к центру. Серая, в режиме «мягкий свет» — окрашивается в цвет
+ * фона, как тиснение, а не вторая картинка; едва плывёт. Смешивание — у обёртки: она и сдвинута (transform),
+ * и смешивается с фоном целиком. На телефоне эмблемы меньше — иначе сходятся в середине, под временем.
+ */
+function Mark({ src, side, drift }: { src: string; side: 'left' | 'right'; drift: boolean }) {
+  return (
+    <div
+      className={`absolute top-1/2 aspect-square h-[56%] -translate-y-1/2 mix-blend-soft-light sm:h-[112%] ${
+        side === 'left' ? 'left-0 -translate-x-1/2 sm:-translate-x-[38%]' : 'right-0 translate-x-1/2 sm:translate-x-[38%]'
+      }`}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt="" aria-hidden decoding="async" className={`h-full w-full object-contain opacity-30 grayscale ${drift ? 'drift-mark' : ''}`} />
+    </div>
   )
 }
 
@@ -56,7 +82,7 @@ export function TopCarousel({
   panels: React.ReactNode[]
   days: DayLink[]
   /** «Афиша»: цвета клубов каждого матча (хозяева слева, гости справа); null — графит */
-  backdrops?: ({ home: string; away: string } | null)[]
+  backdrops?: (Backdrop | null)[]
   className?: string
 }) {
   const track = useRef<HTMLDivElement>(null)
@@ -134,7 +160,7 @@ export function TopCarousel({
         <div aria-hidden className="pointer-events-none absolute -inset-px overflow-hidden rounded-[inherit]">
           {backdrops.map((b, k) => (
             <div key={k} className={`absolute inset-0 transition-opacity duration-700 ${k === cur ? 'opacity-100' : 'opacity-0'}`}>
-              <Paint b={b} drift />
+              <Paint b={b} drift marks />
             </div>
           ))}
           <div className={SCRIM} />
