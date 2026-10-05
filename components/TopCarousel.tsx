@@ -124,11 +124,11 @@ export function TopCarousel({
       ) : null}
       {backdrops ? (
         // свечение, как «подсветка» на YouTube: размытая копия самой карточки — с пятнами и затемнением внизу,
-        // поэтому неровное: где карточка светлее, там и светит. Маска гасит его к низу карточки — подборки под ней
-        // не красятся. Неподвижное (плывёт только фон внутри), слабое; на телефоне нет. Слой с запасом 80px
+        // поэтому неровное: где карточка светлее, там и светит. Маска гасит его к низу карточки и обрезает ровно по её
+        // нижнему краю (80px запаса снизу — прозрачные): ниже карточки ни полоски, подборки не красятся. Неподвижное (плывёт только фон внутри), слабое; на телефоне нет. Слой с запасом 80px
         // вокруг карточки: маска обрезает всё, что за его краем, а размытие расходится примерно на столько
         // При открытии страницы свечение проявляется не сразу, а за полторы секунды (`glow-in`)
-        <div aria-hidden className="glow-in pointer-events-none absolute -inset-20 -z-10 hidden transform-gpu opacity-30 blur-[40px] [mask-image:linear-gradient(to_bottom,#000_55%,transparent_92%)] sm:block">
+        <div aria-hidden className="glow-in pointer-events-none absolute -inset-20 -z-10 hidden transform-gpu opacity-30 blur-[40px] [mask-image:linear-gradient(to_top,transparent_80px,#000_calc(80px_+_40%))] sm:block">
           <div className="absolute inset-20 overflow-hidden rounded-[22px]">
             {backdrops.map((b, k) => (
               <div key={k} className={`absolute inset-0 transition-opacity duration-700 ${k === cur ? 'opacity-100' : 'opacity-0'}`}>

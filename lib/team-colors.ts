@@ -14,8 +14,8 @@ type Hsl = { h: number; s: number; l: number }
 /** Цвета фона «Афиши»: хозяева слева, гости справа. */
 export type MatchColors = { home: string; away: string }
 
-/** Если у эмблемы нет своего цвета. */
-const GRAPHITE: Hsl = { h: 40, s: 0.06, l: 0.3 }
+/** Если у эмблемы нет своего цвета — графит (как есть: пределы насыщенности для клубных цветов к нему не применяем). */
+const GRAPHITE = 'hsl(40 6% 30%)'
 
 function rgbToHsl(r: number, g: number, b: number): Hsl {
   const R = r / 255
@@ -130,9 +130,7 @@ const css = (c: Hsl, darker = 0) => {
 export async function matchColors(m: Match): Promise<MatchColors | null> {
   const [a, b] = await Promise.all([logoColor(m.home.logo).catch(() => null), logoColor(m.away.logo).catch(() => null)])
   if (!a && !b) return null
-  const home = a ?? GRAPHITE
-  const away = b ?? GRAPHITE
-  const dh = Math.abs(home.h - away.h)
-  const close = Boolean(a && b) && Math.min(dh, 360 - dh) < 25
-  return { home: a ? css(home) : css(GRAPHITE), away: b ? css(away, close ? 0.14 : 0) : css(GRAPHITE) }
+  const dh = a && b ? Math.abs(a.h - b.h) : 180
+  const close = Math.min(dh, 360 - dh) < 25
+  return { home: a ? css(a) : GRAPHITE, away: b ? css(b, close ? 0.14 : 0) : GRAPHITE }
 }

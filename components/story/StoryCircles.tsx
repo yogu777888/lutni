@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { artFor, CIRCLE_BG } from '@/lib/story-art'
 import type { CircleArt, CircleKind, StoryGroup } from '@/lib/story-groups'
+import { initials } from '../Monogram'
 import { TeamLogo } from '../TeamLogo'
 import { ArtIcon } from './ArtIcon'
 import { openStory } from './events'
@@ -54,22 +55,36 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
 }
 
 /**
+ * Эмблема клуба на светлом кружке — пара клубов внахлёст, как в главном блоке: на цветной заливке тёмные эмблемы
+ * не тонут, а светлые не выглядят наклейками. Без эмблемы — буквы клуба тёмным на том же кружке.
+ */
+function Plate({ team, className }: { team: CircleArt['home']; className: string }) {
+  return (
+    <span className={`absolute grid h-[30px] w-[30px] place-items-center rounded-full bg-fg shadow-[0_1px_6px_rgb(0_0_0/0.35)] ${className}`}>
+      {team.logo ? (
+        <TeamLogo name={team.name} src={team.logo} size={20} />
+      ) : (
+        <span aria-hidden className="text-[10px] font-bold leading-none tracking-[-0.01em] text-ink">
+          {initials(team.name)}
+        </span>
+      )}
+    </span>
+  )
+}
+
+/**
  * Обложка кружка: своя картинка из public/stories/<ключ>.*; в «Афише» — эмблемы матча на заливке цветами клубов
  * (видно, что внутри истории); иначе — плоский кружок с иконкой тега (lib/story-art.ts).
  */
 function CoverArt({ k, cover, match, children }: { k: string; cover?: string; match?: CircleArt; children?: React.ReactNode }) {
   const art = artFor(k)
   if (!cover && match) {
-    const home = match.colors?.home ?? 'hsl(40 6% 30%)'
+    const home = match.colors?.home ?? 'hsl(40 6% 36%)'
     const away = match.colors?.away ?? 'hsl(40 6% 24%)'
     return (
       <span className="absolute inset-[5.5px] overflow-hidden rounded-full" style={{ background: `linear-gradient(in oklch 135deg, ${home} 20%, ${away} 80%)` }}>
-        <span className="absolute left-2 top-2">
-          <TeamLogo name={match.home.name} src={match.home.logo} size={24} />
-        </span>
-        <span className="absolute bottom-2 right-2">
-          <TeamLogo name={match.away.name} src={match.away.logo} size={24} />
-        </span>
+        <Plate team={match.home} className="left-1.5 top-1.5" />
+        <Plate team={match.away} className="bottom-1.5 right-1.5" />
       </span>
     )
   }
