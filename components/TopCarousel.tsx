@@ -6,7 +6,7 @@ import { CHIP, StoryChipFace } from './Chips'
 import { openStory } from './story/events'
 
 /** Матч слайда — для шапки и кнопки разбора: турнир и разбор — про матч, который сейчас на экране. */
-export type MainSlide = { id: number; href: string; live: boolean; caption: string }
+export type MainSlide = { id: number; href: string; live: boolean; caption: string; title: string }
 /** День в чипе: переход на страницу дня — вся страница (блок, подборки, список) про один и тот же день. */
 export type DayLink = { key: string; label: string; href: string; current: boolean; live?: boolean }
 
@@ -40,7 +40,8 @@ function Paint({ b, drift = false }: { b: { home: string; away: string } | null;
 
 /**
  * «Главные матчи» — до пяти важных встреч дня (lib/day-summary.ts, mainMatches). Шапка карточки: слева турнир
- * и тур матча на экране, справа стрелки «1 из 5» (на телефоне — внизу, и свайп), без автопрокрутки, и чип дня.
+ * и тур матча на экране, справа стрелки (на телефоне их нет — свайп), без автопрокрутки, и чип дня; сколько матчей
+ * и какой на экране — полоски-точки внизу карточки (на телефоне — в ряду с «Разбором за минуту»).
  * Чип — переход на страницу дня: выбранный день меняет всю страницу согласованно (блок, подборки под ним,
  * список матчей) и уходит в ссылки подборок. Слайды — лента со scroll-snap: без JS видны все матчи дня.
  */
@@ -90,15 +91,32 @@ export function TopCarousel({
     }
   }, [open])
 
+  // полоски-точки: сколько главных матчей и какой на экране, как в баннерах App Store; клик — к этому матчу,
+  // при наведении — подсказка с командами
+  const dots = (cls: string, hit = 'h-4 px-[3px]') =>
+    n > 1 ? (
+      <div className={`items-center ${cls}`}>
+        {slides.map((s, k) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => go(k)}
+            title={s.title}
+            aria-label={`Матч ${k + 1} из ${n}: ${s.title}`}
+            aria-current={k === cur ? 'true' : undefined}
+            className={`group/dot grid place-items-center ${hit}`}
+          >
+            <span className={`block h-1.5 rounded-full transition-all duration-300 ${k === cur ? 'w-[18px] bg-fg' : 'w-1.5 bg-white/35 group-hover/dot:bg-white/70'}`} />
+          </button>
+        ))}
+      </div>
+    ) : null
   const arrows = (cls: string) =>
     n > 1 ? (
       <div className={`items-center gap-1.5 ${cls}`}>
         <button type="button" aria-label="Предыдущий матч" disabled={cur === 0} onClick={() => go(cur - 1)} className={`${CHIP} w-8 justify-center text-chalk disabled:pointer-events-none disabled:opacity-35`}>
           <Arrow dir="left" />
         </button>
-        <span className="num min-w-[52px] text-center text-[13px] text-dim" aria-live="polite">
-          {cur + 1} из {n}
-        </span>
         <button type="button" aria-label="Следующий матч" disabled={cur === n - 1} onClick={() => go(cur + 1)} className={`${CHIP} w-8 justify-center text-chalk disabled:pointer-events-none disabled:opacity-35`}>
           <Arrow dir="right" />
         </button>
@@ -185,6 +203,12 @@ export function TopCarousel({
         </div>
       </div>
 
+      {n > 1 ? (
+        <span className="sr-only" aria-live="polite">
+          Матч {cur + 1} из {n}
+        </span>
+      ) : null}
+
       <div
         ref={track}
         className="scrollbar-none relative mt-3 flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain lg:[@media(max-height:799px)]:mt-2"
@@ -201,7 +225,15 @@ export function TopCarousel({
         ))}
       </div>
 
-      {/* на телефоне и планшете — под лентой: разбор матча на экране, на телефоне рядом — стрелки.
+      {/* полоски-точки — внизу по центру, в нижнем отступе карточки: высоту карточки не меняют, первый экран влезает
+          как раньше. На телефоне — справа от «Разбора за минуту», вместо стрелок (там листают свайпом) */}
+      {n > 1 ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-px hidden justify-center sm:flex lg:bottom-1.5 lg:[@media(min-height:740px)_and_(max-height:799px)]:bottom-1 lg:[@media(max-height:739px)]:bottom-0.5">
+          <div className="pointer-events-auto">{dots('flex')}</div>
+        </div>
+      ) : null}
+
+      {/* на телефоне и планшете — под лентой: разбор матча на экране, на телефоне рядом — полоски-точки (крупнее, под палец).
           На компьютере кнопка разбора — под табло в самом слайде */}
       <div className="relative mt-4 flex flex-wrap items-center gap-2 px-[18px] lg:hidden">
         {meta ? (
@@ -209,7 +241,7 @@ export function TopCarousel({
             <StoryChipFace />
           </button>
         ) : null}
-        {arrows('ml-auto flex shrink-0 sm:hidden')}
+        {dots('ml-auto flex shrink-0 sm:hidden', 'h-8 px-[5px]')}
       </div>
     </article>
   )

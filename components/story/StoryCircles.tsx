@@ -56,11 +56,12 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
 
 /**
  * Эмблема клуба на светлом кружке — пара клубов внахлёст, как в главном блоке: на цветной заливке тёмные эмблемы
- * не тонут, а светлые не выглядят наклейками. Без эмблемы — буквы клуба тёмным на том же кружке.
+ * не тонут, а светлые не выглядят наклейками. Кружок плотный на 85% (матовый): цвет клуба чуть просвечивает, как у
+ * подложек в главной карточке, но эмблема читается и на 30 пикселях. Без эмблемы — буквы клуба тёмным.
  */
 function Plate({ team, className }: { team: CircleArt['home']; className: string }) {
   return (
-    <span className={`absolute grid h-[30px] w-[30px] place-items-center rounded-full bg-fg shadow-[0_1px_6px_rgb(0_0_0/0.35)] ${className}`}>
+    <span className={`absolute grid h-[30px] w-[30px] place-items-center rounded-full bg-fg/85 shadow-[0_1px_6px_rgb(0_0_0/0.35)] backdrop-blur-sm ${className}`}>
       {team.logo ? (
         <TeamLogo name={team.name} src={team.logo} size={20} />
       ) : (

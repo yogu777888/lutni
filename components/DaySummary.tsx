@@ -239,7 +239,7 @@ function PlayStats({ m, full, look }: { m: Match; full: MatchFull | null; look: 
 /** Матч слайда для шапки и кнопки разбора: турнир и разбор — про матч, который сейчас на экране. */
 function slideMeta(it: FeedItem): MainSlide {
   const m = it.match
-  return { id: m.id, href: matchHref(m), live: isLive(m), caption: `${leagueShort(m.league)}${m.round ? ` · ${m.round}` : ''}` }
+  return { id: m.id, href: matchHref(m), live: isLive(m), caption: `${leagueShort(m.league)}${m.round ? ` · ${m.round}` : ''}`, title: `${m.home.name} — ${m.away.name}` }
 }
 
 /** Два факта до матча: сильнейший о командах (из разбора матча) и движение линии того же букмекера, что в строке кэфов. */
@@ -253,6 +253,15 @@ function factsFor(it: FeedItem, snap: OddsSnap | null): string[] {
  * эмблемы и названия крупно, справа время начала (в игре — счёт и минута, после — счёт и «итог») и лаймовая
  * «Разбор матча». Цифры и факты — в разборе и на странице матча. Вся карточка открывает сторис.
  */
+/**
+ * Размер названия в «Афише» на телефоне: колонка команды там узкая (около 100px), и длинное слово («Саутгемптон»,
+ * «Мёнхенгладбах») не влезает — мельче шрифт, а не перенос по букве. Не мельче 13px.
+ */
+function phoneSize(name: string): string {
+  const longest = Math.max(...name.split(/[\s-]+/).map((w) => w.length))
+  return longest >= 12 ? 'text-[13px]' : longest >= 10 ? 'text-[15px]' : 'text-[17px]'
+}
+
 function PosterSlide({ it }: { it: FeedItem }) {
   const m = it.match
   const live = isLive(m)
@@ -268,7 +277,7 @@ function PosterSlide({ it }: { it: FeedItem }) {
       <span className="grid h-[var(--disc)] w-[var(--disc)] shrink-0 place-items-center rounded-full bg-white/[0.16] ring-1 ring-white/25 backdrop-blur-md">
         <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
       </span>
-      <span className="line-clamp-2 max-w-full text-balance text-[17px] font-semibold leading-tight tracking-[-0.02em] text-fg sm:text-[20px] lg:text-[clamp(22px,3.1vh,30px)]">{t.name}</span>
+      <span className={`line-clamp-2 max-w-full hyphens-auto text-balance break-words font-semibold leading-tight tracking-[-0.02em] text-fg sm:text-[20px] lg:text-[clamp(22px,3.1vh,30px)] ${phoneSize(t.name)}`}>{t.name}</span>
     </span>
   )
   return (
