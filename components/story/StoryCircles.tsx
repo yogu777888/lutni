@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { artFor, CIRCLE_BG } from '@/lib/story-art'
-import type { CircleKind, StoryGroup } from '@/lib/story-groups'
+import type { CircleArt, CircleKind, StoryGroup } from '@/lib/story-groups'
+import { TeamLogo } from '../TeamLogo'
 import { ArtIcon } from './ArtIcon'
 import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
@@ -21,12 +22,13 @@ const SEEN_STROKE = 'var(--color-mute)'
  * по часовой стрелке (как статусы в мессенджерах), а не вразброс: кольцо показывает, сколько
  * из кружка уже посмотрели, а следующий тап продолжит с первого непросмотренного.
  */
-function Ring({ kind, n, seen }: { kind: CircleKind; n: number; seen: number }) {
+function Ring({ kind, n, seen, light }: { kind: CircleKind; n: number; seen: number; light: boolean }) {
   const step = C / n
   const gap = n > 1 ? Math.min(4, step / 3) : 0
-  // цвет кольца — только «не смотрели» (лайм) и LIVE (красный); просмотренное — серое той же толщины:
-  // иначе кольцо из толстых и тонких дуг выглядит кривым, а слишком бледный серый — недорисованным
-  const color = kind === 'live' ? 'var(--color-live)' : 'var(--color-acid)'
+  // цвет кольца — только «не смотрели» и LIVE (красный); просмотренное — серое той же толщины: иначе кольцо из
+  // толстых и тонких дуг выглядит кривым, а слишком бледный серый — недорисованным. «Не смотрели» — лайм, а при
+  // цветных обложках «Афиши» — белое: лайм у нас «выгодно» и главные кнопки, на цветном он спорит с ними
+  const color = kind === 'live' ? 'var(--color-live)' : light ? 'var(--color-fg)' : 'var(--color-acid)'
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full -rotate-90 overflow-visible" aria-hidden>
       {Array.from({ length: n }, (_, i) => (
@@ -52,11 +54,25 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
 }
 
 /**
- * Обложка кружка: своя картинка из public/stories/<ключ>.* или арт тега —
- * свечение на тёмной основе, зерно и белая иконка (lib/story-art.ts).
+ * Обложка кружка: своя картинка из public/stories/<ключ>.*; в «Афише» — эмблемы матча на заливке цветами клубов
+ * (видно, что внутри истории); иначе — плоский кружок с иконкой тега (lib/story-art.ts).
  */
-function CoverArt({ k, cover, children }: { k: string; cover?: string; children?: React.ReactNode }) {
+function CoverArt({ k, cover, match, children }: { k: string; cover?: string; match?: CircleArt; children?: React.ReactNode }) {
   const art = artFor(k)
+  if (!cover && match) {
+    const home = match.colors?.home ?? 'hsl(40 6% 30%)'
+    const away = match.colors?.away ?? 'hsl(40 6% 24%)'
+    return (
+      <span className="absolute inset-[5.5px] overflow-hidden rounded-full" style={{ background: `linear-gradient(in oklch 135deg, ${home} 20%, ${away} 80%)` }}>
+        <span className="absolute left-2 top-2">
+          <TeamLogo name={match.home.name} src={match.home.logo} size={24} />
+        </span>
+        <span className="absolute bottom-2 right-2">
+          <TeamLogo name={match.away.name} src={match.away.logo} size={24} />
+        </span>
+      </span>
+    )
+  }
   return (
     <span
       className="absolute inset-[5.5px] grid place-items-center overflow-hidden rounded-full ring-1 ring-inset ring-edge"
@@ -72,7 +88,16 @@ function CoverArt({ k, cover, children }: { k: string; cover?: string; children?
  * Это обычные ссылки (на страницу тега / матча) — для поисковиков и без JS;
  * клик открывает сторис матчей кружка, затем следующих кружков.
  */
-export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; covers?: Record<string, string> }) {
+export function StoryCircles({
+  groups,
+  covers = {},
+  art,
+}: {
+  groups: StoryGroup[]
+  covers?: Record<string, string>
+  /** «Афиша»: матч на обложке каждого кружка (DayView, coverMatches) — эмблемы на цветах клубов, кольца белые */
+  art?: Record<string, CircleArt>
+}) {
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
@@ -115,8 +140,8 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
               className="relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95"
               style={{ width: SIZE, height: SIZE }}
             >
-              <Ring kind={g.kind} n={g.items.length} seen={n} />
-              <CoverArt k={g.key} cover={covers[g.key]} />
+              <Ring kind={g.kind} n={g.items.length} seen={n} light={Boolean(art)} />
+              <CoverArt k={g.key} cover={covers[g.key]} match={art?.[g.key]} />
               {g.kind === 'live' ? (
                 <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 rounded-[5px] bg-live px-1.5 text-[9px] font-bold leading-[15px] tracking-wide text-white ring-2 ring-ink">
                   LIVE

@@ -11,7 +11,7 @@ import { IS_MOCK } from '@/lib/sstats/client'
 import { isLive, liveRank } from '@/lib/rank'
 import { dayCounts, goalsPicks, mainMatches, moveExample } from '@/lib/day-summary'
 import { storyCovers } from '@/lib/story-covers'
-import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
+import { buildStoryGroups, coverMatches, mainCircles, type CircleArt } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { DaySummary, type MainItem } from './DaySummary'
@@ -135,12 +135,30 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
     daySnaps(matches, 1200),
   ])
   const hasSummary = mains.length > 0
-  // «Афиша»: цвета клубов из эмблем — только для этого вида; на холодном старте ждём не дольше 1,5 с (дальше — графит,
-  // а цвет досчитается и запомнится к следующему открытию)
-  if (look === 'poster' && hasSummary) {
-    const all = Promise.all(mains.map((x) => matchColors(x.it.match).catch(() => null)))
-    const colors = await Promise.race([all, new Promise<(MatchColors | null)[]>((r) => setTimeout(() => r(mains.map(() => null)), 1500).unref?.())])
+  // «Афиша»: цвета клубов из эмблем — для «Главных матчей» и обложек кружков историй, только в этом виде; на холодном
+  // старте ждём не дольше 1,5 с (дальше — графит, а цвет досчитается и запомнится к следующему открытию)
+  let circleArt: Record<string, CircleArt> | undefined
+  if (look === 'poster') {
+    const byId = new Map(items.map((it) => [it.match.id, it.match]))
+    const covers = Object.entries(coverMatches(storyGroups)).flatMap(([key, id]) => {
+      const m = byId.get(id)
+      return m ? [{ key, m }] : []
+    })
+    const memo = new Map<number, Promise<MatchColors | null>>()
+    const colorsOf = (m: Match) => {
+      if (!memo.has(m.id)) memo.set(m.id, matchColors(m).catch(() => null))
+      return memo.get(m.id)!
+    }
+    const want = [...mains.map((x) => x.it.match), ...covers.map((c) => c.m)]
+    const all = Promise.all(want.map(colorsOf))
+    const colors = await Promise.race([all, new Promise<(MatchColors | null)[]>((r) => setTimeout(() => r(want.map(() => null)), 1500).unref?.())])
     mains.forEach((x, k) => (x.colors = colors[k]))
+    circleArt = Object.fromEntries(
+      covers.map(({ key, m }, k) => [
+        key,
+        { home: { name: m.home.name, logo: m.home.logo }, away: { name: m.away.name, logo: m.away.logo }, colors: colors[mains.length + k] },
+      ]),
+    )
   }
   // заголовок «Все матчи дня» — когда над списком есть что-то ещё (сводка, выгодные ставки)
   const listHead = hasSummary || values.length > 0
@@ -202,7 +220,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
           // кружки понятны и без подписи «Истории дня» — так первый экран влезает целиком;
           // отступ сверху — у ряда (pt-1.5): ряд прокручивается и обрезал бы круг фокуса у кружка
           <section aria-label="Истории дня" className="mt-4 sm:mt-5">
-            <StoryCircles groups={storyGroups} covers={storyCovers()} />
+            <StoryCircles groups={storyGroups} covers={storyCovers()} art={circleArt} />
           </section>
         ) : null}
 
