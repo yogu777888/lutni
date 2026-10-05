@@ -18,6 +18,26 @@ function Arrow({ dir }: { dir: 'left' | 'right' }) {
   )
 }
 
+/** «Афиша»: снизу затемнение — под белый текст */
+const SCRIM = 'absolute inset-0 bg-[linear-gradient(to_top,rgb(11_11_9/0.55),rgb(11_11_9/0.12)_45%,rgb(11_11_9/0.08))]'
+
+/**
+ * Фон «Афиши» одного матча: заливка цветами клубов (хозяева слева, гости справа), пятна тех же цветов и светлый
+ * блик. В карточке пятна медленно плывут (`drift`), в свечении вокруг неё — стоят.
+ */
+function Paint({ b, drift = false }: { b: { home: string; away: string } | null; drift?: boolean }) {
+  const home = b?.home ?? 'hsl(40 6% 30%)'
+  const away = b?.away ?? 'hsl(40 6% 24%)'
+  return (
+    <>
+      <div className="absolute inset-0" style={{ background: `linear-gradient(in oklch 100deg, ${home} 8%, ${away} 92%)` }} />
+      <div className={`absolute -left-[15%] -top-[40%] h-[140%] w-[70%] rounded-full ${drift ? 'drift-a' : ''}`} style={{ background: `radial-gradient(closest-side, ${home}, transparent)` }} />
+      <div className={`absolute -bottom-[40%] -right-[15%] h-[140%] w-[70%] rounded-full ${drift ? 'drift-b' : ''}`} style={{ background: `radial-gradient(closest-side, ${away}, transparent)` }} />
+      <div className={`absolute -top-[30%] left-[25%] h-[110%] w-[50%] rounded-full bg-[radial-gradient(closest-side,rgb(255_255_255/0.13),transparent)] ${drift ? 'drift-b' : ''}`} />
+    </>
+  )
+}
+
 /**
  * «Главные матчи» — до пяти важных встреч дня (lib/day-summary.ts, mainMatches). Шапка карточки: слева турнир
  * и тур матча на экране, справа стрелки «1 из 5» (на телефоне — внизу, и свайп), без автопрокрутки, и чип дня.
@@ -96,34 +116,26 @@ export function TopCarousel({
         <div aria-hidden className="pointer-events-none absolute -inset-px overflow-hidden rounded-[inherit]">
           {backdrops.map((b, k) => (
             <div key={k} className={`absolute inset-0 transition-opacity duration-700 ${k === cur ? 'opacity-100' : 'opacity-0'}`}>
-              {/* заливка на всю карточку: цвет хозяев слева плавно переходит в цвет гостей справа */}
-              <div className="absolute inset-0" style={{ background: `linear-gradient(in oklch 100deg, ${b?.home ?? 'hsl(40 6% 30%)'} 8%, ${b?.away ?? 'hsl(40 6% 24%)'} 92%)` }} />
-              <div
-                className="drift-a absolute -left-[15%] -top-[40%] h-[140%] w-[70%] rounded-full"
-                style={{ background: `radial-gradient(closest-side, ${b?.home ?? 'hsl(40 6% 30%)'}, transparent)` }}
-              />
-              <div
-                className="drift-b absolute -bottom-[40%] -right-[15%] h-[140%] w-[70%] rounded-full"
-                style={{ background: `radial-gradient(closest-side, ${b?.away ?? 'hsl(40 6% 26%)'}, transparent)` }}
-              />
-              {/* светлый блик медленно плывёт поверх — фон «живой», как баннеры в App Store */}
-              <div className="drift-b absolute -top-[30%] left-[25%] h-[110%] w-[50%] rounded-full bg-[radial-gradient(closest-side,rgb(255_255_255/0.13),transparent)]" />
+              <Paint b={b} drift />
             </div>
           ))}
-          <div className="absolute inset-0 bg-[linear-gradient(to_top,rgb(11_11_9/0.55),rgb(11_11_9/0.12)_45%,rgb(11_11_9/0.08))]" />
+          <div className={SCRIM} />
         </div>
       ) : null}
       {backdrops ? (
-        // свечение вокруг карточки, как «подсветка» на YouTube: размытая копия той же заливки за краями.
-        // Неподвижное (плывёт только фон внутри) и слабое — чтобы не красить кружки и подборки; на телефоне нет
-        <div aria-hidden className="pointer-events-none absolute -inset-x-5 -inset-y-4 -z-10 hidden transform-gpu opacity-35 blur-[48px] sm:block">
-          {backdrops.map((b, k) => (
-            <div
-              key={k}
-              className={`absolute inset-0 rounded-[40px] transition-opacity duration-700 ${k === cur ? 'opacity-100' : 'opacity-0'}`}
-              style={{ background: `linear-gradient(in oklch 100deg, ${b?.home ?? 'hsl(40 6% 30%)'} 8%, ${b?.away ?? 'hsl(40 6% 24%)'} 92%)` }}
-            />
-          ))}
+        // свечение, как «подсветка» на YouTube: размытая копия самой карточки — с пятнами и затемнением внизу,
+        // поэтому неровное: где карточка светлее, там и светит. Маска гасит его к низу карточки — подборки под ней
+        // не красятся. Неподвижное (плывёт только фон внутри), слабое; на телефоне нет. Слой с запасом 80px
+        // вокруг карточки: маска обрезает всё, что за его краем, а размытие расходится примерно на столько
+        <div aria-hidden className="pointer-events-none absolute -inset-20 -z-10 hidden transform-gpu opacity-30 blur-[40px] [mask-image:linear-gradient(to_bottom,#000_55%,transparent_92%)] sm:block">
+          <div className="absolute inset-20 overflow-hidden rounded-[22px]">
+            {backdrops.map((b, k) => (
+              <div key={k} className={`absolute inset-0 transition-opacity duration-700 ${k === cur ? 'opacity-100' : 'opacity-0'}`}>
+                <Paint b={b} />
+              </div>
+            ))}
+            <div className={SCRIM} />
+          </div>
         </div>
       ) : null}
       {/* шапка: слева турнир матча на экране, справа стрелки и чип дня (в углу — сверху и справа поровну);
