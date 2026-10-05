@@ -257,6 +257,38 @@
     transform: translateY(10px);
   }
 }
+/* «Афиша»: цветные пятна фона «Главных матчей» медленно плывут — один круг за полминуты */
+@keyframes drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(9%, 7%, 0) scale(1.12);
+  }
+}
+@keyframes drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.06);
+  }
+  50% {
+    transform: translate3d(-8%, -9%, 0) scale(0.94);
+  }
+}
+.drift-a {
+  animation: drift-a 26s ease-in-out infinite;
+}
+.drift-b {
+  animation: drift-b 32s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .drift-a,
+  .drift-b {
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .flap,
   .rise > span,

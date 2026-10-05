@@ -20,9 +20,9 @@ export function LookSwitcher({ current }: { current: Look }) {
     <div
       role="radiogroup"
       aria-label="Вид виджетов"
-      className={`flex w-fit items-center gap-1 rounded-[14px] border border-edge p-1 pl-3.5 transition-opacity ${pending ? 'opacity-70' : ''}`}
+      className={`flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-[14px] border border-edge p-1 transition-opacity sm:pl-3.5 ${pending ? 'opacity-70' : ''}`}
     >
-      <span className="mr-1.5 whitespace-nowrap text-[13px] text-dim">Вид виджетов</span>
+      <span className="mr-1.5 hidden whitespace-nowrap text-[13px] text-dim sm:inline">Вид виджетов</span>
       {LOOKS.map((l) => (
         <button
           key={l.key}

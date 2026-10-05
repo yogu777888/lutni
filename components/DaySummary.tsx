@@ -22,8 +22,9 @@ const SURFACE: Record<Look, string> = {
   bars: CARD,
   dots: 'rounded-[24px] bg-panel',
   digits: 'rounded-[22px] border border-edge',
+  poster: 'rounded-[22px] border border-white/[0.06] bg-panel',
 }
-const HOVER: Record<Look, string> = { bars: 'hover:border-edge-2', dots: 'hover:bg-panel-2', digits: 'hover:bg-white/[0.02]' }
+const HOVER: Record<Look, string> = { bars: 'hover:border-edge-2', dots: 'hover:bg-panel-2', digits: 'hover:bg-white/[0.02]', poster: 'hover:border-edge-2' }
 
 const MATCHES = ['матч', 'матча', 'матчей'] as const
 const TOURNEYS = ['турнир', 'турнира', 'турниров'] as const
@@ -60,7 +61,13 @@ const snapTime = (at: number) => (ymdInTz(at) === todayYmd() ? formatTime(at) : 
 // ─── Главные матчи ───────────────────────────────────────────────────────────
 
 /** Матч главного блока: линия одного букмекера (до начала) и статистика (в игре и после) — что успели получить. */
-export type MainItem = { it: FeedItem; snap: OddsSnap | null; full: MatchFull | null }
+export type MainItem = {
+  it: FeedItem
+  snap: OddsSnap | null
+  full: MatchFull | null
+  /** «Афиша»: цвета клубов из эмблем (lib/team-colors.ts) — только для этого вида */
+  colors?: { home: string; away: string } | null
+}
 
 /**
  * До начала: строка кэфов одного букмекера с временем снимка («Фонбет, линия на 19:25») и два факта с выборкой
@@ -241,12 +248,82 @@ function factsFor(it: FeedItem, snap: OddsSnap | null): string[] {
 }
 
 /**
+ * «Афиша» — главный матч без статистики, как баннер в App Store: фон — цвета клубов (TopCarousel), внизу слева
+ * эмблемы и названия крупно, справа время начала (в игре — счёт и минута, после — счёт и «итог») и лаймовая
+ * «Разбор матча». Цифры и факты — в разборе и на странице матча. Вся карточка открывает сторис.
+ */
+function PosterSlide({ it }: { it: FeedItem }) {
+  const m = it.match
+  const live = isLive(m)
+  const finished = m.status === 'finished'
+  const score = (live || finished) && m.score ? m.score : null
+  const minute = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'
+  const BIG = 'num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[40px] lg:text-[clamp(40px,5.6vh,60px)]'
+  return (
+    <div className="relative flex min-w-0 flex-1 flex-col justify-end">
+      <StoryLink
+        id={m.id}
+        href={matchHref(m)}
+        className={`flex min-w-0 flex-col gap-5 [--logo:34px] lg:flex-row lg:items-end lg:justify-between lg:gap-10 lg:[--logo:clamp(40px,5.4vh,56px)] ${COVER}`}
+      >
+        {/* на компьютере — одной строкой «Хозяева — Гости» с эмблемами по краям, на телефоне — строками друг под другом */}
+        <span className="hidden min-w-0 items-center gap-5 lg:flex">
+          <TeamLogo name={m.home.name} src={m.home.logo} size="var(--logo)" />
+          <span className="min-w-0 text-balance text-[clamp(32px,4.6vh,52px)] font-semibold leading-[1.12] tracking-[-0.03em] text-fg">
+            {m.home.name} <span className="text-fg/55">—</span> {m.away.name}
+          </span>
+          <TeamLogo name={m.away.name} src={m.away.logo} size="var(--logo)" />
+        </span>
+        <span className="flex min-w-0 flex-col gap-3 lg:hidden">
+          {[m.home, m.away].map((t) => (
+            <span key={t.id} className="flex min-w-0 items-center gap-3">
+              <TeamLogo name={t.name} src={t.logo} size="var(--logo)" />
+              <span className="line-clamp-2 text-[24px] font-semibold leading-tight tracking-[-0.02em] text-fg sm:text-[28px]">{t.name}</span>
+            </span>
+          ))}
+        </span>
+        <span className="flex shrink-0 items-end justify-between gap-6 lg:justify-end">
+          {score ? (
+            <span className="flex flex-col lg:items-end">
+              <span className={BIG}>
+                {score.home} : {score.away}
+              </span>
+              <span className="mt-2 flex items-center gap-1.5 text-[13px] font-medium text-fg/85">
+                {live ? <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" aria-hidden /> : null}
+                {live ? minute : 'итог'}
+              </span>
+            </span>
+          ) : (
+            <span className="flex flex-col lg:items-end">
+              <span className="text-[13px] text-fg/75">Начало</span>
+              <span className="mt-1 flex items-baseline gap-1.5">
+                <span className={BIG}>{formatTime(m.ts)}</span>
+                <span className="text-[14px] text-fg/75">мск</span>
+              </span>
+            </span>
+          )}
+          {/* вся карточка — ссылка на сторис, поэтому это подпись, а не отдельная кнопка; на телефоне — кнопка под лентой */}
+          <span aria-hidden className="hidden h-11 shrink-0 items-center gap-2 rounded-[12px] bg-acid px-5 text-[15px] font-semibold text-acid-ink lg:inline-flex">
+            Разбор матча
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 17 17 7" />
+              <path d="M8 7h9v9" />
+            </svg>
+          </span>
+        </span>
+      </StoryLink>
+    </div>
+  )
+}
+
+/**
  * Слайд главного матча. Слева — эмблемы, полные названия, время или счёт и минута LIVE, под табло — «Разбор
  * за минуту». Справа — одна открытая область без внутренних карточек: до начала — кэфы одного букмекера и два
  * факта, в игре — «Сейчас в матче», после — статистика и подробности. На телефоне — столбиком.
  */
 function TopSlide({ item, look }: { item: MainItem; look: Look }) {
   const { it, snap, full } = item
+  if (look === 'poster') return <PosterSlide it={it} />
   const m = it.match
   const live = isLive(m)
   const finished = m.status === 'finished'
@@ -374,17 +451,18 @@ function MoveChart({ mv, kickoff, look }: { mv: LineMove; kickoff: number; look:
   }
   if (look === 'bars') {
     const max = Math.max(mv.from, mv.to)
+    // одна сетка на обе строки: колонка подписей — по самой длинной («4 октября, 19:30»), полосы начинаются ровно
     const row = (label: string, v: number, now: boolean) => (
-      <span className="flex items-center gap-3">
-        <span className="w-[5.5rem] shrink-0 truncate text-[13px] leading-[18px] text-mute">{label}</span>
-        <span className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+      <>
+        <span className="whitespace-nowrap text-[13px] leading-[18px] text-mute">{label}</span>
+        <span className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
           <span className={`block h-full rounded-full ${now ? (down ? 'bg-hot' : 'bg-chalk') : 'bg-white/[0.26]'}`} style={{ width: `${(v / max) * 100}%` }} />
         </span>
-        <span className={`num w-9 shrink-0 text-right text-[13px] leading-[18px] ${now ? (down ? 'font-semibold text-hot' : 'font-semibold text-fg') : 'text-dim'}`}>{v.toFixed(2)}</span>
-      </span>
+        <span className={`num text-right text-[13px] leading-[18px] ${now ? (down ? 'font-semibold text-hot' : 'font-semibold text-fg') : 'text-dim'}`}>{v.toFixed(2)}</span>
+      </>
     )
     return (
-      <span className={`${box} space-y-1.5`} aria-hidden>
+      <span className={`${box} grid grid-cols-[auto_minmax(2.5rem,1fr)_auto] items-center gap-x-3 gap-y-1.5`} aria-hidden>
         {row('открытие', mv.from, false)}
         {row(end, mv.to, true)}
       </span>
@@ -426,7 +504,9 @@ export type DayPicks = {
   movesCovered: number
 }
 
-function Picks({ p, look }: { p: DayPicks; look: Look }) {
+function Picks({ p, look: pageLook }: { p: DayPicks; look: Look }) {
+  // «Афиша» меняет только «Главные матчи» — подборки как в «Полосах»
+  const look: Look = pageLook === 'poster' ? 'bars' : pageLook
   const c = p.counts
   const g = p.goals
   const allLines: React.ReactNode[] =
@@ -524,6 +604,7 @@ export function DaySummary({
         slides={mains.map((x) => slideMeta(x.it))}
         panels={mains.map((x) => <TopSlide key={x.it.match.id} item={x} look={look} />)}
         days={days}
+        backdrops={look === 'poster' ? mains.map((x) => x.colors ?? null) : undefined}
         className={`lg:flex-1 ${SURFACE[look]}`}
       />
       {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг; к плиткам ближе, чем к блоку сверху */}

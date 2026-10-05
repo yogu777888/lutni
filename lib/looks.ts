@@ -7,6 +7,8 @@ export const LOOKS = [
   { key: 'bars', label: 'Полосы' },
   { key: 'dots', label: 'Точки' },
   { key: 'digits', label: 'Цифры' },
+  // «Афиша» — меняет только «Главные матчи»: градиент из цветов клубов, без статистики; подборки — как в «Полосах»
+  { key: 'poster', label: 'Афиша' },
 ] as const
 
 export type Look = (typeof LOOKS)[number]['key']

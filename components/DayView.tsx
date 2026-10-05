@@ -6,6 +6,7 @@ import { dayHref } from '@/lib/links'
 import { addDays, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { lineMoves, type OddsSnap } from '@/lib/lines'
 import { LOOK_COOKIE, parseLook } from '@/lib/looks'
+import { matchColors, type MatchColors } from '@/lib/team-colors'
 import { IS_MOCK } from '@/lib/sstats/client'
 import { isLive, liveRank } from '@/lib/rank'
 import { dayCounts, goalsPicks, mainMatches, moveExample } from '@/lib/day-summary'
@@ -134,6 +135,13 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
     daySnaps(matches, 1200),
   ])
   const hasSummary = mains.length > 0
+  // «Афиша»: цвета клубов из эмблем — только для этого вида; на холодном старте ждём не дольше 1,5 с (дальше — графит,
+  // а цвет досчитается и запомнится к следующему открытию)
+  if (look === 'poster' && hasSummary) {
+    const all = Promise.all(mains.map((x) => matchColors(x.it.match).catch(() => null)))
+    const colors = await Promise.race([all, new Promise<(MatchColors | null)[]>((r) => setTimeout(() => r(mains.map(() => null)), 1500).unref?.())])
+    mains.forEach((x, k) => (x.colors = colors[k]))
+  }
   // заголовок «Все матчи дня» — когда над списком есть что-то ещё (сводка, выгодные ставки)
   const listHead = hasSummary || values.length > 0
   // красная точка у «Сегодня»: на главной знаем сами, на других днях — из того же кэша матчей

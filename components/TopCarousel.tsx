@@ -28,11 +28,14 @@ export function TopCarousel({
   slides,
   panels,
   days,
+  backdrops,
   className = '',
 }: {
   slides: MainSlide[]
   panels: React.ReactNode[]
   days: DayLink[]
+  /** «Афиша»: цвета клубов каждого матча (хозяева слева, гости справа); null — графит */
+  backdrops?: ({ home: string; away: string } | null)[]
   className?: string
 }) {
   const track = useRef<HTMLDivElement>(null)
@@ -82,11 +85,33 @@ export function TopCarousel({
       </div>
     ) : null
   return (
-    <article aria-label="Главные матчи" className={`relative flex min-w-0 flex-col py-[18px] lg:py-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:py-6 lg:[@media(max-height:739px)]:py-5 ${className}`}>
+    <article
+      aria-label="Главные матчи"
+      className={`relative flex min-w-0 flex-col py-[18px] lg:py-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:py-6 lg:[@media(max-height:739px)]:py-5 ${backdrops ? 'overflow-hidden' : ''} ${className}`}
+    >
+      {backdrops ? (
+        // «Афиша»: у каждого матча свой фон — два больших мягких пятна цветов клубов медленно плывут (CSS),
+        // при листании фоны плавно сменяют друг друга; снизу затемнение — под белый текст
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          {backdrops.map((b, k) => (
+            <div key={k} className={`absolute inset-0 transition-opacity duration-700 ${k === cur ? 'opacity-100' : 'opacity-0'}`}>
+              <div
+                className="drift-a absolute -left-[18%] -top-[35%] h-[150%] w-[80%] rounded-full opacity-90"
+                style={{ background: `radial-gradient(closest-side, ${b?.home ?? 'hsl(40 6% 30%)'}, transparent)` }}
+              />
+              <div
+                className="drift-b absolute -bottom-[45%] -right-[18%] h-[150%] w-[80%] rounded-full opacity-90"
+                style={{ background: `radial-gradient(closest-side, ${b?.away ?? 'hsl(40 6% 26%)'}, transparent)` }}
+              />
+            </div>
+          ))}
+          <div className="absolute inset-0 bg-[linear-gradient(to_top,rgb(11_11_9/0.78),rgb(11_11_9/0.2)_55%,rgb(11_11_9/0.1))]" />
+        </div>
+      ) : null}
       {/* шапка: слева турнир матча на экране, справа стрелки и чип дня (в углу — сверху и справа поровну);
           на компьютере отступы карточки больше — 28px (на окне ниже 800px — 24px, ниже 740px — 20px): так табло не жмётся к краю */}
-      <div className="flex items-center justify-between gap-3 px-[18px] lg:px-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:px-6 lg:[@media(max-height:739px)]:px-5">
-        <p className="min-w-0 truncate text-[13px] text-dim">
+      <div className="relative flex items-center justify-between gap-3 px-[18px] lg:px-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:px-6 lg:[@media(max-height:739px)]:px-5">
+        <p className={`min-w-0 truncate text-[13px] ${backdrops ? 'text-fg/80' : 'text-dim'}`}>
           {meta?.live ? <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse-live rounded-full bg-live align-middle" aria-label="идёт" /> : null}
           {meta?.caption}
         </p>
@@ -131,7 +156,7 @@ export function TopCarousel({
 
       <div
         ref={track}
-        className="scrollbar-none mt-3 flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain lg:[@media(max-height:799px)]:mt-2"
+        className="scrollbar-none relative mt-3 flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain lg:[@media(max-height:799px)]:mt-2"
         onScroll={(e) => {
           const el = e.currentTarget
           const k = Math.round(el.scrollLeft / Math.max(1, el.clientWidth))
@@ -147,7 +172,7 @@ export function TopCarousel({
 
       {/* на телефоне и планшете — под лентой: разбор матча на экране, на телефоне рядом — стрелки.
           На компьютере кнопка разбора — под табло в самом слайде */}
-      <div className="mt-4 flex flex-wrap items-center gap-2 px-[18px] lg:hidden">
+      <div className="relative mt-4 flex flex-wrap items-center gap-2 px-[18px] lg:hidden">
         {meta ? (
           <button type="button" onClick={(e) => openStory({ id: meta.id, href: meta.href, opener: e.currentTarget })} className={`${CHIP} shrink-0 gap-2 pl-1 pr-3.5`}>
             <StoryChipFace />
