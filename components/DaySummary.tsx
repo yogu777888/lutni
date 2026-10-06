@@ -519,8 +519,8 @@ function Chevron() {
 }
 
 /**
- * Плитка подборки в «Афише» и «Эмблемах»: объёмный значок темы (та же серия, что у кружков историй,
- * public/story-icons), название с тихой стрелкой и одна строка по делу. `aside` — справа от названия (на телефоне — третьей строкой), строка под
+ * Плитка подборки в «Афише» и «Эмблемах»: объёмный значок темы в настоящих цветах (та же «надутая» серия, что у
+ * кружков историй, public/story-icons), название с тихой стрелкой и одна строка по делу. `aside` — справа от названия (на телефоне — третьей строкой), строка под
  * названием — на всю ширину.
  */
 function IconTile({
@@ -630,7 +630,7 @@ function IconPicks({ p, surface }: { p: DayPicks; surface: string }) {
     // 1 : 1 : 1.6, а не 1 : 1 : 2: строке маленьких плиток нужно место, а у широкой середина пустовала
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)]">
       <IconTile pic="/story-icons/calendar.webp" title="Все матчи" href={`${p.dayHref}#matches`} line={all} surface={surface} />
-      <IconTile pic="/story-icons/tb-2-5.webp" title="Голевые матчи" href={`/matches/${p.ymd}/goals`} line={goals} surface={surface} />
+      <IconTile pic="/story-icons/ball.webp" title="Голевые матчи" href={`/matches/${p.ymd}/goals`} line={goals} surface={surface} />
       <div className="min-w-0 sm:col-span-2 lg:col-span-1">
         <IconTile pic="/story-icons/arrows-up-down.webp" title="Движение коэффициентов" href={`/matches/${p.ymd}/odds`} line={move} aside={aside} hint={hint} surface={surface} />
       </div>
