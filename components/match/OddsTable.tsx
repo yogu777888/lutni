@@ -84,7 +84,7 @@ export function OddsTable({
                     >
                       {formatOdd(q?.value)}
                       {moved <= -0.05 ? <span className="ml-0.5 text-[9px] text-hot">▼</span> : moved >= 0.05 ? <span className="ml-0.5 text-[9px] text-mute">▲</span> : null}
-                      {val ? <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-acid" title="Value" /> : null}
+                      {val ? <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-acid" title="Выгодно" /> : null}
                     </span>
                   )
                   return (

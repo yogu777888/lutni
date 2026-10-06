@@ -7,7 +7,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 export const NAV = [
   { href: '/', label: 'Матчи' },
   { href: '/tags', label: 'Теги' },
-  { href: '/tag/value', label: 'Value' },
+  { href: '/tag/value', label: 'Выгодно' },
   { href: '/leagues', label: 'Лиги' },
   { href: '/bookmakers', label: 'Букмекеры' },
 ] as const
@@ -78,8 +78,10 @@ export function NavCapsule({ className = '', wide = false }: { className?: strin
             key={n.href}
             href={n.href}
             aria-current={on ? 'page' : undefined}
-            className={`relative z-10 inline-flex h-8 shrink-0 items-center justify-center rounded-full px-3.5 text-[14px] font-medium transition-colors ${
-              wide ? 'flex-1 px-2.5 text-[13.5px]' : ''
+            // на телефоне капсула во всю ширину: отступы пунктов сжимаются с экраном (10px → 4px), чтобы пять пунктов
+            // влезали и на 360px; лишнее место раздаёт flex-1
+            className={`relative z-10 inline-flex h-8 shrink-0 items-center justify-center rounded-full font-medium transition-colors ${
+              wide ? 'flex-1 px-[clamp(4px,calc((100vw_-_316px)/10),10px)] text-[13px]' : 'px-3.5 text-[14px]'
             } ${on ? 'text-fg' : 'text-dim hover:text-fg'} ${on && !pill ? 'bg-panel-3' : ''}`}
           >
             {n.label}
