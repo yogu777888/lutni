@@ -55,7 +55,7 @@ export const hasArt = (key: string) => key in ART
  * Объёмные значки тем — картинки владельца (сгенерированы в ChatGPT в стиле логотипа: «надутое» белое матовое
  * стекло), public/story-icons/<ключ>.webp: обрезаны по предмету, по центру, размер выровнен по диагонали габаритов.
  * В кружках историй — вместо плоских; плоские (Phosphor, `icon`) — запасные. Там же цветные значки плиток «Подборок»
- * (calendar, ball, arrows-up-down — DaySummary.tsx).
+ * (pitch, goal, arrows-up-down — DaySummary.tsx).
  */
 const PICS = new Set(['live', 'top', 'value', 'progruz', 'tb-2-5', 'tm-2-5', 'obe-zabyut', 'favorit', 'ravnye', 'andedog', 'seriya', 'krepost', 'kadry', 'h2h', 'top-match'])
 

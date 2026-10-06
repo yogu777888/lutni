@@ -629,8 +629,8 @@ function IconPicks({ p, surface }: { p: DayPicks; surface: string }) {
   return (
     // 1 : 1 : 1.6, а не 1 : 1 : 2: строке маленьких плиток нужно место, а у широкой середина пустовала
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)]">
-      <IconTile pic="/story-icons/calendar.webp" title="Все матчи" href={`${p.dayHref}#matches`} line={all} surface={surface} />
-      <IconTile pic="/story-icons/ball.webp" title="Голевые матчи" href={`/matches/${p.ymd}/goals`} line={goals} surface={surface} />
+      <IconTile pic="/story-icons/pitch.webp" title="Все матчи" href={`${p.dayHref}#matches`} line={all} surface={surface} />
+      <IconTile pic="/story-icons/goal.webp" title="Голевые матчи" href={`/matches/${p.ymd}/goals`} line={goals} surface={surface} />
       <div className="min-w-0 sm:col-span-2 lg:col-span-1">
         <IconTile pic="/story-icons/arrows-up-down.webp" title="Движение коэффициентов" href={`/matches/${p.ymd}/odds`} line={move} aside={aside} hint={hint} surface={surface} />
       </div>
