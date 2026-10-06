@@ -62,10 +62,10 @@ const PICS = new Set(['live', 'top', 'value', 'progruz', 'tb-2-5', 'tm-2-5', 'ob
 export const artPic = (key: string): string | null => (PICS.has(key) ? `/story-icons/${key}.webp` : null)
 
 /**
- * Фон кружка на главной: одна спокойная тёмная основа для всех — без радуги.
- * Различаются кружки иконкой, а цвет — только в кольце (не смотрели / LIVE / просмотрено).
+ * Фон кружка на главной: одна тёмная основа для всех, во всех видах. Различаются кружки значком (он и даёт цвет),
+ * а кольцо говорит, смотрели ли историю (не смотрели / LIVE / просмотрено).
  */
-export const CIRCLE_BG = 'var(--color-panel)'
+export const CIRCLE_BG = 'linear-gradient(135deg, #1b1a17 20%, #0e0e0c 80%)'
 
 /** Фон просмотрщика историй: то же свечение, но мягко и сверху — текст остаётся читаемым. */
 export function artGlow(art: Art): string {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { addDays, todayYmd } from '@/lib/format'
-import { buildStoryGroups, coverMatches, mainCircles, statFor, type StoryGroup } from '@/lib/story-groups'
+import { buildStoryGroups, mainCircles, statFor, type StoryGroup } from '@/lib/story-groups'
 import type { Match } from '@/lib/types'
 
 const team = (id: number, name: string) => ({ id, name, original: name, logo: null, country: 'England' })
@@ -116,14 +116,5 @@ describe('кружки на главной', () => {
     ]
     expect(mainCircles(groups).map((x) => x.key)).toEqual(['live', 'top', 'value', 'progruz', 'tb-2-5', 'favorit', 'obe-zabyut'])
     expect(mainCircles(groups.slice(4, 6)).map((x) => x.key)).toEqual(['value', 'progruz'])
-  })
-})
-
-describe('обложки кружков в «Афише»', () => {
-  it('у кружков разные матчи на обложке; маленькие выбирают первыми; если все заняты — первый матч кружка', () => {
-    const g = (key: string, ids: number[]) => ({ key, items: ids.map((id) => ({ id, href: '', focus: null })) }) as unknown as StoryGroup
-    expect(coverMatches([g('live', [1, 2]), g('top', [1, 3]), g('value', [3, 4, 1]), g('progruz', [3, 1])])).toEqual({ live: 1, top: 3, value: 4, progruz: 3 })
-    // в «Много голов» один матч, и он же первый в «В игре»: обложку забирает маленький кружок, а «В игре» берёт второй матч
-    expect(coverMatches([g('live', [1, 2]), g('tb-2-5', [1])])).toEqual({ live: 2, 'tb-2-5': 1 })
   })
 })

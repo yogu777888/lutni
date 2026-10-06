@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useState } from 'react'
 import { artFor, artPic, CIRCLE_BG } from '@/lib/story-art'
-import type { CircleArt, CircleKind, StoryGroup } from '@/lib/story-groups'
+import type { CircleKind, StoryGroup } from '@/lib/story-groups'
 import { ArtIcon } from './ArtIcon'
 import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
@@ -62,24 +62,6 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
   return <span className={`block truncate ${dim ? 'text-dim' : 'text-fg'}`}>{g.label}</span>
 }
 
-/**
- * Эмблема клуба на обложке кружка — увеличенная и сильно размытая: от неё остаются только цвета клуба, как фон из
- * обложки альбома в Apple Music. Детали не нужны, поэтому маленькие эмблемы из API здесь не выглядят мутными.
- * Приглушена (яркость 65%, 85%): светлые эмблемы иначе дают светлое пятно, и белый значок на нём теряется.
- */
-function Smear({ src, side }: { src: string; side: 'left' | 'right' }) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt=""
-      aria-hidden
-      decoding="async"
-      className={`absolute top-1/2 h-[95%] w-[95%] -translate-y-1/2 object-contain opacity-85 blur-[7px] brightness-[0.65] saturate-[1.7] ${side === 'left' ? '-left-[20%]' : '-right-[20%]'}`}
-    />
-  )
-}
-
 /** Значок темы: объёмная картинка владельца (public/story-icons), если есть, иначе плоский значок Phosphor. */
 function Glyph({ k, tone }: { k: string; tone: string }) {
   const pic = artPic(k)
@@ -92,35 +74,17 @@ function Glyph({ k, tone }: { k: string; tone: string }) {
 }
 
 /**
- * Обложка кружка: своя картинка из public/stories/<ключ>.*; в «Афише» и «Эмблемах» — значок темы поверх сильно
- * размытых эмблем матча этой истории (цвета клубов: хозяева слева, гости справа) — видно и тему, и что кружок
- * «живой», как история; иначе — плоский кружок со значком (lib/story-art.ts).
+ * Обложка кружка: своя картинка из public/stories/<ключ>.*, иначе — тёмный кружок со значком темы, во всех видах. Цвет
+ * дают сами значки: размытые эмблемы клубов под ними владелец убрал — цвет на цвете, золотая звезда и янтарная стрелка
+ * тонули в рыжих пятнах.
  */
-function CoverArt({ k, cover, match, children }: { k: string; cover?: string; match?: CircleArt; children?: React.ReactNode }) {
-  if (!cover && match) {
-    // без цветов клубов («Эмблемы») — почти чёрная основа: на сером размытые эмблемы смешивались в грязные пятна,
-    // а на чёрном светятся цветом
-    const home = match.colors?.home ?? '#1b1a17'
-    const away = match.colors?.away ?? '#0e0e0c'
-    return (
-      <span
-        className="absolute inset-[5.5px] grid place-items-center overflow-hidden rounded-full"
-        style={{ background: `linear-gradient(in oklch 135deg, ${home} 20%, ${away} 80%)` }}
-      >
-        {match.home.logo ? <Smear src={match.home.logo} side="left" /> : null}
-        {match.away.logo ? <Smear src={match.away.logo} side="right" /> : null}
-        {/* затемнение к центру — под белый значок на любых цветах, и на светлых эмблемах тоже */}
-        <span className="absolute inset-0 bg-[radial-gradient(circle,rgb(0_0_0/0.6),rgb(0_0_0/0.22)_75%)]" />
-        <Glyph k={k} tone="text-fg" />
-      </span>
-    )
-  }
+function CoverArt({ k, cover }: { k: string; cover?: string }) {
   return (
     <span
-      className="absolute inset-[5.5px] grid place-items-center overflow-hidden rounded-full ring-1 ring-inset ring-edge"
+      className="absolute inset-[5.5px] grid place-items-center overflow-hidden rounded-full"
       style={{ background: cover ? `center / cover no-repeat url("${cover}")` : CIRCLE_BG }}
     >
-      {cover ? null : (children ?? <Glyph k={k} tone="text-chalk" />)}
+      {cover ? null : <Glyph k={k} tone="text-fg" />}
     </span>
   )
 }
@@ -130,16 +94,7 @@ function CoverArt({ k, cover, match, children }: { k: string; cover?: string; ma
  * Это обычные ссылки (на страницу тега / матча) — для поисковиков и без JS;
  * клик открывает сторис матчей кружка, затем следующих кружков.
  */
-export function StoryCircles({
-  groups,
-  covers = {},
-  art,
-}: {
-  groups: StoryGroup[]
-  covers?: Record<string, string>
-  /** «Афиша»: матч на обложке каждого кружка (DayView, coverMatches) — размытые эмблемы на цветах клубов */
-  art?: Record<string, CircleArt>
-}) {
+export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; covers?: Record<string, string> }) {
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
@@ -183,7 +138,7 @@ export function StoryCircles({
               style={{ width: SIZE, height: SIZE }}
             >
               <Ring kind={g.kind} n={g.items.length} seen={n} />
-              <CoverArt k={g.key} cover={covers[g.key]} match={art?.[g.key]} />
+              <CoverArt k={g.key} cover={covers[g.key]} />
               {g.kind === 'live' ? (
                 <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 rounded-[5px] bg-live px-1.5 text-[9px] font-bold leading-[15px] tracking-wide text-white ring-2 ring-ink">
                   LIVE

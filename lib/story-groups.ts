@@ -166,30 +166,6 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
   return groups
 }
 
-/** Обложка кружка в «Афише»: эмблемы матча на заливке цветами клубов (цвета — из эмблем, lib/team-colors.ts). */
-export type CircleArt = {
-  home: { name: string; logo: string | null }
-  away: { name: string; logo: string | null }
-  colors: { home: string; away: string } | null
-}
-
-/**
- * Матч для обложки каждого кружка: первый матч кружка, которого ещё нет на других обложках, — одинаковые
- * обложки рядом выглядят как ошибка. Первыми выбирают кружки, где матчей меньше (у них меньше вариантов),
- * поэтому повторов почти не бывает. Если все матчи кружка уже на обложках — его первый матч.
- */
-export function coverMatches(groups: StoryGroup[]): Record<string, number> {
-  const used = new Set<number>()
-  const out: Record<string, number> = {}
-  for (const g of [...groups].sort((a, b) => a.items.length - b.items.length)) {
-    const id = (g.items.find((x) => !used.has(x.id)) ?? g.items[0])?.id
-    if (id == null) continue
-    out[g.key] = id
-    used.add(id)
-  }
-  return out
-}
-
 /** Какие теги идут в кружки на главной — по пользе для посетителя; остальные — в «Все теги». */
 const MAIN_TAGS = ['value', 'progruz', 'tb-2-5', 'favorit', 'obe-zabyut', 'ravnye', 'andedog', 'top-match', 'tm-2-5', 'seriya', 'krepost', 'kadry', 'h2h']
 
