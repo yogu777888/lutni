@@ -55,6 +55,7 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
 /**
  * Эмблема клуба на обложке кружка — увеличенная и сильно размытая: от неё остаются только цвета клуба, как фон из
  * обложки альбома в Apple Music. Детали не нужны, поэтому маленькие эмблемы из API здесь не выглядят мутными.
+ * Приглушена (яркость 65%, 85%): светлые эмблемы иначе дают светлое пятно, и белый значок на нём теряется.
  */
 function Smear({ src, side }: { src: string; side: 'left' | 'right' }) {
   return (
@@ -64,7 +65,7 @@ function Smear({ src, side }: { src: string; side: 'left' | 'right' }) {
       alt=""
       aria-hidden
       decoding="async"
-      className={`absolute top-1/2 h-[95%] w-[95%] -translate-y-1/2 object-contain blur-[7px] saturate-150 ${side === 'left' ? '-left-[20%]' : '-right-[20%]'}`}
+      className={`absolute top-1/2 h-[95%] w-[95%] -translate-y-1/2 object-contain opacity-85 blur-[7px] brightness-[0.65] saturate-[1.7] ${side === 'left' ? '-left-[20%]' : '-right-[20%]'}`}
     />
   )
 }
@@ -74,7 +75,8 @@ function Glyph({ k, tone }: { k: string; tone: string }) {
   const pic = artPic(k)
   if (pic) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={pic} alt="" aria-hidden decoding="async" className="relative h-10 w-10" />
+    // лёгкая тень отделяет белое стекло от светлых пятен эмблем
+    return <img src={pic} alt="" aria-hidden decoding="async" className="relative h-10 w-10 drop-shadow-[0_1px_3px_rgb(0_0_0/0.5)]" />
   }
   return <ArtIcon name={artFor(k).icon} className={`relative h-[26px] w-[26px] ${tone}`} />
 }
@@ -86,8 +88,10 @@ function Glyph({ k, tone }: { k: string; tone: string }) {
  */
 function CoverArt({ k, cover, match, children }: { k: string; cover?: string; match?: CircleArt; children?: React.ReactNode }) {
   if (!cover && match) {
-    const home = match.colors?.home ?? 'hsl(40 6% 34%)'
-    const away = match.colors?.away ?? 'hsl(40 6% 24%)'
+    // без цветов клубов («Эмблемы») — почти чёрная основа: на сером размытые эмблемы смешивались в грязные пятна,
+    // а на чёрном светятся цветом
+    const home = match.colors?.home ?? '#1b1a17'
+    const away = match.colors?.away ?? '#0e0e0c'
     return (
       <span
         className="absolute inset-[5.5px] grid place-items-center overflow-hidden rounded-full"
@@ -95,8 +99,8 @@ function CoverArt({ k, cover, match, children }: { k: string; cover?: string; ma
       >
         {match.home.logo ? <Smear src={match.home.logo} side="left" /> : null}
         {match.away.logo ? <Smear src={match.away.logo} side="right" /> : null}
-        {/* затемнение к центру — под белый значок на любых цветах */}
-        <span className="absolute inset-0 bg-[radial-gradient(circle,rgb(0_0_0/0.42),rgb(0_0_0/0.14)_75%)]" />
+        {/* затемнение к центру — под белый значок на любых цветах, и на светлых эмблемах тоже */}
+        <span className="absolute inset-0 bg-[radial-gradient(circle,rgb(0_0_0/0.6),rgb(0_0_0/0.22)_75%)]" />
         <Glyph k={k} tone="text-fg" />
       </span>
     )
