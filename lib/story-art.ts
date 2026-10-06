@@ -4,7 +4,7 @@
  * Свою картинку можно подложить файлом public/stories/<ключ>.(webp|jpg|png):
  * ключ — slug тега, «live», «top» или «all» (см. lib/story-covers.ts).
  */
-/** Значок темы (и плиток «Подборок») — имя из Phosphor Icons (components/story/ArtIcon.tsx). */
+/** Значок темы — имя из Phosphor Icons (components/story/ArtIcon.tsx). */
 export type ArtIcon =
   | 'broadcast'
   | 'star'
@@ -22,8 +22,6 @@ export type ArtIcon =
   | 'arrows-in-line-horizontal'
   | 'trophy'
   | 'hash'
-  | 'calendar-dots'
-  | 'arrows-down-up'
 
 /** a — свечение сверху слева, b — снизу справа, base — тёмная основа. */
 export type Art = { a: string; b: string; base: string; icon: ArtIcon }
@@ -56,7 +54,8 @@ export const hasArt = (key: string) => key in ART
 /**
  * Объёмные значки тем — картинки владельца (сгенерированы в ChatGPT в стиле логотипа: «надутое» белое матовое
  * стекло), public/story-icons/<ключ>.webp: обрезаны по предмету, по центру, размер выровнен по диагонали габаритов.
- * В кружках историй — вместо плоских; плоские (Phosphor, `icon`) — запасные и в плитках «Подборок».
+ * В кружках историй и плитках «Подборок» (там же calendar.webp и arrows-up-down.webp) — вместо плоских;
+ * плоские (Phosphor, `icon`) — запасные.
  */
 const PICS = new Set(['live', 'top', 'value', 'progruz', 'tb-2-5', 'tm-2-5', 'obe-zabyut', 'favorit', 'ravnye', 'andedog', 'seriya', 'krepost', 'kadry', 'h2h', 'top-match'])
 

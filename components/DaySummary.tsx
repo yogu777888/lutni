@@ -8,10 +8,8 @@ import { biggestMove, lineMoves, moveOutcome, periodEndLabel, periodText, x12Lin
 import { matchHref } from '@/lib/links'
 import { isLive } from '@/lib/rank'
 import { posterLike, type Look } from '@/lib/looks'
-import type { ArtIcon as IconName } from '@/lib/story-art'
 import type { League, Match, MatchFull, StatPair } from '@/lib/types'
 import { CHIP, StoryChipFace } from './Chips'
-import { ArtIcon } from './story/ArtIcon'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
 import { TopCarousel, type Backdrop, type DayLink, type MainSlide } from './TopCarousel'
@@ -521,12 +519,12 @@ function Chevron() {
 }
 
 /**
- * Плитка подборки в «Афише» и «Эмблемах»: значок темы на мягком кружке (тот же набор, что у кружков историй), название
- * с тихой стрелкой и одна строка по делу. `aside` — справа от названия (на телефоне — третьей строкой), строка под
+ * Плитка подборки в «Афише» и «Эмблемах»: объёмный значок темы (та же серия, что у кружков историй,
+ * public/story-icons), название с тихой стрелкой и одна строка по делу. `aside` — справа от названия (на телефоне — третьей строкой), строка под
  * названием — на всю ширину.
  */
 function IconTile({
-  icon,
+  pic,
   title,
   href,
   line,
@@ -534,7 +532,8 @@ function IconTile({
   hint,
   surface,
 }: {
-  icon: IconName
+  /** картинка значка — public/story-icons/*.webp */
+  pic: string
   title: string
   href: string
   line: React.ReactNode
@@ -550,11 +549,15 @@ function IconTile({
       title={hint}
       className={`group grid h-full min-w-0 grid-cols-[40px_minmax(0,1fr)] content-center items-center gap-x-3 p-[18px] transition-colors ${aside ? 'sm:grid-cols-[40px_minmax(0,1fr)_auto]' : ''} ${surface}`}
     >
-      <span
-        className={`col-start-1 grid h-10 w-10 place-items-center rounded-full bg-white/[0.06] text-fg transition-colors duration-300 group-hover:bg-white/[0.1] ${aside ? 'row-[1/span_3] sm:row-[1/span_2]' : 'row-[1/span_2]'}`}
-      >
-        <ArtIcon name={icon} className="h-5 w-5" />
-      </span>
+      {/* без подложки: объёмному значку кружок не нужен; при наведении — чуть крупнее */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={pic}
+        alt=""
+        aria-hidden
+        decoding="async"
+        className={`col-start-1 h-10 w-10 transition-transform duration-300 group-hover:scale-105 ${aside ? 'row-[1/span_3] sm:row-[1/span_2]' : 'row-[1/span_2]'}`}
+      />
       <span className="col-start-2 row-start-1 flex min-w-0 items-center gap-1">
         <span className="truncate text-[15px] font-semibold leading-5 text-fg">{title}</span>
         <Chevron />
@@ -626,10 +629,10 @@ function IconPicks({ p, surface }: { p: DayPicks; surface: string }) {
   return (
     // 1 : 1 : 1.6, а не 1 : 1 : 2: строке маленьких плиток нужно место, а у широкой середина пустовала
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)]">
-      <IconTile icon="calendar-dots" title="Все матчи" href={`${p.dayHref}#matches`} line={all} surface={surface} />
-      <IconTile icon="soccer-ball" title="Голевые матчи" href={`/matches/${p.ymd}/goals`} line={goals} surface={surface} />
+      <IconTile pic="/story-icons/calendar.webp" title="Все матчи" href={`${p.dayHref}#matches`} line={all} surface={surface} />
+      <IconTile pic="/story-icons/tb-2-5.webp" title="Голевые матчи" href={`/matches/${p.ymd}/goals`} line={goals} surface={surface} />
       <div className="min-w-0 sm:col-span-2 lg:col-span-1">
-        <IconTile icon="arrows-down-up" title="Движение коэффициентов" href={`/matches/${p.ymd}/odds`} line={move} aside={aside} hint={hint} surface={surface} />
+        <IconTile pic="/story-icons/arrows-up-down.webp" title="Движение коэффициентов" href={`/matches/${p.ymd}/odds`} line={move} aside={aside} hint={hint} surface={surface} />
       </div>
     </div>
   )
