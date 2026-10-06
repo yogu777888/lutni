@@ -107,7 +107,7 @@ export function OddsTable({
                       href={goHref(partner, 'odds-table', match.id)}
                       target="_blank"
                       rel={SPONSORED_REL}
-                      className="inline-flex rounded-full bg-white/[0.08] px-3 py-1.5 text-[12px] font-medium text-fg transition-colors hover:bg-acid hover:text-acid-ink"
+                      className="inline-flex rounded-full bg-white/[0.08] px-3 py-1.5 text-[12px] font-medium text-fg transition-colors hover:bg-fg hover:text-ink"
                     >
                       Ставка
                     </a>

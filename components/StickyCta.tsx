@@ -12,7 +12,7 @@ export function StickyCta({ partner, href, title, subtitle, action }: { partner:
           <span className="block truncate text-[14px] font-semibold">{title}</span>
           <span className="block truncate text-[11px] text-mute">{subtitle} · Реклама · 18+</span>
         </span>
-        <span className="shrink-0 rounded-full bg-acid px-5 py-2.5 text-sm font-semibold text-acid-ink">{action}</span>
+        <span className="shrink-0 rounded-full bg-fg px-5 py-2.5 text-sm font-semibold text-ink">{action}</span>
       </a>
     </div>
   )

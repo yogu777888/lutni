@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { artFor, artPic, CIRCLE_BG } from '@/lib/story-art'
 import type { CircleArt, CircleKind, StoryGroup } from '@/lib/story-groups'
 import { ArtIcon } from './ArtIcon'
@@ -21,15 +21,25 @@ const SEEN_STROKE = 'var(--color-mute)'
  * по часовой стрелке (как статусы в мессенджерах), а не вразброс: кольцо показывает, сколько
  * из кружка уже посмотрели, а следующий тап продолжит с первого непросмотренного.
  */
-function Ring({ kind, n, seen, light }: { kind: CircleKind; n: number; seen: number; light: boolean }) {
+function Ring({ kind, n, seen }: { kind: CircleKind; n: number; seen: number }) {
   const step = C / n
   const gap = n > 1 ? Math.min(4, step / 3) : 0
+  // своё имя градиента у каждого кольца: общее имя ломается, если первый кружок скрыт
+  const id = `ring-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
   // цвет кольца — только «не смотрели» и LIVE (красный); просмотренное — серое той же толщины: иначе кольцо из
-  // толстых и тонких дуг выглядит кривым, а слишком бледный серый — недорисованным. «Не смотрели» — лайм, а при
-  // цветных обложках «Афиши» — белое: лайм у нас «выгодно» и главные кнопки, на цветном он спорит с ними
-  const color = kind === 'live' ? 'var(--color-live)' : light ? 'var(--color-fg)' : 'var(--color-acid)'
+  // толстых и тонких дуг выглядит кривым, а слишком бледный серый — недорисованным. «Не смотрели» — градиент
+  // лайм → бирюза снизу слева вверх направо, как в Instagram, но цветами сайта: белое владельцу показалось скучным,
+  // а тёплый градиент Instagram спорил бы с красным LIVE
+  const color = kind === 'live' ? 'var(--color-live)' : `url(#${id})`
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full -rotate-90 overflow-visible" aria-hidden>
+      {/* svg повёрнут на −90°, поэтому вектор (0,0) → (1,1) на экране идёт снизу слева вверх направо */}
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="var(--color-acid)" />
+          <stop offset="1" stopColor="#2ee6c9" />
+        </linearGradient>
+      </defs>
       {Array.from({ length: n }, (_, i) => (
         <circle
           key={i}
@@ -127,7 +137,7 @@ export function StoryCircles({
 }: {
   groups: StoryGroup[]
   covers?: Record<string, string>
-  /** «Афиша»: матч на обложке каждого кружка (DayView, coverMatches) — эмблемы на цветах клубов, кольца белые */
+  /** «Афиша»: матч на обложке каждого кружка (DayView, coverMatches) — размытые эмблемы на цветах клубов */
   art?: Record<string, CircleArt>
 }) {
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
@@ -172,7 +182,7 @@ export function StoryCircles({
               className="relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95"
               style={{ width: SIZE, height: SIZE }}
             >
-              <Ring kind={g.kind} n={g.items.length} seen={n} light={Boolean(art)} />
+              <Ring kind={g.kind} n={g.items.length} seen={n} />
               <CoverArt k={g.key} cover={covers[g.key]} match={art?.[g.key]} />
               {g.kind === 'live' ? (
                 <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 rounded-[5px] bg-live px-1.5 text-[9px] font-bold leading-[15px] tracking-wide text-white ring-2 ring-ink">

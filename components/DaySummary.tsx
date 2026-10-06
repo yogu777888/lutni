@@ -319,7 +319,7 @@ function PosterSlide({ it }: { it: FeedItem }) {
             </>
           )}
           {/* вся карточка — ссылка на сторис, поэтому это подпись, а не отдельная кнопка; на телефоне — кнопка под лентой */}
-          <span aria-hidden className="mt-5 hidden h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-[12px] bg-acid px-5 text-[15px] font-semibold text-acid-ink lg:inline-flex lg:[@media(max-height:739px)]:mt-3">
+          <span aria-hidden className="mt-5 hidden h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-[12px] bg-fg px-5 text-[15px] font-semibold text-ink lg:inline-flex lg:[@media(max-height:739px)]:mt-3">
             Разбор матча
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M7 17 17 7" />

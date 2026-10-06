@@ -7,11 +7,11 @@ export const CHIP = 'inline-flex h-8 items-center rounded-[10px] bg-white/[0.07]
 /** «Выгодно» — лаймовый чип. */
 export const VALUE_CHIP = 'inline-flex h-8 min-w-0 items-center gap-1.5 rounded-[10px] bg-acid/[0.12] px-3 text-[13px] font-semibold text-acid'
 
-/** Содержимое кнопки «Разбор за минуту»: лаймовый квадрат с «плей» и подпись. */
+/** Содержимое кнопки «Разбор за минуту»: светлый квадрат с «плей» и подпись. */
 export function StoryChipFace() {
   return (
     <>
-      <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-acid text-acid-ink" aria-hidden>
+      <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-fg text-ink" aria-hidden>
         <svg viewBox="0 0 12 12" className="ml-px h-2.5 w-2.5" fill="currentColor">
           <path d="M3 1.5v9l7.5-4.5z" />
         </svg>

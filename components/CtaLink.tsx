@@ -1,13 +1,14 @@
 import { SPONSORED_REL } from '@/lib/affiliate'
 
 /**
- * primary — лайм, главное действие экрана; ghost — тонкая обводка; light — светлая кнопка;
+ * primary — тёплый белый (как текст), главное действие экрана: лайм у нас — «выгодно», логотип и кольца новых историй;
+ * ghost — тонкая обводка; light — то же, что primary;
  * link — текстовая ссылка с лаймовым подчёркиванием-маркером.
  */
 type Variant = 'primary' | 'ghost' | 'light' | 'link' | 'secondary'
 
 const STYLES: Record<Variant, string> = {
-  primary: 'rounded-full bg-acid px-5 text-acid-ink hover:-translate-y-px hover:brightness-105 active:scale-[0.97]',
+  primary: 'rounded-full bg-fg px-5 text-ink hover:-translate-y-px hover:bg-white active:scale-[0.97]',
   ghost: 'rounded-full border border-edge-2 px-5 text-fg hover:-translate-y-px hover:bg-white/[0.04] active:scale-[0.97]',
   secondary: 'rounded-full border border-edge-2 px-5 text-fg hover:-translate-y-px hover:bg-white/[0.04] active:scale-[0.97]',
   light: 'rounded-full bg-fg px-5 text-ink hover:-translate-y-px hover:bg-white active:scale-[0.97]',

@@ -483,7 +483,7 @@ export function StoryViewer() {
                   href={story.cta.href}
                   target="_blank"
                   rel={SPONSORED_REL}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-acid px-3 py-3.5 text-[15px] font-bold text-acid-ink shadow-[0_8px_28px_-8px_rgb(200_255_46/0.6)] transition hover:brightness-110 active:scale-[0.98]"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-fg px-3 py-3.5 text-[15px] font-bold text-ink shadow-[0_8px_28px_-8px_rgb(244_241_230/0.35)] transition hover:bg-white active:scale-[0.98]"
                 >
                   {story.cta.text}
                   <span className="font-semibold opacity-65">· {story.cta.partner}</span>
