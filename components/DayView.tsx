@@ -1,13 +1,9 @@
 import Link from 'next/link'
-import { cookies } from 'next/headers'
 import { countryRank, featuredRank } from '@/config/leagues'
-import { daySnaps, getMatchesByDate, peekOddsSnap, tagsFor, waitMatchFull, waitOddsSnap, type FeedItem } from '@/lib/data'
+import { daySnaps, getMatchesByDate, peekOddsSnap, tagsFor, waitOddsSnap, type FeedItem } from '@/lib/data'
 import { dayHref } from '@/lib/links'
 import { addDays, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { lineMoves, type OddsSnap } from '@/lib/lines'
-import { LOOK_COOKIE, parseLook } from '@/lib/looks'
-import { matchColors, type MatchColors } from '@/lib/team-colors'
-import { IS_MOCK } from '@/lib/sstats/client'
 import { isLive, liveRank } from '@/lib/rank'
 import { dayCounts, goalsPicks, mainMatches, moveExample } from '@/lib/day-summary'
 import { storyCovers } from '@/lib/story-covers'
@@ -15,7 +11,6 @@ import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { DaySummary, type MainItem } from './DaySummary'
-import { LookSwitcher } from './LookSwitcher'
 import type { DayLink } from './TopCarousel'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
@@ -117,34 +112,19 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
 
   const heading = dayHeading(ymd, today)
   const past = diffDays(ymd, today) < 0
-  // вид виджетов сводки — пока владелец выбирает подачу (переключатель — только в демо и при разработке)
-  const look = parseLook((await cookies()).get(LOOK_COOKIE)?.value)
-  const showLooks = IS_MOCK || process.env.NODE_ENV !== 'production'
   // «Главные матчи» — в любой день: впереди — анонсы и идущие, на прошедших днях — итоги главных матчей.
-  // До начала — линия одного букмекера, в игре и после — статистика матча; на холодном старте ждём их недолго
+  // До начала — линия одного букмекера для строки кэфов (на холодном старте ждём её недолго); в игре и после кэфов нет
   // линия для подборок: топ-турниры без снимка догружаются (не дольше 1,2 с, остальное — в фоне, к следующему открытию)
   const [mains, day] = await Promise.all([
     Promise.all(
       mainMatches(items).map(async (it): Promise<MainItem> => {
         const m = it.match
-        const scheduled = m.status === 'scheduled'
-        const [snap, full] = await Promise.all([scheduled ? waitOddsSnap(m) : peekOddsSnap(m.id), scheduled ? null : waitMatchFull(m.id)])
-        return { it, snap, full }
+        return { it, snap: m.status === 'scheduled' ? await waitOddsSnap(m) : null }
       }),
     ),
     daySnaps(matches, 1200),
   ])
   const hasSummary = mains.length > 0
-  // «Афиша»: цвета клубов из эмблем — для «Главных матчей»; на холодном старте ждём не дольше 1,5 с (дальше — графит,
-  // а цвет досчитается и запомнится к следующему открытию). «Эмблемы» — без цветов, графит: владелец увидел этот вид до
-  // того, как цвета догрузились, и выбрал так — их и не считаем
-  if (look === 'poster') {
-    const colors = await Promise.race([
-      Promise.all(mains.map((x) => matchColors(x.it.match).catch(() => null))),
-      new Promise<(MatchColors | null)[]>((r) => setTimeout(() => r(mains.map(() => null)), 1500).unref?.()),
-    ])
-    mains.forEach((x, k) => (x.colors = colors[k]))
-  }
   // заголовок «Все матчи дня» — когда над списком есть что-то ещё (сводка, выгодные ставки)
   const listHead = hasSummary || values.length > 0
   // красная точка у «Сегодня»: на главной знаем сами, на других днях — из того же кэша матчей
@@ -198,7 +178,6 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
             </span>
           </h1>
         </section>
-        {hasSummary && showLooks ? <LookSwitcher current={look} /> : null}
         </div>
 
         {storyGroups.length ? (
@@ -214,7 +193,6 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
           <DaySummary
             mains={mains}
             days={dayLinks}
-            look={look}
             picks={{
               ymd,
               dayHref: base,

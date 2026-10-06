@@ -7,11 +7,8 @@ import { openStory } from './story/events'
 
 /** Матч слайда — для шапки и кнопки разбора: турнир и разбор — про матч, который сейчас на экране. */
 export type MainSlide = { id: number; href: string; live: boolean; caption: string; title: string }
-/**
- * Фон «Афиши» одного матча: цвета клубов (хозяева слева, гости справа; нет — графит) и в «Эмблемах» — эмблемы
- * команд для крупного тиснения за ними.
- */
-export type Backdrop = { home?: string; away?: string; home2?: string; away2?: string; marks?: { home: string | null; away: string | null } }
+/** Эмблемы команд матча — крупным тиснением на фоне карточки (хозяева слева, гости справа). */
+export type Marks = { home: string | null; away: string | null }
 /** День в чипе: переход на страницу дня — вся страница (блок, подборки, список) про один и тот же день. */
 export type DayLink = { key: string; label: string; href: string; current: boolean; live?: boolean }
 
@@ -23,20 +20,20 @@ function Arrow({ dir }: { dir: 'left' | 'right' }) {
   )
 }
 
-/** «Афиша»: снизу затемнение — под белый текст */
+/** Снизу затемнение — под белый текст. */
 const SCRIM = 'absolute inset-0 bg-[linear-gradient(to_top,rgb(11_11_9/0.55),rgb(11_11_9/0.12)_45%,rgb(11_11_9/0.08))]'
 
 /**
- * Фон «Афиши» одного матча, как живые обои Apple: заливка цветами клубов (хозяева слева, гости справа) и четыре
- * пятна — по два цвета на клуб (главный и второй: с эмблемы или соседний оттенок), плюс светлый блик. В карточке
- * пятна плывут каждое своим путём (`drift-a…d`, 19–27 с) и смешиваются — фон переливается; в свечении — стоят.
- * Пятна других цветов, чем заливка под ними, — иначе движения не видно.
+ * Фон карточки матча, как живые обои Apple, но монохром: графитовая заливка и четыре графитовых пятна разной
+ * светлоты, плюс светлый блик. В карточке пятна плывут каждое своим путём (`drift-a…d`, 19–27 с) — фон переливается;
+ * в свечении — стоят. Поверх — эмблемы команд тиснением (`Mark`), только в самой карточке.
+ * Цвета клубов (вид «Афиша») владелец сменил на графит: увидел карточку до того, как цвета догрузились, и выбрал так.
  */
-function Paint({ b, drift = false, marks = false }: { b: Backdrop | null; drift?: boolean; marks?: boolean }) {
-  const home = b?.home ?? 'hsl(40 6% 30%)'
-  const away = b?.away ?? 'hsl(40 6% 24%)'
-  const home2 = b?.home2 ?? 'hsl(40 6% 38%)'
-  const away2 = b?.away2 ?? 'hsl(40 6% 32%)'
+function Paint({ marks, drift = false }: { marks?: Marks; drift?: boolean }) {
+  const home = 'hsl(40 6% 30%)'
+  const away = 'hsl(40 6% 24%)'
+  const home2 = 'hsl(40 6% 38%)'
+  const away2 = 'hsl(40 6% 32%)'
   const blob = (c: string) => ({ background: `radial-gradient(closest-side, ${c}, transparent)` })
   return (
     <>
@@ -46,14 +43,14 @@ function Paint({ b, drift = false, marks = false }: { b: Backdrop | null; drift?
       <div className={`absolute -bottom-[40%] -right-[15%] h-[140%] w-[70%] rounded-full ${drift ? 'drift-b' : ''}`} style={blob(away)} />
       <div className={`absolute -top-[55%] right-[4%] h-[125%] w-[52%] rounded-full opacity-90 ${drift ? 'drift-d' : ''}`} style={blob(away2)} />
       <div className={`absolute -top-[30%] left-[25%] h-[110%] w-[50%] rounded-full bg-[radial-gradient(closest-side,rgb(255_255_255/0.13),transparent)] ${drift ? 'drift-b' : ''}`} />
-      {marks && b?.marks?.home ? <Mark src={b.marks.home} side="left" drift={drift} /> : null}
-      {marks && b?.marks?.away ? <Mark src={b.marks.away} side="right" drift={drift} /> : null}
+      {marks?.home ? <Mark src={marks.home} side="left" drift={drift} /> : null}
+      {marks?.away ? <Mark src={marks.away} side="right" drift={drift} /> : null}
     </>
   )
 }
 
 /**
- * «Эмблемы»: эмблема команды крупно за ней — чуть выше карточки (обрезана сверху и снизу едва-едва), а сбоку
+ * Эмблема команды крупно за ней — чуть выше карточки (обрезана сверху и снизу едва-едва), а сбоку
  * наполовину за краем: видна часть, обращённая к центру. Серая, в режиме «мягкий свет» — окрашивается в цвет
  * фона, как тиснение. Контрастный трафарет (серая, контраст ×3): настоящие эмблемы маленькие, при таком
  * увеличении они мутные; контраст делает из этого чёткий оттиск с гладкими краями, как печать. Просто без фильтра
@@ -91,14 +88,14 @@ export function TopCarousel({
   slides,
   panels,
   days,
-  backdrops,
+  marks,
   className = '',
 }: {
   slides: MainSlide[]
   panels: React.ReactNode[]
   days: DayLink[]
-  /** «Афиша»: цвета клубов каждого матча (хозяева слева, гости справа); null — графит */
-  backdrops?: (Backdrop | null)[]
+  /** эмблемы команд каждого матча — для тиснения на фоне */
+  marks: Marks[]
   className?: string
 }) {
   const track = useRef<HTMLDivElement>(null)
@@ -169,40 +166,33 @@ export function TopCarousel({
       aria-label="Главные матчи"
       className={`relative flex min-w-0 flex-col py-[18px] lg:py-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:py-6 lg:[@media(max-height:739px)]:py-5 ${className}`}
     >
-      {backdrops ? (
-        // «Афиша»: у каждого матча свой фон — заливка цветами клубов, поверх медленно плывут пятна и блик (CSS),
-        // при листании фоны плавно сменяют друг друга; снизу лёгкое затемнение.
-        // Фон заходит и под прозрачную рамку карточки — иначе по краю видна тёмная полоска
-        <div aria-hidden className="pointer-events-none absolute -inset-px overflow-hidden rounded-[inherit]">
-          {backdrops.map((b, k) => (
-            <div key={k} className={`absolute inset-0 transition-opacity duration-700 ${k === cur ? 'opacity-100' : 'opacity-0'}`}>
-              <Paint b={b} drift marks />
-            </div>
-          ))}
+      {/* у каждого матча свой фон — графит, поверх медленно плывут пятна и блик (CSS) и эмблемы команд тиснением;
+          при листании фоны плавно сменяют друг друга; снизу лёгкое затемнение.
+          Фон заходит и под прозрачную рамку карточки — иначе по краю видна тёмная полоска */}
+      <div aria-hidden className="pointer-events-none absolute -inset-px overflow-hidden rounded-[inherit]">
+        {marks.map((mk, k) => (
+          <div key={k} className={`absolute inset-0 transition-opacity duration-700 ${k === cur ? 'opacity-100' : 'opacity-0'}`}>
+            <Paint marks={mk} drift />
+          </div>
+        ))}
+        <div className={SCRIM} />
+      </div>
+      {/* свечение, как «подсветка» на YouTube: размытая копия фона карточки — с пятнами и затемнением внизу, поэтому
+          неровное: где карточка светлее, там и светит. Маска гасит его к низу карточки и обрезает ровно по её нижнему
+          краю (80px запаса снизу — прозрачные): ниже карточки ни полоски, подборки не красятся. Неподвижное, слабое; на
+          телефоне нет. Слой с запасом 80px вокруг карточки: маска обрезает всё, что за его краем, а размытие расходится
+          примерно на столько. Фон у всех матчей один (графит), поэтому слой один. При открытии страницы свечение
+          проявляется не сразу, а за полторы секунды (`glow-in`) */}
+      <div aria-hidden className="glow-in pointer-events-none absolute -inset-20 -z-10 hidden transform-gpu opacity-30 blur-[40px] [mask-image:linear-gradient(to_top,transparent_80px,#000_calc(80px_+_40%))] sm:block">
+        <div className="absolute inset-20 overflow-hidden rounded-[22px]">
+          <Paint />
           <div className={SCRIM} />
         </div>
-      ) : null}
-      {backdrops ? (
-        // свечение, как «подсветка» на YouTube: размытая копия самой карточки — с пятнами и затемнением внизу,
-        // поэтому неровное: где карточка светлее, там и светит. Маска гасит его к низу карточки и обрезает ровно по её
-        // нижнему краю (80px запаса снизу — прозрачные): ниже карточки ни полоски, подборки не красятся. Неподвижное (плывёт только фон внутри), слабое; на телефоне нет. Слой с запасом 80px
-        // вокруг карточки: маска обрезает всё, что за его краем, а размытие расходится примерно на столько
-        // При открытии страницы свечение проявляется не сразу, а за полторы секунды (`glow-in`)
-        <div aria-hidden className="glow-in pointer-events-none absolute -inset-20 -z-10 hidden transform-gpu opacity-30 blur-[40px] [mask-image:linear-gradient(to_top,transparent_80px,#000_calc(80px_+_40%))] sm:block">
-          <div className="absolute inset-20 overflow-hidden rounded-[22px]">
-            {backdrops.map((b, k) => (
-              <div key={k} className={`absolute inset-0 transition-opacity duration-700 ${k === cur ? 'opacity-100' : 'opacity-0'}`}>
-                <Paint b={b} />
-              </div>
-            ))}
-            <div className={SCRIM} />
-          </div>
-        </div>
-      ) : null}
+      </div>
       {/* шапка: слева турнир матча на экране, справа стрелки и чип дня (в углу — сверху и справа поровну);
           на компьютере отступы карточки больше — 28px (на окне ниже 800px — 24px, ниже 740px — 20px): так табло не жмётся к краю */}
       <div className="relative flex items-center justify-between gap-3 px-[18px] lg:px-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:px-6 lg:[@media(max-height:739px)]:px-5">
-        <p className={`min-w-0 truncate text-[13px] ${backdrops ? 'text-fg/80' : 'text-dim'}`}>
+        <p className="min-w-0 truncate text-[13px] text-fg/80">
           {meta?.live ? <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse-live rounded-full bg-live align-middle" aria-label="идёт" /> : null}
           {meta?.caption}
         </p>
