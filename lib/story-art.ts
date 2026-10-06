@@ -54,6 +54,15 @@ export const artFor = (key: string | null | undefined): Art => (key ? ART[key] :
 export const hasArt = (key: string) => key in ART
 
 /**
+ * Объёмные значки тем — картинки владельца (сгенерированы в ChatGPT в стиле логотипа: «надутое» белое матовое
+ * стекло), public/story-icons/<ключ>.webp: обрезаны по предмету, по центру, размер выровнен по диагонали габаритов.
+ * В кружках историй — вместо плоских; плоские (Phosphor, `icon`) — запасные и в плитках «Подборок».
+ */
+const PICS = new Set(['live', 'top', 'value', 'progruz', 'tb-2-5', 'tm-2-5', 'obe-zabyut', 'favorit', 'ravnye', 'andedog', 'seriya', 'krepost', 'kadry', 'h2h', 'top-match'])
+
+export const artPic = (key: string): string | null => (PICS.has(key) ? `/story-icons/${key}.webp` : null)
+
+/**
  * Фон кружка на главной: одна спокойная тёмная основа для всех — без радуги.
  * Различаются кружки иконкой, а цвет — только в кольце (не смотрели / LIVE / просмотрено).
  */

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { artFor, CIRCLE_BG } from '@/lib/story-art'
+import { artFor, artPic, CIRCLE_BG } from '@/lib/story-art'
 import type { CircleArt, CircleKind, StoryGroup } from '@/lib/story-groups'
 import { ArtIcon } from './ArtIcon'
 import { openStory } from './events'
@@ -69,13 +69,22 @@ function Smear({ src, side }: { src: string; side: 'left' | 'right' }) {
   )
 }
 
+/** Значок темы: объёмная картинка владельца (public/story-icons), если есть, иначе плоский значок Phosphor. */
+function Glyph({ k, tone }: { k: string; tone: string }) {
+  const pic = artPic(k)
+  if (pic) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={pic} alt="" aria-hidden decoding="async" className="relative h-10 w-10" />
+  }
+  return <ArtIcon name={artFor(k).icon} className={`relative h-[26px] w-[26px] ${tone}`} />
+}
+
 /**
  * Обложка кружка: своя картинка из public/stories/<ключ>.*; в «Афише» и «Эмблемах» — значок темы поверх сильно
  * размытых эмблем матча этой истории (цвета клубов: хозяева слева, гости справа) — видно и тему, и что кружок
  * «живой», как история; иначе — плоский кружок со значком (lib/story-art.ts).
  */
 function CoverArt({ k, cover, match, children }: { k: string; cover?: string; match?: CircleArt; children?: React.ReactNode }) {
-  const art = artFor(k)
   if (!cover && match) {
     const home = match.colors?.home ?? 'hsl(40 6% 34%)'
     const away = match.colors?.away ?? 'hsl(40 6% 24%)'
@@ -88,7 +97,7 @@ function CoverArt({ k, cover, match, children }: { k: string; cover?: string; ma
         {match.away.logo ? <Smear src={match.away.logo} side="right" /> : null}
         {/* затемнение к центру — под белый значок на любых цветах */}
         <span className="absolute inset-0 bg-[radial-gradient(circle,rgb(0_0_0/0.42),rgb(0_0_0/0.14)_75%)]" />
-        <ArtIcon name={art.icon} className="relative h-[26px] w-[26px] text-fg" />
+        <Glyph k={k} tone="text-fg" />
       </span>
     )
   }
@@ -97,7 +106,7 @@ function CoverArt({ k, cover, match, children }: { k: string; cover?: string; ma
       className="absolute inset-[5.5px] grid place-items-center overflow-hidden rounded-full ring-1 ring-inset ring-edge"
       style={{ background: cover ? `center / cover no-repeat url("${cover}")` : CIRCLE_BG }}
     >
-      {cover ? null : (children ?? <ArtIcon name={art.icon} className="h-[26px] w-[26px] text-chalk" />)}
+      {cover ? null : (children ?? <Glyph k={k} tone="text-chalk" />)}
     </span>
   )
 }
