@@ -145,17 +145,19 @@ export function TopCarousel({
   const aim = useRef<number | null>(null)
   const aimTimer = useRef<number | undefined>(undefined)
   const [open, setOpen] = useState(false)
-  // эмблемы «желе» вздрагивают только при перелистывании: при открытии страницы стоят
-  // направление листания: эмблемы отстают по ходу движения (вперёд — наклон влево, назад — вправо)
-  const [moved, setMoved] = useState(false)
+  // эмблемы «желе» подпрыгивают только при перелистывании (при открытии страницы стоят): после стрелки или точки —
+  // сразу, после свайпа — когда лента остановилась (иначе подскок проходит, пока палец ещё ведёт карточку).
+  // dir — направление: эмблемы отстают по ходу движения
+  const [jelly, setJelly] = useState<number | null>(null)
   const [dir, setDir] = useState(1)
-  const prev = useRef(0)
-  useEffect(() => {
-    if (cur === prev.current) return
-    setDir(cur > prev.current ? 1 : -1)
-    prev.current = cur
-    setMoved(true)
-  }, [cur])
+  const landed = useRef(0)
+  const settle = useRef<number | undefined>(undefined)
+  const hop = (k: number) => {
+    if (k === landed.current) return
+    setDir(k > landed.current ? 1 : -1)
+    landed.current = k
+    setJelly(k)
+  }
   const n = panels.length
   const meta = slides[cur]
   const current = days.find((d) => d.current)
@@ -170,6 +172,7 @@ export function TopCarousel({
     aimTimer.current = window.setTimeout(() => (aim.current = null), 900)
     if (el) el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' })
     setCur(next)
+    hop(next)
   }
 
   // меню дня закрывается кликом мимо и Esc
@@ -299,10 +302,16 @@ export function TopCarousel({
             return
           }
           if (k !== cur) setCur(k)
+          // свайп: лента остановилась — слайд «приземлился», эмблемы подпрыгивают
+          window.clearTimeout(settle.current)
+          settle.current = window.setTimeout(() => {
+            const w = Math.max(1, el.clientWidth)
+            if (Math.abs(el.scrollLeft / w - Math.round(el.scrollLeft / w)) < 0.02) hop(Math.round(el.scrollLeft / w))
+          }, 70)
         }}
       >
         {panels.map((c, k) => (
-          <div key={k} data-jelly={moved && k === cur ? '' : undefined} style={{ ['--jelly-dir' as string]: dir }} className="flex w-full shrink-0 snap-start px-[18px] lg:px-[clamp(18px,3.4vh,28px)]">
+          <div key={k} data-jelly={jelly === k ? '' : undefined} style={{ ['--jelly-dir' as string]: dir }} className="flex w-full shrink-0 snap-start px-[18px] lg:px-[clamp(18px,3.4vh,28px)]">
             {c}
           </div>
         ))}
