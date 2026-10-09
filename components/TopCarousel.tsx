@@ -178,17 +178,19 @@ export function TopCarousel({
         ))}
         <div className={SCRIM} />
       </div>
-      {/* «рисованная» эмблема на фоне (светлая версия): настоящие эмблемы маленькие, при увеличении — пиксели и рябь.
-          Фильтр сглаживает картинку и оставляет только контуры формы — как штрих карандашом (--mark-filter) */}
+      {/* эмблема на фоне (светлая версия): настоящие эмблемы маленькие, при увеличении — пиксели и рябь. Фильтр
+          сглаживает картинку и сводит её к трём плоским тонам серого — как чистая векторная печать (--mark-filter).
+          Контур краёв (как «рисунок») на настоящих эмблемах давал двойные линии и грязь — владелец забраковал */}
       <svg aria-hidden className="pointer-events-none absolute h-0 w-0">
-        <filter id="crest-sketch" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
-          <feFlood floodColor="#fff" result="paper" />
-          <feComposite in="SourceGraphic" in2="paper" operator="over" result="flat" />
-          <feGaussianBlur in="flat" stdDeviation="2.2" result="soft" />
+        <filter id="crest-flat" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="soft" />
           <feColorMatrix in="soft" type="saturate" values="0" result="gray" />
-          <feConvolveMatrix in="gray" order="3" kernelMatrix="-1 -1 -1 -1 8 -1 -1 -1 -1" preserveAlpha="true" result="edge" />
-          <feColorMatrix in="edge" type="matrix" values="0 0 0 0 0.09  0 0 0 0 0.13  0 0 0 0 0.18  5 5 5 0 0" result="line" />
-          <feGaussianBlur in="line" stdDeviation="0.4" />
+          <feComponentTransfer in="gray">
+            <feFuncR type="discrete" tableValues="0.35 0.62 0.9" />
+            <feFuncG type="discrete" tableValues="0.35 0.62 0.9" />
+            <feFuncB type="discrete" tableValues="0.35 0.62 0.9" />
+            <feFuncA type="discrete" tableValues="0 0 1 1 1" />
+          </feComponentTransfer>
         </filter>
       </svg>
       {/* шапка: слева турнир матча на экране, справа стрелки и чип дня (в углу — сверху и справа поровну);
