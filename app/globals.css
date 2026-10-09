@@ -210,11 +210,21 @@
   html:not([data-look='dark']) :is(.card, .surface) {
     border-color: rgb(24 34 45 / 0.08);
   }
-  /* меню — графит посветлее, активная вкладка #324456 */
+  /* меню — светлая полупрозрачная капсула на голубом, как переключатель в iOS: пункты белые, выбранный раздел —
+     белая «таблетка» с тёмным текстом (в пару к белой кнопке «Бонус»). Чёрное меню владельцу не понравилось */
   html:not([data-look='dark']) :is(.nav-capsule, .nav-capsule [class^='bg-panel'], .nav-capsule [class*=' bg-panel']) {
-    --color-panel: #1e2a36;
-    --color-panel-2: #283746;
-    --color-panel-3: #324456;
+    --color-panel: rgb(255 255 255 / 0.16);
+    --color-panel-2: rgb(255 255 255 / 0.14);
+    --color-panel-3: #ffffff;
+    --color-edge: rgb(255 255 255 / 0.24);
+    --color-fg: #18222d;
+    --color-dim: rgb(255 255 255 / 0.92);
+  }
+  html:not([data-look='dark']) .nav-capsule {
+    backdrop-filter: blur(14px);
+  }
+  html:not([data-look='dark']) .nav-capsule a:not([aria-current]):hover {
+    color: #ffffff;
   }
   /* «Главные матчи» — светлая карточка: тёмный текст, графитовая кнопка «Разбор матча», эмблемы-тиснение — тихой
      серой печатью (multiply) */
@@ -642,4 +652,11 @@
   .st-move {
     animation: none;
   }
+}
+
+/* Светлая версия: шапка после прокрутки — голубое стекло вместо графитового (вне @layer — иначе утилита
+   data-[scrolled]:bg-ink/75 в HeaderShell перебивает) */
+html:not([data-look='dark']) header[data-scrolled] {
+  background-color: rgb(12 132 228 / 0.82);
+  border-color: rgb(255 255 255 / 0.18);
 }
