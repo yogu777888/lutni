@@ -1,14 +1,16 @@
 import Link from 'next/link'
 import { countryRank, featuredRank } from '@/config/leagues'
-import { daySnaps, getMatchesByDate, getStandings, peekOddsSnap, tagsFor, waitOddsSnap, type FeedItem } from '@/lib/data'
+import { daySnaps, getMatchesByDate, getStandings, getTeamGames, peekOddsSnap, tagsFor, waitOddsSnap, type FeedItem } from '@/lib/data'
 import { dayHref } from '@/lib/links'
-import { addDays, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
+import { addDays, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdInTz, ymdToNoonTs } from '@/lib/format'
 import { lineMoves, type OddsSnap } from '@/lib/lines'
 import { isLive, liveRank } from '@/lib/rank'
 import { dayCounts, goalsPicks, mainMatches, moveExample } from '@/lib/day-summary'
 import { storyCovers } from '@/lib/story-covers'
 import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import { matchColors } from '@/lib/team-colors'
+import { handNotes, type HandNotes } from '@/lib/hand-notes'
+import { buildForm } from '@/lib/stats'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { DaySummary, type MainItem } from './DaySummary'
@@ -62,22 +64,20 @@ const leagueOrder = (it: FeedItem) => {
 }
 
 /**
- * Кто из соперников — лидер турнира (первое место в таблице своей группы) — для приписки «лидер» в «Главных матчах».
- * Таблица — из кэша слоя данных, ждём не дольше 1,5 с; кубки без таблицы и начало сезона (меньше 3 туров) — без приписки.
+ * Приписки «от руки» над командами «Главных матчей» (lib/hand-notes.ts): таблица и прошедшие матчи обеих команд —
+ * из кэша слоя данных, ждём не дольше 1,5 с; не успели — без приписок.
  */
-async function leaderSide(m: Match): Promise<'home' | 'away' | null> {
-  if (!m.season?.year) return null
-  const st = await Promise.race([
-    getStandings(m.league.id, m.season.year).catch(() => null),
-    new Promise<null>((r) => setTimeout(() => r(null), 1500)),
-  ])
-  for (const g of st?.groups ?? []) {
-    const top = g.rows.find((r) => r.rank === 1)
-    if (!top || top.played < 3) continue
-    if (top.teamId === m.home.id) return 'home'
-    if (top.teamId === m.away.id) return 'away'
-  }
-  return null
+async function notesFor(m: Match): Promise<HandNotes | null> {
+  const work = (async () => {
+    const [st, games] = await Promise.all([
+      m.season?.year ? getStandings(m.league.id, m.season.year).catch(() => null) : null,
+      getTeamGames(m.home.id, m.away.id, ymdInTz(m.ts)).catch(() => [] as Match[]),
+    ])
+    // свои же матч и будущие в форму не берём: факты — до этого матча
+    const past = games.filter((g) => g.id !== m.id && g.ts < m.ts)
+    return handNotes({ homeId: m.home.id, awayId: m.away.id, standings: st, homeForm: buildForm(m.home.id, past), awayForm: buildForm(m.away.id, past) })
+  })()
+  return Promise.race([work.catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))])
 }
 
 export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; today: string; sort?: DaySort }) {
@@ -141,8 +141,8 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         const m = it.match
         // цвета клубов — для мягкой подкраски половин карточки (светлая версия); ждём не дольше 1,5 с, иначе без неё
         const colors = Promise.race([matchColors(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))])
-        const [snap, tint, leader] = await Promise.all([m.status === 'scheduled' ? waitOddsSnap(m) : null, colors, leaderSide(m)])
-        return { it, snap, tint: tint ? { home: tint.home, away: tint.away } : null, leader }
+        const [snap, tint, notes] = await Promise.all([m.status === 'scheduled' ? waitOddsSnap(m) : null, colors, notesFor(m)])
+        return { it, snap, tint: tint ? { home: tint.home, away: tint.away } : null, notes }
       }),
     ),
     daySnaps(matches, 1200),

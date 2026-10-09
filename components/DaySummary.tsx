@@ -11,6 +11,7 @@ import type { League, Match } from '@/lib/types'
 import { StoryLink } from './story/StoryLink'
 import { discBackground, StorySymbol, symbolColor } from './story/StorySymbol'
 import { TeamLogo } from './TeamLogo'
+import type { HandNotes } from '@/lib/hand-notes'
 import { TopCarousel, type DayLink, type MainSlide } from './TopCarousel'
 
 /** Ссылка-накладка: вся карточка кликабельна, а текст ссылки — понятное название. */
@@ -33,19 +34,37 @@ export type MainItem = {
   snap: OddsSnap | null
   /** цвета клубов (lib/team-colors) — мягкая подкраска половин карточки; нет — без неё */
   tint?: { home: string; away: string } | null
-  /** лидер турнира (первое место в таблице) — приписка «лидер» от руки над его эмблемой */
-  leader?: 'home' | 'away' | null
+  /** приписки «от руки» над командами (lib/hand-notes.ts): «лидер», «4 победы подряд»… */
+  notes?: HandNotes | null
 }
 
 /**
- * Приписка «лидер» над эмблемой, как от руки: красным рукописным шрифтом (Caveat), чуть наискось, и кривая стрелка
- * вниз к эмблеме. Над кругом, по центру; на ширину и высоту табло не влияет (поверх).
+ * Приписка над эмблемой, как от руки: красным рукописным шрифтом (Caveat), чуть наискось, и кривая стрелка вниз
+ * к эмблеме. Текст уходит от края карточки к центру: у хозяев — вправо, у гостей — влево (зеркально). Поверх —
+ * на высоту табло не влияет.
  */
-function LeaderNote() {
+function HandNote({ text, side }: { text: string; side: 'home' | 'away' }) {
+  const away = side === 'away'
   return (
-    <span aria-hidden className="pointer-events-none absolute bottom-[calc(100%-2px)] left-1/2 flex -translate-x-[38%] flex-col items-center text-live">
-      <span className="font-hand -rotate-[7deg] text-[23px] leading-none lg:text-[clamp(22px,3.3vh,30px)]">лидер</span>
-      <svg viewBox="0 0 24 28" className="-mt-0.5 h-[22px] w-[19px] -translate-x-1.5 lg:h-[clamp(18px,2.6vh,26px)] lg:w-auto" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <span
+      aria-hidden
+      className={`pointer-events-none absolute bottom-[calc(100%-4px)] flex flex-col text-live ${away ? 'right-[18%] items-end' : 'left-[18%] items-start'}`}
+    >
+      {/* на телефоне длинная приписка — в две строки (иначе заходит на счёт), на компьютере — в одну */}
+      <span
+        className={`font-hand block w-max max-w-[7.5rem] text-balance text-[21px] leading-[0.9] sm:max-w-none sm:whitespace-nowrap lg:text-[clamp(20px,3vh,28px)] ${away ? 'mr-3.5 rotate-[6deg] text-right' : 'ml-3.5 -rotate-[6deg]'}`}
+      >
+        {text}
+      </span>
+      <svg
+        viewBox="0 0 24 28"
+        className={`-mt-0.5 h-[17px] w-[15px] sm:h-[22px] sm:w-[19px] lg:h-[clamp(18px,2.6vh,26px)] lg:w-auto ${away ? '-scale-x-100' : ''}`}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M15 2.5c-4.5 3.5-1.5 8.5-4.2 13.4-1 1.9-2.4 4.4-3.3 8.1" />
         <path d="M3.4 19.6l4 5.1 3.6-5" />
       </svg>
@@ -106,7 +125,7 @@ function phoneSize(name: string): string {
  * фон — графит с эмблемами команд крупным тиснением (TopCarousel).
  */
 function MatchSlide({ item }: { item: MainItem }) {
-  const leader = item.leader ?? null
+  const notes = item.notes ?? null
   const { it, snap } = item
   const m = it.match
   const line = m.status === 'scheduled' ? x12Line(snap) : null
@@ -121,7 +140,7 @@ function MatchSlide({ item }: { item: MainItem }) {
   const team = (t: Match['home'], k: 'home' | 'away') => (
     <span className={`flex min-w-0 flex-col items-center gap-3 text-center lg:gap-4 ${lead && lead !== k ? 'opacity-70' : ''}`}>
       <span className="relative grid h-[var(--disc)] w-[var(--disc)] shrink-0 place-items-center rounded-full bg-white/[0.16] ring-1 ring-white/25 backdrop-blur-md">
-        {leader === k ? <LeaderNote /> : null}
+        {notes?.[k] ? <HandNote text={notes[k]} side={k} /> : null}
         {/* при перелистывании эмблема вздрагивает, как желе: сжимается и разжимается с отскоком; гости — чуть позже */}
         <span className={`jelly grid place-items-center ${k === 'away' ? '[--jelly-delay:0.3s]' : ''}`}>
           <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
