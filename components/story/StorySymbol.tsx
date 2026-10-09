@@ -102,11 +102,42 @@ const SYMBOLS: Record<string, Sym> = {
   krepost: { color: '#1e6fb8', draw: <path d="M4.5 11.2L12 5l7.5 6.2M7 10v8.5h10V10" {...LINE} /> },
   // Травмы: крест
   kadry: { color: '#d94848', draw: <path d="M12 6v12M6 12h12" {...LINE} strokeWidth={2.8} /> },
+  // Подборки: все матчи — расписание строками
+  'pick-all': {
+    color: '#1e6fb8',
+    draw: (
+      <>
+        <circle cx="6" cy="7" r="1.5" {...SOLID} />
+        <circle cx="6" cy="12" r="1.5" {...SOLID} />
+        <circle cx="6" cy="17" r="1.5" {...SOLID} />
+        <path d="M10 7h8.5M10 12h8.5M10 17h6" {...LINE} />
+      </>
+    ),
+  },
+  // Подборки: голевые матчи — ворота и мяч в них (сетка в 22px сливалась в таблицу)
+  'pick-goals': {
+    color: '#2f9a5d',
+    draw: (
+      <>
+        <path d="M4 19V6.5h16V19" {...LINE} strokeWidth={2.6} />
+        <circle cx="12" cy="14.5" r="2.9" {...SOLID} />
+      </>
+    ),
+  },
+  // Подборки: движение коэффициентов — стрелки вверх и вниз
+  'pick-moves': {
+    color: '#d98a1f',
+    draw: <path d="M8 19V5M4.5 8.5L8 5l3.5 3.5M16 5v14M12.5 15.5L16 19l3.5-3.5" {...LINE} />,
+  },
   // Личные встречи: стрелки навстречу
   h2h: { color: '#4f6478', draw: <path d="M3.5 12h6M7 8.7L10.2 12 7 15.3M20.5 12h-6M17 8.7L13.8 12l3.2 3.3" {...LINE} /> },
 }
 
 const FALLBACK: Sym = { color: '#4f6478', draw: <path d="M9.5 4.5l-2 15M16.5 4.5l-2 15M5 9h14.5M4.5 15H19" {...LINE} /> }
+
+/** Заливка диска, как иконки Apple: цвет категории — светлее сверху, глубже снизу. */
+export const discBackground = (c: string) =>
+  `linear-gradient(165deg, color-mix(in oklab, ${c} 72%, white) 0%, ${c} 55%, color-mix(in oklab, ${c} 82%, black) 100%)`
 
 export const symbolColor = (key: string) => (SYMBOLS[key] ?? FALLBACK).color
 

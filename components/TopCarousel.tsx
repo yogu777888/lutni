@@ -165,7 +165,7 @@ export function TopCarousel({
   return (
     <article
       aria-label="Главные матчи"
-      className={`on-dark hero relative flex min-w-0 flex-col py-[18px] lg:py-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:py-6 lg:[@media(max-height:739px)]:py-4 ${className}`}
+      className={`on-dark hero relative flex min-w-0 flex-col py-[18px] lg:py-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:py-6 lg:[@media(max-height:739px)]:py-4 lg:[@media(max-height:719px)]:py-3 ${className}`}
     >
       {/* у каждого матча свой фон — графит, поверх медленно плывут пятна и блик (CSS) и эмблемы команд тиснением;
           при листании фоны плавно сменяют друг друга; снизу лёгкое затемнение.

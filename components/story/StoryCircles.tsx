@@ -5,7 +5,7 @@ import type { CircleKind, StoryGroup } from '@/lib/story-groups'
 import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
-import { StorySymbol, symbolColor } from './StorySymbol'
+import { discBackground, StorySymbol, symbolColor } from './StorySymbol'
 
 /**
  * Истории — круглые входы в подборки, в духе iOS: светлый диск (#FFFFFF → #EAF2F8, тонкая граница, мягкая тень), в
@@ -67,7 +67,7 @@ function Disc({ k, cover }: { k: string; cover?: string }) {
       style={{
         background: cover
           ? `center / cover no-repeat url("${cover}")`
-          : `linear-gradient(165deg, color-mix(in oklab, ${c} 72%, white) 0%, ${c} 55%, color-mix(in oklab, ${c} 82%, black) 100%)`,
+          : discBackground(c),
       }}
     >
       {cover ? null : <StorySymbol k={k} tone="#ffffff" className="h-[56%] w-[56%] drop-shadow-[0_1px_1.5px_rgb(0_0_0/0.18)]" />}
@@ -119,7 +119,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             className="group flex w-[88px] shrink-0 flex-col items-center focus-visible:outline-none max-sm:w-[78px]"
           >
             {/* фокус с клавиатуры — белым кругом вокруг кружка */}
-            <span className="relative block h-[76px] w-[76px] rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 max-sm:h-[68px] max-sm:w-[68px]">
+            <span className="relative block h-[76px] w-[76px] rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 max-sm:h-[68px] max-sm:w-[68px] lg:[@media(max-height:719px)]:h-[64px] lg:[@media(max-height:719px)]:w-[64px]">
               <Ring kind={g.kind} n={g.items.length} seen={n} />
               <Disc k={g.key} cover={covers[g.key]} />
             </span>

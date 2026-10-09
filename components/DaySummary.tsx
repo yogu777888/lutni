@@ -9,6 +9,7 @@ import { matchHref } from '@/lib/links'
 import { isLive } from '@/lib/rank'
 import type { League, Match } from '@/lib/types'
 import { StoryLink } from './story/StoryLink'
+import { discBackground, StorySymbol, symbolColor } from './story/StorySymbol'
 import { TeamLogo } from './TeamLogo'
 import { TopCarousel, type DayLink, type MainSlide } from './TopCarousel'
 
@@ -94,7 +95,7 @@ function MatchSlide({ item }: { item: MainItem }) {
   const minute = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'
   // после свистка проигравший чуть тусклее; до матча и при ничьей — обе одинаково
   const lead = score && score.home !== score.away ? (score.home > score.away ? 'home' : 'away') : null
-  const BIG = 'num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[36px] sm:text-[44px] lg:text-[clamp(44px,6.4vh,68px)] lg:[@media(max-height:739px)]:text-[40px]'
+  const BIG = 'num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[36px] sm:text-[44px] lg:text-[clamp(44px,6.4vh,68px)] lg:[@media(max-height:739px)]:text-[40px] lg:[@media(max-height:719px)]:text-[34px]'
   // эмблема на матовом светлом круге, как в Apple Sports: тёмные эмблемы не тонут в цвете фона
   const team = (t: Match['home'], k: 'home' | 'away') => (
     <span className={`flex min-w-0 flex-col items-center gap-3 text-center lg:gap-4 ${lead && lead !== k ? 'opacity-70' : ''}`}>
@@ -110,7 +111,7 @@ function MatchSlide({ item }: { item: MainItem }) {
       <StoryLink
         id={m.id}
         href={matchHref(m)}
-        className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 py-2 [--disc:64px] sm:gap-x-6 sm:[--disc:80px] lg:gap-x-10 lg:[--disc:clamp(76px,11vh,112px)] lg:[@media(max-height:739px)]:[--disc:54px] ${COVER}`}
+        className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 py-2 [--disc:64px] sm:gap-x-6 sm:[--disc:80px] lg:gap-x-10 lg:[--disc:clamp(76px,11vh,112px)] lg:[@media(max-height:739px)]:[--disc:54px] lg:[@media(max-height:719px)]:[--disc:46px] ${COVER}`}
       >
         {team(m.home, 'home')}
         <span className="flex flex-col items-center text-center">
@@ -132,7 +133,7 @@ function MatchSlide({ item }: { item: MainItem }) {
             </>
           )}
           {/* вся карточка — ссылка на сторис, поэтому это подпись, а не отдельная кнопка; на телефоне — кнопка под лентой */}
-          <span aria-hidden className="mt-5 hidden h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-[12px] bg-btn px-5 text-[15px] font-semibold text-btn-ink lg:inline-flex lg:[@media(max-height:739px)]:mt-3">
+          <span aria-hidden className="mt-5 hidden h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-[12px] bg-btn px-5 text-[15px] font-semibold text-btn-ink lg:inline-flex lg:[@media(max-height:739px)]:mt-3 lg:[@media(max-height:719px)]:mt-2 lg:[@media(max-height:719px)]:h-10">
             Разбор матча
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M7 17 17 7" />
@@ -160,20 +161,20 @@ function Chevron() {
 }
 
 /**
- * Плитка подборки: объёмный значок темы в настоящих цветах (та же «надутая» серия, что у кружков историй,
- * public/story-icons), название с тихой стрелкой и одна строка по делу. `aside` — справа от названия (на телефоне —
+ * Плитка подборки: знак темы на цветном диске — та же система, что у историй (StorySymbol: белый знак, градиент
+ * цвета темы), название с тихой стрелкой и одна строка по делу. `aside` — справа от названия (на телефоне —
  * третьей строкой), строка под названием — на всю ширину.
  */
 function IconTile({
-  pic,
+  sym,
   title,
   href,
   line,
   aside,
   hint,
 }: {
-  /** картинка значка — public/story-icons/*.webp */
-  pic: string
+  /** знак — ключ StorySymbol (pick-all, pick-goals, pick-moves) */
+  sym: string
   title: string
   href: string
   line: React.ReactNode
@@ -186,17 +187,16 @@ function IconTile({
       href={href}
       prefetch={false}
       title={hint}
-      className={`group grid h-full min-w-0 grid-cols-[40px_minmax(0,1fr)] content-center items-center gap-x-3 p-[18px] transition-colors hover:bg-panel-3 ${aside ? 'sm:grid-cols-[40px_minmax(0,1fr)_auto]' : ''} ${SURFACE}`}
+      className={`group grid h-full min-w-0 grid-cols-[40px_minmax(0,1fr)] content-center items-center gap-x-3 p-[18px] transition-colors hover:bg-panel-3 lg:[@media(max-height:719px)]:py-3 ${aside ? 'sm:grid-cols-[40px_minmax(0,1fr)_auto]' : ''} ${SURFACE}`}
     >
-      {/* без подложки: объёмному значку кружок не нужен; при наведении — чуть крупнее */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={pic}
-        alt=""
+      {/* при наведении — чуть крупнее */}
+      <span
         aria-hidden
-        decoding="async"
-        className={`col-start-1 h-10 w-10 transition-transform duration-300 group-hover:scale-105 ${aside ? 'row-[1/span_3] sm:row-[1/span_2]' : 'row-[1/span_2]'}`}
-      />
+        className={`story-disc col-start-1 grid h-10 w-10 place-items-center rounded-full transition-transform duration-300 group-hover:scale-105 ${aside ? 'row-[1/span_3] sm:row-[1/span_2]' : 'row-[1/span_2]'}`}
+        style={{ background: discBackground(symbolColor(sym)) }}
+      >
+        <StorySymbol k={sym} tone="#ffffff" className="h-[56%] w-[56%]" />
+      </span>
       <span className="col-start-2 row-start-1 flex min-w-0 items-center gap-1">
         <span className="truncate text-[15px] font-semibold leading-5 text-fg">{title}</span>
         <Chevron />
@@ -268,10 +268,10 @@ function IconPicks({ p }: { p: DayPicks }) {
   return (
     // 1 : 1 : 1.6, а не 1 : 1 : 2: строке маленьких плиток нужно место, а у широкой середина пустовала
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)]">
-      <IconTile pic="/story-icons/pitch.webp" title="Все матчи" href={`${p.dayHref}#matches`} line={all} />
-      <IconTile pic="/story-icons/goal.webp" title="Голевые матчи" href={`/matches/${p.ymd}/goals`} line={goals} />
+      <IconTile sym="pick-all" title="Все матчи" href={`${p.dayHref}#matches`} line={all} />
+      <IconTile sym="pick-goals" title="Голевые матчи" href={`/matches/${p.ymd}/goals`} line={goals} />
       <div className="min-w-0 sm:col-span-2 lg:col-span-1">
-        <IconTile pic="/story-icons/arrows-up-down.webp" title="Движение коэффициентов" href={`/matches/${p.ymd}/odds`} line={move} aside={aside} hint={hint} />
+        <IconTile sym="pick-moves" title="Движение коэффициентов" href={`/matches/${p.ymd}/odds`} line={move} aside={aside} hint={hint} />
       </div>
     </div>
   )
