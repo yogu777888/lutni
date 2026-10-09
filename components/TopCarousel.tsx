@@ -165,7 +165,7 @@ export function TopCarousel({
   return (
     <article
       aria-label="Главные матчи"
-      className={`on-dark hero relative flex min-w-0 flex-col py-[18px] lg:py-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:py-6 lg:[@media(max-height:739px)]:py-4 lg:[@media(max-height:719px)]:py-3 ${className}`}
+      className={`on-dark hero relative flex min-w-0 flex-col py-[18px] lg:py-[clamp(10px,calc(8vh_-_36px),28px)] ${className}`}
     >
       {/* у каждого матча свой фон — графит, поверх медленно плывут пятна и блик (CSS) и эмблемы команд тиснением;
           при листании фоны плавно сменяют друг друга; снизу лёгкое затемнение.
@@ -180,7 +180,7 @@ export function TopCarousel({
       </div>
       {/* шапка: слева турнир матча на экране, справа стрелки и чип дня (в углу — сверху и справа поровну);
           на компьютере отступы карточки больше — 28px (на окне ниже 800px — 24px, ниже 740px — 20px): так табло не жмётся к краю */}
-      <div className="relative flex items-center justify-between gap-3 px-[18px] lg:px-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:px-6 lg:[@media(max-height:739px)]:px-5">
+      <div className="relative flex items-center justify-between gap-3 px-[18px] lg:px-[clamp(18px,3.4vh,28px)]">
         <p className="min-w-0 truncate text-[13px] text-fg/80">
           {meta?.live ? <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse-live rounded-full bg-live align-middle" aria-label="идёт" /> : null}
           {meta?.caption}
@@ -232,7 +232,7 @@ export function TopCarousel({
 
       <div
         ref={track}
-        className="scrollbar-none relative mt-3 flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain lg:[@media(max-height:799px)]:mt-2"
+        className="scrollbar-none relative mt-3 flex flex-1 snap-x lg:mt-[clamp(4px,1.4vh,12px)] snap-mandatory overflow-x-auto overscroll-x-contain"
         onScroll={(e) => {
           const el = e.currentTarget
           const k = Math.round(el.scrollLeft / Math.max(1, el.clientWidth))
@@ -240,7 +240,7 @@ export function TopCarousel({
         }}
       >
         {panels.map((c, k) => (
-          <div key={k} className="flex w-full shrink-0 snap-start px-[18px] lg:px-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:px-6 lg:[@media(max-height:739px)]:px-5">
+          <div key={k} className="flex w-full shrink-0 snap-start px-[18px] lg:px-[clamp(18px,3.4vh,28px)]">
             {c}
           </div>
         ))}
@@ -249,7 +249,7 @@ export function TopCarousel({
       {/* полоски-точки — внизу по центру, в нижнем отступе карточки: высоту карточки не меняют, первый экран влезает
           как раньше. На телефоне — справа от «Разбора за минуту», вместо стрелок (там листают свайпом) */}
       {n > 1 ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-px hidden justify-center sm:flex lg:bottom-1.5 lg:[@media(min-height:740px)_and_(max-height:799px)]:bottom-1 lg:[@media(max-height:739px)]:bottom-0.5">
+        <div className="pointer-events-none absolute inset-x-0 bottom-px hidden justify-center sm:flex lg:bottom-1.5">
           <div className="pointer-events-auto">{dots('flex')}</div>
         </div>
       ) : null}

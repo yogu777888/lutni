@@ -168,7 +168,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <section className="min-w-0 pt-1 sm:pt-0">
           <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
-          <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px] lg:[@media(max-height:719px)]:text-[36px]">
+          <h1 className="mt-1.5 text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[42px] lg:text-[clamp(28px,calc(9vh_-_30px),42px)]">
             <span className="rise">
               <span>
                 {heading.title}
@@ -183,7 +183,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         {storyGroups.length ? (
           // кружки понятны и без подписи «Истории дня» — так первый экран влезает целиком;
           // отступ сверху — у ряда (pt-1.5): ряд прокручивается и обрезал бы круг фокуса у кружка
-          <section aria-label="Истории дня" className="mt-4 sm:mt-5 lg:[@media(max-height:799px)]:mt-3 lg:[@media(max-height:719px)]:mt-2">
+          <section aria-label="Истории дня" className="mt-4 sm:mt-5 lg:mt-[clamp(6px,2.2vh,20px)]">
             <StoryCircles groups={storyGroups} covers={storyCovers()} />
           </section>
         ) : null}
@@ -202,7 +202,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
               move: moveExample(items, snapOf),
               movesCovered: items.filter((it) => lineMoves(snapOf(it.match.id)).length > 0).length,
             }}
-            className="mt-5 lg:flex-1 lg:[@media(min-height:740px)_and_(max-height:799px)]:mt-4 lg:[@media(max-height:739px)]:mt-3"
+            className="mt-5 lg:mt-[clamp(10px,2.4vh,20px)] lg:flex-1"
           />
         ) : null}
       </div>

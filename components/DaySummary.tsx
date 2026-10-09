@@ -57,7 +57,7 @@ function OddsLine({ line, m }: { line: X12Line; m: Match }) {
       target="_blank"
       rel={SPONSORED_REL}
       title={`Коэффициенты ${line.bookmaker}, линия на ${snapTime(line.at)}`}
-      className="relative z-[2] mx-auto mt-4 flex w-fit max-w-full flex-wrap items-baseline justify-center gap-x-4 gap-y-1 rounded-[12px] px-3 py-1.5 transition-colors hover:bg-white/[0.07] lg:mt-4 lg:[@media(max-height:739px)]:mt-2"
+      className="relative z-[2] mx-auto mt-4 flex w-fit max-w-full flex-wrap items-baseline justify-center gap-x-4 gap-y-1 rounded-[12px] px-3 py-1.5 transition-colors hover:bg-white/[0.07] lg:mt-[clamp(6px,1.8vh,16px)]"
     >
       {odds.map(([label, odd]) => (
         <span key={label} className="flex items-baseline gap-1.5">
@@ -95,7 +95,7 @@ function MatchSlide({ item }: { item: MainItem }) {
   const minute = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'
   // после свистка проигравший чуть тусклее; до матча и при ничьей — обе одинаково
   const lead = score && score.home !== score.away ? (score.home > score.away ? 'home' : 'away') : null
-  const BIG = 'num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[36px] sm:text-[44px] lg:text-[clamp(44px,6.4vh,68px)] lg:[@media(max-height:739px)]:text-[40px] lg:[@media(max-height:719px)]:text-[34px]'
+  const BIG = 'num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[36px] sm:text-[44px] lg:text-[clamp(28px,calc(14vh_-_62px),68px)]'
   // эмблема на матовом светлом круге, как в Apple Sports: тёмные эмблемы не тонут в цвете фона
   const team = (t: Match['home'], k: 'home' | 'away') => (
     <span className={`flex min-w-0 flex-col items-center gap-3 text-center lg:gap-4 ${lead && lead !== k ? 'opacity-70' : ''}`}>
@@ -111,7 +111,7 @@ function MatchSlide({ item }: { item: MainItem }) {
       <StoryLink
         id={m.id}
         href={matchHref(m)}
-        className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 py-2 [--disc:64px] sm:gap-x-6 sm:[--disc:80px] lg:gap-x-10 lg:[--disc:clamp(76px,11vh,112px)] lg:[@media(max-height:739px)]:[--disc:54px] lg:[@media(max-height:719px)]:[--disc:46px] ${COVER}`}
+        className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 py-2 [--disc:64px] sm:gap-x-6 sm:[--disc:80px] lg:gap-x-10 lg:[--disc:clamp(36px,calc(26vh_-_136px),112px)] ${COVER}`}
       >
         {team(m.home, 'home')}
         <span className="flex flex-col items-center text-center">
@@ -133,7 +133,7 @@ function MatchSlide({ item }: { item: MainItem }) {
             </>
           )}
           {/* вся карточка — ссылка на сторис, поэтому это подпись, а не отдельная кнопка; на телефоне — кнопка под лентой */}
-          <span aria-hidden className="mt-5 hidden h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-[12px] bg-btn px-5 text-[15px] font-semibold text-btn-ink lg:inline-flex lg:[@media(max-height:739px)]:mt-3 lg:[@media(max-height:719px)]:mt-2 lg:[@media(max-height:719px)]:h-10">
+          <span aria-hidden className="mt-5 hidden h-11 lg:mt-[clamp(6px,calc(4vh_-_12px),20px)] lg:h-[clamp(32px,calc(8vh_-_20px),44px)] shrink-0 items-center gap-2 whitespace-nowrap rounded-[12px] bg-btn px-5 text-[15px] font-semibold text-btn-ink lg:inline-flex">
             Разбор матча
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M7 17 17 7" />
@@ -187,7 +187,7 @@ function IconTile({
       href={href}
       prefetch={false}
       title={hint}
-      className={`group grid h-full min-w-0 grid-cols-[40px_minmax(0,1fr)] content-center items-center gap-x-3 p-[18px] transition-colors hover:bg-panel-3 lg:[@media(max-height:719px)]:py-3 ${aside ? 'sm:grid-cols-[40px_minmax(0,1fr)_auto]' : ''} ${SURFACE}`}
+      className={`group grid h-full min-w-0 grid-cols-[40px_minmax(0,1fr)] content-center items-center gap-x-3 p-[18px] transition-colors hover:bg-panel-3 lg:py-[clamp(10px,2.2vh,18px)] ${aside ? 'sm:grid-cols-[40px_minmax(0,1fr)_auto]' : ''} ${SURFACE}`}
     >
       {/* при наведении — чуть крупнее */}
       <span
@@ -307,7 +307,7 @@ export function DaySummary({ mains, days, picks, className = '' }: { mains: Main
         className={`lg:flex-1 ${SURFACE}`}
       />
       {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг; к плиткам ближе, чем к блоку сверху */}
-      <h2 className="mb-2.5 mt-4 text-[13px] font-medium text-mute lg:[@media(min-height:740px)_and_(max-height:799px)]:mb-2 lg:[@media(min-height:740px)_and_(max-height:799px)]:mt-3 lg:[@media(max-height:739px)]:mt-3">
+      <h2 className="mb-2.5 mt-4 text-[13px] font-medium text-mute lg:mb-[clamp(6px,1.2vh,10px)] lg:mt-[clamp(8px,1.8vh,16px)]">
         Подборки
       </h2>
       <IconPicks p={picks} />
