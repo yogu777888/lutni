@@ -5,7 +5,7 @@ import type { CircleKind, StoryGroup } from '@/lib/story-groups'
 import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
-import { StorySymbol } from './StorySymbol'
+import { StorySymbol, symbolColor } from './StorySymbol'
 
 /**
  * Истории — круглые входы в подборки, в духе iOS: светлый диск (#FFFFFF → #EAF2F8, тонкая граница, мягкая тень), в
@@ -47,22 +47,30 @@ const plural = (n: number) => {
 function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
   return (
     <>
-      <span className={`block truncate text-[12.5px] font-semibold leading-tight ${dim ? 'text-[#243746]/60' : 'text-[#243746]'}`}>{g.label}</span>
-      <span className="mt-0.5 block text-[11px] font-medium leading-tight text-[#243746]/75">
+      <span className={`block truncate text-[12.5px] font-semibold leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>{g.label}</span>
+      <span className="mt-0.5 block text-[11px] font-medium leading-tight text-white/75">
         {g.items.length} {plural(g.items.length)}
       </span>
     </>
   )
 }
 
-/** Диск: своя картинка из public/stories/<ключ>.*, иначе светлая подложка со знаком категории. */
+/**
+ * Диск, как иконки Apple («Команды», Fitness): мягкий градиент цвета категории — светлее сверху, глубже снизу, —
+ * тонкий блик по верхнему краю и белый знак. Своя картинка из public/stories/<ключ>.* — вместо всего этого.
+ */
 function Disc({ k, cover }: { k: string; cover?: string }) {
+  const c = symbolColor(k)
   return (
     <span
       className="story-disc absolute inset-[5px] grid place-items-center overflow-hidden rounded-full"
-      style={cover ? { background: `center / cover no-repeat url("${cover}")` } : undefined}
+      style={{
+        background: cover
+          ? `center / cover no-repeat url("${cover}")`
+          : `linear-gradient(165deg, color-mix(in oklab, ${c} 72%, white) 0%, ${c} 55%, color-mix(in oklab, ${c} 82%, black) 100%)`,
+      }}
     >
-      {cover ? null : <StorySymbol k={k} className="h-[54%] w-[54%]" />}
+      {cover ? null : <StorySymbol k={k} tone="#ffffff" className="h-[56%] w-[56%] drop-shadow-[0_1px_1.5px_rgb(0_0_0/0.18)]" />}
     </span>
   )
 }

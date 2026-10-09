@@ -110,10 +110,11 @@ const FALLBACK: Sym = { color: '#4f6478', draw: <path d="M9.5 4.5l-2 15M16.5 4.5
 
 export const symbolColor = (key: string) => (SYMBOLS[key] ?? FALLBACK).color
 
-export function StorySymbol({ k, className = '' }: { k: string; className?: string }) {
+/** `tone` — цвет знака вместо акцентного (в кружке историй знак белый на заливке цветом категории). */
+export function StorySymbol({ k, className = '', tone }: { k: string; className?: string; tone?: string }) {
   const s = SYMBOLS[k] ?? FALLBACK
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className={className} style={{ color: s.color }}>
+    <svg viewBox="0 0 24 24" aria-hidden className={className} style={{ color: tone ?? s.color }}>
       {s.draw}
     </svg>
   )
