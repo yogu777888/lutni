@@ -184,6 +184,13 @@
   .story-cover {
     background: linear-gradient(180deg, #263443, #17212c);
   }
+  /* диск истории: светлый, тонкая граница, мягкая тень — один во всех цветовых версиях */
+  .story-disc {
+    background: linear-gradient(180deg, #ffffff, #eaf2f8);
+    box-shadow:
+      inset 0 0 0 1px rgb(30 42 54 / 0.08),
+      0 4px 12px rgb(27 45 68 / 0.08);
+  }
 
   /* светлая версия */
   html:not([data-look='dark']) {
