@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { CHIP, StoryChipFace } from './Chips'
 import { openStory } from './story/events'
 
@@ -68,7 +68,16 @@ function Paint({ marks, drift = false }: { marks?: Marks; drift?: boolean }) {
  * со сдвигом по времени, не в такт левой). Смешивание — у обёртки: она и сдвинута (transform), и смешивается с
  * фоном целиком. На телефоне эмблемы меньше — иначе сходятся в середине, под временем.
  */
+/** Тёмный оттенок цвета клуба для силуэта (цвета — `hsl(h s% l%)` из lib/team-colors.ts): светлота ×0.75.
+    Фильтру нужен готовый цвет; непонятный формат — графит. */
+function darken(c: string): string {
+  const m = /^hsl\(\s*([\d.]+)\s+([\d.]+)%\s+([\d.]+)%\s*\)$/i.exec(c.trim())
+  return m ? `hsl(${m[1]} ${m[2]}% ${Math.round(Number(m[3]) * 0.75)}%)` : '#18222d'
+}
+
 function Mark({ src, side, drift, color }: { src: string; side: 'left' | 'right'; drift: boolean; color?: string }) {
+  const fid = `crest-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
+  const ink = color ? darken(color) : '#18222d'
   return (
     <div
       className={`hero-mark absolute top-1/2 aspect-square h-[56%] -translate-y-1/2 sm:h-[112%] ${
@@ -83,16 +92,27 @@ function Mark({ src, side, drift, color }: { src: string; side: 'left' | 'right'
         decoding="async"
         className={`hero-mark-img h-full w-full object-contain ${drift ? `drift-mark ${side === 'right' ? '[animation-delay:-9s]' : ''}` : ''}`}
       />
-      {/* светлая версия: силуэт эмблемы маской по её форме, залит тёмным оттенком цвета клуба (нет цвета — графит).
-          Маска гладкая: детали маленькой эмблемы при увеличении дают пиксели и рябь, силуэт — нет */}
-      <div
+      {/* светлая версия: силуэт эмблемы одним ровным тоном — тёмным оттенком цвета клуба (нет цвета — графит).
+          Фильтр, а не CSS-маска: маска грузит картинку с CORS, и эмблемы с чужого сервера без него пропадают.
+          Форма — по прозрачности, край сглажен: детали маленькой эмблемы при увеличении дают пиксели и рябь */}
+      <svg aria-hidden className="pointer-events-none absolute h-0 w-0">
+        <filter id={fid} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="soft" />
+          <feComponentTransfer in="soft" result="shape">
+            <feFuncA type="table" tableValues="0 0 0 1 1" />
+          </feComponentTransfer>
+          <feFlood floodColor={ink} result="ink" />
+          <feComposite in="ink" in2="shape" operator="in" />
+        </filter>
+      </svg>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
         aria-hidden
-        className={`hero-mark-sil h-full w-full ${drift ? `drift-mark ${side === 'right' ? '[animation-delay:-9s]' : ''}` : ''}`}
-        style={{
-          background: color ? `color-mix(in oklab, ${color} 75%, black)` : '#18222d',
-          mask: `url("${src}") center / contain no-repeat`,
-          WebkitMask: `url("${src}") center / contain no-repeat`,
-        }}
+        decoding="async"
+        style={{ filter: `url(#${fid})` }}
+        className={`hero-mark-sil h-full w-full object-contain ${drift ? `drift-mark ${side === 'right' ? '[animation-delay:-9s]' : ''}` : ''}`}
       />
     </div>
   )
