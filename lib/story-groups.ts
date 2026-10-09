@@ -28,7 +28,7 @@ export type StoryGroup = {
   /** Цифра на «табло» кружка: самый сильный сигнал группы (−18%, +11%, 71%…). */
   stat: string
   items: StoryGroupItem[]
-  /** Эмблемы для обложки: 2–3 команды из разных матчей истории, по порядку матчей. */
+  /** Эмблемы для обложки: до двух команд из разных матчей истории, по порядку матчей. */
   crests?: Crest[]
 }
 
@@ -37,9 +37,9 @@ export type Crest = { name: string; logo: string | null }
 
 /**
  * Эмблемы для обложки: по одной команде из первых матчей истории (хозяева, а если у них нет эмблемы — гости), без
- * повторов, не больше трёх. Обложка показывает подборку, а не один матч.
+ * повторов, не больше двух. Обложка показывает подборку, а не один матч.
  */
-export function crestsOf(list: FeedItem[], max = 3): Crest[] {
+export function crestsOf(list: FeedItem[], max = 2): Crest[] {
   const out: Crest[] = []
   for (const it of list) {
     const t = it.match.home.logo || !it.match.away.logo ? it.match.home : it.match.away

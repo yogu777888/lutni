@@ -118,9 +118,9 @@ describe('кружки на главной', () => {
     expect(mainCircles(groups.slice(4, 6)).map((x) => x.key)).toEqual(['value', 'progruz'])
   })
 
-  it('эмблемы обложки — из разных матчей, без повторов, не больше трёх', () => {
+  it('эмблемы обложки — из разных матчей, без повторов, не больше двух', () => {
     const items = [1, 2, 3, 4].map((id) => item(id, 'scheduled'))
-    expect(crestsOf(items).map((c) => c.name)).toEqual(['Home 1', 'Home 2', 'Home 3'])
+    expect(crestsOf(items).map((c) => c.name)).toEqual(['Home 1', 'Home 2'])
     expect(crestsOf([items[0], items[0], items[1]]).map((c) => c.name)).toEqual(['Home 1', 'Home 2'])
     expect(crestsOf([])).toEqual([])
   })
