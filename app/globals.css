@@ -534,6 +534,46 @@
 .drift-mark {
   animation: drift-mark 16s ease-in-out infinite;
 }
+/* лава-лампа «Главных матчей» (Lava в TopCarousel.tsx): капля всплывает, вытягивается и опускается */
+@keyframes lava-1 {
+  0%,
+  100% {
+    transform: translate(0, 10%) scale(1);
+  }
+  50% {
+    transform: translate(12%, -95%) scale(0.85, 1.12);
+  }
+}
+@keyframes lava-2 {
+  0%,
+  100% {
+    transform: translate(0, -80%) scale(0.9);
+  }
+  50% {
+    transform: translate(-10%, 30%) scale(1.08, 0.92);
+  }
+}
+@keyframes lava-3 {
+  0%,
+  100% {
+    transform: translate(0, 60%) scale(1);
+  }
+  40% {
+    transform: translate(20%, -40%) scale(0.8, 1.2);
+  }
+  70% {
+    transform: translate(-15%, -140%) scale(0.9);
+  }
+}
+.hero-lava {
+  opacity: 0.26;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-lava * {
+    animation: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .drift-a,
   .drift-b,

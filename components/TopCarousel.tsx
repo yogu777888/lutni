@@ -29,6 +29,48 @@ const SCRIM = 'hero-scrim absolute inset-0'
  * эмблемы команд тиснением (`Mark`). Свечения вокруг карточки нет: на голубом фоне оно читалось тяжёлой тенью.
  * Цвета клубов (вид «Афиша») владелец сменил на графит: увидел карточку до того, как цвета догрузились, и выбрал так.
  */
+/**
+ * Лава-лампа цветами клубов: слева капли цвета хозяев, справа — гостей; всплывают и опускаются каждая своим путём
+ * (`lava-1…3`, 17–29 с), а фильтр `#lava-goo` склеивает сблизившиеся капли, как воск в лампе. Под эмблемами,
+ * сами эмблемы не искажаются. Прозрачно и медленно — счёт важнее; при «уменьшить движение» капли стоят.
+ */
+const LAVA: { side: 'l' | 'r'; x: number; size: number; anim: string }[] = [
+  { side: 'l', x: 2, size: 46, anim: 'lava-1 19s ease-in-out -3s infinite' },
+  { side: 'l', x: 16, size: 30, anim: 'lava-2 23s ease-in-out -11s infinite' },
+  { side: 'l', x: 26, size: 22, anim: 'lava-3 29s ease-in-out -7s infinite' },
+  { side: 'r', x: 3, size: 44, anim: 'lava-2 21s ease-in-out -5s infinite' },
+  { side: 'r', x: 18, size: 28, anim: 'lava-3 17s ease-in-out -13s infinite' },
+  { side: 'r', x: 27, size: 24, anim: 'lava-1 26s ease-in-out -2s infinite' },
+]
+
+function Lava({ home, away, drift }: { home: string; away: string; drift: boolean }) {
+  return (
+    <div aria-hidden className="hero-tint hero-lava absolute inset-0 overflow-hidden">
+      <svg className="absolute h-0 w-0">
+        <filter id="lava-goo" colorInterpolationFilters="sRGB">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="b" />
+          <feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9" result="goo" />
+          <feGaussianBlur in="goo" stdDeviation="1.5" />
+        </filter>
+      </svg>
+      <div className="absolute inset-0" style={{ filter: 'url(#lava-goo)' }}>
+        {LAVA.map((b, i) => (
+          <div
+            key={i}
+            className="absolute top-1/2 aspect-square rounded-full"
+            style={{
+              [b.side === 'l' ? 'left' : 'right']: `${b.x}%`,
+              height: `${b.size}%`,
+              background: b.side === 'l' ? home : away,
+              animation: drift ? b.anim : undefined,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function Paint({ marks, drift = false }: { marks?: Marks; drift?: boolean }) {
   // цвета — CSS-переменные .hero (app/globals.css): светлая версия и прежняя графитовая (?look=dark)
   const home = 'var(--paint-1)'
@@ -49,10 +91,11 @@ function Paint({ marks, drift = false }: { marks?: Marks; drift?: boolean }) {
         <div
           className="hero-tint absolute inset-0"
           style={{
-            background: `radial-gradient(75% 110% at 0% 55%, color-mix(in oklab, ${marks.tint.home} 32%, transparent), transparent 70%), radial-gradient(75% 110% at 100% 55%, color-mix(in oklab, ${marks.tint.away} 32%, transparent), transparent 70%)`,
+            background: `radial-gradient(75% 110% at 0% 55%, color-mix(in oklab, ${marks.tint.home} 20%, transparent), transparent 70%), radial-gradient(75% 110% at 100% 55%, color-mix(in oklab, ${marks.tint.away} 20%, transparent), transparent 70%)`,
           }}
         />
       ) : null}
+      {marks?.tint ? <Lava home={marks.tint.home} away={marks.tint.away} drift={drift} /> : null}
       {marks?.home ? <Mark src={marks.home} side="left" drift={drift} color={marks.tint?.home} /> : null}
       {marks?.away ? <Mark src={marks.away} side="right" drift={drift} color={marks.tint?.away} /> : null}
     </>
