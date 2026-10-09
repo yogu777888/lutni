@@ -102,7 +102,10 @@ function MatchSlide({ item }: { item: MainItem }) {
   const team = (t: Match['home'], k: 'home' | 'away') => (
     <span className={`flex min-w-0 flex-col items-center gap-3 text-center lg:gap-4 ${lead && lead !== k ? 'opacity-70' : ''}`}>
       <span className="grid h-[var(--disc)] w-[var(--disc)] shrink-0 place-items-center rounded-full bg-white/[0.16] ring-1 ring-white/25 backdrop-blur-md">
-        <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
+        {/* эмблема дышит, как желе: сжимается и разжимается с лёгким отскоком; гости — не в такт хозяевам */}
+        <span className={`jelly grid place-items-center ${k === 'away' ? '[animation-delay:-1.7s]' : ''}`}>
+          <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
+        </span>
       </span>
       <span className={`line-clamp-2 max-w-full hyphens-auto text-balance break-words font-semibold leading-tight tracking-[-0.02em] text-fg sm:text-[20px] lg:text-[clamp(22px,3.1vh,30px)] ${phoneSize(t.name)}`}>{t.name}</span>
     </span>

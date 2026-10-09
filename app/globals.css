@@ -534,6 +534,36 @@
 .drift-mark {
   animation: drift-mark 16s ease-in-out infinite;
 }
+/* эмблемы в табло «Главных матчей» — как желе: сжались, разжались с отскоком, успокоились (DaySummary.tsx) */
+@keyframes jelly {
+  0%,
+  62%,
+  100% {
+    transform: scale(1, 1);
+  }
+  14% {
+    transform: scale(1.07, 0.93);
+  }
+  28% {
+    transform: scale(0.95, 1.06);
+  }
+  40% {
+    transform: scale(1.03, 0.97);
+  }
+  51% {
+    transform: scale(0.99, 1.01);
+  }
+}
+.jelly {
+  transform-origin: 50% 70%;
+  animation: jelly 3.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .jelly {
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .drift-a,
   .drift-b,
