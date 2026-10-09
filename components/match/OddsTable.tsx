@@ -78,7 +78,7 @@ export function OddsTable({
                   const cell = (
                     <span
                       className={`num relative inline-flex min-w-[54px] items-center justify-center rounded-full px-2 py-1 ${
-                        isBest ? 'bg-acid/[0.12] font-semibold text-acid' : 'font-medium text-fg/85'
+                        isBest ? 'bg-acid/[0.12] font-semibold text-good' : 'font-medium text-fg/85'
                       }`}
                       title={q?.opening ? `Открытие: ${q.opening.toFixed(2)}` : undefined}
                     >
@@ -107,7 +107,7 @@ export function OddsTable({
                       href={goHref(partner, 'odds-table', match.id)}
                       target="_blank"
                       rel={SPONSORED_REL}
-                      className="inline-flex rounded-full bg-white/[0.08] px-3 py-1.5 text-[12px] font-medium text-fg transition-colors hover:bg-fg hover:text-ink"
+                      className="inline-flex rounded-full bg-white/[0.08] px-3 py-1.5 text-[12px] font-medium text-fg transition-colors hover:bg-btn hover:text-btn-ink"
                     >
                       Ставка
                     </a>

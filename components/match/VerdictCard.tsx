@@ -62,8 +62,8 @@ export function VerdictCard({ v, pickAnchor }: { v: Verdict; pickAnchor?: string
           </Row>
         ) : null}
         {v.bet ? (
-          <Row icon="bet" tone={v.bet.value ? 'text-acid' : 'text-dim'}>
-            <span className={v.bet.value ? 'font-semibold text-acid' : 'font-semibold text-fg'}>
+          <Row icon="bet" tone={v.bet.value ? 'text-good' : 'text-dim'}>
+            <span className={v.bet.value ? 'font-semibold text-good' : 'font-semibold text-fg'}>
               {v.bet.value ? 'Выгодная ставка' : 'Наш выбор'}: {v.bet.text}
               {v.bet.odd ? ` за ${v.bet.odd.toFixed(2)}` : ''}
             </span>

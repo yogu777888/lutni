@@ -25,15 +25,15 @@ const SCRIM = 'absolute inset-0 bg-[linear-gradient(to_top,rgb(11_11_9/0.55),rgb
 
 /**
  * Фон карточки матча, как живые обои Apple, но монохром: графитовая заливка и четыре графитовых пятна разной
- * светлоты, плюс светлый блик. В карточке пятна плывут каждое своим путём (`drift-a…d`, 19–27 с) — фон переливается;
- * в свечении — стоят. Поверх — эмблемы команд тиснением (`Mark`), только в самой карточке.
+ * светлоты, плюс светлый блик. Пятна плывут каждое своим путём (`drift-a…d`, 19–27 с) — фон переливается. Поверх —
+ * эмблемы команд тиснением (`Mark`). Свечения вокруг карточки нет: на голубом фоне оно читалось тяжёлой тенью.
  * Цвета клубов (вид «Афиша») владелец сменил на графит: увидел карточку до того, как цвета догрузились, и выбрал так.
  */
 function Paint({ marks, drift = false }: { marks?: Marks; drift?: boolean }) {
-  const home = 'hsl(40 6% 30%)'
-  const away = 'hsl(40 6% 24%)'
-  const home2 = 'hsl(40 6% 38%)'
-  const away2 = 'hsl(40 6% 32%)'
+  const home = 'hsl(214 15% 25%)'
+  const away = 'hsl(214 16% 19%)'
+  const home2 = 'hsl(214 14% 32%)'
+  const away2 = 'hsl(214 15% 27%)'
   const blob = (c: string) => ({ background: `radial-gradient(closest-side, ${c}, transparent)` })
   return (
     <>
@@ -164,7 +164,7 @@ export function TopCarousel({
   return (
     <article
       aria-label="Главные матчи"
-      className={`relative flex min-w-0 flex-col py-[18px] lg:py-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:py-6 lg:[@media(max-height:739px)]:py-5 ${className}`}
+      className={`on-dark relative flex min-w-0 flex-col py-[18px] lg:py-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:py-6 lg:[@media(max-height:739px)]:py-5 ${className}`}
     >
       {/* у каждого матча свой фон — графит, поверх медленно плывут пятна и блик (CSS) и эмблемы команд тиснением;
           при листании фоны плавно сменяют друг друга; снизу лёгкое затемнение.
@@ -176,18 +176,6 @@ export function TopCarousel({
           </div>
         ))}
         <div className={SCRIM} />
-      </div>
-      {/* свечение, как «подсветка» на YouTube: размытая копия фона карточки — с пятнами и затемнением внизу, поэтому
-          неровное: где карточка светлее, там и светит. Маска гасит его к низу карточки и обрезает ровно по её нижнему
-          краю (80px запаса снизу — прозрачные): ниже карточки ни полоски, подборки не красятся. Неподвижное, слабое; на
-          телефоне нет. Слой с запасом 80px вокруг карточки: маска обрезает всё, что за его краем, а размытие расходится
-          примерно на столько. Фон у всех матчей один (графит), поэтому слой один. При открытии страницы свечение
-          проявляется не сразу, а за полторы секунды (`glow-in`) */}
-      <div aria-hidden className="glow-in pointer-events-none absolute -inset-20 -z-10 hidden transform-gpu opacity-30 blur-[40px] [mask-image:linear-gradient(to_top,transparent_80px,#000_calc(80px_+_40%))] sm:block">
-        <div className="absolute inset-20 overflow-hidden rounded-[22px]">
-          <Paint />
-          <div className={SCRIM} />
-        </div>
       </div>
       {/* шапка: слева турнир матча на экране, справа стрелки и чип дня (в углу — сверху и справа поровну);
           на компьютере отступы карточки больше — 28px (на окне ниже 800px — 24px, ниже 740px — 20px): так табло не жмётся к краю */}
@@ -222,7 +210,7 @@ export function TopCarousel({
                         {d.live ? <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" aria-label="идут матчи" /> : null}
                       </span>
                       {d.current ? (
-                        <svg viewBox="0 0 24 24" className="h-4 w-4 text-acid" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 text-good" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                           <path d="M20 6 9 17l-5-5" />
                         </svg>
                       ) : null}

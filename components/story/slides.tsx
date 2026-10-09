@@ -94,7 +94,7 @@ function Frame({ children }: { children: React.ReactNode }) {
 function Head({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
     <div className="shrink-0">
-      <div className="st-rise text-[11px] font-bold uppercase tracking-[0.14em] text-acid">{eyebrow}</div>
+      <div className="st-rise text-[11px] font-bold uppercase tracking-[0.14em] text-good">{eyebrow}</div>
       <h2 className="st-rise mt-2 text-[23px] font-bold leading-[1.15] tracking-tight" style={wait(80)}>
         {title}
       </h2>
@@ -161,7 +161,7 @@ function Cover({ s, story, focus }: { s: S<'cover'>; story: StoryData; focus: St
                 {score.away}
               </span>
             ) : (
-              <span className="text-[22px] font-bold italic text-acid">VS</span>
+              <span className="text-[22px] font-bold italic text-good">VS</span>
             )}
           </div>
           <TeamBig team={story.away} cls="st-slide-r" />
@@ -699,12 +699,12 @@ function PickSlide({ s }: { s: S<'pick'> }) {
   ]
   return (
     <Frame>
-      <div className="st-rise flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-acid">
+      <div className="st-rise flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-good">
         Прогноз tag.bet
         {s.value ? <span className="rounded-full bg-acid px-2 py-0.5 text-[10px] tracking-normal text-acid-ink">выгодно</span> : null}
       </div>
       <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <div className="st-pop max-w-[20rem] text-[32px] font-bold leading-[1.1] tracking-tight text-acid" style={wait(150)}>
+        <div className="st-pop max-w-[20rem] text-[32px] font-bold leading-[1.1] tracking-tight text-good" style={wait(150)}>
           {s.label}
         </div>
         <p className="st-rise mt-2 max-w-[19rem] text-[17px] font-semibold leading-snug first-letter:uppercase" style={wait(300)}>
@@ -739,7 +739,7 @@ function PickSlide({ s }: { s: S<'pick'> }) {
           </div>
           <div className="rounded-xl bg-panel-2 px-1 py-2 ring-1 ring-inset ring-edge">
             <dt className="text-[10px] text-dim">Выгода</dt>
-            <dd className={`num text-[17px] font-bold ${s.ev != null && s.ev > 0 ? 'text-acid' : ''}`}>
+            <dd className={`num text-[17px] font-bold ${s.ev != null && s.ev > 0 ? 'text-good' : ''}`}>
               {s.ev != null ? `${s.ev >= 0 ? '+' : '−'}${dec(Math.abs(s.ev) * 100)}%` : '—'}
             </dd>
           </div>

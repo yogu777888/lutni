@@ -191,7 +191,7 @@ export default async function OddsMovesPage({ params, searchParams }: Props) {
         букмекера. 18+
       </p>
       <p className="mt-4">
-        <Link href={`${dayHref(date, today)}#matches`} className="text-[14px] font-medium text-fg transition-colors hover:text-acid">
+        <Link href={`${dayHref(date, today)}#matches`} className="text-[14px] font-medium text-fg transition-colors hover:text-good">
           ← Все матчи дня
         </Link>
       </p>

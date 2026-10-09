@@ -103,7 +103,7 @@ export default async function AdminPage({ searchParams }: Props) {
         aside={
           <span className="flex gap-2">
             {[1, 7, 30].map((d) => (
-              <a key={d} href={q(d)} className={d === days ? 'font-bold text-acid' : 'hover:text-fg'}>
+              <a key={d} href={q(d)} className={d === days ? 'font-bold text-good' : 'hover:text-fg'}>
                 {d === 1 ? 'сутки' : `${d} дн.`}
               </a>
             ))}

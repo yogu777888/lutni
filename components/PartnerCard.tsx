@@ -15,7 +15,7 @@ export function PartnerCard({ partner, placement }: { partner: Partner; placemen
       >
         <PartnerBadge partner={partner} size={34} />
         <span className="min-w-0">
-          <span className="block truncate text-[15px] font-semibold transition-colors group-hover:text-acid">{partner.name}</span>
+          <span className="block truncate text-[15px] font-semibold transition-colors group-hover:text-good">{partner.name}</span>
           <span className="block truncate text-[12px] text-dim">{partner.bonus}</span>
         </span>
         <span className="num text-[20px] font-bold tracking-tight">{partner.rating.toFixed(1)}</span>

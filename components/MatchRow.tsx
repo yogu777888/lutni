@@ -109,7 +109,7 @@ export function Hashtags({ tags, max = 3 }: { tags: TagHit[]; max?: number }) {
       {tags.slice(0, max).map((t) => {
         const def = TAG_BY_SLUG.get(t.slug)
         if (!def) return null
-        const hash = def.kind === 'accent' ? 'text-acid' : def.kind === 'hot' ? 'text-hot' : 'text-mute'
+        const hash = def.kind === 'accent' ? 'text-good' : def.kind === 'hot' ? 'text-hot' : 'text-mute'
         return (
           <Link key={t.slug} href={`/tag/${t.slug}`} prefetch={false} title={t.reason} className="whitespace-nowrap text-dim transition-colors hover:text-fg">
             <span className={hash}>#</span>
@@ -198,7 +198,7 @@ export function MatchRow({
             {showLeague ? <span className="text-mute">{m.league.name}</span> : null}
             {v ? <span className="font-medium text-chalk">{v.headline}</span> : null}
             {betText ? (
-              <span className="text-acid">
+              <span className="text-good">
                 {betText}
                 {bet!.odd && !inCell ? <span className="num ml-1 font-semibold">{bet!.odd.toFixed(2)}</span> : null}
               </span>

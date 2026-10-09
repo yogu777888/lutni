@@ -58,7 +58,7 @@ export function NavCapsule({ className = '', wide = false }: { className?: strin
     <nav
       ref={ref}
       aria-label="Основное меню"
-      className={`relative flex items-center rounded-full border border-edge bg-panel/80 p-1 backdrop-blur-md ${className}`}
+      className={`on-dark relative flex items-center rounded-full border border-edge bg-panel p-1 ${className}`}
     >
       {pill ? (
         <span
@@ -82,7 +82,7 @@ export function NavCapsule({ className = '', wide = false }: { className?: strin
             // влезали и на 360px; лишнее место раздаёт flex-1
             className={`relative z-10 inline-flex h-8 shrink-0 items-center justify-center rounded-full font-medium transition-colors ${
               wide ? 'flex-1 px-[clamp(4px,calc((100vw_-_316px)/10),10px)] text-[13px]' : 'px-3.5 text-[14px]'
-            } ${on ? 'text-fg' : 'text-dim hover:text-fg'} ${on && !pill ? 'bg-panel-3' : ''}`}
+            } ${on ? 'text-fg' : 'text-dim hover:bg-panel-2 hover:text-fg'} ${on && !pill ? 'bg-panel-3' : ''}`}
           >
             {n.label}
           </Link>

@@ -50,7 +50,7 @@ export function ValueBoard({ items }: { items: FeedItem[] }) {
               className={`grid grid-cols-3 gap-x-4 gap-y-3 border-b border-edge px-4 py-4 transition-colors last:border-b-0 hover:bg-white/[0.02] sm:items-center sm:px-6 ${COLS}`}
             >
               <div className="col-span-3 min-w-0 sm:col-span-1">
-                <StoryLink id={m.id} href={matchHref(m)} className="block truncate text-[16px] font-semibold transition-colors hover:text-acid">
+                <StoryLink id={m.id} href={matchHref(m)} className="block truncate text-[16px] font-semibold transition-colors hover:text-good">
                   {m.home.name} — {m.away.name}
                 </StoryLink>
                 <span className="text-[12px] text-mute">

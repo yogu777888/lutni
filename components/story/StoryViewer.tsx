@@ -376,7 +376,7 @@ export function StoryViewer() {
       aria-modal="true"
       aria-label={story ? `Разбор матча: ${story.home.name} — ${story.away.name}` : 'Разбор матча'}
       tabIndex={-1}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 outline-none backdrop-blur-md"
+      className="on-dark fixed inset-0 z-[100] flex items-center justify-center bg-black/85 outline-none backdrop-blur-md"
       onClick={(e) => {
         if (e.target === e.currentTarget) close()
       }}
@@ -483,7 +483,7 @@ export function StoryViewer() {
                   href={story.cta.href}
                   target="_blank"
                   rel={SPONSORED_REL}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-fg px-3 py-3.5 text-[15px] font-bold text-ink shadow-[0_8px_28px_-8px_rgb(244_241_230/0.35)] transition hover:bg-white active:scale-[0.98]"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-btn px-3 py-3.5 text-[15px] font-bold text-btn-ink shadow-[0_8px_28px_-8px_rgb(244_241_230/0.35)] transition hover:bg-white active:scale-[0.98]"
                 >
                   {story.cta.text}
                   <span className="font-semibold opacity-65">· {story.cta.partner}</span>
@@ -503,7 +503,7 @@ export function StoryViewer() {
         ) : null}
 
         {toast ? (
-          <div className="pointer-events-none absolute left-1/2 top-16 -translate-x-1/2 rounded-full bg-fg px-3 py-1.5 text-[13px] font-semibold text-ink shadow-lg">
+          <div className="pointer-events-none absolute left-1/2 top-16 -translate-x-1/2 rounded-full bg-btn px-3 py-1.5 text-[13px] font-semibold text-btn-ink shadow-lg">
             {toast}
           </div>
         ) : null}

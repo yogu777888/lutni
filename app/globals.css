@@ -1,32 +1,45 @@
 @import 'tailwindcss';
 
 @theme {
-  /* «Табло»: тёплый почти чёрный фон, тёплый белый текст, лайм — маркер «выше честной цены».
-     Имя ink, не base: в Tailwind v4 text-base — размер шрифта. */
-  --color-ink: #0b0b09;
-  --color-panel: #121210;
-  --color-panel-2: #1a1915;
-  --color-panel-3: #22211c;
-  --color-edge: #26251f;
-  --color-edge-2: #34332b;
-  /* текст */
-  --color-fg: #f4f1e6;
-  --color-chalk: #c9c5b8;
-  --color-dim: #9a978a;
-  --color-mute: #66645a;
-  /* акценты */
+  /* Цветовая система: ярко-голубой фон страницы, светлые карточки, графитовые «острова» (меню, карточка матча,
+     сторис). Токены на :root — для текста прямо на голубом; внутри светлых поверхностей и графитовых островов те же
+     имена переопределены ниже (@layer base) — компоненты пишут text-fg / text-dim / bg-panel-2 и не знают, где
+     стоят. Имя ink, не base: в Tailwind v4 text-base — размер шрифта. ink — графит (текст на белых кнопках, стекло
+     шапки). */
+  --color-brand: #119af5;
+  --color-brand-deep: #0c84e4;
+  --color-brand-soft: #45b8ff;
+  --color-ink: #11161d;
+  /* поверхности: светлая карточка, вторичный фон, наведение */
+  --color-panel: #eaf4ff;
+  --color-panel-2: #f7fbff;
+  --color-panel-3: #eaf4ff;
+  --color-edge: rgb(255 255 255 / 0.2);
+  --color-edge-2: rgb(255 255 255 / 0.32);
+  /* текст на голубом */
+  --color-fg: #ffffff;
+  --color-chalk: rgb(255 255 255 / 0.94);
+  --color-dim: rgb(255 255 255 / 0.88);
+  --color-mute: rgb(255 255 255 / 0.78);
+  /* кнопки: на голубом — белая с графитовым текстом, на светлой карточке — голубая */
+  --color-btn: #ffffff;
+  --color-btn-ink: #11161d;
+  --color-btn-hover: #eaf4ff;
+  --color-focus: #ffffff;
+  /* акценты. good — текст «выгодно» (на светлой карточке — тёмно-зелёный, лайм там не читается);
+     acid — лаймовая плашка «выгодно» с тёмными цифрами */
   --color-acid: #c8ff2e;
   --color-acid-ink: #141a00;
-  --color-live: #ff5c5c;
+  --color-good: #d8ff6b;
+  --color-live: #ff5d5d;
   --color-hot: #ffb020;
-  --color-win: #3fae6a;
-  --color-draw: #8a877c;
-  --color-loss: #ff5c5c;
-  /* графики «хозяева — гости»: шаги проверены валидатором палитры на тёмном фоне
-     (яркость, различимость при дальтонизме); ничья — нейтральная середина */
+  --color-win: #2ed47a;
+  --color-draw: #8a94a3;
+  --color-loss: #ff5d5d;
+  /* графики «хозяева — гости»; ничья — нейтральная середина */
   --color-home: #7ba300;
   --color-away: #3987e5;
-  --color-tie: #5d5b52;
+  --color-tie: #8a94a3;
 
   --font-sans: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -45,12 +58,14 @@
 
 @layer base {
   html {
-    color-scheme: dark;
+    color-scheme: light;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    background: var(--color-ink);
+    /* деликатный градиент по всей странице, без свечения и шума */
+    background: var(--color-brand-deep) linear-gradient(180deg, var(--color-brand) 0%, var(--color-brand-deep) 100%);
+    min-height: 100%;
     color: var(--color-fg);
     font-family: var(--font-sans);
     line-height: 1.55;
@@ -71,7 +86,7 @@
     text-decoration: none;
   }
   :focus-visible {
-    outline: 2px solid var(--color-acid);
+    outline: 2px solid var(--color-focus);
     outline-offset: 3px;
     border-radius: 8px;
   }
@@ -83,13 +98,76 @@
   }
 }
 
+/* Светлые поверхности: карточки и всё с фоном bg-panel* (кроме hover:bg-panel*). Внутри — тёмный текст,
+   плашки bg-white/[…] становятся графитовыми полупрозрачными, «выгодно» — тёмно-зелёным, кнопка — голубой. */
+@layer base {
+  .card,
+  [class^='bg-panel'],
+  [class*=' bg-panel'] {
+    --color-fg: #0f1722;
+    --color-chalk: #2a3441;
+    --color-dim: #617184;
+    --color-mute: #65758a;
+    --color-edge: rgb(17 22 29 / 0.08);
+    --color-edge-2: rgb(17 22 29 / 0.14);
+    --color-white: #11161d;
+    --color-btn: #119af5;
+    --color-btn-ink: #ffffff;
+    --color-btn-hover: #0c84e4;
+    --color-focus: #0c84e4;
+    --color-good: #0b7e3c;
+    --color-acid-ink: #141a00;
+    --color-hot: #a35f00;
+    --color-live: #d93636;
+    --color-loss: #d93636;
+    --color-win: #1e8a4c;
+    --color-draw: #617184;
+    --color-tie: #b8c3cf;
+    color: var(--color-fg);
+  }
+  /* графитовые острова: меню-капсула, карточка «Главных матчей», сторис, табло цифр */
+  .on-dark,
+  .flaps,
+  .on-dark [class^='bg-panel'],
+  .on-dark [class*=' bg-panel'] {
+    --color-panel: #11161d;
+    --color-panel-2: #1a222c;
+    --color-panel-3: #2a3441;
+    --color-fg: #f7fbff;
+    --color-chalk: #d5dde7;
+    --color-dim: rgb(255 255 255 / 0.72);
+    --color-mute: rgb(255 255 255 / 0.5);
+    --color-edge: rgb(255 255 255 / 0.08);
+    --color-edge-2: rgb(255 255 255 / 0.14);
+    --color-white: #ffffff;
+    --color-btn: #ffffff;
+    --color-btn-ink: #11161d;
+    --color-btn-hover: #eaf4ff;
+    --color-focus: #ffffff;
+    --color-good: #c8ff2e;
+    --color-hot: #ffb020;
+    --color-live: #ff5d5d;
+    --color-loss: #ff5d5d;
+    --color-win: #2ed47a;
+    --color-draw: #8a94a3;
+    --color-tie: #5d6672;
+    color: var(--color-fg);
+  }
+}
+
 @layer components {
   /* карточка без обводки: держится на фоне светлее страницы. Прозрачная рамка видна только в режиме высокой
      контрастности (Windows) — там карточки не сливаются. Плашки внутри карточки — bg-white/[0.04], не panel-2 */
   .card {
     background: var(--color-panel-2);
-    border: 1px solid transparent;
+    border: 1px solid rgb(17 22 29 / 0.08);
     border-radius: 18px;
+    box-shadow: 0 10px 30px rgb(8 25 46 / 0.08);
+  }
+  /* карточка верхнего уровня без класса .card (плитки сводки): та же рамка и едва заметная тень */
+  .surface {
+    border-color: rgb(17 22 29 / 0.08);
+    box-shadow: 0 10px 30px rgb(8 25 46 / 0.08);
   }
   /* моноширинные цифры: коэффициенты и счёт не «прыгают» */
   .num {
@@ -328,23 +406,12 @@
 .drift-mark {
   animation: drift-mark 16s ease-in-out infinite;
 }
-/* свечение вокруг карточки «включается» не сразу, как подсветка на YouTube: после небольшой паузы плавно
-   проявляется до своей прозрачности (opacity элемента); один раз — когда карточка появилась на странице */
-@keyframes glow-in {
-  from {
-    opacity: 0;
-  }
-}
-.glow-in {
-  animation: glow-in 1.5s ease-out 0.3s backwards;
-}
 @media (prefers-reduced-motion: reduce) {
   .drift-a,
   .drift-b,
   .drift-c,
   .drift-d,
-  .drift-mark,
-  .glow-in {
+  .drift-mark {
     animation: none;
   }
 }

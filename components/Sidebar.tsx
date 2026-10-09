@@ -41,7 +41,7 @@ export function Sidebar() {
       </section>
       {SITE.telegramUrl ? (
         <a href={SITE.telegramUrl} target="_blank" rel="noopener" className="card flex items-center gap-3 p-6 transition-colors hover:bg-panel-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#229ED9] text-lg font-bold text-white">✈</span>
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#229ED9] text-lg font-bold text-[#fff]">✈</span>
           <span>
             <span className="block text-[15px] font-semibold">Теги в Telegram</span>
             <span className="text-[13px] text-dim">Value и прогрузы — сразу в ленту</span>

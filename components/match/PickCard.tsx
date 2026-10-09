@@ -43,7 +43,7 @@ export function PickCard({ pick, match }: { pick: Pick; match: Match }) {
         </div>
         <div className="rounded-xl bg-white/[0.04] px-3 py-3.5">
           <dt className="text-[12px] text-dim">Выгода</dt>
-          <dd className={`num mt-1 text-[24px] font-extrabold tracking-[-0.03em] sm:text-[30px] ${ev != null && ev > 0 ? 'text-acid' : 'text-dim'}`}>
+          <dd className={`num mt-1 text-[24px] font-extrabold tracking-[-0.03em] sm:text-[30px] ${ev != null && ev > 0 ? 'text-good' : 'text-dim'}`}>
             {ev != null ? signedPct(ev) : '—'}
           </dd>
         </div>

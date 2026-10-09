@@ -3,7 +3,7 @@ export type TagKind = 'accent' | 'hot' | 'neutral'
 
 // без обводок: цвет только у «денежного» value и у прогрузов, остальные — нейтральные
 const KIND: Record<TagKind, { chip: string; hash: string }> = {
-  accent: { chip: 'bg-acid/[0.12] text-acid', hash: 'text-acid/55' },
+  accent: { chip: 'bg-acid/[0.12] text-good', hash: 'text-good/55' },
   hot: { chip: 'bg-hot/[0.12] text-hot', hash: 'text-hot/55' },
   neutral: { chip: 'bg-white/[0.06] text-fg/85', hash: 'text-mute' },
 }

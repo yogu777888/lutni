@@ -32,7 +32,7 @@ export function FeedCard({ item, tagSlug }: { item: FeedItem; tagSlug: string })
         {summary?.pick ? (
           <span
             className={`inline-flex h-6 items-center rounded-full px-2 text-[12px] font-medium ${
-              summary.pick.kind === 'value' ? 'bg-acid/[0.12] text-acid' : 'bg-white/[0.06] text-fg/85'
+              summary.pick.kind === 'value' ? 'bg-acid/[0.12] text-good' : 'bg-white/[0.06] text-fg/85'
             }`}
           >
             Прогноз {summary.pick.label}
