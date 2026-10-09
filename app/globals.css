@@ -556,10 +556,13 @@
 }
 .jelly {
   transform-origin: 50% 70%;
-  animation: jelly 3.4s ease-in-out infinite;
+}
+/* один раз, когда слайд пришёл при листании (data-jelly ставит TopCarousel); при открытии страницы — покой */
+[data-jelly] .jelly {
+  animation: jelly 2.8s ease-in-out calc(0.15s + var(--jelly-delay, 0s)) 1 both;
 }
 @media (prefers-reduced-motion: reduce) {
-  .jelly {
+  [data-jelly] .jelly {
     animation: none;
   }
 }

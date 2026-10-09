@@ -102,8 +102,8 @@ function MatchSlide({ item }: { item: MainItem }) {
   const team = (t: Match['home'], k: 'home' | 'away') => (
     <span className={`flex min-w-0 flex-col items-center gap-3 text-center lg:gap-4 ${lead && lead !== k ? 'opacity-70' : ''}`}>
       <span className="grid h-[var(--disc)] w-[var(--disc)] shrink-0 place-items-center rounded-full bg-white/[0.16] ring-1 ring-white/25 backdrop-blur-md">
-        {/* эмблема дышит, как желе: сжимается и разжимается с лёгким отскоком; гости — не в такт хозяевам */}
-        <span className={`jelly grid place-items-center ${k === 'away' ? '[animation-delay:-1.7s]' : ''}`}>
+        {/* при перелистывании эмблема вздрагивает, как желе: сжимается и разжимается с отскоком; гости — чуть позже */}
+        <span className={`jelly grid place-items-center ${k === 'away' ? '[--jelly-delay:0.3s]' : ''}`}>
           <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
         </span>
       </span>

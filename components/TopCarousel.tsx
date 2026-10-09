@@ -143,6 +143,13 @@ export function TopCarousel({
   const menu = useRef<HTMLDivElement>(null)
   const [cur, setCur] = useState(0)
   const [open, setOpen] = useState(false)
+  // эмблемы «желе» вздрагивают только при перелистывании: при открытии страницы стоят
+  const [moved, setMoved] = useState(false)
+  const first = useRef(true)
+  useEffect(() => {
+    if (first.current) first.current = false
+    else setMoved(true)
+  }, [cur])
   const n = panels.length
   const meta = slides[cur]
   const current = days.find((d) => d.current)
@@ -280,7 +287,7 @@ export function TopCarousel({
         }}
       >
         {panels.map((c, k) => (
-          <div key={k} className="flex w-full shrink-0 snap-start px-[18px] lg:px-[clamp(18px,3.4vh,28px)]">
+          <div key={k} data-jelly={moved && k === cur ? '' : undefined} className="flex w-full shrink-0 snap-start px-[18px] lg:px-[clamp(18px,3.4vh,28px)]">
             {c}
           </div>
         ))}
