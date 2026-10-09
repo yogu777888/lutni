@@ -178,19 +178,17 @@ export function TopCarousel({
         ))}
         <div className={SCRIM} />
       </div>
-      {/* эмблема на фоне (светлая версия): настоящие эмблемы маленькие, при увеличении — пиксели и рябь. Фильтр
-          сглаживает картинку и сводит её к трём плоским тонам серого — как чистая векторная печать (--mark-filter).
-          Контур краёв (как «рисунок») на настоящих эмблемах давал двойные линии и грязь — владелец забраковал */}
+      {/* эмблема на фоне (светлая версия) — только силуэт, одним ровным тоном, как водяной знак: настоящие эмблемы
+          маленькие, и любые детали при увеличении в 3–4 раза дают пиксели, рябь или пятна (контур и «три тона серого»
+          владелец забраковал). Фильтр берёт форму по прозрачности, сглаживает край и заливает графитом (--mark-filter) */}
       <svg aria-hidden className="pointer-events-none absolute h-0 w-0">
-        <filter id="crest-flat" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="soft" />
-          <feColorMatrix in="soft" type="saturate" values="0" result="gray" />
-          <feComponentTransfer in="gray">
-            <feFuncR type="discrete" tableValues="0.35 0.62 0.9" />
-            <feFuncG type="discrete" tableValues="0.35 0.62 0.9" />
-            <feFuncB type="discrete" tableValues="0.35 0.62 0.9" />
-            <feFuncA type="discrete" tableValues="0 0 1 1 1" />
+        <filter id="crest-silhouette" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="soft" />
+          <feComponentTransfer in="soft" result="shape">
+            <feFuncA type="table" tableValues="0 0 0 1 1" />
           </feComponentTransfer>
+          <feFlood floodColor="#18222d" result="ink" />
+          <feComposite in="ink" in2="shape" operator="in" />
         </filter>
       </svg>
       {/* шапка: слева турнир матча на экране, справа стрелки и чип дня (в углу — сверху и справа поровну);
