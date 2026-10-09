@@ -539,19 +539,22 @@
    по ходу движения и наклоняются (--jelly-dir: 1 — вперёд, -1 — назад), подпрыгивают и с отскоком успокаиваются */
 @keyframes jelly {
   0% {
-    transform: translateX(calc(var(--jelly-dir, 1) * 7%)) skewX(calc(var(--jelly-dir, 1) * 9deg)) scale(1.06, 0.94);
+    transform: translateX(calc(var(--jelly-dir, 1) * 10%)) skewX(calc(var(--jelly-dir, 1) * 12deg)) scale(1.12, 0.88);
   }
-  22% {
-    transform: translate(calc(var(--jelly-dir, 1) * -3%), -9%) skewX(calc(var(--jelly-dir, 1) * -6deg)) scale(0.94, 1.07);
+  18% {
+    transform: translate(calc(var(--jelly-dir, 1) * -4%), -22%) skewX(calc(var(--jelly-dir, 1) * -7deg)) scale(0.88, 1.14);
   }
-  42% {
-    transform: translate(0, 0) skewX(calc(var(--jelly-dir, 1) * 3deg)) scale(1.06, 0.94);
+  36% {
+    transform: translate(0, 0) skewX(calc(var(--jelly-dir, 1) * 4deg)) scale(1.14, 0.86);
   }
-  60% {
-    transform: translateY(-2%) skewX(calc(var(--jelly-dir, 1) * -1.5deg)) scale(0.98, 1.025);
+  52% {
+    transform: translateY(-8%) skewX(calc(var(--jelly-dir, 1) * -2deg)) scale(0.95, 1.06);
   }
-  78% {
-    transform: scale(1.01, 0.99);
+  68% {
+    transform: translateY(0) scale(1.05, 0.95);
+  }
+  84% {
+    transform: scale(0.99, 1.01);
   }
   100% {
     transform: none;
@@ -562,7 +565,7 @@
 }
 /* один раз, сразу как слайд сменился (data-jelly ставит TopCarousel); при открытии страницы — покой */
 [data-jelly] .jelly {
-  animation: jelly 0.95s cubic-bezier(0.3, 0.7, 0.4, 1) var(--jelly-delay, 0s) 1 both;
+  animation: jelly 1.5s cubic-bezier(0.33, 0.6, 0.4, 1) var(--jelly-delay, 0s) 1 both;
 }
 @media (prefers-reduced-motion: reduce) {
   [data-jelly] .jelly {
