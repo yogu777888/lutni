@@ -17,7 +17,7 @@ import { readSeen, SEEN_EVENT } from './seen'
 const W = 84
 const H = 92
 const SIZES =
-  '[--sw:94px] [--sh:103px] [--crest:24px] [--icon:40px] lg:[@media(max-height:799px)]:[--sw:84px] lg:[@media(max-height:799px)]:[--sh:92px] lg:[@media(max-height:799px)]:[--crest:20px] lg:[@media(max-height:799px)]:[--icon:36px]'
+  '[--sw:94px] [--sh:103px] [--crest:24px] [--icon:40px] lg:[@media(max-height:799px)]:[--sw:84px] lg:[@media(max-height:799px)]:[--sh:92px] lg:[@media(max-height:799px)]:[--crest:20px] lg:[@media(max-height:799px)]:[--icon:42px]'
 /** Цвета рамки: не смотрели — лайм, LIVE — красный, просмотрено — приглушённый светло-серый. */
 const UNSEEN = 'rgb(200 255 101 / 0.8)'
 const LIVE = 'rgb(255 100 109 / 0.9)'
@@ -75,12 +75,15 @@ function Cover({ g, cover }: { g: StoryGroup; cover?: string }) {
       {cover ? null : (
         <>
           {/* не больше двух эмблем, рядом и без перекрытия — три мелкие было не разглядеть */}
-          <span className="flex h-[var(--crest)] items-center gap-1.5">
+          {/* на невысоком окне компьютера карточка меньше — эмблемы там были бы мелкими, их нет совсем */}
+          <span className="flex h-[var(--crest)] items-center gap-1.5 lg:[@media(max-height:799px)]:hidden">
             {crests.map((c) => (
               <TeamLogo key={c.name} name={c.name} src={c.logo} size="var(--crest)" />
             ))}
           </span>
-          <Glyph k={g.key} />
+          <span className="grid flex-1 place-items-center">
+            <Glyph k={g.key} />
+          </span>
           {/* у LIVE — красная точка вместо отдельной плашки: плашка закрывала бы счётчик */}
           <span className="num flex items-center gap-1 text-[12px] font-semibold leading-none text-fg/80">
             {g.kind === 'live' ? <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" aria-hidden /> : null}
