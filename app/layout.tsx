@@ -1,4 +1,6 @@
 import '@fontsource-variable/onest'
+// рукописный — только для приписки «лидер» в «Главных матчах»; кириллица, один вес
+import '@fontsource/caveat/cyrillic-600.css'
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Footer } from '@/components/Footer'

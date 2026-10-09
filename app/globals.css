@@ -43,6 +43,7 @@
 
   --font-sans: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-hand: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
 
   --animate-pulse-live: pulse-live 2s ease-in-out infinite;
   @keyframes pulse-live {

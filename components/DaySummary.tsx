@@ -33,6 +33,24 @@ export type MainItem = {
   snap: OddsSnap | null
   /** цвета клубов (lib/team-colors) — мягкая подкраска половин карточки; нет — без неё */
   tint?: { home: string; away: string } | null
+  /** лидер турнира (первое место в таблице) — приписка «лидер» от руки над его эмблемой */
+  leader?: 'home' | 'away' | null
+}
+
+/**
+ * Приписка «лидер» над эмблемой, как от руки: красным рукописным шрифтом (Caveat), чуть наискось, и кривая стрелка
+ * вниз к эмблеме. Над кругом, по центру; на ширину и высоту табло не влияет (поверх).
+ */
+function LeaderNote() {
+  return (
+    <span aria-hidden className="pointer-events-none absolute bottom-[calc(100%-2px)] left-1/2 flex -translate-x-[38%] flex-col items-center text-live">
+      <span className="font-hand -rotate-[7deg] text-[23px] leading-none lg:text-[clamp(22px,3.3vh,30px)]">лидер</span>
+      <svg viewBox="0 0 24 28" className="-mt-0.5 h-[22px] w-[19px] -translate-x-1.5 lg:h-[clamp(18px,2.6vh,26px)] lg:w-auto" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15 2.5c-4.5 3.5-1.5 8.5-4.2 13.4-1 1.9-2.4 4.4-3.3 8.1" />
+        <path d="M3.4 19.6l4 5.1 3.6-5" />
+      </svg>
+    </span>
+  )
 }
 
 /** Матч слайда для шапки и кнопки разбора: турнир и разбор — про матч, который сейчас на экране. */
@@ -88,6 +106,7 @@ function phoneSize(name: string): string {
  * фон — графит с эмблемами команд крупным тиснением (TopCarousel).
  */
 function MatchSlide({ item }: { item: MainItem }) {
+  const leader = item.leader ?? null
   const { it, snap } = item
   const m = it.match
   const line = m.status === 'scheduled' ? x12Line(snap) : null
@@ -101,7 +120,8 @@ function MatchSlide({ item }: { item: MainItem }) {
   // эмблема на матовом светлом круге, как в Apple Sports: тёмные эмблемы не тонут в цвете фона
   const team = (t: Match['home'], k: 'home' | 'away') => (
     <span className={`flex min-w-0 flex-col items-center gap-3 text-center lg:gap-4 ${lead && lead !== k ? 'opacity-70' : ''}`}>
-      <span className="grid h-[var(--disc)] w-[var(--disc)] shrink-0 place-items-center rounded-full bg-white/[0.16] ring-1 ring-white/25 backdrop-blur-md">
+      <span className="relative grid h-[var(--disc)] w-[var(--disc)] shrink-0 place-items-center rounded-full bg-white/[0.16] ring-1 ring-white/25 backdrop-blur-md">
+        {leader === k ? <LeaderNote /> : null}
         {/* при перелистывании эмблема вздрагивает, как желе: сжимается и разжимается с отскоком; гости — чуть позже */}
         <span className={`jelly grid place-items-center ${k === 'away' ? '[--jelly-delay:0.3s]' : ''}`}>
           <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />

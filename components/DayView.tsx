@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { countryRank, featuredRank } from '@/config/leagues'
-import { daySnaps, getMatchesByDate, peekOddsSnap, tagsFor, waitOddsSnap, type FeedItem } from '@/lib/data'
+import { daySnaps, getMatchesByDate, getStandings, peekOddsSnap, tagsFor, waitOddsSnap, type FeedItem } from '@/lib/data'
 import { dayHref } from '@/lib/links'
 import { addDays, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { lineMoves, type OddsSnap } from '@/lib/lines'
@@ -59,6 +59,25 @@ const hasOdds = (items: FeedItem[]) => items.some((i) => i.match.odds)
 const leagueOrder = (it: FeedItem) => {
   const r = featuredRank(it.match.league)
   return r < 0 ? 1e3 : r
+}
+
+/**
+ * Кто из соперников — лидер турнира (первое место в таблице своей группы) — для приписки «лидер» в «Главных матчах».
+ * Таблица — из кэша слоя данных, ждём не дольше 1,5 с; кубки без таблицы и начало сезона (меньше 3 туров) — без приписки.
+ */
+async function leaderSide(m: Match): Promise<'home' | 'away' | null> {
+  if (!m.season?.year) return null
+  const st = await Promise.race([
+    getStandings(m.league.id, m.season.year).catch(() => null),
+    new Promise<null>((r) => setTimeout(() => r(null), 1500)),
+  ])
+  for (const g of st?.groups ?? []) {
+    const top = g.rows.find((r) => r.rank === 1)
+    if (!top || top.played < 3) continue
+    if (top.teamId === m.home.id) return 'home'
+    if (top.teamId === m.away.id) return 'away'
+  }
+  return null
 }
 
 export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; today: string; sort?: DaySort }) {
@@ -122,8 +141,8 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         const m = it.match
         // цвета клубов — для мягкой подкраски половин карточки (светлая версия); ждём не дольше 1,5 с, иначе без неё
         const colors = Promise.race([matchColors(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))])
-        const [snap, tint] = await Promise.all([m.status === 'scheduled' ? waitOddsSnap(m) : null, colors])
-        return { it, snap, tint: tint ? { home: tint.home, away: tint.away } : null }
+        const [snap, tint, leader] = await Promise.all([m.status === 'scheduled' ? waitOddsSnap(m) : null, colors, leaderSide(m)])
+        return { it, snap, tint: tint ? { home: tint.home, away: tint.away } : null, leader }
       }),
     ),
     daySnaps(matches, 1200),
