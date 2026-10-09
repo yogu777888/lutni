@@ -142,13 +142,19 @@ export function TopCarousel({
   const track = useRef<HTMLDivElement>(null)
   const menu = useRef<HTMLDivElement>(null)
   const [cur, setCur] = useState(0)
+  const aim = useRef<number | null>(null)
+  const aimTimer = useRef<number | undefined>(undefined)
   const [open, setOpen] = useState(false)
   // эмблемы «желе» вздрагивают только при перелистывании: при открытии страницы стоят
+  // направление листания: эмблемы отстают по ходу движения (вперёд — наклон влево, назад — вправо)
   const [moved, setMoved] = useState(false)
-  const first = useRef(true)
+  const [dir, setDir] = useState(1)
+  const prev = useRef(0)
   useEffect(() => {
-    if (first.current) first.current = false
-    else setMoved(true)
+    if (cur === prev.current) return
+    setDir(cur > prev.current ? 1 : -1)
+    prev.current = cur
+    setMoved(true)
   }, [cur])
   const n = panels.length
   const meta = slides[cur]
@@ -157,6 +163,11 @@ export function TopCarousel({
   const go = (k: number) => {
     const next = Math.max(0, Math.min(n - 1, k))
     const el = track.current
+    // пока лента плавно едет к слайду, прокрутка не перебивает выбранный слайд (иначе номер на полпути
+    // откатывается и «желе» эмблем перезапускается с опозданием)
+    aim.current = next
+    window.clearTimeout(aimTimer.current)
+    aimTimer.current = window.setTimeout(() => (aim.current = null), 900)
     if (el) el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' })
     setCur(next)
   }
@@ -283,11 +294,15 @@ export function TopCarousel({
         onScroll={(e) => {
           const el = e.currentTarget
           const k = Math.round(el.scrollLeft / Math.max(1, el.clientWidth))
+          if (aim.current !== null) {
+            if (Math.abs(el.scrollLeft - aim.current * el.clientWidth) < 2) aim.current = null
+            return
+          }
           if (k !== cur) setCur(k)
         }}
       >
         {panels.map((c, k) => (
-          <div key={k} data-jelly={moved && k === cur ? '' : undefined} className="flex w-full shrink-0 snap-start px-[18px] lg:px-[clamp(18px,3.4vh,28px)]">
+          <div key={k} data-jelly={moved && k === cur ? '' : undefined} style={{ ['--jelly-dir' as string]: dir }} className="flex w-full shrink-0 snap-start px-[18px] lg:px-[clamp(18px,3.4vh,28px)]">
             {c}
           </div>
         ))}

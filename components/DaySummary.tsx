@@ -142,7 +142,7 @@ function MatchSlide({ item }: { item: MainItem }) {
       <span className="relative grid h-[var(--disc)] w-[var(--disc)] shrink-0 place-items-center rounded-full bg-white/[0.16] ring-1 ring-white/25 backdrop-blur-md">
         {notes?.[k] ? <HandNote text={notes[k]} side={k} /> : null}
         {/* при перелистывании эмблема вздрагивает, как желе: сжимается и разжимается с отскоком; гости — чуть позже */}
-        <span className={`jelly grid place-items-center ${k === 'away' ? '[--jelly-delay:0.3s]' : ''}`}>
+        <span className={`jelly grid place-items-center ${k === 'away' ? '[--jelly-delay:0.06s]' : ''}`}>
           <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
         </span>
       </span>

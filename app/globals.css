@@ -535,32 +535,34 @@
 .drift-mark {
   animation: drift-mark 16s ease-in-out infinite;
 }
-/* эмблемы в табло «Главных матчей» — как желе: сжались, разжались с отскоком, успокоились (DaySummary.tsx) */
+/* эмблемы в табло «Главных матчей» — как желе, которое встряхнули листанием (DaySummary.tsx): сразу отстают
+   по ходу движения и наклоняются (--jelly-dir: 1 — вперёд, -1 — назад), подпрыгивают и с отскоком успокаиваются */
 @keyframes jelly {
-  0%,
-  62%,
+  0% {
+    transform: translateX(calc(var(--jelly-dir, 1) * 7%)) skewX(calc(var(--jelly-dir, 1) * 9deg)) scale(1.06, 0.94);
+  }
+  22% {
+    transform: translate(calc(var(--jelly-dir, 1) * -3%), -9%) skewX(calc(var(--jelly-dir, 1) * -6deg)) scale(0.94, 1.07);
+  }
+  42% {
+    transform: translate(0, 0) skewX(calc(var(--jelly-dir, 1) * 3deg)) scale(1.06, 0.94);
+  }
+  60% {
+    transform: translateY(-2%) skewX(calc(var(--jelly-dir, 1) * -1.5deg)) scale(0.98, 1.025);
+  }
+  78% {
+    transform: scale(1.01, 0.99);
+  }
   100% {
-    transform: scale(1, 1);
-  }
-  14% {
-    transform: scale(1.07, 0.93);
-  }
-  28% {
-    transform: scale(0.95, 1.06);
-  }
-  40% {
-    transform: scale(1.03, 0.97);
-  }
-  51% {
-    transform: scale(0.99, 1.01);
+    transform: none;
   }
 }
 .jelly {
-  transform-origin: 50% 70%;
+  transform-origin: 50% 85%;
 }
-/* один раз, когда слайд пришёл при листании (data-jelly ставит TopCarousel); при открытии страницы — покой */
+/* один раз, сразу как слайд сменился (data-jelly ставит TopCarousel); при открытии страницы — покой */
 [data-jelly] .jelly {
-  animation: jelly 2.8s ease-in-out calc(0.15s + var(--jelly-delay, 0s)) 1 both;
+  animation: jelly 0.95s cubic-bezier(0.3, 0.7, 0.4, 1) var(--jelly-delay, 0s) 1 both;
 }
 @media (prefers-reduced-motion: reduce) {
   [data-jelly] .jelly {
