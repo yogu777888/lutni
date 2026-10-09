@@ -8,7 +8,7 @@ import { openStory } from './story/events'
 /** Матч слайда — для шапки и кнопки разбора: турнир и разбор — про матч, который сейчас на экране. */
 export type MainSlide = { id: number; href: string; live: boolean; caption: string; title: string }
 /** Эмблемы команд матча — крупным тиснением на фоне карточки (хозяева слева, гости справа). */
-export type Marks = { home: string | null; away: string | null }
+export type Marks = { home: string | null; away: string | null; tint?: { home: string; away: string } | null }
 /** День в чипе: переход на страницу дня — вся страница (блок, подборки, список) про один и тот же день. */
 export type DayLink = { key: string; label: string; href: string; current: boolean; live?: boolean }
 
@@ -44,6 +44,15 @@ function Paint({ marks, drift = false }: { marks?: Marks; drift?: boolean }) {
       <div className={`absolute -bottom-[40%] -right-[15%] h-[140%] w-[70%] rounded-full ${drift ? 'drift-b' : ''}`} style={blob(away)} />
       <div className={`absolute -top-[55%] right-[4%] h-[125%] w-[52%] rounded-full opacity-90 ${drift ? 'drift-d' : ''}`} style={blob(away2)} />
       <div className={`absolute -top-[30%] left-[25%] h-[110%] w-[50%] rounded-full bg-[radial-gradient(closest-side,rgb(255_255_255/0.13),transparent)] ${drift ? 'drift-b' : ''}`} />
+      {/* цвета клубов, как в Apple Sports: левая половина — в тон хозяев, правая — гостей, к центру сходят на нет */}
+      {marks?.tint ? (
+        <div
+          className="hero-tint absolute inset-0"
+          style={{
+            background: `radial-gradient(75% 110% at 0% 55%, color-mix(in oklab, ${marks.tint.home} 32%, transparent), transparent 70%), radial-gradient(75% 110% at 100% 55%, color-mix(in oklab, ${marks.tint.away} 32%, transparent), transparent 70%)`,
+          }}
+        />
+      ) : null}
       {marks?.home ? <Mark src={marks.home} side="left" drift={drift} /> : null}
       {marks?.away ? <Mark src={marks.away} side="right" drift={drift} /> : null}
     </>

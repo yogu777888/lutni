@@ -31,6 +31,8 @@ const snapTime = (at: number) => (ymdInTz(at) === todayYmd() ? formatTime(at) : 
 export type MainItem = {
   it: FeedItem
   snap: OddsSnap | null
+  /** цвета клубов (lib/team-colors) — мягкая подкраска половин карточки; нет — без неё */
+  tint?: { home: string; away: string } | null
 }
 
 /** Матч слайда для шапки и кнопки разбора: турнир и разбор — про матч, который сейчас на экране. */
@@ -303,7 +305,7 @@ export function DaySummary({ mains, days, picks, className = '' }: { mains: Main
         slides={mains.map((x) => slideMeta(x.it))}
         panels={mains.map((x) => <MatchSlide key={x.it.match.id} item={x} />)}
         days={days}
-        marks={mains.map(({ it }) => ({ home: it.match.home.logo, away: it.match.away.logo }))}
+        marks={mains.map(({ it, tint }) => ({ home: it.match.home.logo, away: it.match.away.logo, tint: tint ?? null }))}
         className={`lg:flex-1 ${SURFACE}`}
       />
       {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг; к плиткам ближе, чем к блоку сверху */}

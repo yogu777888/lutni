@@ -184,6 +184,10 @@
   .story-cover {
     background: linear-gradient(180deg, #263443, #17212c);
   }
+  /* подкраска цветами клубов — только в светлой версии */
+  html[data-look='dark'] .hero-tint {
+    display: none;
+  }
   /* диск истории: заливка цветом категории (StoryCircles), блик по верхнему краю, тонкая граница, мягкая тень */
   .story-disc {
     box-shadow:

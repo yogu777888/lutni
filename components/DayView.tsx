@@ -8,6 +8,7 @@ import { isLive, liveRank } from '@/lib/rank'
 import { dayCounts, goalsPicks, mainMatches, moveExample } from '@/lib/day-summary'
 import { storyCovers } from '@/lib/story-covers'
 import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
+import { matchColors } from '@/lib/team-colors'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { DaySummary, type MainItem } from './DaySummary'
@@ -119,7 +120,10 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
     Promise.all(
       mainMatches(items).map(async (it): Promise<MainItem> => {
         const m = it.match
-        return { it, snap: m.status === 'scheduled' ? await waitOddsSnap(m) : null }
+        // цвета клубов — для мягкой подкраски половин карточки (светлая версия); ждём не дольше 1,5 с, иначе без неё
+        const colors = Promise.race([matchColors(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))])
+        const [snap, tint] = await Promise.all([m.status === 'scheduled' ? waitOddsSnap(m) : null, colors])
+        return { it, snap, tint: tint ? { home: tint.home, away: tint.away } : null }
       }),
     ),
     daySnaps(matches, 1200),
