@@ -1,59 +1,33 @@
 'use client'
 
-import { useEffect, useId, useState } from 'react'
-import { artFor, artPic, CIRCLE_BG } from '@/lib/story-art'
+import { useEffect, useState } from 'react'
+import { formatTime } from '@/lib/format'
+import { artFor, artPic } from '@/lib/story-art'
 import type { CircleKind, StoryGroup } from '@/lib/story-groups'
+import { TeamLogo } from '../TeamLogo'
 import { ArtIcon } from './ArtIcon'
 import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
 
-const SIZE = 68
-/** Кольцо 2.5px по радиусу 32: до края 0.75px (сглаживание не обрезается), до обложки — 2.25px воздуха. */
-const R = 32
-const STROKE = 2.5
-const C = 2 * Math.PI * R
-/** Просмотренный сегмент: спокойный серый, но заметный — кольцо читается целым кругом. */
-const SEEN_STROKE = 'var(--color-mute)'
+/** Карточка истории: 84×92, вертикальная, как истории в Яндекс Картах. */
+const W = 84
+const H = 92
+const RING_MASK = 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)'
 
 /**
- * Кольцо из сегментов — по одному на матч кружка. Просмотренные гаснут по порядку, от верха
- * по часовой стрелке (как статусы в мессенджерах), а не вразброс: кольцо показывает, сколько
- * из кружка уже посмотрели, а следующий тап продолжит с первого непросмотренного.
+ * Рамка карточки — цвет говорит, смотрели ли историю: «не смотрели» — градиент лайм → бирюза снизу слева вверх
+ * направо (как кольца в Instagram, но цветами сайта), LIVE — красная, всё просмотрено — серая той же толщины.
+ * Рамка — кольцо с прозрачной серединой (маска): между рамкой и карточкой виден фон страницы.
  */
-function Ring({ kind, n, seen }: { kind: CircleKind; n: number; seen: number }) {
-  const step = C / n
-  const gap = n > 1 ? Math.min(4, step / 3) : 0
-  // своё имя градиента у каждого кольца: общее имя ломается, если первый кружок скрыт
-  const id = `ring-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
-  // цвет кольца — только «не смотрели» и LIVE (красный); просмотренное — серое той же толщины: иначе кольцо из
-  // толстых и тонких дуг выглядит кривым, а слишком бледный серый — недорисованным. «Не смотрели» — градиент
-  // лайм → бирюза снизу слева вверх направо, как в Instagram, но цветами сайта: белое владельцу показалось скучным,
-  // а тёплый градиент Instagram спорил бы с красным LIVE
-  const color = kind === 'live' ? 'var(--color-live)' : `url(#${id})`
+function Frame({ kind, done }: { kind: CircleKind; done: boolean }) {
+  const bg = done ? 'var(--color-mute)' : kind === 'live' ? 'var(--color-live)' : 'linear-gradient(45deg, var(--color-acid), #2ee6c9)'
   return (
-    <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 h-full w-full -rotate-90 overflow-visible" aria-hidden>
-      {/* svg повёрнут на −90°, поэтому вектор (0,0) → (1,1) на экране идёт снизу слева вверх направо */}
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="var(--color-acid)" />
-          <stop offset="1" stopColor="#2ee6c9" />
-        </linearGradient>
-      </defs>
-      {Array.from({ length: n }, (_, i) => (
-        <circle
-          key={i}
-          cx={SIZE / 2}
-          cy={SIZE / 2}
-          r={R}
-          fill="none"
-          stroke={i < seen ? SEEN_STROKE : color}
-          strokeWidth={STROKE}
-          strokeDasharray={`${step - gap} ${C - step + gap}`}
-          strokeDashoffset={-(i * step + gap / 2)}
-        />
-      ))}
-    </svg>
+    <span
+      aria-hidden
+      className="absolute inset-0 rounded-[16px] p-[2.5px]"
+      style={{ background: bg, mask: RING_MASK, WebkitMask: RING_MASK, maskComposite: 'exclude', WebkitMaskComposite: 'xor' }}
+    />
   )
 }
 
@@ -63,28 +37,39 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
 }
 
 /** Значок темы: объёмная картинка владельца (public/story-icons), если есть, иначе плоский значок Phosphor. */
-function Glyph({ k, tone }: { k: string; tone: string }) {
+function Glyph({ k }: { k: string }) {
   const pic = artPic(k)
-  if (pic) {
-    // eslint-disable-next-line @next/next/no-img-element
-    // лёгкая тень отделяет белое стекло от светлых пятен эмблем
-    return <img src={pic} alt="" aria-hidden decoding="async" className="relative h-10 w-10 drop-shadow-[0_1px_3px_rgb(0_0_0/0.5)]" />
-  }
-  return <ArtIcon name={artFor(k).icon} className={`relative h-[26px] w-[26px] ${tone}`} />
+  // eslint-disable-next-line @next/next/no-img-element
+  if (pic) return <img src={pic} alt="" aria-hidden decoding="async" className="h-5 w-5 drop-shadow-[0_1px_2px_rgb(0_0_0/0.5)]" />
+  return <ArtIcon name={artFor(k).icon} className="h-5 w-5 text-fg" />
 }
 
 /**
- * Обложка кружка: своя картинка из public/stories/<ключ>.*, иначе — тёмный кружок со значком темы, во всех видах. Цвет
- * дают сами значки: размытые эмблемы клубов под ними владелец убрал — цвет на цвете, золотая звезда и янтарная стрелка
- * тонули в рыжих пятнах.
+ * Обложка — превью матча, который откроется первым: эмблемы, время начала или счёт с минутой, внизу значок темы.
+ * Графитовая, как карточка «Главных матчей». Своя картинка из public/stories/<ключ>.* — важнее превью.
  */
-function CoverArt({ k, cover }: { k: string; cover?: string }) {
+function Cover({ g, cover }: { g: StoryGroup; cover?: string }) {
+  const c = g.cover
   return (
     <span
-      className="absolute inset-[5.5px] grid place-items-center overflow-hidden rounded-full"
-      style={{ background: cover ? `center / cover no-repeat url("${cover}")` : CIRCLE_BG }}
+      className="on-dark absolute inset-[4.5px] flex flex-col items-center justify-between overflow-hidden rounded-[12px] px-1 pb-1.5 pt-[7px]"
+      style={{ background: cover ? `center / cover no-repeat url("${cover}")` : 'radial-gradient(120% 80% at 30% 0%, #2a3441, #11161d)' }}
     >
-      {cover ? null : <Glyph k={k} tone="text-fg" />}
+      {cover || !c ? (
+        cover ? null : <span className="grid flex-1 place-items-center"><Glyph k={g.key} /></span>
+      ) : (
+        <>
+          <span className="flex gap-1">
+            <TeamLogo name={c.home.name} src={c.home.logo} size={20} />
+            <TeamLogo name={c.away.name} src={c.away.logo} size={20} />
+          </span>
+          <span className="flex flex-col items-center leading-none">
+            <span className="num text-[16px] font-bold tracking-[-0.02em] text-fg">{c.score ? `${c.score.home}:${c.score.away}` : formatTime(c.ts)}</span>
+            <span className={`mt-1 text-[10px] ${c.live ? 'font-semibold text-live' : 'text-dim'}`}>{c.live ? c.minute : c.finished ? 'итог' : 'мск'}</span>
+          </span>
+          <Glyph k={g.key} />
+        </>
+      )}
     </span>
   )
 }
@@ -119,7 +104,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
   }
 
   return (
-    <nav aria-label="Истории дня" className="scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 pt-1.5 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
+    <nav aria-label="Истории дня" className="scrollbar-none -mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 pt-1.5 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
       {groups.map((g, gi) => {
         const n = seenCount(g, seen)
         const done = n === g.items.length
@@ -130,17 +115,17 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             onClick={(e) => open(gi, e)}
             title={g.hint}
             aria-label={`${g.label}. ${g.hint}. Смотреть истории`}
-            className="group flex w-[80px] shrink-0 flex-col items-center focus-visible:outline-none"
+            className="group flex w-[84px] shrink-0 flex-col items-center focus-visible:outline-none"
           >
-            {/* фокус с клавиатуры — белым кругом вокруг кружка, а не рамкой вокруг кружка с подписью */}
+            {/* фокус с клавиатуры — рамкой вокруг карточки, а не вокруг карточки с подписью */}
             <span
-              className="relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95"
-              style={{ width: SIZE, height: SIZE }}
+              className="relative block rounded-[16px] transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95"
+              style={{ width: W, height: H }}
             >
-              <Ring kind={g.kind} n={g.items.length} seen={n} />
-              <CoverArt k={g.key} cover={covers[g.key]} />
+              <Frame kind={g.kind} done={done} />
+              <Cover g={g} cover={covers[g.key]} />
               {g.kind === 'live' ? (
-                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 rounded-[5px] bg-live px-1.5 text-[9px] font-bold leading-[15px] tracking-wide text-white ring-2 ring-ink">
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-[5px] bg-live px-1.5 text-[9px] font-bold leading-[15px] tracking-wide text-white ring-2 ring-brand">
                   LIVE
                 </span>
               ) : null}

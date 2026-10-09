@@ -56,7 +56,7 @@ function OddsLine({ line, m }: { line: X12Line; m: Match }) {
       target="_blank"
       rel={SPONSORED_REL}
       title={`Коэффициенты ${line.bookmaker}, линия на ${snapTime(line.at)}`}
-      className="relative z-[2] mx-auto mt-4 flex w-fit max-w-full flex-wrap items-baseline justify-center gap-x-4 gap-y-1 rounded-[12px] px-3 py-1.5 transition-colors hover:bg-white/[0.07] lg:mt-6 lg:[@media(max-height:739px)]:mt-2"
+      className="relative z-[2] mx-auto mt-4 flex w-fit max-w-full flex-wrap items-baseline justify-center gap-x-4 gap-y-1 rounded-[12px] px-3 py-1.5 transition-colors hover:bg-white/[0.07] lg:mt-4 lg:[@media(max-height:739px)]:mt-2"
     >
       {odds.map(([label, odd]) => (
         <span key={label} className="flex items-baseline gap-1.5">
@@ -110,7 +110,7 @@ function MatchSlide({ item }: { item: MainItem }) {
       <StoryLink
         id={m.id}
         href={matchHref(m)}
-        className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 py-2 [--disc:64px] sm:gap-x-6 sm:[--disc:80px] lg:gap-x-10 lg:[--disc:clamp(76px,11vh,112px)] lg:[@media(max-height:739px)]:[--disc:60px] ${COVER}`}
+        className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 py-2 [--disc:64px] sm:gap-x-6 sm:[--disc:80px] lg:gap-x-10 lg:[--disc:clamp(76px,11vh,112px)] lg:[@media(max-height:739px)]:[--disc:54px] ${COVER}`}
       >
         {team(m.home, 'home')}
         <span className="flex flex-col items-center text-center">

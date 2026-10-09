@@ -28,6 +28,20 @@ export type StoryGroup = {
   /** Цифра на «табло» кружка: самый сильный сигнал группы (−18%, +11%, 71%…). */
   stat: string
   items: StoryGroupItem[]
+  /** Превью на обложке — матч, который откроется первым (`withCovers`). */
+  cover?: StoryCover
+}
+
+/** Превью матча на обложке истории: эмблемы, время начала или счёт с минутой. */
+export type StoryCover = {
+  home: { name: string; logo: string | null }
+  away: { name: string; logo: string | null }
+  ts: number
+  live: boolean
+  finished: boolean
+  score: { home: number; away: number } | null
+  /** «59′» или «перерыв» — только у идущих */
+  minute: string | null
 }
 
 const TOP_LIMIT = 8
@@ -184,4 +198,39 @@ export function mainCircles(groups: StoryGroup[], max = 5): StoryGroup[] {
     .sort((a, b) => rank(a.key) - rank(b.key))
     .slice(0, max)
   return [...fixed, ...tags]
+}
+
+/**
+ * Обложки историй — у каждой свой матч: одинаковые превью рядом читаются как повтор. Матчи большой карточки
+ * «Главные матчи» (`exclude`) берём последними — они и так на экране. Первыми выбирают истории, где матчей меньше
+ * (у них меньше вариантов). Выбранный матч встаёт в истории первым — по тапу открывается то, что на обложке.
+ */
+export function withCovers(groups: StoryGroup[], items: FeedItem[], exclude: Set<number> = new Set()): StoryGroup[] {
+  const byId = new Map(items.map((it) => [it.match.id, it]))
+  const used = new Set<number>()
+  const pick = new Map<string, number>()
+  for (const g of [...groups].sort((a, b) => a.items.length - b.items.length)) {
+    const ids = g.items.map((x) => x.id)
+    const id = ids.find((x) => !used.has(x) && !exclude.has(x)) ?? ids.find((x) => !used.has(x)) ?? ids[0]
+    if (id == null) continue
+    pick.set(g.key, id)
+    used.add(id)
+  }
+  return groups.map((g) => {
+    const id = pick.get(g.key)
+    const m = id == null ? undefined : byId.get(id)?.match
+    if (!m) return g
+    const live = isLive(m)
+    const cover: StoryCover = {
+      home: { name: m.home.name, logo: m.home.logo },
+      away: { name: m.away.name, logo: m.away.logo },
+      ts: m.ts,
+      live,
+      finished: m.status === 'finished',
+      score: (live || m.status === 'finished') && m.score ? m.score : null,
+      minute: live ? (m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}′` : 'идёт') : null,
+    }
+    const first = g.items.find((x) => x.id === id)!
+    return { ...g, cover, items: [first, ...g.items.filter((x) => x !== first)] }
+  })
 }

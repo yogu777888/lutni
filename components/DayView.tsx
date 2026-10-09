@@ -7,7 +7,7 @@ import { lineMoves, type OddsSnap } from '@/lib/lines'
 import { isLive, liveRank } from '@/lib/rank'
 import { dayCounts, goalsPicks, mainMatches, moveExample } from '@/lib/day-summary'
 import { storyCovers } from '@/lib/story-covers'
-import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
+import { buildStoryGroups, mainCircles, withCovers } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { DaySummary, type MainItem } from './DaySummary'
@@ -100,7 +100,8 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
 
   const open = items.filter((i) => i.match.status === 'scheduled' || i.match.status === 'live')
   // на первом экране — только главные кружки, остальные теги — по «Все теги»
-  const storyGroups = mainCircles(buildStoryGroups(items))
+  // у каждой обложки свой матч; матчи большой карточки — в последнюю очередь, они и так на экране
+  const storyGroups = withCovers(mainCircles(buildStoryGroups(items)), items, new Set(mainMatches(items).map((it) => it.match.id)))
   const values = open
     .filter((i) => i.summary?.pick?.kind === 'value' && i.match.status === 'scheduled')
     .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
@@ -183,7 +184,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         {storyGroups.length ? (
           // кружки понятны и без подписи «Истории дня» — так первый экран влезает целиком;
           // отступ сверху — у ряда (pt-1.5): ряд прокручивается и обрезал бы круг фокуса у кружка
-          <section aria-label="Истории дня" className="mt-4 sm:mt-5">
+          <section aria-label="Истории дня" className="mt-4 sm:mt-5 lg:[@media(max-height:799px)]:mt-3">
             <StoryCircles groups={storyGroups} covers={storyCovers()} />
           </section>
         ) : null}
