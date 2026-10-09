@@ -1,4 +1,7 @@
 /**
+ * Цвета — системная палитра iOS (красный, оранжевый, зелёный, фиолетовый, индиго, мятный): приглушённые горчичный,
+ * тёмно-бирюзовый и графитовый владелец счёл «не эпловскими»; синих на голубом фоне сайта нет — сливаются.
+ *
  * Символы историй — своя система вместо предметных значков (мяч, корона, кубок): абстрактные знаки на одной сетке
  * 24×24, линия 2.2px со скруглёнными концами, один акцентный цвет у категории. Цвет — только у знака; подложка
  * кружка светлая и одна для всех. Нет своего знака — решётка tag.bet.
@@ -17,7 +20,7 @@ const num = (t: string, size = 12.5) => (
 const SYMBOLS: Record<string, Sym> = {
   // В игре: точка и симметричные дуги сигнала
   live: {
-    color: '#ff5c63',
+    color: '#ff3b30',
     draw: (
       <>
         <circle cx="12" cy="12" r="2.3" {...SOLID} />
@@ -27,12 +30,12 @@ const SYMBOLS: Record<string, Sym> = {
   },
   // Топ дня: строгая пятиконечная звезда
   top: {
-    color: '#d5a33a',
+    color: '#f5b400',
     draw: <path d="M12 3.6l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.5l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z" {...SOLID} />,
   },
   // Выгодно: знак процента — цена выше честной
   value: {
-    color: '#2f9a5d',
+    color: '#30c158',
     draw: (
       <>
         <path d="M17.5 6.5l-11 11" {...LINE} />
@@ -43,16 +46,16 @@ const SYMBOLS: Record<string, Sym> = {
   },
   // Кэф упал: график вниз
   progruz: {
-    color: '#2e8b7b',
+    color: '#ff6b00',
     draw: <path d="M4 6.5l5.2 5.2 3.4-3.2L20 16M20 10.8V16h-5.2" {...LINE} strokeWidth={2.6} />,
   },
   // Много голов: «3+»
-  'tb-2-5': { color: '#1e6fb8', draw: num('3+', 13) },
+  'tb-2-5': { color: '#af52de', draw: num('3+', 13) },
   // Мало голов: «≤2»
-  'tm-2-5': { color: '#4f6478', draw: num('≤2', 12) },
+  'tm-2-5': { color: '#00b5c9', draw: num('≤2', 12) },
   // Фаворит: перевес — высокий столбик против низкого
   favorit: {
-    color: '#3558d6',
+    color: '#5e5ce6',
     draw: (
       <>
         <rect x="5.5" y="4.5" width="5.5" height="15" rx="1.6" {...SOLID} />
@@ -62,7 +65,7 @@ const SYMBOLS: Record<string, Sym> = {
   },
   // 50 на 50: диск, разделённый пополам
   ravnye: {
-    color: '#4a5a6a',
+    color: '#00c2b2',
     draw: (
       <>
         <circle cx="12" cy="12" r="7.6" {...LINE} />
@@ -72,7 +75,7 @@ const SYMBOLS: Record<string, Sym> = {
   },
   // Обе забьют: две точки, навстречу друг другу
   'obe-zabyut': {
-    color: '#1e6fb8',
+    color: '#ff2d55',
     draw: (
       <>
         <circle cx="6.5" cy="12" r="2.6" {...SOLID} />
@@ -82,10 +85,10 @@ const SYMBOLS: Record<string, Sym> = {
     ),
   },
   // Может удивить: излом
-  andedog: { color: '#7a5af0', draw: <path d="M13.5 3.8L7 13h5l-1.5 7.2L17 11h-5z" {...LINE} /> },
+  andedog: { color: '#bf5af2', draw: <path d="M13.5 3.8L7 13h5l-1.5 7.2L17 11h-5z" {...LINE} /> },
   // Топ-матч: две концентрические окружности — в центре внимания
   'top-match': {
-    color: '#d5a33a',
+    color: '#ffb800',
     draw: (
       <>
         <circle cx="12" cy="12" r="7.6" {...LINE} />
@@ -95,16 +98,16 @@ const SYMBOLS: Record<string, Sym> = {
   },
   // Серия: три растущих столбика
   seriya: {
-    color: '#e07a2e',
+    color: '#ff6b00',
     draw: <path d="M6 18v-3.5M12 18v-7M18 18V6.5" {...LINE} strokeWidth={2.8} />,
   },
   // Сильны дома: крыша и основание
-  krepost: { color: '#1e6fb8', draw: <path d="M4.5 11.2L12 5l7.5 6.2M7 10v8.5h10V10" {...LINE} /> },
+  krepost: { color: '#5e5ce6', draw: <path d="M4.5 11.2L12 5l7.5 6.2M7 10v8.5h10V10" {...LINE} /> },
   // Травмы: крест
-  kadry: { color: '#d94848', draw: <path d="M12 6v12M6 12h12" {...LINE} strokeWidth={2.8} /> },
+  kadry: { color: '#ff3b30', draw: <path d="M12 6v12M6 12h12" {...LINE} strokeWidth={2.8} /> },
   // Подборки: все матчи — расписание строками
   'pick-all': {
-    color: '#1e6fb8',
+    color: '#007aff',
     draw: (
       <>
         <circle cx="6" cy="7" r="1.5" {...SOLID} />
@@ -116,7 +119,7 @@ const SYMBOLS: Record<string, Sym> = {
   },
   // Подборки: голевые матчи — ворота и мяч в них (сетка в 22px сливалась в таблицу)
   'pick-goals': {
-    color: '#2f9a5d',
+    color: '#30c158',
     draw: (
       <>
         <path d="M4 19V6.5h16V19" {...LINE} strokeWidth={2.6} />
@@ -126,18 +129,18 @@ const SYMBOLS: Record<string, Sym> = {
   },
   // Подборки: движение коэффициентов — стрелки вверх и вниз
   'pick-moves': {
-    color: '#d98a1f',
+    color: '#ff9500',
     draw: <path d="M8 19V5M4.5 8.5L8 5l3.5 3.5M16 5v14M12.5 15.5L16 19l3.5-3.5" {...LINE} />,
   },
   // Личные встречи: стрелки навстречу
-  h2h: { color: '#4f6478', draw: <path d="M3.5 12h6M7 8.7L10.2 12 7 15.3M20.5 12h-6M17 8.7L13.8 12l3.2 3.3" {...LINE} /> },
+  h2h: { color: '#64748b', draw: <path d="M3.5 12h6M7 8.7L10.2 12 7 15.3M20.5 12h-6M17 8.7L13.8 12l3.2 3.3" {...LINE} /> },
 }
 
-const FALLBACK: Sym = { color: '#4f6478', draw: <path d="M9.5 4.5l-2 15M16.5 4.5l-2 15M5 9h14.5M4.5 15H19" {...LINE} /> }
+const FALLBACK: Sym = { color: '#64748b', draw: <path d="M9.5 4.5l-2 15M16.5 4.5l-2 15M5 9h14.5M4.5 15H19" {...LINE} /> }
 
 /** Заливка диска, как иконки Apple: цвет категории — светлее сверху, глубже снизу. */
 export const discBackground = (c: string) =>
-  `linear-gradient(165deg, color-mix(in oklab, ${c} 72%, white) 0%, ${c} 55%, color-mix(in oklab, ${c} 82%, black) 100%)`
+  `radial-gradient(120% 70% at 30% 0%, rgb(255 255 255 / 0.32), transparent 55%), linear-gradient(170deg, color-mix(in oklab, ${c} 78%, white) 0%, ${c} 55%, color-mix(in oklab, ${c} 88%, black) 100%)`
 
 export const symbolColor = (key: string) => (SYMBOLS[key] ?? FALLBACK).color
 
