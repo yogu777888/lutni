@@ -254,9 +254,9 @@
     --paint-3: #f3f8fc;
     --paint-4: #e7f1f9;
     --scrim: none;
-    --mark-blend: multiply;
-    --mark-opacity: 0.08;
-    --mark-filter: grayscale(1) contrast(1.6);
+    --mark-blend: normal;
+    --mark-opacity: 0.34;
+    --mark-filter: url(#crest-sketch);
   }
   /* истории — светлые голубовато-серые, счётчик тёмный */
   html:not([data-look='dark']) .story-cover {
