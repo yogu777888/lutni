@@ -188,6 +188,17 @@
   html[data-look='dark'] .hero-tint {
     display: none;
   }
+  /* силуэт эмблемы цветом клуба — в светлой версии; в графитовой — прежнее тиснение картинкой */
+  .hero-mark-sil {
+    display: none;
+    opacity: var(--mark-opacity);
+  }
+  html:not([data-look='dark']) .hero-mark-sil {
+    display: block;
+  }
+  html:not([data-look='dark']) .hero-mark-img {
+    display: none;
+  }
   /* диск истории: заливка цветом категории (StoryCircles), блик по верхнему краю, тонкая граница, мягкая тень */
   .story-disc {
     box-shadow:
@@ -259,8 +270,8 @@
     --paint-4: #e7f1f9;
     --scrim: none;
     --mark-blend: normal;
-    --mark-opacity: 0.05;
-    --mark-filter: url(#crest-silhouette);
+    --mark-opacity: 0.1;
+    --mark-filter: none;
   }
   /* истории — светлые голубовато-серые, счётчик тёмный */
   html:not([data-look='dark']) .story-cover {

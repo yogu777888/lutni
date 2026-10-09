@@ -53,8 +53,8 @@ function Paint({ marks, drift = false }: { marks?: Marks; drift?: boolean }) {
           }}
         />
       ) : null}
-      {marks?.home ? <Mark src={marks.home} side="left" drift={drift} /> : null}
-      {marks?.away ? <Mark src={marks.away} side="right" drift={drift} /> : null}
+      {marks?.home ? <Mark src={marks.home} side="left" drift={drift} color={marks.tint?.home} /> : null}
+      {marks?.away ? <Mark src={marks.away} side="right" drift={drift} color={marks.tint?.away} /> : null}
     </>
   )
 }
@@ -68,7 +68,7 @@ function Paint({ marks, drift = false }: { marks?: Marks; drift?: boolean }) {
  * со сдвигом по времени, не в такт левой). Смешивание — у обёртки: она и сдвинута (transform), и смешивается с
  * фоном целиком. На телефоне эмблемы меньше — иначе сходятся в середине, под временем.
  */
-function Mark({ src, side, drift }: { src: string; side: 'left' | 'right'; drift: boolean }) {
+function Mark({ src, side, drift, color }: { src: string; side: 'left' | 'right'; drift: boolean; color?: string }) {
   return (
     <div
       className={`hero-mark absolute top-1/2 aspect-square h-[56%] -translate-y-1/2 sm:h-[112%] ${
@@ -82,6 +82,17 @@ function Mark({ src, side, drift }: { src: string; side: 'left' | 'right'; drift
         aria-hidden
         decoding="async"
         className={`hero-mark-img h-full w-full object-contain ${drift ? `drift-mark ${side === 'right' ? '[animation-delay:-9s]' : ''}` : ''}`}
+      />
+      {/* светлая версия: силуэт эмблемы маской по её форме, залит тёмным оттенком цвета клуба (нет цвета — графит).
+          Маска гладкая: детали маленькой эмблемы при увеличении дают пиксели и рябь, силуэт — нет */}
+      <div
+        aria-hidden
+        className={`hero-mark-sil h-full w-full ${drift ? `drift-mark ${side === 'right' ? '[animation-delay:-9s]' : ''}` : ''}`}
+        style={{
+          background: color ? `color-mix(in oklab, ${color} 75%, black)` : '#18222d',
+          mask: `url("${src}") center / contain no-repeat`,
+          WebkitMask: `url("${src}") center / contain no-repeat`,
+        }}
       />
     </div>
   )
@@ -187,19 +198,6 @@ export function TopCarousel({
         ))}
         <div className={SCRIM} />
       </div>
-      {/* эмблема на фоне (светлая версия) — только силуэт, одним ровным тоном, как водяной знак: настоящие эмблемы
-          маленькие, и любые детали при увеличении в 3–4 раза дают пиксели, рябь или пятна (контур и «три тона серого»
-          владелец забраковал). Фильтр берёт форму по прозрачности, сглаживает край и заливает графитом (--mark-filter) */}
-      <svg aria-hidden className="pointer-events-none absolute h-0 w-0">
-        <filter id="crest-silhouette" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="soft" />
-          <feComponentTransfer in="soft" result="shape">
-            <feFuncA type="table" tableValues="0 0 0 1 1" />
-          </feComponentTransfer>
-          <feFlood floodColor="#18222d" result="ink" />
-          <feComposite in="ink" in2="shape" operator="in" />
-        </filter>
-      </svg>
       {/* шапка: слева турнир матча на экране, справа стрелки и чип дня (в углу — сверху и справа поровну);
           на компьютере отступы карточки больше — 28px (на окне ниже 800px — 24px, ниже 740px — 20px): так табло не жмётся к краю */}
       <div className="relative flex items-center justify-between gap-3 px-[18px] lg:px-[clamp(18px,3.4vh,28px)]">
