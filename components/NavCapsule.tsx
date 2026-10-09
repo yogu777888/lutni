@@ -58,7 +58,7 @@ export function NavCapsule({ className = '', wide = false }: { className?: strin
     <nav
       ref={ref}
       aria-label="Основное меню"
-      className={`on-dark relative flex items-center rounded-full border border-edge bg-panel p-1 ${className}`}
+      className={`on-dark nav-capsule relative flex items-center rounded-full border border-edge bg-panel p-1 ${className}`}
     >
       {pill ? (
         <span

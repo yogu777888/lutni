@@ -40,7 +40,18 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru">
+    // suppressHydrationWarning: data-look ставит скрипт ниже до отрисовки (сравнение цветовых версий)
+    <html lang="ru" suppressHydrationWarning>
+      <head>
+        {/* Эксперимент с цветами: по умолчанию — светлая голубовато-серая версия; ?look=dark — прежняя графитовая
+            (запоминается в браузере), ?look=light — вернуть светлую. Ставим до отрисовки — без мигания. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var q=new URLSearchParams(location.search).get('look');if(q==='dark')localStorage.setItem('tb-look','dark');else if(q)localStorage.removeItem('tb-look');if(localStorage.getItem('tb-look')==='dark')document.documentElement.dataset.look='dark'}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-dvh antialiased">
         <Header />
         <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6">{children}</main>

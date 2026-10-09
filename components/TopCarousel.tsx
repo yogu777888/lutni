@@ -21,7 +21,7 @@ function Arrow({ dir }: { dir: 'left' | 'right' }) {
 }
 
 /** Снизу затемнение — под белый текст. */
-const SCRIM = 'absolute inset-0 bg-[linear-gradient(to_top,rgb(11_11_9/0.55),rgb(11_11_9/0.12)_45%,rgb(11_11_9/0.08))]'
+const SCRIM = 'hero-scrim absolute inset-0'
 
 /**
  * Фон карточки матча, как живые обои Apple, но монохром: графитовая заливка и четыре графитовых пятна разной
@@ -30,10 +30,11 @@ const SCRIM = 'absolute inset-0 bg-[linear-gradient(to_top,rgb(11_11_9/0.55),rgb
  * Цвета клубов (вид «Афиша») владелец сменил на графит: увидел карточку до того, как цвета догрузились, и выбрал так.
  */
 function Paint({ marks, drift = false }: { marks?: Marks; drift?: boolean }) {
-  const home = 'hsl(214 15% 25%)'
-  const away = 'hsl(214 16% 19%)'
-  const home2 = 'hsl(214 14% 32%)'
-  const away2 = 'hsl(214 15% 27%)'
+  // цвета — CSS-переменные .hero (app/globals.css): светлая версия и прежняя графитовая (?look=dark)
+  const home = 'var(--paint-1)'
+  const away = 'var(--paint-2)'
+  const home2 = 'var(--paint-3)'
+  const away2 = 'var(--paint-4)'
   const blob = (c: string) => ({ background: `radial-gradient(closest-side, ${c}, transparent)` })
   return (
     <>
@@ -61,7 +62,7 @@ function Paint({ marks, drift = false }: { marks?: Marks; drift?: boolean }) {
 function Mark({ src, side, drift }: { src: string; side: 'left' | 'right'; drift: boolean }) {
   return (
     <div
-      className={`absolute top-1/2 aspect-square h-[56%] -translate-y-1/2 mix-blend-soft-light sm:h-[112%] ${
+      className={`hero-mark absolute top-1/2 aspect-square h-[56%] -translate-y-1/2 sm:h-[112%] ${
         side === 'left' ? 'left-0 -translate-x-1/2 sm:-translate-x-[38%]' : 'right-0 translate-x-1/2 sm:translate-x-[38%]'
       }`}
     >
@@ -71,7 +72,7 @@ function Mark({ src, side, drift }: { src: string; side: 'left' | 'right'; drift
         alt=""
         aria-hidden
         decoding="async"
-        className={`h-full w-full object-contain opacity-[0.32] [filter:grayscale(1)_contrast(3)_brightness(1.1)] ${drift ? `drift-mark ${side === 'right' ? '[animation-delay:-9s]' : ''}` : ''}`}
+        className={`hero-mark-img h-full w-full object-contain ${drift ? `drift-mark ${side === 'right' ? '[animation-delay:-9s]' : ''}` : ''}`}
       />
     </div>
   )
@@ -164,7 +165,7 @@ export function TopCarousel({
   return (
     <article
       aria-label="Главные матчи"
-      className={`on-dark relative flex min-w-0 flex-col py-[18px] lg:py-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:py-6 lg:[@media(max-height:739px)]:py-4 ${className}`}
+      className={`on-dark hero relative flex min-w-0 flex-col py-[18px] lg:py-7 lg:[@media(min-height:740px)_and_(max-height:799px)]:py-6 lg:[@media(max-height:739px)]:py-4 ${className}`}
     >
       {/* у каждого матча свой фон — графит, поверх медленно плывут пятна и блик (CSS) и эмблемы команд тиснением;
           при листании фоны плавно сменяют друг друга; снизу лёгкое затемнение.

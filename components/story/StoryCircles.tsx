@@ -69,8 +69,8 @@ function Cover({ g, cover }: { g: StoryGroup; cover?: string }) {
   const crests = g.crests ?? []
   return (
     <span
-      className="on-dark absolute inset-[4px] flex flex-col items-center justify-between overflow-hidden rounded-[12px] pb-2 pt-2"
-      style={{ background: cover ? `center / cover no-repeat url("${cover}")` : 'linear-gradient(180deg, #263443, #17212c)' }}
+      className="on-dark story-cover absolute inset-[4px] flex flex-col items-center justify-between overflow-hidden rounded-[12px] pb-2 pt-2"
+      style={cover ? { background: `center / cover no-repeat url("${cover}")` } : undefined}
     >
       {cover ? null : (
         <>
