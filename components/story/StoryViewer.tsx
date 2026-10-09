@@ -418,6 +418,26 @@ export function StoryViewer() {
             </div>
           ))}
         </div>
+        {/* прогресс по матчам истории: до 10 матчей — сегменты, больше — одна тонкая полоса и «3 / 15»
+            (десятки узких сегментов не читаются). Матчи до текущего — пройдены */}
+        {group && group.total > 1 ? (
+          <div className="flex items-center gap-2 px-3 pt-1.5" aria-label={`Матч ${group.pos} из ${group.total}`}>
+            {group.total <= 10 ? (
+              <div className="flex flex-1 gap-[3px]">
+                {Array.from({ length: group.total }, (_, i) => (
+                  <span key={i} className={`h-[2px] flex-1 rounded-full ${i < group.pos ? 'bg-fg/70' : 'bg-white/15'}`} />
+                ))}
+              </div>
+            ) : (
+              <div className="h-[2px] flex-1 overflow-hidden rounded-full bg-white/15">
+                <div className="h-full rounded-full bg-fg/70 transition-[width] duration-300" style={{ width: `${(group.pos / group.total) * 100}%` }} />
+              </div>
+            )}
+            <span className="num shrink-0 text-[11px] text-dim">
+              {group.pos} / {group.total}
+            </span>
+          </div>
+        ) : null}
 
         <div className="flex items-center gap-2.5 px-3 pt-2.5">
           {story ? (
@@ -434,7 +454,7 @@ export function StoryViewer() {
                   {group ? (
                     <>
                       <GroupLabel label={group.label} kind={group.kind} />
-                      {group.total > 1 ? ` ${group.pos}/${group.total}` : ''} ·{' '}
+                      {' · '}
                     </>
                   ) : null}
                   {story.league}

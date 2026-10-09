@@ -28,20 +28,26 @@ export type StoryGroup = {
   /** Цифра на «табло» кружка: самый сильный сигнал группы (−18%, +11%, 71%…). */
   stat: string
   items: StoryGroupItem[]
-  /** Превью на обложке — матч, который откроется первым (`withCovers`). */
-  cover?: StoryCover
+  /** Эмблемы для обложки: 2–3 команды из разных матчей истории, по порядку матчей. */
+  crests?: Crest[]
 }
 
-/** Превью матча на обложке истории: эмблемы, время начала или счёт с минутой. */
-export type StoryCover = {
-  home: { name: string; logo: string | null }
-  away: { name: string; logo: string | null }
-  ts: number
-  live: boolean
-  finished: boolean
-  score: { home: number; away: number } | null
-  /** «59′» или «перерыв» — только у идущих */
-  minute: string | null
+/** Эмблема на обложке истории. */
+export type Crest = { name: string; logo: string | null }
+
+/**
+ * Эмблемы для обложки: по одной команде из первых матчей истории (хозяева, а если у них нет эмблемы — гости), без
+ * повторов, не больше трёх. Обложка показывает подборку, а не один матч.
+ */
+export function crestsOf(list: FeedItem[], max = 3): Crest[] {
+  const out: Crest[] = []
+  for (const it of list) {
+    const t = it.match.home.logo || !it.match.away.logo ? it.match.home : it.match.away
+    if (out.some((c) => c.name === t.name)) continue
+    out.push({ name: t.name, logo: t.logo })
+    if (out.length === max) break
+  }
+  return out
 }
 
 const TOP_LIMIT = 8
@@ -123,7 +129,9 @@ const storyLabel = (label: string) => {
 export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
   const open = items.filter((i) => i.match.status === 'scheduled' || isLive(i.match))
   const groups: StoryGroup[] = []
-  const add = (g: Omit<StoryGroup, 'items' | 'href' | 'stat'> & { href?: string; stat?: string }, list: Entry[]) => {
+  const add = (g: Omit<StoryGroup, 'items' | 'href' | 'stat' | 'crests'> & { href?: string; stat?: string }, list: Entry[]) => {
+    // один матч в истории — один раз
+    list = list.filter((x, i) => list.findIndex((y) => y.it.match.id === x.it.match.id) === i)
     if (!list.length) return
     const first = list[0]
     groups.push({
@@ -131,6 +139,7 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
       href: g.href ?? matchHref(first.it.match),
       stat: g.stat ?? (first.tag ? statFor(first.tag.slug, first.tag.reason) : '#'),
       items: list.map(({ it, tag }) => ({ id: it.match.id, href: matchHref(it.match), focus: focusOf(tag) })),
+      crests: crestsOf(list.map((x) => x.it)),
     })
   }
 
@@ -200,37 +209,3 @@ export function mainCircles(groups: StoryGroup[], max = 5): StoryGroup[] {
   return [...fixed, ...tags]
 }
 
-/**
- * Обложки историй — у каждой свой матч: одинаковые превью рядом читаются как повтор. Матчи большой карточки
- * «Главные матчи» (`exclude`) берём последними — они и так на экране. Первыми выбирают истории, где матчей меньше
- * (у них меньше вариантов). Выбранный матч встаёт в истории первым — по тапу открывается то, что на обложке.
- */
-export function withCovers(groups: StoryGroup[], items: FeedItem[], exclude: Set<number> = new Set()): StoryGroup[] {
-  const byId = new Map(items.map((it) => [it.match.id, it]))
-  const used = new Set<number>()
-  const pick = new Map<string, number>()
-  for (const g of [...groups].sort((a, b) => a.items.length - b.items.length)) {
-    const ids = g.items.map((x) => x.id)
-    const id = ids.find((x) => !used.has(x) && !exclude.has(x)) ?? ids.find((x) => !used.has(x)) ?? ids[0]
-    if (id == null) continue
-    pick.set(g.key, id)
-    used.add(id)
-  }
-  return groups.map((g) => {
-    const id = pick.get(g.key)
-    const m = id == null ? undefined : byId.get(id)?.match
-    if (!m) return g
-    const live = isLive(m)
-    const cover: StoryCover = {
-      home: { name: m.home.name, logo: m.home.logo },
-      away: { name: m.away.name, logo: m.away.logo },
-      ts: m.ts,
-      live,
-      finished: m.status === 'finished',
-      score: (live || m.status === 'finished') && m.score ? m.score : null,
-      minute: live ? (m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}′` : 'идёт') : null,
-    }
-    const first = g.items.find((x) => x.id === id)!
-    return { ...g, cover, items: [first, ...g.items.filter((x) => x !== first)] }
-  })
-}

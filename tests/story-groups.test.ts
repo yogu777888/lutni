@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { addDays, todayYmd } from '@/lib/format'
-import { buildStoryGroups, mainCircles, statFor, withCovers, type StoryGroup } from '@/lib/story-groups'
+import { buildStoryGroups, mainCircles, statFor, crestsOf, type StoryGroup } from '@/lib/story-groups'
 import type { Match } from '@/lib/types'
 
 const team = (id: number, name: string) => ({ id, name, original: name, logo: null, country: 'England' })
@@ -118,15 +118,10 @@ describe('кружки на главной', () => {
     expect(mainCircles(groups.slice(4, 6)).map((x) => x.key)).toEqual(['value', 'progruz'])
   })
 
-  it('у каждой обложки свой матч, матчи большой карточки — последними, матч обложки открывается первым', () => {
+  it('эмблемы обложки — из разных матчей, без повторов, не больше трёх', () => {
     const items = [1, 2, 3, 4].map((id) => item(id, 'scheduled'))
-    const grp = (key: string, ids: number[]): StoryGroup => ({ key, label: key, kind: 'top', hint: '', href: '/', stat: '#', items: ids.map((id) => ({ id, href: `/m/${id}`, focus: null })) })
-    const out = withCovers([grp('top', [1, 2, 3]), grp('value', [1, 4]), grp('progruz', [1])], items, new Set([1]))
-    const first = Object.fromEntries(out.map((g) => [g.key, g.items[0].id]))
-    // «progruz» — только главный матч: берёт его; «value» — свой 4-й; «top» — 2-й, а не главный 1-й
-    expect(first).toEqual({ top: 2, value: 4, progruz: 1 })
-    expect(out[0].items.map((x) => x.id)).toEqual([2, 1, 3])
-    expect(out[0].cover?.home.name).toBe('Home 2')
+    expect(crestsOf(items).map((c) => c.name)).toEqual(['Home 1', 'Home 2', 'Home 3'])
+    expect(crestsOf([items[0], items[0], items[1]]).map((c) => c.name)).toEqual(['Home 1', 'Home 2'])
+    expect(crestsOf([])).toEqual([])
   })
 })
-
