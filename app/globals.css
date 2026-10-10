@@ -535,6 +535,33 @@
 .drift-mark {
   animation: drift-mark 16s ease-in-out infinite;
 }
+/* бегущая строка матчей в шапке (components/LiveTicker.tsx): едет по кругу, при наведении и фокусе стоит, края тают;
+   при «уменьшить движение» не едет — её можно прокрутить */
+@keyframes ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker {
+  mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 40px), transparent);
+}
+.ticker-track {
+  animation: ticker 40s linear infinite;
+}
+.ticker:hover .ticker-track,
+.ticker:focus-within .ticker-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ticker-track {
+    animation: none;
+  }
+}
+
 /* эмблемы в табло «Главных матчей» — как желе, которое встряхнули листанием (DaySummary.tsx): сразу отстают
    по ходу движения и наклоняются (--jelly-dir: 1 — вперёд, -1 — назад), подпрыгивают и с отскоком успокаиваются */
 @keyframes jelly {

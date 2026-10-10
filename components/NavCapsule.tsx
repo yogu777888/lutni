@@ -91,3 +91,31 @@ export function NavCapsule({ className = '', wide = false }: { className?: strin
     </nav>
   )
 }
+
+/**
+ * Меню текстом — для шапки на компьютере, рядом с бегущей строкой матчей: тише капсулы, чтобы главным в шапке
+ * были матчи. Выбранный раздел — белый с короткой чертой снизу.
+ */
+export function NavLinks({ className = '' }: { className?: string }) {
+  const active = activeNav(usePathname())
+  return (
+    <nav aria-label="Основное меню" className={`flex items-center gap-0.5 ${className}`}>
+      {NAV.map((n) => {
+        const on = n.href === active
+        return (
+          <Link
+            key={n.href}
+            href={n.href}
+            aria-current={on ? 'page' : undefined}
+            className={`relative inline-flex h-9 items-center rounded-[10px] px-3 text-[14.5px] font-medium transition-colors ${
+              on ? 'text-fg' : 'text-fg/75 hover:bg-white/12 hover:text-fg'
+            }`}
+          >
+            {n.label}
+            {on ? <span aria-hidden className="absolute inset-x-3 bottom-0.5 h-[2.5px] rounded-full bg-fg" /> : null}
+          </Link>
+        )
+      })}
+    </nav>
+  )
+}
