@@ -1,14 +1,19 @@
 import Link from 'next/link'
 import { countryRank, FEATURED_LEAGUES, featuredRank } from '@/config/leagues'
-import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
-import { dayHref, listHref } from '@/lib/links'
+import { getLiveOdds, getMatchesByDate, getStandings, getTeamGames, tagsFor, waitOddsSnap, type FeedItem } from '@/lib/data'
+import { dayHref, listHref, matchHref } from '@/lib/links'
 import { applyListFilter, filterQuery, isEmptyFilter, type ListFilter } from '@/lib/list-filter'
-import { diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
+import { appNow, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdInTz, ymdToNoonTs } from '@/lib/format'
 import { isLive, liveRank } from '@/lib/rank'
-import { soonMatches } from '@/lib/day-summary'
+import { mainMatches, soonMatches } from '@/lib/day-summary'
+import { handNotes, type HandNotes } from '@/lib/hand-notes'
+import { x12Line, type X12Line } from '@/lib/lines'
+import { buildForm } from '@/lib/stats'
+import { matchColors } from '@/lib/team-colors'
 import { buildStoryGroups, mainCircles, statFor } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
+import { DayHero, type HeroItem } from './DayHero'
 import { LiveRefresh } from './Live'
 import { FavMatches } from './FavMatches'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
@@ -81,6 +86,48 @@ const leagueOrder = (it: FeedItem) => {
   return r < 0 ? 1e3 : r
 }
 
+/** Не ждать дольше `ms`: не успели — null (страница не стоит из-за медленного источника). */
+const within = <T,>(p: Promise<T>, ms: number): Promise<T | null> => Promise.race([p.catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), ms))])
+
+/** Метки-факты над эмблемами «Матча дня» (lib/hand-notes.ts): таблица и прошедшие матчи обеих команд, ≤1,5 с. */
+function notesFor(m: Match): Promise<HandNotes | null> {
+  return within(
+    (async () => {
+      const [st, games] = await Promise.all([
+        m.season?.year ? getStandings(m.league.id, m.season.year).catch(() => null) : null,
+        getTeamGames(m.home.id, m.away.id, ymdInTz(m.ts)).catch(() => [] as Match[]),
+      ])
+      // свой же матч и будущие в форму не берём: факты — до этого матча
+      const past = games.filter((g) => g.id !== m.id && g.ts < m.ts)
+      return handNotes({ homeId: m.home.id, awayId: m.away.id, standings: st, homeForm: buildForm(m.home.id, past), awayForm: buildForm(m.away.id, past) })
+    })(),
+    1500,
+  )
+}
+
+/** Live-кэфы PARI идущего матча (≤1,2 с); нет всех трёх исходов — без строки. */
+async function liveLineFor(m: Match): Promise<X12Line | null> {
+  if (!isLive(m)) return null
+  const odds = await within(getLiveOdds(m), 1200)
+  if (!odds?.home || !odds.draw || !odds.away) return null
+  return { bookmaker: 'PARI', slug: 'pari', at: appNow(), home: odds.home, draw: odds.draw, away: odds.away }
+}
+
+/** «Матч дня» и вкладки — главные матчи дня (`mainMatches`) с цветами клубов, фактами и кэфами. */
+function heroItems(items: FeedItem[]): Promise<HeroItem[]> {
+  return Promise.all(
+    mainMatches(items).map(async ({ match: m }) => {
+      const [snap, tint, notes, liveLine] = await Promise.all([
+        m.status === 'scheduled' ? waitOddsSnap(m) : null,
+        within(matchColors(m), 1500),
+        notesFor(m),
+        liveLineFor(m),
+      ])
+      return { m, href: matchHref(m), tint: tint ? { home: tint.home, away: tint.away } : null, notes, line: x12Line(snap), liveLine }
+    }),
+  )
+}
+
 export async function DayView({
   ymd,
   today,
@@ -151,6 +198,8 @@ export async function DayView({
   const liveTop = [...liveAll].sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts).slice(0, LIVE_LIMIT)
 
   const heading = dayHeading(ymd, today)
+  // «Матч дня» — первый экран главной: главный матч крупно и вкладки с остальными (на странице «Матчи» его нет)
+  const hero = view === 'home' ? await heroItems(items) : []
   const past = diffDays(ymd, today) < 0
   // заголовок «Все матчи дня» над списком — когда на главной над ним есть что-то ещё (выгодные ставки)
   const listHead = view === 'home' && values.length > 0
@@ -191,13 +240,13 @@ export async function DayView({
       if (g.key === 'live' || g.key === 'top' || !/\d/.test(st)) continue
       shelfStats[`${g.key}:${x.id}`] = BADGE_WORD[g.key] ? `${BADGE_WORD[g.key]} · ${g.key === 'kadry' ? st.replace(/\D/g, '') : st}` : st
     }
-  // «Скоро начнутся» — без матчей из «В игре» и «Топ дня»
+  // «Скоро начнутся» — без матчей «Матча дня», «В игре» и «Топ дня»
   const soon =
     view === 'home' && !past
-      ? soonMatches(items, new Set([...shelfGroups.filter((g) => g.key === 'top' || g.key === 'live').flatMap((g) => g.items.slice(0, 12).map((x) => x.id))]))
+      ? soonMatches(items, new Set([...hero.map((x) => x.m.id), ...shelfGroups.filter((g) => g.key === 'top' || g.key === 'live').flatMap((g) => g.items.slice(0, 12).map((x) => x.id))]))
       : []
   // список — на странице «Матчи»; на главной — только если полок нет (в этот день нет «взрослых» матчей)
-  const showList = view === 'list' || (!shelfGroups.length && !soon.length && !values.length)
+  const showList = view === 'list' || (!hero.length && !shelfGroups.length && !soon.length && !values.length)
   return (
     <>
       {/* пока на этой странице идут матчи — счёт и минуты обновляются сами, без перезагрузки */}
@@ -218,9 +267,10 @@ export async function DayView({
             </h1>
           </section>
 
-      {/* истории — полками, как «Скоро начнутся»: «В игре», «Топ дня», потом «Скоро начнутся» и «Выгодно сегодня»,
+      {/* «Матч дня» (DayHero) — главный матч крупно и вкладки с остальными; он заменяет полку «Топ дня». Дальше истории — полками: «В игре», (без «Матча дня» — «Топ дня»), потом «Скоро начнутся» и «Выгодно сегодня»,
           потом остальные истории (у «Выгодно» своя полка с кэфами — история-дубль не нужна) */}
-      <StoryShelves groups={shelfGroups} show={['live', 'top']} matches={shelfMatches} more={shelfMore} stats={shelfStats} />
+      {hero.length ? <DayHero items={hero} ymd={ymd} /> : null}
+      <StoryShelves groups={shelfGroups} show={hero.length ? ['live'] : ['live', 'top']} matches={shelfMatches} more={shelfMore} stats={shelfStats} />
       {past ? null : <SoonShelf items={soon} allHref={`${list}?sort=time`} />}
       <ValueBoard items={values} />
       <StoryShelves groups={shelfGroups} show={shelfGroups.map((g) => g.key).filter((k) => k !== 'live' && k !== 'top')} matches={shelfMatches} more={shelfMore} stats={shelfStats} />
