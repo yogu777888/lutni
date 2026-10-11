@@ -8,6 +8,7 @@ import { buildVerdict, split100 } from '@/lib/verdict'
 import type { Match } from '@/lib/types'
 import { StoryLink } from './story/StoryLink'
 import { Tick } from './Live'
+import { TeamLogo } from './TeamLogo'
 
 /** Колонки строки матча: время · матч · шансы · коэффициенты (на телефоне — время и матч, кэфы ниже). */
 export const ROW_COLS = 'grid-cols-[3.25rem_minmax(0,1fr)] sm:grid-cols-[3.75rem_minmax(0,1fr)_7.5rem_11.25rem]'
@@ -147,7 +148,15 @@ export function MatchRow({
   const awayWon = m.status === 'finished' && m.score && m.score.away > m.score.home
   const pick = m.status === 'scheduled' ? summary?.pick : null
   const hotKey = pick?.kind === 'value' && ['home', 'draw', 'away'].includes(pick.key) ? pick.key : null
-  const name = (t: Match['home'], lost: boolean) => <span className={lost ? 'text-fg/55' : ''}>{t.name}</span>
+  // эмблема перед названием — матч узнаётся глазами раньше, чем прочитан
+  const name = (t: Match['home'], lost: boolean) => (
+    <span className={`flex min-w-0 items-center gap-1.5 ${lost ? 'text-fg/55' : ''}`}>
+      <span className={`shrink-0 ${lost ? 'opacity-60' : ''}`}>
+        <TeamLogo name={t.name} src={t.logo} size={18} />
+      </span>
+      <span className="truncate">{t.name}</span>
+    </span>
+  )
 
   if (compact) {
     return (
@@ -188,10 +197,10 @@ export function MatchRow({
         <StoryLink
           id={m.id}
           href={matchHref(m)}
-          className="block truncate text-[15px] font-semibold after:absolute after:inset-0 after:content-[''] sm:text-[16px]"
+          className="flex min-w-0 items-center text-[15px] font-semibold after:absolute after:inset-0 after:content-[''] sm:text-[16px]"
         >
           {name(m.home, Boolean(awayWon))}
-          <span className="mx-1.5 font-normal text-mute">—</span>
+          <span className="mx-1.5 shrink-0 font-normal text-mute">—</span>
           {name(m.away, Boolean(homeWon))}
         </StoryLink>
         {meta ? (

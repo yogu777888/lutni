@@ -7,6 +7,7 @@ import { outcomeText } from '@/lib/verdict'
 import { edgeTone, Flaps } from './Flaps'
 import { SHELF_CARD, Shelf } from './Shelf'
 import { StoryLink } from './story/StoryLink'
+import { TeamLogo } from './TeamLogo'
 
 const edge = (ev: number) => `${ev >= 0 ? '+' : '−'}${Math.abs(ev * 100).toFixed(1).replace('.', ',')}%`
 
@@ -42,11 +43,21 @@ export function ValueBoard({ items }: { items: FeedItem[] }) {
                 <Chip>{m.league.name}</Chip>
                 <Chip>{formatTime(m.ts)}</Chip>
               </div>
-              <StoryLink id={m.id} href={matchHref(m)} className="mt-4 text-[18px] font-bold leading-snug tracking-[-0.02em] transition-colors hover:text-acid">
-                {m.home.name} — {m.away.name}
-              </StoryLink>
+              <div className="mt-4 flex items-start gap-3">
+                {/* эмблемы — «обложка» карточки: матч узнаётся раньше, чем прочитан */}
+                <span className="flex shrink-0 -space-x-2 pt-0.5">
+                  {[m.home, m.away].map((t) => (
+                    <span key={t.id} className="grid h-9 w-9 place-items-center rounded-full bg-panel-3 ring-2 ring-panel-2">
+                      <TeamLogo name={t.name} src={t.logo} size={22} />
+                    </span>
+                  ))}
+                </span>
+                <StoryLink id={m.id} href={matchHref(m)} className="min-w-0 text-[18px] font-bold leading-snug tracking-[-0.02em] transition-colors hover:text-acid">
+                  {m.home.name} — {m.away.name}
+                </StoryLink>
+              </div>
               {/* исход словами: «победа «X»», «3 гола и больше» — вместо «П1», «ТБ 2.5» */}
-              <p className="mt-1.5 text-[15px] leading-snug text-dim first-letter:uppercase">{outcomeText(p.key, m)}</p>
+              <p className="mt-1.5 pl-[4.75rem] text-[15px] leading-snug text-dim first-letter:uppercase">{outcomeText(p.key, m)}</p>
 
               <div className="mt-auto flex items-end justify-between gap-3 pt-6">
                 <div>
