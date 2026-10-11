@@ -36,6 +36,8 @@ export type MainItem = {
   tint?: { home: string; away: string } | null
   /** приписки «от руки» над командами (lib/hand-notes.ts): «лидер», «4 победы подряд»… */
   notes?: HandNotes | null
+  /** live-кэфы PARI идущего матча (DayView, getLiveOdds) — строкой «Сейчас в матче» под табло */
+  liveOdds?: X12Line | null
 }
 
 /**
@@ -84,7 +86,11 @@ function slideMeta(it: FeedItem): MainSlide {
  * табло: главное в карточке — матч, но без неё с первого экрана к ставке вёл только «Бонус» в углу. Ссылка — поверх
  * накладки сторис (z-index). В игре и после строки нет: LIVE-кэфы не показываем.
  */
-function OddsLine({ line, m }: { line: X12Line; m: Match }) {
+/**
+ * Тихая строка кэфов одного букмекера под табло: до начала — доматчевые, в игре — live-кэфы PARI
+ * (легальный букмекер; в основном API live-кэфы только у зарубежного Bet365) с пометкой «Сейчас в матче».
+ */
+function OddsLine({ line, m, live = false }: { line: X12Line; m: Match; live?: boolean }) {
   const odds = [
     ['Хозяева', line.home],
     ['Ничья', line.draw],
@@ -92,12 +98,18 @@ function OddsLine({ line, m }: { line: X12Line; m: Match }) {
   ] as const
   return (
     <a
-      href={goHref(line.slug, 'main-odds', m.id)}
+      href={goHref(line.slug, live ? 'main-live-odds' : 'main-odds', m.id)}
       target="_blank"
       rel={SPONSORED_REL}
-      title={`Коэффициенты ${line.bookmaker}, линия на ${snapTime(line.at)}`}
+      title={live ? `Live-коэффициенты ${line.bookmaker} на ${formatTime(line.at)}` : `Коэффициенты ${line.bookmaker}, линия на ${snapTime(line.at)}`}
       className="relative z-[2] mx-auto mt-4 flex w-fit max-w-full flex-wrap items-baseline justify-center gap-x-4 gap-y-1 rounded-[12px] px-3 py-1.5 transition-colors hover:bg-white/[0.07] lg:mt-[clamp(6px,1.8vh,16px)]"
     >
+      {live ? (
+        <span className="flex items-center gap-1.5 self-center text-[13px] font-medium text-live">
+          <span className="h-1.5 w-1.5 rounded-full bg-live" />
+          Сейчас в матче
+        </span>
+      ) : null}
       {odds.map(([label, odd]) => (
         <span key={label} className="flex items-baseline gap-1.5">
           <span className="text-[14px] text-fg/70">{label}</span>
@@ -129,6 +141,7 @@ function MatchSlide({ item }: { item: MainItem }) {
   const { it, snap } = item
   const m = it.match
   const line = m.status === 'scheduled' ? x12Line(snap) : null
+  const liveLine = item.liveOdds ?? null
   const live = isLive(m)
   const finished = m.status === 'finished'
   const score = (live || finished) && m.score ? m.score : null
@@ -150,7 +163,7 @@ function MatchSlide({ item }: { item: MainItem }) {
     </span>
   )
   return (
-    <div className="relative flex min-w-0 flex-1 flex-col justify-center">
+    <div className="relative flex min-w-0 flex-1 flex-col justify-center pt-9 sm:pt-5 lg:pt-0">
       {/* табло по центру: хозяева — на своём цвете слева, гости — справа, между ними время или счёт */}
       <StoryLink
         id={m.id}
@@ -187,7 +200,7 @@ function MatchSlide({ item }: { item: MainItem }) {
         </span>
         {team(m.away, 'away')}
       </StoryLink>
-      {line ? <OddsLine line={line} m={m} /> : null}
+      {line ? <OddsLine line={line} m={m} /> : liveLine ? <OddsLine line={liveLine} m={m} live /> : null}
     </div>
   )
 }

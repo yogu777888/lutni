@@ -23,8 +23,9 @@ import { TagPill } from '@/components/TagPill'
 import { PARTNERS, primaryPartner } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
-import { getMatchInsights, getMatchesByDate, settle } from '@/lib/data'
-import { formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
+import { getMatchInsights, getMatchesByDate, getPariHistory, settle } from '@/lib/data'
+import { LineChart } from '@/components/match/LineChart'
+import { appNow, formatDateShort, formatTime, idFromSlug, pct, pluralN, ymdInTz } from '@/lib/format'
 import { isValue } from '@/lib/model'
 import { leagueHref, matchHref } from '@/lib/links'
 import { buildStory } from '@/lib/story'
@@ -76,6 +77,20 @@ export default async function MatchPage({ params }: Props) {
   if (`/match/${slug}` !== canonical) permanentRedirect(canonical)
 
   const { full, books, cons, model, candidates, pick, tags } = ins
+  // история доматчевой линии PARI (легальный букмекер): ждём не дольше 2 с, иначе — без графика
+  const pari = await Promise.race([getPariHistory(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 2000))])
+  const lineSeries = pari
+    ? (
+        [
+          ['home', 'Хозяева', '#1f6fd1'],
+          ['draw', 'Ничья', '#0f9d8a'],
+          ['away', 'Гости', '#e0670f'],
+        ] as const
+      )
+        .map(([key, label, color]) => ({ key, label, color, pts: pari.history[key] ?? [] }))
+        .filter((s) => s.pts.length)
+    : []
+  const lineChanges = lineSeries.reduce((n, s) => n + s.pts.length - 1, 0)
   const scheduled = m.status === 'scheduled'
   const x = model?.x12 ?? cons.x12
   const over25 = model?.over['2.5'] ?? cons.over['2.5']
@@ -214,6 +229,24 @@ export default async function MatchPage({ params }: Props) {
                   </p>
                 ) : null}
               </div>
+            </Section>
+          ) : null}
+
+          {lineSeries.length === 3 && lineChanges > 0 ? (
+            <Section title="Как менялась линия" aside={`PARI · до матча · ${pluralN(lineChanges, ['изменение', 'изменения', 'изменений'])}`}>
+              <LineChart series={lineSeries} end={Math.min(m.ts, appNow())} />
+              <p className="mt-3 text-[13px] leading-relaxed text-dim">
+                {lineSeries
+                  .map((s) => {
+                    const vs = s.pts.map((p) => p.v).filter((v): v is number => v != null)
+                    const a0 = vs[0]
+                    const a1 = vs[vs.length - 1]
+                    const d = Math.round((a1 / a0 - 1) * 100)
+                    return `${s.label}: ${a0.toFixed(2)} → ${a1.toFixed(2)}${d ? ` (${d > 0 ? '+' : '−'}${Math.abs(d)}%)` : ''}`
+                  })
+                  .join(' · ')}
+                . Кэф снижается — букмекер считает исход вероятнее.
+              </p>
             </Section>
           ) : null}
 

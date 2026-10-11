@@ -828,6 +828,99 @@ function odds(gameId: number): ApiEnvelope<RawBookmakerOdds[]> {
   )
 }
 
+// ─── PARI (демо): тот же день, те же команды; id события — 700000000 + id матча ─────────────────
+
+const PARI_ID = 700_000_000
+const PARI_MARGIN = 0.065
+
+/** Шансы итогов с текущего счёта: оставшиеся голы — Пуассон с долей ожидаемых голов на остаток матча. */
+function liveProbs(g: MockGame, now: number) {
+  const ph = phaseOf(g, now)
+  const sc = ph.status === 2 ? { h: 0, a: 0 } : scoreAt(g, ph.minute)
+  const left = ph.status === 2 ? 1 : Math.max(0.02, (90 - ph.minute) / 90)
+  let home = 0
+  let draw = 0
+  let away = 0
+  let over = 0
+  for (let i = 0; i <= 8; i++) {
+    for (let j = 0; j <= 8; j++) {
+      const p = pois(i, g.lh * left) * pois(j, g.la * left)
+      const h = sc.h + i
+      const a = sc.a + j
+      if (h > a) home += p
+      else if (h === a) draw += p
+      else away += p
+      if (h + a > 2.5) over += p
+    }
+  }
+  return { home, draw, away, over }
+}
+
+function pariOdds(pr: { home: number; draw: number; away: number; over: number }) {
+  const o = (id: number, q: number) => (q > 0.002 && q < 0.995 ? [{ id, value: price(q, PARI_MARGIN) }] : [])
+  return [...o(8250, pr.home), ...o(8256, pr.draw), ...o(8253, pr.away), ...o(217, pr.over), ...o(292, 1 - pr.over)]
+}
+
+function pariMatches(p: URLSearchParams, now: number) {
+  const live = bool(p, 'live')
+  const withOdds = bool(p, 'includeOdds')
+  const date = p.get('date')
+  const day = dayIndexOf(date ? date.slice(0, 10) : ymdInTz(now))
+  const games = gamesOnDay(day).filter((g) => !live || [3, 4, 5].includes(phaseOf(g, now).status))
+  return envelope(
+    games.map((g) => {
+      const ph = phaseOf(g, now)
+      const sc = ph.status === 2 ? null : scoreAt(g, ph.minute)
+      return {
+        matchInfo: {
+          eventId: PARI_ID + g.id,
+          startDate: isoWithOffset(g.kickoff, 3),
+          status: ph.status === 2 ? 'NotStarted' : ph.status === 8 ? 'Finished' : 'Live',
+          tournament: { id: g.league.id, name: g.league.name },
+          homeTeam: { id: PARI_ID + (TEAM_ID.get(g.home) ?? 0), name: g.home },
+          awayTeam: { id: PARI_ID + (TEAM_ID.get(g.away) ?? 0), name: g.away },
+          homeScore: sc?.h ?? null,
+          awayScore: sc?.a ?? null,
+          liveSeconds: ph.status === 2 ? null : ph.minute * 60,
+          url: null,
+          isDeleted: false,
+        },
+        currentOdds: withOdds && ph.status !== 8 ? pariOdds(liveProbs(g, now)) : [],
+      }
+    }),
+    { offset: 0, TotalCount: games.length },
+  )
+}
+
+/** История доматчевой линии: снимки раз в 6–14 часов за неделю до матча, кэф бродит к значению на старте. */
+function pariHistoryMock(eventId: number, now: number) {
+  const g = gameById(eventId - PARI_ID)
+  if (!g) return envelope([])
+  const r = rng('pari-history', g.id)
+  const p0 = trueProbs(g.lh, g.la)
+  const end = Math.min(now, g.kickoff)
+  const start = g.kickoff - 7 * 86_400_000
+  // смещение шанса хозяев у открытия: потом линия плавно идёт к честной цене
+  let drift = (r() - 0.5) * 0.16
+  const snaps = []
+  for (let t = start; t <= end; t += (6 + r() * 8) * 3_600_000) {
+    drift *= 0.82 + r() * 0.1
+    const home = Math.min(0.95, Math.max(0.03, p0.ph + drift))
+    const rest = 1 - home
+    const share = p0.pd / (p0.pd + p0.pa)
+    const over = Math.min(0.95, Math.max(0.05, p0.over['2.5'] + drift * 0.4))
+    snaps.push({
+      seconds: null,
+      addedTime: null,
+      isLive: false,
+      isSuspended: false,
+      createdAt: isoWithOffset(t, 3),
+      odds: pariOdds({ home, draw: rest * share, away: rest * (1 - share), over }),
+    })
+  }
+  return envelope(snaps)
+}
+
 /**
  * Точка входа: имитирует GET {path}?{params} к api.sstats.net. Часы — общие с сайтом (`appNow`):
  * в демо они стоят на 4 октября, 19:30; SSTATS_MOCK_NOW=2026-10-02T21:00:00+03:00 «переводит» их,
@@ -843,6 +936,8 @@ export async function mockFetch(pathname: string, params: URLSearchParams): Prom
   if (low === '/leagues') return leaguesList()
   if (low === '/seasons/standings') return standings(params, now)
   if (low === '/games/injuries') return injuries(Number(params.get('gameId')))
+  if (low === '/pari/matches') return pariMatches(params, now)
+  if ((m = /^\/pari\/odds\/history\/(\d+)$/.exec(low))) return pariHistoryMock(Number(m[1]), now)
   if (low === '/odds/bookmakers') return envelope(BOOKMAKERS.map((b) => ({ id: b.id, bookmakerName: b.name })))
   if ((m = /^\/games\/glicko\/(\d+)$/.exec(low))) return glicko(Number(m[1]), now)
   if ((m = /^\/odds\/(\d+)$/.exec(low))) return odds(Number(m[1]))

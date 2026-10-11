@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import { countryRank, featuredRank } from '@/config/leagues'
-import { daySnaps, getMatchesByDate, getStandings, getTeamGames, peekOddsSnap, tagsFor, waitOddsSnap, type FeedItem } from '@/lib/data'
+import { daySnaps, getLiveOdds, getMatchesByDate, getStandings, getTeamGames, peekOddsSnap, tagsFor, waitOddsSnap, type FeedItem } from '@/lib/data'
 import { dayHref } from '@/lib/links'
-import { addDays, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdInTz, ymdToNoonTs } from '@/lib/format'
-import { lineMoves, type OddsSnap } from '@/lib/lines'
+import { addDays, appNow, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdInTz, ymdToNoonTs } from '@/lib/format'
+import { lineMoves, type OddsSnap, type X12Line } from '@/lib/lines'
 import { isLive, liveRank } from '@/lib/rank'
 import { dayCounts, goalsPicks, mainMatches, moveExample } from '@/lib/day-summary'
 import { storyCovers } from '@/lib/story-covers'
@@ -80,6 +80,14 @@ async function notesFor(m: Match): Promise<HandNotes | null> {
   return Promise.race([work.catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))])
 }
 
+/** Live-кэфы PARI для строки под табло идущего матча: ждём не дольше 1,2 с; нет всех трёх исходов — без строки. */
+async function liveLineFor(m: Match): Promise<X12Line | null> {
+  if (!isLive(m)) return null
+  const odds = await Promise.race([getLiveOdds(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1200))])
+  if (!odds?.home || !odds.draw || !odds.away) return null
+  return { bookmaker: 'PARI', slug: 'pari', at: appNow(), home: odds.home, draw: odds.draw, away: odds.away }
+}
+
 export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; today: string; sort?: DaySort }) {
   let matches: Match[] = []
   let failed = false
@@ -141,8 +149,8 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         const m = it.match
         // цвета клубов — для мягкой подкраски половин карточки (светлая версия); ждём не дольше 1,5 с, иначе без неё
         const colors = Promise.race([matchColors(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))])
-        const [snap, tint, notes] = await Promise.all([m.status === 'scheduled' ? waitOddsSnap(m) : null, colors, notesFor(m)])
-        return { it, snap, tint: tint ? { home: tint.home, away: tint.away } : null, notes }
+        const [snap, tint, notes, liveOdds] = await Promise.all([m.status === 'scheduled' ? waitOddsSnap(m) : null, colors, notesFor(m), liveLineFor(m)])
+        return { it, snap, tint: tint ? { home: tint.home, away: tint.away } : null, notes, liveOdds }
       }),
     ),
     daySnaps(matches, 1200),
