@@ -63,11 +63,11 @@ const POINTS = [
 export function RightPanel({ teams = [] }: { teams?: FavTeam[] }) {
   const [soon, setSoon] = useState(false)
   return (
-    <div className="relative h-full overflow-hidden rounded-card bg-[linear-gradient(165deg,#7fb21a_0%,#1f9b7a_42%,#1f5f9e_78%,#2b3f8f_100%)] text-white">
+    <div className="signup-panel relative h-full overflow-hidden rounded-card bg-[linear-gradient(165deg,#7fb21a_0%,#1f9b7a_42%,#1f5f9e_78%,#2b3f8f_100%)] text-white">
       {/* свёрнута — полоска: кнопка «развернуть» и значок Telegram */}
       <div className="shell-r-rail h-full flex-col items-center gap-3 py-3">
         <PanelToggle side="r" open={false} />
-        <span className="grid h-10 w-10 place-items-center rounded-full bg-white/20" title="Войти через Telegram">
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-[#2aabee]" title="Войти через Telegram">
           <TgIcon className="h-5 w-5" />
         </span>
       </div>

@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
 export function setShellTint(a?: string | null, b?: string | null) {
   const el = document.querySelector<HTMLElement>('.shell-center')
   if (!el) return
-  const mix = (c: string) => `color-mix(in oklab, ${c} 42%, transparent)`
+  const mix = (c: string) => `color-mix(in oklab, ${c} 30%, transparent)`
   if (a && b) {
     el.style.setProperty('--tint-a', mix(a))
     el.style.setProperty('--tint-b', mix(b))

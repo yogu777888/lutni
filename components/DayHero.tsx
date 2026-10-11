@@ -103,7 +103,7 @@ export function DayHero({ items, ymd }: { items: HeroItem[]; ymd: string }) {
   }
 
   return (
-    <section aria-label="Матч дня" className="relative mt-6 sm:mt-8">
+    <section aria-label="Матч дня" className="relative mx-auto mt-6 max-w-[880px] sm:mt-8">
       {/* ниже xl градиента панели нет — своё свечение цветами клубов за карточкой */}
       {t ? (
         <div

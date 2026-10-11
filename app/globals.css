@@ -674,7 +674,7 @@
 
 /* Каркас, как у Spotify (app/layout.tsx, от xl): центральная панель — графит чуть светлее фона страницы, сверху
    мягко спускается свет цветом содержимого — клубов матча на экране (components/shell/tint.tsx), по умолчанию лайм;
-   слева цвет хозяев, справа гостей. Цвета — @property, поэтому при листании матчей градиент плавно перетекает */
+   слева цвет хозяев, справа гостей — два пятна 560×480px по бокам от середины (за эмблемами «Матча дня»), а не на всю ширину: на широком окне заливка во всю панель выглядела обоями. min() с процентами в размере эллипса Chrome не принимает — весь фон пропадает. Цвета — @property, поэтому при листании матчей градиент плавно перетекает */
 @property --tint-a {
   syntax: '<color>';
   inherits: true;
@@ -689,13 +689,18 @@
   .shell-center {
     border-radius: var(--radius-card);
     background:
-      radial-gradient(70% 560px at 15% 0, var(--tint-a), transparent),
-      radial-gradient(70% 560px at 85% 0, var(--tint-b), transparent),
+      radial-gradient(560px 480px at calc(50% - min(22%, 300px)) 0, var(--tint-a), transparent),
+      radial-gradient(560px 480px at calc(50% + min(22%, 300px)) 0, var(--tint-b), transparent),
       #0e1318;
     transition:
       --tint-a 0.8s ease,
       --tint-b 0.8s ease;
   }
+}
+
+/* свёрнутая панель входа — графитовая полоска, как левая: яркий градиент в узкой полосе спорил с градиентом центра */
+html[data-shell-rc] .signup-panel {
+  background: #151b22;
 }
 
 /* боковые панели каркаса: ширина — переменные (components/shell/shell-state.ts), свёрнутая — полоска */
