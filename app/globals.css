@@ -35,7 +35,7 @@
   --color-tie: #8a94a3;
 
   --font-sans: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Oswald Variable', 'Onest Variable', ui-sans-serif, system-ui, sans-serif;
 
   /* скругления — одна шкала: ctl — кнопки, чипы, поля и мелкие плашки; tile — плашки внутри карточек и меню;
      card — карточки; slab — большие плиты главной. Мелочь графиков (2–6px) — по месту */
@@ -386,33 +386,6 @@
 .drift-d {
   animation: drift-d 24s ease-in-out infinite;
 }
-/* бегущая строка матчей в шапке (components/LiveTicker.tsx): едет по кругу, при наведении и фокусе стоит, края тают;
-   при «уменьшить движение» не едет — её можно прокрутить */
-@keyframes ticker {
-  to {
-    transform: translateX(-50%);
-  }
-}
-.ticker {
-  mask-image: linear-gradient(90deg, transparent, #000 56px, #000 calc(100% - 56px), transparent);
-}
-.ticker-track {
-  animation: ticker 40s linear infinite;
-}
-.ticker:hover .ticker-track,
-.ticker:focus-within .ticker-track {
-  animation-play-state: paused;
-}
-@media (prefers-reduced-motion: reduce) {
-  .ticker {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .ticker-track {
-    animation: none;
-  }
-}
-
 /* эмблемы в табло «Главных матчей» — как желе, которое встряхнули листанием (DaySummary.tsx): сразу отстают
    по ходу движения и наклоняются (--jelly-dir: 1 — вперёд, -1 — назад), подпрыгивают и с отскоком успокаиваются */
 @keyframes jelly {
@@ -678,48 +651,28 @@
   }
 }
 
-/* временно: варианты фирменного шрифта (FONT_VARIANT=a — Unbounded, b — Oswald; app/layout.tsx) */
-html[data-font] :is(h1, h2:not([class*='text-[13px]'])),
-html[data-font] .display-num,
-html[data-font] .wordmark {
-  font-family: var(--font-brand);
+/* Фирменный шрифт — Oswald (узкий, как табло стадиона; выбрал владелец из Unbounded и Oswald): крупные
+   заголовки заглавными (h1, .h2, заголовки секций `Section`), крупный счёт и время на табло, название tag.bet
+   в шапке. Остальной текст и мелкие h2 (подписи, заголовки таблиц) — Onest. */
+:is(h1, .h2),
+.display-num,
+.wordmark {
+  font-family: var(--font-display);
 }
-html[data-font] .wordmark {
-  display: inline;
-  color: var(--color-fg);
-  line-height: 1;
-}
-html[data-font='a'] {
-  --font-brand: 'Unbounded Variable', var(--font-sans);
-}
-html[data-font='a'] :is(h1, h2:not([class*='text-[13px]'])) {
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-html[data-font='a'] .display-num {
-  font-weight: 500;
-  letter-spacing: -0.04em;
-}
-html[data-font='a'] .wordmark {
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-}
-html[data-font='b'] {
-  --font-brand: 'Oswald Variable', var(--font-sans);
-}
-html[data-font='b'] :is(h1, h2:not([class*='text-[13px]'])) {
+:is(h1, .h2) {
   font-weight: 600;
   letter-spacing: 0.005em;
   text-transform: uppercase;
 }
-html[data-font='b'] .display-num {
+.display-num {
   font-weight: 500;
   letter-spacing: 0;
 }
-html[data-font='b'] .wordmark {
+.wordmark {
+  color: var(--color-fg);
   font-size: 21px;
   font-weight: 600;
+  line-height: 1;
   letter-spacing: 0.01em;
   text-transform: uppercase;
 }

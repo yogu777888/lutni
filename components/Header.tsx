@@ -4,14 +4,13 @@ import { goHref } from '@/lib/affiliate'
 import { CtaLink } from './CtaLink'
 import { HeaderShell } from './HeaderShell'
 import { LogoMark } from './Logo'
-import { LiveTicker } from './LiveTicker'
 import { NavLinks } from './NavLinks'
 import { Search } from './Search'
 
 /**
- * Шапка одной спокойной строкой, без плашек и рамок: логотип и меню текстом, тонкая черта, бегущая строка матчей
- * (идущие со счётом и минутой; нет идущих — ближайшие) без своего фона, справа 18+ и «Бонус». Три «острова»
- * в рамках, как у reg.ru, владелец счёл уродливыми. Ниже lg меню — тем же текстом во втором ряду.
+ * Шапка одной спокойной строкой: знак с названием tag.bet и меню текстом слева, справа поиск, 18+ и «Бонус».
+ * Бегущую строку матчей убрали — шапка была перегружена, а идущие матчи и так видны в «В игре» и «Главных матчах».
+ * Ниже lg меню — тем же текстом во втором ряду.
  */
 export function Header() {
   const partner = primaryPartner()
@@ -21,14 +20,11 @@ export function Header() {
         <Link href="/" aria-label="tag.bet — на главную" className="shrink-0 text-fg transition-opacity hover:opacity-80">
           <span className="flex items-center gap-2">
             <LogoMark size={26} />
-            <span className="wordmark hidden">tag.bet</span>
+            <span className="wordmark">tag.bet</span>
           </span>
         </Link>
         <NavLinks className="hidden shrink-0 lg:flex" />
-        <span aria-hidden className="hidden h-5 w-px shrink-0 bg-edge-2 lg:block" />
-        {/* на телефоне строки нет: зажатая между логотипом и «Бонусом», она показывала обрывки; идущие матчи — в истории «В игре» */}
-        <LiveTicker className="hidden h-9 min-w-0 flex-1 sm:flex" />
-        <span className="flex-1 sm:hidden" />
+        <span className="flex-1" />
         <div className="flex shrink-0 items-center gap-3">
           <Search />
           <span className="rounded-[4px] border-[1.5px] border-dim/70 px-1 text-[11px] font-bold leading-[16px] text-dim" title="Только для совершеннолетних">
