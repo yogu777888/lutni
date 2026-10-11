@@ -15,16 +15,28 @@ export function MatchCardBody({
   sub,
   dim = false,
   badge,
+  tint,
 }: {
   m: Match
   sub: string
   dim?: boolean
   /** главная цифра истории в углу обложки («−17%», «62%»); hot — янтарём (кэф упал) */
   badge?: { text: string; hot?: boolean } | null
+  /** цвета клубов — карточка мягко окрашена, как у Spotify под цвет обложки: хозяева сверху слева, гости справа */
+  tint?: { home: string; away: string } | null
 }) {
   const played = Boolean(m.score) && (live(m) || m.status === 'finished')
   return (
     <>
+      {tint ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `linear-gradient(135deg, color-mix(in oklab, ${tint.home} 30%, transparent), transparent 55%), linear-gradient(315deg, color-mix(in oklab, ${tint.away} 30%, transparent), transparent 55%)`,
+          }}
+        />
+      ) : null}
       <span className={`relative grid h-[132px] grid-cols-[1fr_auto_1fr] items-center rounded-tile bg-white/[0.04] px-3 ${dim ? 'opacity-60' : ''}`}>
         {badge ? (
           <span className={`num absolute left-2 top-2 rounded-ctl px-2 py-0.5 text-[12.5px] font-semibold ${badge.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.08] text-fg'}`}>
@@ -53,7 +65,7 @@ export function MatchCardBody({
           )}
         </span>
       </span>
-      <span className="min-w-0 px-2 pb-1">
+      <span className="relative min-w-0 px-2 pb-1">
         <span className="block truncate text-[16px] font-semibold">
           {m.home.name} <span className="font-normal text-mute">—</span> {m.away.name}
         </span>

@@ -23,6 +23,7 @@ export function StoryShelves({
   matches,
   more,
   stats = {},
+  tints = {},
 }: {
   /** все истории по порядку — для очереди просмотра */
   groups: StoryGroup[]
@@ -34,6 +35,8 @@ export function StoryShelves({
   more: Record<string, string | undefined>
   /** главная цифра матча в истории (`statFor`) по ключу «история:матч» — метка в углу обложки */
   stats?: Record<string, string>
+  /** цвета клубов матчей — окраска карточек */
+  tints?: Record<number, { home: string; away: string }>
 }) {
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
   useEffect(() => {
@@ -84,6 +87,7 @@ export function StoryShelves({
                     m={m}
                     sub={m.league.name}
                     dim={seen.has(seenKey(g.key, it.id))}
+                    tint={tints[it.id]}
                     badge={stats[`${g.key}:${it.id}`] ? { text: stats[`${g.key}:${it.id}`], hot: g.key === 'progruz' } : null}
                   />
                 </a>

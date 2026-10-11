@@ -248,6 +248,28 @@ export async function DayView({
       if (g.key === 'live' || g.key === 'top' || !/\d/.test(st)) continue
       shelfStats[`${g.key}:${x.id}`] = g.key === 'kadry' ? `без ${st.replace(/\D/g, '')} игроков` : (BADGE_WORD[g.key] ?? '') + st
     }
+  // «Скоро начнутся» — без матчей из «Главных», «В игре» и «Топ дня»
+  const soon =
+    view === 'home' && !past
+      ? soonMatches(items, new Set([...mains.map((x) => x.it.match.id), ...shelfGroups.filter((g) => g.key === 'top' || g.key === 'live').flatMap((g) => g.items.slice(0, 12).map((x) => x.id))]))
+      : []
+  // окраска карточек на полках цветами клубов, как у Spotify под цвет обложки: ждём не дольше 1 с, не успели — карточка
+  // без окраски (цвета эмблем кэшируются на месяц — со второго открытия будут)
+  const cardTints: Record<number, { home: string; away: string }> = {}
+  if (view === 'home') {
+    const cards = [...Object.values(shelfMatches), ...soon.map((x) => x.match)]
+    // кто успел за 1 с — с окраской; один медленный матч не оставляет серыми остальные
+    const all = Promise.all(
+      cards.map((m) =>
+        matchColors(m)
+          .then((c) => {
+            if (c) cardTints[m.id] = { home: c.home, away: c.away }
+          })
+          .catch(() => {}),
+      ),
+    )
+    await Promise.race([all, new Promise((r) => setTimeout(r, 1000))])
+  }
   const picks = {
     ymd,
     listHref: list,
@@ -296,10 +318,10 @@ export async function DayView({
 
       {/* истории — полками, как «Скоро начнутся»: «В игре», «Топ дня», потом «Скоро начнутся» и «Выгодно сегодня»,
           потом остальные истории (у «Выгодно» своя полка с кэфами — история-дубль не нужна) */}
-      <StoryShelves groups={shelfGroups} show={['live', 'top']} matches={shelfMatches} more={shelfMore} stats={shelfStats} />
-      {past ? null : <SoonShelf items={soonMatches(items, new Set([...mains.map((x) => x.it.match.id), ...shelfGroups.filter((g) => g.key === 'top' || g.key === 'live').flatMap((g) => g.items.slice(0, 12).map((x) => x.id))]))} allHref={`${list}?sort=time`} />}
+      <StoryShelves groups={shelfGroups} show={['live', 'top']} matches={shelfMatches} more={shelfMore} stats={shelfStats} tints={cardTints} />
+      {past ? null : <SoonShelf items={soon} allHref={`${list}?sort=time`} tints={cardTints} />}
       <ValueBoard items={values} />
-      <StoryShelves groups={shelfGroups} show={shelfGroups.map((g) => g.key).filter((k) => k !== 'live' && k !== 'top')} matches={shelfMatches} more={shelfMore} stats={shelfStats} />
+      <StoryShelves groups={shelfGroups} show={shelfGroups.map((g) => g.key).filter((k) => k !== 'live' && k !== 'top')} matches={shelfMatches} more={shelfMore} stats={shelfStats} tints={cardTints} />
 
         </>
       ) : null}

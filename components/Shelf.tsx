@@ -45,4 +45,4 @@ export function Shelf({
 }
 
 /** Карточка на полке: одна ширина у всех полок, графит на тон светлее страницы. */
-export const SHELF_CARD = 'card flex w-[82%] shrink-0 snap-start flex-col p-5 sm:w-[300px]'
+export const SHELF_CARD = 'card relative flex w-[82%] shrink-0 snap-start flex-col overflow-hidden p-5 sm:w-[300px]'
