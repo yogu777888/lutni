@@ -1,162 +1,72 @@
 'use client'
 
-import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { PanelToggle } from './PanelToggle'
 
-export type PanelOption = { key: string; label: string }
-type Day = { ymd: string; label: string }
+/** Значок Telegram (бумажный самолётик) — одним цветом. */
+function TgIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M21.4 4.3 2.9 11.5c-1.3.5-1.3 1.2-.2 1.6l4.7 1.5 1.8 5.6c.2.6.1.8.8.8.5 0 .7-.2 1-.5l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.7c.3-1.3-.5-1.9-1.4-1.5ZM8.9 14.2l9.4-5.9c.4-.3.9-.1.5.2l-8 7.3-.3 3.3-1.6-4.9Z" />
+    </svg>
+  )
+}
 
-const STATUS: PanelOption[] = [
-  { key: '', label: 'Все' },
-  { key: 'live', label: 'В игре' },
-  { key: 'ahead', label: 'Впереди' },
-  { key: 'done', label: 'Сыграны' },
+const POINTS = [
+  'Ваши команды — на всех устройствах',
+  'Напоминания о матчах в Telegram',
+  'Сигнал, когда падает кэф',
 ]
 
-/** Чип выбора: выбранный — светлый, остальные — тихие. */
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={on}
-      onClick={onClick}
-      className={`h-8 rounded-ctl px-3 text-[13px] font-medium transition-colors ${on ? 'bg-white text-ink' : 'bg-white/[0.06] text-dim hover:bg-white/[0.1] hover:text-fg'}`}
-    >
-      {children}
-    </button>
-  )
-}
-
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <fieldset className="mt-5 first:mt-3">
-      <legend className="mb-2 text-[12px] font-medium text-mute">{title}</legend>
-      <div className="flex flex-wrap gap-1.5">{children}</div>
-    </fieldset>
-  )
-}
-
 /**
- * Правая панель каркаса (от xl) — служебная: «Своя подборка». День, что показывать (в игре / впереди / сыграны),
- * турниры, теги и порядок — кнопка «Показать матчи» открывает страницу «Матчи» с этим фильтром в адресе
- * (lib/list-filter.ts). На странице «Матчи» панель подхватывает текущий фильтр из адреса.
+ * Правая панель каркаса (от xl) — вход на сайт, как «Зарегистрируйся» у Spotify: вся панель — яркий градиент,
+ * крупный заголовок, три пользы и белая кнопка «Войти через Telegram». Входа пока нет (бэкенд — следующим шагом):
+ * кнопка только говорит «Скоро». Свёрнута — полоска со значком Telegram.
  */
-export function RightPanel({ days, leagues, tags, promo }: { days: Day[]; leagues: PanelOption[]; tags: PanelOption[]; promo?: React.ReactNode }) {
-  const router = useRouter()
-  const path = usePathname()
-  const today = days.find((d) => d.label === 'Сегодня')?.ymd ?? days[0].ymd
-  const [day, setDay] = useState(today)
-  const [st, setSt] = useState('')
-  const [lg, setLg] = useState<string[]>([])
-  const [tg, setTg] = useState<string[]>([])
-  const [sort, setSort] = useState<'league' | 'time'>('league')
-
-  // на странице «Матчи» — подхватить фильтр из адреса
-  useEffect(() => {
-    if (!path.startsWith('/matches')) return
-    const q = new URLSearchParams(window.location.search)
-    const m = /^\/matches\/(\d{4}-\d{2}-\d{2})\/all/.exec(path)
-    setDay(m ? m[1] : today)
-    setSt(q.get('st') ?? '')
-    setLg((q.get('lg') ?? '').split(',').filter(Boolean))
-    setTg((q.get('tag') ?? '').split(',').filter(Boolean))
-    setSort(q.get('sort') === 'time' ? 'time' : 'league')
-  }, [path, today])
-
-  const flip = (list: string[], set: (v: string[]) => void, k: string) => set(list.includes(k) ? list.filter((x) => x !== k) : [...list, k])
-  const touched = Boolean(st || lg.length || tg.length || sort !== 'league' || day !== today)
-
-  const show = () => {
-    const q = new URLSearchParams()
-    if (sort === 'time') q.set('sort', 'time')
-    if (st) q.set('st', st)
-    if (lg.length) q.set('lg', lg.join(','))
-    if (tg.length) q.set('tag', tg.join(','))
-    const qs = q.toString().replace(/%2C/g, ',')
-    router.push(`${day === today ? '/matches' : `/matches/${day}/all`}${qs ? `?${qs}` : ''}`)
-  }
-  const reset = () => {
-    setDay(today)
-    setSt('')
-    setLg([])
-    setTg([])
-    setSort('league')
-  }
-
+export function RightPanel() {
+  const [soon, setSoon] = useState(false)
   return (
-    <div className="h-full rounded-card bg-panel">
-      {/* свёрнута — полоска: кнопка «развернуть» и значок фильтра (лаймовая точка — подборка настроена) */}
-      <div className="shell-r-rail h-full flex-col items-center gap-2 py-3">
+    <div className="relative h-full overflow-hidden rounded-card bg-[linear-gradient(165deg,#7fb21a_0%,#1f9b7a_42%,#1f5f9e_78%,#2b3f8f_100%)] text-white">
+      {/* свёрнута — полоска: кнопка «развернуть» и значок Telegram */}
+      <div className="shell-r-rail h-full flex-col items-center gap-3 py-3">
         <PanelToggle side="r" open={false} />
-        <span className="relative grid h-10 w-10 place-items-center rounded-full bg-white/[0.06] text-dim" title="Своя подборка">
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
-            <path d="M4 6h16M7 12h10M10 18h4" />
-          </svg>
-          {touched ? <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-acid ring-2 ring-panel" /> : null}
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-white/20" title="Войти через Telegram">
+          <TgIcon className="h-5 w-5" />
         </span>
       </div>
-      <div className="shell-r-full flex h-full flex-col overflow-hidden">
-        <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto p-4">
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold">
-            <PanelToggle side="r" open />
-            Своя подборка
-            {touched ? (
-              <button type="button" onClick={reset} className="ml-auto text-[12.5px] font-medium text-dim hover:text-fg">
-                Сбросить
-              </button>
-            ) : null}
-          </h2>
-          <p className="mt-1 text-[12.5px] leading-snug text-mute">Соберите список матчей под себя</p>
 
-          <Group title="День">
-            {days.map((d) => (
-              <Chip key={d.ymd} on={day === d.ymd} onClick={() => setDay(d.ymd)}>
-                {d.label}
-              </Chip>
-            ))}
-          </Group>
-          <Group title="Матчи">
-            {STATUS.map((s) => (
-              <Chip key={s.key || 'all'} on={st === s.key} onClick={() => setSt(s.key)}>
-                {s.label}
-              </Chip>
-            ))}
-          </Group>
-          <Group title="Турниры">
-            {leagues.map((l) => (
-              <Chip key={l.key} on={lg.includes(l.key)} onClick={() => flip(lg, setLg, l.key)}>
-                {l.label}
-              </Chip>
-            ))}
-          </Group>
-          <Group title="Теги">
-            {tags.map((t) => (
-              <Chip key={t.key} on={tg.includes(t.key)} onClick={() => flip(tg, setTg, t.key)}>
-                {t.label}
-              </Chip>
-            ))}
-          </Group>
-          <Group title="Порядок">
-            <Chip on={sort === 'league'} onClick={() => setSort('league')}>
-              По турнирам
-            </Chip>
-            <Chip on={sort === 'time'} onClick={() => setSort('time')}>
-              По времени
-            </Chip>
-          </Group>
+      <div className="shell-r-full scrollbar-none flex h-full flex-col overflow-y-auto p-5">
+        <div className="-ml-2 -mt-1 [&_button]:text-white/80 [&_button:hover]:bg-white/15 [&_button:hover]:text-white">
+          <PanelToggle side="r" open />
         </div>
-        {/* кнопка — внизу панели, вне прокрутки: всегда под рукой и ничего не закрывает */}
-        <div className="space-y-3 border-t border-edge p-4">
+        <div className="mt-auto">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-white/75">tag.bet для своих</p>
+          <h2 className="mt-2 font-[family-name:var(--font-display)] text-[34px] font-semibold uppercase leading-[1.02]">
+            Следи за своими командами
+          </h2>
+          <ul className="mt-5 space-y-2.5">
+            {POINTS.map((p) => (
+              <li key={p} className="flex items-start gap-2.5 text-[14.5px] leading-snug">
+                <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="m5 12.5 4.5 4.5L19 7.5" />
+                </svg>
+                {p}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="mt-8">
           <button
             type="button"
-            onClick={show}
-            className="h-11 w-full rounded-ctl bg-white text-[15px] font-semibold text-ink transition-colors hover:bg-white/85"
+            onClick={() => setSoon(true)}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-[15px] font-semibold text-[#0b0f14] transition-transform hover:scale-[1.02] active:scale-[0.98]"
           >
-            Показать матчи
+            <TgIcon className="h-5 w-5 text-[#229ed9]" />
+            Войти через Telegram
           </button>
-          {/* яркий виджет, как у Spotify «Зарегистрируйся» — бонус букмекера (реклама) */}
-          {promo}
+          <p className="mt-2.5 text-center text-[12.5px] text-white/75" aria-live="polite">
+            {soon ? 'Скоро — уже делаем вход' : 'Бесплатно, без пароля и почты'}
+          </p>
         </div>
       </div>
     </div>

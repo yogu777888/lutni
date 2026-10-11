@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { countryRank, featuredRank } from '@/config/leagues'
+import { countryRank, FEATURED_LEAGUES, featuredRank } from '@/config/leagues'
 import { daySnaps, getLiveOdds, getMatchesByDate, getStandings, getTeamGames, peekOddsSnap, tagsFor, waitOddsSnap, type FeedItem } from '@/lib/data'
 import { dayHref, listHref } from '@/lib/links'
 import { applyListFilter, filterQuery, isEmptyFilter, type ListFilter } from '@/lib/list-filter'
@@ -22,6 +22,8 @@ import { Sidebar } from './Sidebar'
 import { StoryShelves } from './story/StoryShelves'
 import { ValueBoard } from './ValueBoard'
 import { SoonShelf } from './SoonShelf'
+import { MatchFilter } from './MatchFilter'
+import { TAGS } from '@/lib/tags'
 
 const OTHER_LIMIT = 160
 /** В списке «по времени» — не больше стольких матчей: сначала топ-лиги, потом остальные с линией. */
@@ -328,6 +330,15 @@ export async function DayView({
             </p>
           ) : null}
         </section>
+      ) : null}
+      {view === 'list' ? (
+        // «Своя подборка» — что показывать, турниры, теги и порядок (раньше была в правой панели каркаса)
+        <MatchFilter
+          day={ymd}
+          today={today}
+          leagues={FEATURED_LEAGUES.slice(0, 8).map((l) => ({ key: String(l.id), label: l.short }))}
+          tags={TAGS.map((t) => ({ key: t.slug, label: t.label.replace(/^#/, '') }))}
+        />
       ) : null}
       {showList ? (
       <section

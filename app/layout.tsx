@@ -9,12 +9,10 @@ import { Metrika } from '@/components/Metrika'
 import { LeftPanel } from '@/components/shell/LeftPanel'
 import { RightPanel } from '@/components/shell/RightPanel'
 import { ShellFrame } from '@/components/shell/ShellFrame'
-import { PromoCard } from '@/components/shell/PromoCard'
 import { ResizeHandle } from '@/components/shell/ResizeHandle'
 import { SHELL_SCRIPT } from '@/components/shell/shell-state'
-import { FEATURED_LEAGUES, featuredRank } from '@/config/leagues'
-import { addDays, todayYmd } from '@/lib/format'
-import { TAGS } from '@/lib/tags'
+import { featuredRank } from '@/config/leagues'
+import { todayYmd } from '@/lib/format'
 import { getMatchesByDate } from '@/lib/data'
 import { isMinor } from '@/lib/rank'
 import type { FavTeam } from '@/components/favorites'
@@ -83,7 +81,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Header />
         <ShellFrame />
         {/* каркас, как у Spotify (от xl): слева «Мои команды» и турниры, в центре — серая панель страницы с градиентом
-            сверху, справа служебная «Своя подборка» (фильтр страницы «Матчи») — по одной панели на всю высоту; уже — обычная страница во всю ширину */}
+            сверху, справа — вход на сайт (виджет, как у Spotify «Зарегистрируйся») — по одной панели на всю высоту; уже — обычная страница во всю ширину */}
         <div className="xl:grid xl:grid-cols-[var(--shell-l)_minmax(0,1fr)_var(--shell-r)] xl:gap-2 xl:px-2 xl:pb-2 xl:pt-2">
           <aside aria-label="Мои команды и турниры" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
@@ -95,19 +93,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6">{children}</main>
             <Footer />
           </div>
-          <aside aria-label="Своя подборка" className="hidden xl:block">
+          <aside aria-label="Вход на сайт" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
               <ResizeHandle side="r" />
-              <RightPanel
-                days={[
-                  { ymd: addDays(todayYmd(), -1), label: 'Вчера' },
-                  { ymd: todayYmd(), label: 'Сегодня' },
-                  { ymd: addDays(todayYmd(), 1), label: 'Завтра' },
-                ]}
-                leagues={FEATURED_LEAGUES.slice(0, 8).map((l) => ({ key: String(l.id), label: l.short }))}
-                tags={TAGS.map((t) => ({ key: t.slug, label: t.label.replace(/^#/, '') }))}
-                promo={<PromoCard />}
-              />
+              <RightPanel />
             </div>
           </aside>
         </div>
