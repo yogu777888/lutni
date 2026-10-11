@@ -325,14 +325,11 @@ export function DaySummary({
   mains,
   days,
   picks,
-  stories,
   className = '',
 }: {
   mains: MainItem[]
   days: DayLink[]
   picks: DayPicks
-  /** истории дня карточками — вместо подборок под «Главными матчами» (подборки тогда — `PicksRow` ниже) */
-  stories?: React.ReactNode
   className?: string
 }) {
   if (!mains.length) return null
@@ -347,19 +344,10 @@ export function DaySummary({
       />
       {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг; к ряду ближе, чем к блоку сверху */}
       <h2 className="mb-2.5 mt-4 text-[13px] font-medium text-mute lg:mb-[clamp(6px,1.2vh,10px)] lg:mt-[clamp(8px,1.8vh,16px)]">
-        {stories ? 'Истории дня' : 'Подборки'}
+        Подборки
       </h2>
-      {stories ?? <IconPicks p={picks} />}
-    </section>
-  )
-}
-
-/** «Подборки» под первым экраном — когда их место внизу первого экрана заняли истории. */
-export function PicksRow({ picks }: { picks: DayPicks }) {
-  return (
-    <section aria-label="Подборки" className="mt-10 sm:mt-12">
-      <h2 className="mb-2.5 text-[13px] font-medium text-mute">Подборки</h2>
       <IconPicks p={picks} />
     </section>
   )
 }
+

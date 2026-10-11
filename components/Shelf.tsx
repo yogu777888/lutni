@@ -7,12 +7,15 @@ import Link from 'next/link'
  */
 export function Shelf({
   title,
+  icon,
   more,
   note,
   id,
   children,
 }: {
   title: React.ReactNode
+  /** знак слева от заголовка (полки историй — тот же кружок, что был у истории) */
+  icon?: React.ReactNode
   /** «Показать все» — ссылка на полный список */
   more?: { href: string; label?: string }
   /** тихая строка под рядом: оговорки, «реклама · 18+» */
@@ -23,7 +26,10 @@ export function Shelf({
   return (
     <section id={id} className="mt-12 scroll-mt-24 sm:mt-14">
       <div className="flex items-end justify-between gap-4">
-        <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{title}</h2>
+        <h2 className="h2 flex items-center gap-3 text-[24px] leading-none sm:text-[28px]">
+          {icon}
+          {title}
+        </h2>
         {more ? (
           <Link href={more.href} prefetch={false} className="shrink-0 pb-0.5 text-[14px] font-semibold text-dim transition-colors hover:text-fg">
             {more.label ?? 'Показать все'}

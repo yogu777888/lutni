@@ -6,7 +6,6 @@ import { addDays, appNow, diffDays, formatDayMonth, formatWeekdayLong, pluralN, 
 import { lineMoves, type OddsSnap, type X12Line } from '@/lib/lines'
 import { isLive, liveRank } from '@/lib/rank'
 import { dayCounts, goalsPicks, mainMatches, moveExample, soonMatches } from '@/lib/day-summary'
-import { storyCovers } from '@/lib/story-covers'
 import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import { matchColors } from '@/lib/team-colors'
 import { handNotes, type HandNotes } from '@/lib/hand-notes'
@@ -15,11 +14,11 @@ import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { LiveRefresh } from './Live'
 import { FavMatches } from './FavMatches'
-import { DaySummary, PicksRow, type MainItem } from './DaySummary'
+import { DaySummary, type MainItem } from './DaySummary'
 import type { DayLink } from './TopCarousel'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
-import { StoryCircles } from './story/StoryCircles'
+import { StoryShelves } from './story/StoryShelves'
 import { ValueBoard } from './ValueBoard'
 import { SoonShelf } from './SoonShelf'
 
@@ -193,6 +192,15 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
     : []
   const base = dayHref(ymd, today)
 
+  // полки историй: без «Выгодно» (у него своя полка с кэфами), по 12 матчей; «Показать все» — страница тега, у «В игре» — список
+  const shelfGroups = storyGroups.filter((g) => g.key !== 'value')
+  const byId = new Map(items.map((it) => [it.match.id, it.match]))
+  const shelfMatches = Object.fromEntries(
+    shelfGroups.flatMap((g) => g.items.slice(0, 12).map((x) => [x.id, byId.get(x.id)])).filter((e) => e[1]),
+  ) as Record<number, (typeof items)[number]['match']>
+  const shelfMore = Object.fromEntries(
+    shelfGroups.map((g) => [g.key, g.key === 'live' ? `${base}#matches` : g.key === 'top' ? undefined : `/tag/${g.key}`]),
+  )
   const picks = {
     ymd,
     dayHref: base,
@@ -232,16 +240,17 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
             mains={mains}
             days={dayLinks}
             picks={picks}
-            // истории — карточками внизу первого экрана, на месте подборок (кружки сверху съедали место у табло)
-            stories={storyGroups.length ? <StoryCircles groups={storyGroups} covers={storyCovers()} layout="cards" /> : undefined}
             className="mt-5 lg:mt-[clamp(10px,2.4vh,20px)] lg:flex-1"
           />
         ) : null}
       </div>
 
-      {hasSummary && storyGroups.length ? <PicksRow picks={picks} /> : null}
-      {past ? null : <SoonShelf items={soonMatches(items, new Set(mains.map((x) => x.it.match.id)))} allHref={`${base}?sort=time#matches`} />}
+      {/* истории — полками, как «Скоро начнутся»: «В игре», «Топ дня», потом «Скоро начнутся» и «Выгодно сегодня»,
+          потом остальные истории (у «Выгодно» своя полка с кэфами — история-дубль не нужна) */}
+      <StoryShelves groups={shelfGroups} show={['live', 'top']} matches={shelfMatches} more={shelfMore} />
+      {past ? null : <SoonShelf items={soonMatches(items, new Set([...mains.map((x) => x.it.match.id), ...shelfGroups.filter((g) => g.key === 'top' || g.key === 'live').flatMap((g) => g.items.slice(0, 12).map((x) => x.id))]))} allHref={`${base}?sort=time#matches`} />}
       <ValueBoard items={values} />
+      <StoryShelves groups={shelfGroups} show={shelfGroups.map((g) => g.key).filter((k) => k !== 'live' && k !== 'top')} matches={shelfMatches} more={shelfMore} />
 
       {/* без сводки (в этот день нет ни одного «взрослого» матча) список идёт сразу под заголовком страницы — второй заголовок не нужен */}
       {/* светлая плита (ритм страницы плитами, как у reg.ru): класс bg-panel даёт внутри токены светлой поверхности
