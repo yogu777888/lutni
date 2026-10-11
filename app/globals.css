@@ -715,3 +715,10 @@ html[data-shell-lc] .shell-l-rail,
 html[data-shell-rc] .shell-r-rail {
   display: flex;
 }
+
+/* мягкое появление (окраска карточек, догруженная после открытия страницы) */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}

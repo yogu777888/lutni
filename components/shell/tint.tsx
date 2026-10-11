@@ -63,3 +63,57 @@ export function ShellTint({ id, ymd, home, away }: { id?: number; ymd?: string; 
   useEffect(() => () => setShellTint(null, null), [])
   return null
 }
+
+/**
+ * Цвета для карточек на полках: если страница их не дождалась, карточки без цвета собираются в одну очередь
+ * (50 мс) и спрашивают /api/tint?ids=… одним запросом на день.
+ */
+const queue = new Map<string, { ids: Set<number>; waiters: ((t: Record<number, Tint>) => void)[] }>()
+function askBatch(ymd: string, id: number): Promise<Record<number, Tint>> {
+  let q = queue.get(ymd)
+  if (!q) {
+    q = { ids: new Set(), waiters: [] }
+    queue.set(ymd, q)
+    setTimeout(() => {
+      const cur = queue.get(ymd)!
+      queue.delete(ymd)
+      fetch(`/api/tint?d=${ymd}&ids=${[...cur.ids].join(',')}`)
+        .then((r) => r.json())
+        .then((d: { tints?: Record<number, Tint> }) => cur.waiters.forEach((w) => w(d.tints ?? {})))
+        .catch(() => cur.waiters.forEach((w) => w({})))
+    }, 50)
+  }
+  q.ids.add(id)
+  return new Promise((res) => q!.waiters.push(res))
+}
+
+export function useCardTint(id: number, ymd: string, initial?: Tint | null): Tint | null {
+  const [late, setLate] = useState<Tint | null>(() => loaded.get(id) ?? null)
+  useEffect(() => {
+    if (initial || loaded.has(id)) return
+    let stop = false
+    askBatch(ymd, id).then((t) => {
+      if (t[id]) loaded.set(id, t[id])
+      if (!stop && t[id]) setLate(t[id])
+    })
+    return () => {
+      stop = true
+    }
+  }, [id, ymd, initial])
+  return initial ?? late
+}
+
+/** Окраска карточки цветами клубов (хозяева — сверху слева, гости — снизу справа). */
+export function CardTint({ id, ymd, initial }: { id: number; ymd: string; initial?: Tint | null }) {
+  const t = useCardTint(id, ymd, initial)
+  if (!t) return null
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute inset-0 animate-[fade-in_0.6s_ease]"
+      style={{
+        background: `linear-gradient(135deg, color-mix(in oklab, ${t.home} 30%, transparent), transparent 55%), linear-gradient(315deg, color-mix(in oklab, ${t.away} 30%, transparent), transparent 55%)`,
+      }}
+    />
+  )
+}

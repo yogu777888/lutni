@@ -1,7 +1,8 @@
-import { formatTime } from '@/lib/format'
+import { formatTime, ymdInTz } from '@/lib/format'
 import type { Match } from '@/lib/types'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
+import { CardTint } from './shell/tint'
 
 const live = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
@@ -22,22 +23,15 @@ export function MatchCardBody({
   dim?: boolean
   /** главная цифра истории в углу обложки («−17%», «62%»); hot — янтарём (кэф упал) */
   badge?: { text: string; hot?: boolean } | null
-  /** цвета клубов — карточка мягко окрашена, как у Spotify под цвет обложки: хозяева сверху слева, гости справа */
+  /** цвета клубов — карточка мягко окрашена, как у Spotify под цвет обложки (хозяева сверху слева, гости справа);
+      обложка с эмблемами — непрозрачная, не окрашивается; не успели с сервера — догружаются (CardTint) */
   tint?: { home: string; away: string } | null
 }) {
   const played = Boolean(m.score) && (live(m) || m.status === 'finished')
   return (
     <>
-      {tint ? (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background: `linear-gradient(135deg, color-mix(in oklab, ${tint.home} 30%, transparent), transparent 55%), linear-gradient(315deg, color-mix(in oklab, ${tint.away} 30%, transparent), transparent 55%)`,
-          }}
-        />
-      ) : null}
-      <span className={`relative grid h-[132px] grid-cols-[1fr_auto_1fr] items-center rounded-tile bg-white/[0.04] px-3 ${dim ? 'opacity-60' : ''}`}>
+      <CardTint id={m.id} ymd={ymdInTz(m.ts)} initial={tint} />
+      <span className={`relative grid h-[132px] grid-cols-[1fr_auto_1fr] items-center rounded-tile bg-panel-3 px-3 ${dim ? 'opacity-60' : ''}`}>
         {badge ? (
           <span className={`num absolute left-2 top-2 rounded-ctl px-2 py-0.5 text-[12.5px] font-semibold ${badge.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.08] text-fg'}`}>
             {badge.text}
