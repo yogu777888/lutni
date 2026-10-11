@@ -103,7 +103,7 @@ export function useCardTint(id: number, ymd: string, initial?: Tint | null): Tin
   return initial ?? late
 }
 
-/** Окраска карточки цветами клубов (хозяева — сверху слева, гости — снизу справа). */
+/** Окраска обложки карточки цветами клубов: свечение хозяев слева, гостей справа, к центру сходит на нет. */
 export function CardTint({ id, ymd, initial }: { id: number; ymd: string; initial?: Tint | null }) {
   const t = useCardTint(id, ymd, initial)
   if (!t) return null
@@ -112,7 +112,7 @@ export function CardTint({ id, ymd, initial }: { id: number; ymd: string; initia
       aria-hidden
       className="pointer-events-none absolute inset-0 animate-[fade-in_0.6s_ease]"
       style={{
-        background: `linear-gradient(135deg, color-mix(in oklab, ${t.home} 30%, transparent), transparent 55%), linear-gradient(315deg, color-mix(in oklab, ${t.away} 30%, transparent), transparent 55%)`,
+        background: `radial-gradient(75% 130% at 0% 50%, color-mix(in oklab, ${t.home} 55%, transparent), transparent 72%), radial-gradient(75% 130% at 100% 50%, color-mix(in oklab, ${t.away} 55%, transparent), transparent 72%)`,
       }}
     />
   )

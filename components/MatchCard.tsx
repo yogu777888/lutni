@@ -23,29 +23,30 @@ export function MatchCardBody({
   dim?: boolean
   /** главная цифра истории в углу обложки («−17%», «62%»); hot — янтарём (кэф упал) */
   badge?: { text: string; hot?: boolean } | null
-  /** цвета клубов — карточка мягко окрашена, как у Spotify под цвет обложки (хозяева сверху слева, гости справа);
-      обложка с эмблемами — непрозрачная, не окрашивается; не успели с сервера — догружаются (CardTint) */
+  /** цвета клубов — обложка с эмблемами окрашена, как обложка альбома у Spotify (хозяева слева, гости справа),
+      сама карточка — графит; не успели с сервера — догружаются (CardTint) */
   tint?: { home: string; away: string } | null
 }) {
   const played = Boolean(m.score) && (live(m) || m.status === 'finished')
   return (
     <>
-      <CardTint id={m.id} ymd={ymdInTz(m.ts)} initial={tint} />
-      <span className={`relative grid h-[132px] grid-cols-[1fr_auto_1fr] items-center rounded-tile bg-panel-3 px-3 ${dim ? 'opacity-60' : ''}`}>
+      <span className={`relative grid h-[132px] grid-cols-[1fr_auto_1fr] items-center overflow-hidden rounded-tile bg-panel-3 px-3 ${dim ? 'opacity-60' : ''}`}>
+        {/* обложка в цветах клубов, как обложка альбома у Spotify: хозяева светят слева, гости справа */}
+        <CardTint id={m.id} ymd={ymdInTz(m.ts)} initial={tint} />
         {badge ? (
           <span className={`num absolute left-2 top-2 rounded-ctl px-2 py-0.5 text-[12.5px] font-semibold ${badge.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.08] text-fg'}`}>
             {badge.text}
           </span>
         ) : null}
         {[m.home, m.away].map((t, i) => (
-          <span key={t.id} className={`grid place-items-center transition-transform duration-300 group-hover:scale-105 ${i ? 'order-3' : ''}`}>
+          <span key={t.id} className={`relative grid place-items-center transition-transform duration-300 group-hover:scale-105 ${i ? 'order-3' : ''}`}>
             <TeamLogo name={t.name} src={t.logo} size={64} />
           </span>
         ))}
-        <span className="order-2 flex flex-col items-center gap-1.5">
+        <span className="relative order-2 flex flex-col items-center gap-1.5">
           {played ? (
             <>
-              <span className={`num display-num whitespace-nowrap text-[28px] leading-none ${live(m) ? 'text-live' : ''}`}>
+              <span className="num display-num whitespace-nowrap text-[28px] leading-none text-white drop-shadow-[0_1px_2px_rgb(0_0_0/0.5)]">
                 <Tick v={m.score!.home} />
                 <span className="mx-1 text-mute">:</span>
                 <Tick v={m.score!.away} />
