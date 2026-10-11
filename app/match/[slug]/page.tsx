@@ -25,6 +25,8 @@ import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
 import { getMatchInsights, getMatchesByDate, getPariHistory, settle } from '@/lib/data'
 import { LineChart } from '@/components/match/LineChart'
+import { matchColors } from '@/lib/team-colors'
+import { handNotes } from '@/lib/hand-notes'
 import { appNow, formatDateShort, formatTime, idFromSlug, pct, pluralN, ymdInTz } from '@/lib/format'
 import { isValue } from '@/lib/model'
 import { leagueHref, matchHref } from '@/lib/links'
@@ -77,6 +79,9 @@ export default async function MatchPage({ params }: Props) {
   if (`/match/${slug}` !== canonical) permanentRedirect(canonical)
 
   const { full, books, cons, model, candidates, pick, tags } = ins
+  // цвета клубов для свечения за командами (не дольше 1,5 с) и метки-факты над эмблемами — как в «Главных матчах»
+  const tint = await Promise.race([matchColors(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))])
+  const notes = handNotes({ homeId: m.home.id, awayId: m.away.id, standings: ins.standings, homeForm: ins.homeForm, awayForm: ins.awayForm })
   // история доматчевой линии PARI (легальный букмекер): ждём не дольше 2 с, иначе — без графика
   const pari = await Promise.race([getPariHistory(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 2000))])
   const lineSeries = pari
@@ -147,16 +152,10 @@ export default async function MatchPage({ params }: Props) {
           { href: canonical, label: pair },
         ]}
       />
-      <h1 className="display mb-6 mt-2 text-[32px] sm:text-[48px]">{h1}</h1>
+      <h1 className="display mb-5 mt-2 text-[24px] sm:text-[32px]">{h1}</h1>
 
-      {/* сначала ответ словами, потом цифры */}
-      {verdict ? (
-        <div className="mb-5">
-          <VerdictCard v={verdict} pickAnchor={pick ? '#pick' : undefined} />
-        </div>
-      ) : null}
-
-      <MatchHero full={full} cells={cells} books={cons.books}>
+      {/* сначала табло, как в «Главных матчах»: команды, время или счёт, шансы; ниже — ответ словами */}
+      <MatchHero full={full} cells={cells} books={cons.books} tint={tint ? { home: tint.home, away: tint.away } : null} notes={notes}>
         {hasStory || tags.length ? (
           <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-edge pt-5">
             {hasStory ? <StoryButton id={m.id} href={canonical} className="mr-2" /> : null}
@@ -166,6 +165,12 @@ export default async function MatchPage({ params }: Props) {
           </div>
         ) : null}
       </MatchHero>
+
+      {verdict ? (
+        <div className="mt-5">
+          <VerdictCard v={verdict} pickAnchor={pick ? '#pick' : undefined} />
+        </div>
+      ) : null}
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-6">

@@ -5,6 +5,8 @@ import { leagueHref } from '@/lib/links'
 import { split100 } from '@/lib/verdict'
 import type { MatchFull } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
+import { HandNote } from '../FactChip'
+import type { HandNotes } from '@/lib/hand-notes'
 
 /** Ячейка табло: шанс исхода, лучший коэффициент и честная цена; hot — платят больше честного. */
 export type BoardCell = {
@@ -14,6 +16,12 @@ export type BoardCell = {
   odd: number | null
   fair: number
   hot: boolean
+}
+
+/** На телефоне колонка команды узкая: длинное слово («Саутгемптон») — мельче шрифт, а не перенос по букве. */
+const phoneSize = (name: string) => {
+  const longest = Math.max(...name.split(/[\s-]+/).map((w) => w.length))
+  return longest >= 12 ? 'text-[13px]' : longest >= 10 ? 'text-[14px]' : 'text-[16px]'
 }
 
 const signed = (ev: number) => `${ev >= 0 ? '+' : '−'}${Math.abs(ev * 100).toFixed(1).replace('.', ',')}%`
@@ -26,11 +34,17 @@ export function MatchHero({
   full,
   cells,
   books,
+  tint,
+  notes,
   children,
 }: {
   full: MatchFull
   cells: BoardCell[] | null
   books: number
+  /** цвета клубов — мягкое свечение за командами, как в «Главных матчах» */
+  tint?: { home: string; away: string } | null
+  /** метки-факты над эмблемами (lib/hand-notes.ts) */
+  notes?: HandNotes | null
   children?: React.ReactNode
 }) {
   const m = full.match
@@ -38,16 +52,29 @@ export function MatchHero({
   const n = cells ? split100({ home: cells[0].p, draw: cells[1].p, away: cells[2].p }) : null
   const live = m.status === 'live' || m.status === 'suspended'
   const played = Boolean(m.score) && (live || m.status === 'finished')
-  const team = (t: typeof m.home, right = false) => (
-    <div className={`flex min-w-0 items-center gap-3 ${right ? 'flex-row-reverse text-right' : ''}`}>
-      {t.logo ? <TeamLogo name={t.name} src={t.logo} size={44} /> : null}
-      <span className="min-w-0 hyphens-auto break-words text-[18px] font-extrabold uppercase leading-[1.05] tracking-[-0.02em] sm:text-[32px]">
-        {t.name}
+  const lead = played && m.score!.home !== m.score!.away ? (m.score!.home > m.score!.away ? 'home' : 'away') : null
+  // команда, как в «Главных матчах»: эмблема на матовом круге, название под ней, над кругом — метка-факт
+  const team = (t: typeof m.home, k: 'home' | 'away') => (
+    <div className={`flex min-w-0 flex-col items-center gap-3 text-center ${lead && lead !== k ? 'opacity-70' : ''}`}>
+      <span className="relative grid h-[var(--disc)] w-[var(--disc)] place-items-center rounded-full bg-white/[0.08] ring-1 ring-white/15 [--disc:68px] sm:[--disc:104px]">
+        {notes?.[k] ? <HandNote text={notes[k]!} short={notes[k]!.length <= 12} /> : null}
+        <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
       </span>
+      <span className={`line-clamp-2 max-w-full hyphens-auto break-words font-semibold leading-tight tracking-[-0.02em] sm:text-[26px] ${phoneSize(t.name)}`}>{t.name}</span>
     </div>
   )
   return (
-    <section className="card overflow-hidden p-5 shadow-[0_40px_80px_-40px_#000] sm:p-7">
+    <section className="card relative overflow-hidden p-5 sm:p-7">
+      {tint ? (
+        <div
+          aria-hidden
+          className="hero-tint pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(60% 120% at 0% 40%, color-mix(in oklab, ${tint.home} 20%, transparent), transparent 70%), radial-gradient(60% 120% at 100% 40%, color-mix(in oklab, ${tint.away} 20%, transparent), transparent 70%)`,
+          }}
+        />
+      ) : null}
+      <div className="relative">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[13px] text-dim">
         <Link
           href={leagueHref(m.league)}
@@ -58,44 +85,47 @@ export function MatchHero({
         </Link>
         <span>
           {m.round ? `${m.round} · ` : ''}
-          <span className="capitalize">{formatWeekdayLong(m.ts)}</span>, {formatDateLong(m.ts)} · {formatTime(m.ts)} {SITE.tzLabel}
+          <span className="capitalize">{formatWeekdayLong(m.ts)}</span>, {formatDateLong(m.ts)}
         </span>
       </div>
 
-      <div className="mt-7 grid grid-cols-2 items-center gap-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-6">
-        {team(m.home)}
-        <span className="hidden text-center text-[13px] text-mute sm:block">{played ? (live ? 'идёт матч' : 'итог') : 'шанс на исход'}</span>
-        {team(m.away, true)}
-      </div>
-
-      {played ? (
-        <div className="mt-4 text-center">
-          <span className={`display num text-[76px] sm:text-[124px] ${live ? 'text-live' : ''}`}>
-            {m.score!.home}
-            <span className="mx-2 text-mute">:</span>
-            {m.score!.away}
-          </span>
-          <div className={`mt-1 text-[13px] font-semibold ${live ? 'text-live' : 'text-dim'}`}>
-            {live && m.elapsed && m.statusCode !== 4 ? `${m.elapsed}′ · ` : ''}
-            {m.statusLabel}
-            {m.scoreHT ? <span className="font-normal text-mute"> · 1-й тайм {m.scoreHT.home}:{m.scoreHT.away}</span> : null}
-          </div>
+      {/* табло по центру, как в «Главных матчах»: хозяева слева, гости справа, в середине время или счёт */}
+      <div className="mt-12 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 sm:mt-14 sm:gap-x-8">
+        {team(m.home, 'home')}
+        <div className="text-center">
+          {played ? (
+            <>
+              <div className="num whitespace-nowrap text-[44px] font-semibold leading-none tracking-[-0.03em] sm:text-[76px]">
+                {m.score!.home}
+                <span className="mx-1.5 text-mute sm:mx-3">:</span>
+                {m.score!.away}
+              </div>
+              <div className={`mt-2 flex items-center justify-center gap-1.5 text-[13px] font-medium sm:text-[14px] ${live ? 'text-fg' : 'text-dim'}`}>
+                {live ? <span className="h-1.5 w-1.5 rounded-full bg-live" /> : null}
+                {live && m.elapsed && m.statusCode !== 4 ? `${m.elapsed}-я минута` : m.statusLabel}
+              </div>
+              {m.scoreHT ? <div className="mt-1 text-[12px] text-mute">1-й тайм {m.scoreHT.home}:{m.scoreHT.away}</div> : null}
+            </>
+          ) : m.status !== 'scheduled' ? (
+            <p className="text-[15px] font-semibold text-loss">{m.statusLabel}</p>
+          ) : (
+            <>
+              <div className="text-[13px] text-dim">Начало</div>
+              <div className="num mt-1 text-[40px] font-semibold leading-none tracking-[-0.03em] sm:text-[68px]">{formatTime(m.ts)}</div>
+              <div className="mt-2 text-[13px] text-dim">{SITE.tzLabel.toLowerCase()}</div>
+            </>
+          )}
         </div>
-      ) : m.status !== 'scheduled' ? (
-        <p className="mt-4 text-center text-[15px] font-semibold text-loss">{m.statusLabel}</p>
-      ) : null}
+        {team(m.away, 'away')}
+      </div>
 
       {cells ? (
         <>
-          {played ? <p className="eyebrow mt-6">До матча · шансы на исход</p> : null}
-          <div className={`grid grid-cols-3 gap-2 sm:gap-3 ${played ? 'mt-3' : 'mt-5'}`}>
+          <p className="eyebrow mt-9">{played ? 'До матча · шансы на исход' : 'Шансы на исход'}</p>
+          <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
             {cells.map((c) => (
               <div key={c.key} className="min-w-0 rounded-xl bg-white/[0.04] px-2 pb-3 pt-3 text-center">
-                <div
-                  className={`num font-extrabold leading-[0.95] tracking-[-0.045em] ${played ? 'text-[34px] sm:text-[48px]' : 'text-[46px] sm:text-[88px]'} ${
-                    c.key === 'draw' ? 'text-chalk' : 'text-fg'
-                  }`}
-                >
+                <div className={`num font-semibold leading-none tracking-[-0.03em] text-[26px] sm:text-[34px] ${c.key === 'draw' ? 'text-chalk' : 'text-fg'}`}>
                   {/* проценты трёх исходов в сумме — ровно 100 */}
                   {n?.[c.key]}
                   <span className="ml-0.5 text-[0.42em] tracking-normal">%</span>
@@ -148,6 +178,7 @@ export function MatchHero({
         </p>
       ) : null}
       {children}
+      </div>
     </section>
   )
 }
