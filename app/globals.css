@@ -843,3 +843,27 @@ html:not([data-look='light']) .hero-tint {
   /* подкраска в разметке — 20% цвета клуба (её же берёт голубая версия); на графите её почти не видно — насыщеннее */
   filter: saturate(1.6) brightness(1.5);
 }
+/* изменившийся счёт (Tick в components/Live.tsx): цифра въезжает сверху и на секунду горит лаймом */
+@keyframes tick-in {
+  0% {
+    transform: translateY(-45%);
+    opacity: 0;
+    color: #c8ff2e;
+  }
+  35% {
+    transform: none;
+    opacity: 1;
+    color: #c8ff2e;
+  }
+  100% {
+    color: inherit;
+  }
+}
+.tick {
+  animation: tick-in 1.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tick {
+    animation: none;
+  }
+}

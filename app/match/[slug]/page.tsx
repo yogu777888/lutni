@@ -25,6 +25,7 @@ import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
 import { getMatchInsights, getMatchesByDate, getPariHistory, settle } from '@/lib/data'
 import { LineChart } from '@/components/match/LineChart'
+import { LiveRefresh } from '@/components/Live'
 import { matchColors } from '@/lib/team-colors'
 import { handNotes } from '@/lib/hand-notes'
 import { appNow, formatDateShort, formatTime, idFromSlug, pct, pluralN, ymdInTz } from '@/lib/format'
@@ -152,6 +153,8 @@ export default async function MatchPage({ params }: Props) {
           { href: canonical, label: pair },
         ]}
       />
+      {/* идёт матч — счёт, минута и live-кэфы обновляются сами */}
+      {m.status === 'live' || m.status === 'suspended' ? <LiveRefresh /> : null}
       <h1 className="display mb-5 mt-2 text-[24px] sm:text-[32px]">{h1}</h1>
 
       {/* сначала табло, как в «Главных матчах»: команды, время или счёт, шансы; ниже — ответ словами */}

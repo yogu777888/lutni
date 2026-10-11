@@ -7,6 +7,7 @@ import { TAG_BY_SLUG, type TagHit } from '@/lib/tags'
 import { buildVerdict, split100 } from '@/lib/verdict'
 import type { Match } from '@/lib/types'
 import { StoryLink } from './story/StoryLink'
+import { Tick } from './Live'
 
 /** Колонки строки матча: время · матч · шансы · коэффициенты (на телефоне — время и матч, кэфы ниже). */
 export const ROW_COLS = 'grid-cols-[3.25rem_minmax(0,1fr)] sm:grid-cols-[3.75rem_minmax(0,1fr)_7.5rem_11.25rem]'
@@ -94,9 +95,9 @@ function Score({ m, big = false }: { m: Match; big?: boolean }) {
   if (!m.score) return null
   return (
     <span className={`num text-center font-bold ${big ? 'text-[20px]' : 'text-[16px]'} ${isLive(m) ? 'text-live' : 'text-fg'}`}>
-      {m.score.home}
+      <Tick v={m.score.home} />
       <span className="mx-1 text-mute">:</span>
-      {m.score.away}
+      <Tick v={m.score.away} />
     </span>
   )
 }

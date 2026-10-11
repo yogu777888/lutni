@@ -13,6 +13,8 @@ import { handNotes, type HandNotes } from '@/lib/hand-notes'
 import { buildForm } from '@/lib/stats'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
+import { LiveRefresh } from './Live'
+import { FavMatches } from './FavMatches'
 import { DaySummary, type MainItem } from './DaySummary'
 import type { DayLink } from './TopCarousel'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
@@ -192,6 +194,8 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
 
   return (
     <>
+      {/* пока на этой странице идут матчи — счёт и минуты обновляются сами, без перезагрузки */}
+      {liveAll.length ? <LiveRefresh /> : null}
       {/* первый экран: заголовок, кружки и сводка. На компьютере сводка тянется до низа окна —
           заходишь и сразу видишь всё нужное, а «Все матчи дня» начинаются ниже, по прокрутке.
           На очень высоких мониторах — не выше 50rem (хватает на обычное окно браузера на экране 1080p), чтобы плитки не раздувались. */}
@@ -295,6 +299,8 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
                 Не удалось загрузить матчи: источник данных временно недоступен. Обновите страницу через минуту.
               </div>
             ) : null}
+            {/* матчи избранных команд (звёздочка на странице матча) — первыми; нет избранных — блока нет */}
+            <FavMatches ymd={ymd} />
             {liveTop.length ? <LiveBlock items={liveTop} total={liveAll.length} /> : null}
             {byTime && timeList.length ? <TimeBlock items={timeList} /> : null}
             {byTime ? null : featured.map((g) => (

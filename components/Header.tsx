@@ -6,6 +6,7 @@ import { HeaderShell } from './HeaderShell'
 import { LogoMark } from './Logo'
 import { LiveTicker } from './LiveTicker'
 import { NavLinks } from './NavCapsule'
+import { Search } from './Search'
 
 /**
  * Шапка одной спокойной строкой, без плашек и рамок: логотип и меню текстом, тонкая черта, бегущая строка матчей
@@ -26,6 +27,7 @@ export function Header() {
         <LiveTicker className="hidden h-9 min-w-0 flex-1 sm:flex" />
         <span className="flex-1 sm:hidden" />
         <div className="flex shrink-0 items-center gap-3">
+          <Search />
           <span className="rounded-[4px] border-[1.5px] border-dim/70 px-1 text-[11px] font-bold leading-[16px] text-dim" title="Только для совершеннолетних">
             18+
           </span>

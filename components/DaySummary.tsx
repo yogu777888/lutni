@@ -14,6 +14,7 @@ import { TeamLogo } from './TeamLogo'
 import type { HandNotes } from '@/lib/hand-notes'
 import { HandNote } from './FactChip'
 import { TopCarousel, type DayLink, type MainSlide } from './TopCarousel'
+import { Tick } from './Live'
 
 /** Ссылка-накладка: вся карточка кликабельна, а текст ссылки — понятное название. */
 const COVER = "after:absolute after:inset-0 after:rounded-[22px] after:content-['']"
@@ -143,7 +144,7 @@ function MatchSlide({ item }: { item: MainItem }) {
           {score ? (
             <>
               <span className={BIG}>
-                {score.home} : {score.away}
+                <Tick v={score.home} /> : <Tick v={score.away} />
               </span>
               <span className="mt-2 flex items-center gap-1.5 text-[13px] font-medium text-fg/85">
                 {live ? <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" aria-hidden /> : null}

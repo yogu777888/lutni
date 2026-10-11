@@ -7,6 +7,8 @@ import type { MatchFull } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
 import { HandNote } from '../FactChip'
 import type { HandNotes } from '@/lib/hand-notes'
+import { Tick } from '../Live'
+import { FavStar } from '../FavStar'
 
 /** Ячейка табло: шанс исхода, лучший коэффициент и честная цена; hot — платят больше честного. */
 export type BoardCell = {
@@ -61,6 +63,7 @@ export function MatchHero({
         <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
       </span>
       <span className={`line-clamp-2 max-w-full hyphens-auto break-words font-semibold leading-tight tracking-[-0.02em] sm:text-[26px] ${phoneSize(t.name)}`}>{t.name}</span>
+      <FavStar id={t.id} name={t.name} className="-mt-1" />
     </div>
   )
   return (
@@ -96,9 +99,9 @@ export function MatchHero({
           {played ? (
             <>
               <div className="num whitespace-nowrap text-[44px] font-semibold leading-none tracking-[-0.03em] sm:text-[76px]">
-                {m.score!.home}
+                <Tick v={m.score!.home} />
                 <span className="mx-1.5 text-mute sm:mx-3">:</span>
-                {m.score!.away}
+                <Tick v={m.score!.away} />
               </div>
               <div className={`mt-2 flex items-center justify-center gap-1.5 text-[13px] font-medium sm:text-[14px] ${live ? 'text-fg' : 'text-dim'}`}>
                 {live ? <span className="h-1.5 w-1.5 rounded-full bg-live" /> : null}
