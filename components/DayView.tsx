@@ -233,12 +233,25 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
       <ValueBoard items={values} />
 
       {/* без сводки (в этот день нет ни одного «взрослого» матча) список идёт сразу под заголовком страницы — второй заголовок не нужен */}
-      <section id="matches" className={`scroll-mt-24 ${listHead ? 'mt-16 sm:mt-20' : 'mt-5 sm:mt-6'}`}>
+      {/* светлая плита (ритм страницы плитами, как у reg.ru): класс bg-panel даёт внутри токены светлой поверхности
+          (тёмный текст), фон — на тон темнее карточек, чтобы карточки турниров на ней читались */}
+      <section
+        id="matches"
+        className={`bg-panel scroll-mt-24 rounded-[28px] px-3 py-7 sm:rounded-[40px] sm:px-10 sm:py-12 ${listHead ? 'mt-10 sm:mt-14' : 'mt-5 sm:mt-6'}`}
+        style={{ background: '#e4eef7' }}
+      >
         {listHead ? (
-          <>
-            <p className="eyebrow">{past ? 'Результаты' : 'Матчи'}</p>
-            <h2 className="h2 mt-3 text-[30px] sm:text-[44px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
-          </>
+          <h2 className="h2 px-1 text-[32px] sm:px-0 sm:text-[48px]">
+            {past ? (
+              <>
+                Как <span className="text-btn">сыграли</span>
+              </>
+            ) : (
+              <>
+                Все матчи <span className="text-btn">дня</span>
+              </>
+            )}
+          </h2>
         ) : null}
         {/* выбор дня — и здесь, у списка (как и чип в «Главных матчах», ведёт на страницу дня); рядом — порядок списка */}
         <div className={`flex flex-wrap items-center justify-between gap-x-6 gap-y-3 ${listHead ? 'mt-5' : ''}`}>
