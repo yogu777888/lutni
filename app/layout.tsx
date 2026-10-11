@@ -9,6 +9,7 @@ import { Metrika } from '@/components/Metrika'
 import { LeftPanel } from '@/components/shell/LeftPanel'
 import { RightPanel } from '@/components/shell/RightPanel'
 import { ShellFrame } from '@/components/shell/ShellFrame'
+import { PromoCard } from '@/components/shell/PromoCard'
 import { ResizeHandle } from '@/components/shell/ResizeHandle'
 import { SHELL_SCRIPT } from '@/components/shell/shell-state'
 import { FEATURED_LEAGUES, featuredRank } from '@/config/leagues'
@@ -105,6 +106,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 ]}
                 leagues={FEATURED_LEAGUES.slice(0, 8).map((l) => ({ key: String(l.id), label: l.short }))}
                 tags={TAGS.map((t) => ({ key: t.slug, label: t.label.replace(/^#/, '') }))}
+                promo={<PromoCard />}
               />
             </div>
           </aside>

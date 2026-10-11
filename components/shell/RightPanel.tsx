@@ -42,7 +42,7 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
  * турниры, теги и порядок — кнопка «Показать матчи» открывает страницу «Матчи» с этим фильтром в адресе
  * (lib/list-filter.ts). На странице «Матчи» панель подхватывает текущий фильтр из адреса.
  */
-export function RightPanel({ days, leagues, tags }: { days: Day[]; leagues: PanelOption[]; tags: PanelOption[] }) {
+export function RightPanel({ days, leagues, tags, promo }: { days: Day[]; leagues: PanelOption[]; tags: PanelOption[]; promo?: React.ReactNode }) {
   const router = useRouter()
   const path = usePathname()
   const today = days.find((d) => d.label === 'Сегодня')?.ymd ?? days[0].ymd
@@ -147,7 +147,7 @@ export function RightPanel({ days, leagues, tags }: { days: Day[]; leagues: Pane
           </Group>
         </div>
         {/* кнопка — внизу панели, вне прокрутки: всегда под рукой и ничего не закрывает */}
-        <div className="border-t border-edge p-4">
+        <div className="space-y-3 border-t border-edge p-4">
           <button
             type="button"
             onClick={show}
@@ -155,6 +155,8 @@ export function RightPanel({ days, leagues, tags }: { days: Day[]; leagues: Pane
           >
             Показать матчи
           </button>
+          {/* яркий виджет, как у Spotify «Зарегистрируйся» — бонус букмекера (реклама) */}
+          {promo}
         </div>
       </div>
     </div>
