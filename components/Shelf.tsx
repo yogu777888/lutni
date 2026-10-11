@@ -11,6 +11,7 @@ export function Shelf({
   more,
   note,
   id,
+  rows,
   children,
 }: {
   title: React.ReactNode
@@ -21,6 +22,8 @@ export function Shelf({
   /** тихая строка под рядом: оговорки, «реклама · 18+» */
   note?: React.ReactNode
   id?: string
+  /** две строки карточек, листаются вбок вместе (компактные карточки «Скоро начнутся») */
+  rows?: 2
   children: React.ReactNode
 }) {
   return (
@@ -36,7 +39,7 @@ export function Shelf({
           </Link>
         ) : null}
       </div>
-      <div className="scrollbar-none -mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)] sm:mx-0 sm:scroll-px-0 sm:px-0">
+      <div className={`scrollbar-none -mx-4 mt-4 ${rows ? 'grid auto-cols-[80%] grid-flow-col grid-rows-2 sm:auto-cols-[330px]' : 'flex'} snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)] sm:mx-0 sm:scroll-px-0 sm:px-0`}>
         {children}
       </div>
       {note ? <p className="mt-3 text-[12.5px] text-mute">{note}</p> : null}
@@ -44,5 +47,21 @@ export function Shelf({
   )
 }
 
-/** Карточка на полке: одна ширина у всех полок, графит на тон светлее страницы. */
-export const SHELF_CARD = 'card relative flex w-[82%] shrink-0 snap-start flex-col overflow-hidden p-5 sm:w-[300px]'
+/** Карточка на полке без ширины: графит на тон светлее страницы. Ширина — по виду полки (`SHELF_W`). */
+export const SHELF_BASE = 'card relative flex shrink-0 snap-start flex-col overflow-hidden'
+
+/**
+ * Ширины карточек: у полок разный вид, как у Spotify (крупные плакаты, обычные обложки, компактные строки), — чтобы
+ * главная не была рядом одинаковых карточек (владелец: «блоки игр в подборках все одинаково выглядят»).
+ */
+export const SHELF_W = {
+  /** «Топ дня» — крупный плакат */
+  poster: 'w-[86%] sm:w-[440px]',
+  /** обычная карточка: «В игре», «Выгодно сегодня», полки тегов */
+  card: 'w-[82%] sm:w-[300px]',
+  /** компактная строка в два ряда — «Скоро начнутся» (ширину колонки задаёт сетка полки `rows`) */
+  row: 'w-full',
+}
+
+/** Обычная карточка полки. */
+export const SHELF_CARD = `${SHELF_BASE} ${SHELF_W.card} p-5`

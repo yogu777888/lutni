@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import type { StoryGroup } from '@/lib/story-groups'
 import type { Match } from '@/lib/types'
-import { MatchCardBody } from '../MatchCard'
-import { SHELF_CARD, Shelf } from '../Shelf'
+import { LiveCardBody, MatchCardBody, PosterCardBody, StatCardBody } from '../MatchCard'
+import { SHELF_BASE, SHELF_W, Shelf } from '../Shelf'
 import { openStory } from './events'
 import { circleQueue } from './queue'
 import { readSeen, SEEN_EVENT, seenKey } from './seen'
@@ -73,19 +73,26 @@ export function StoryShelves({
           >
             {items.map((it) => {
               const m = matches[it.id]
+              const isSeen = seen.has(seenKey(g.key, it.id))
+              const stat = stats[`${g.key}:${it.id}`]
+              // у каждой полки свой вид карточек (владелец: «блоки игр в подборках все одинаково выглядят»)
+              const kind = g.key === 'top' ? 'poster' : g.key === 'live' ? 'live' : stat ? 'stat' : 'cover'
               return (
                 <a
                   key={it.id}
                   href={it.href}
                   onClick={(e) => open(gi, it.id, e)}
-                  className={`${SHELF_CARD} group gap-3 !p-3 transition-colors hover:bg-panel-3`}
+                  className={`${SHELF_BASE} ${kind === 'poster' ? SHELF_W.poster : SHELF_W.card} group ${kind === 'live' || kind === 'stat' ? 'p-4' : 'gap-3 p-3'} transition-colors hover:bg-panel-3`}
                 >
-                  <MatchCardBody
-                    m={m}
-                    sub={m.league.name}
-                    seen={seen.has(seenKey(g.key, it.id))}
-                    badge={stats[`${g.key}:${it.id}`] ? { text: stats[`${g.key}:${it.id}`], hot: g.key === 'progruz' } : null}
-                  />
+                  {kind === 'live' ? (
+                    <LiveCardBody m={m} seen={isSeen} />
+                  ) : kind === 'poster' ? (
+                    <PosterCardBody m={m} seen={isSeen} />
+                  ) : kind === 'stat' ? (
+                    <StatCardBody m={m} stat={stat} hot={g.key === 'progruz'} seen={isSeen} />
+                  ) : (
+                    <MatchCardBody m={m} sub={m.league.name} seen={isSeen} />
+                  )}
                 </a>
               )
             })}

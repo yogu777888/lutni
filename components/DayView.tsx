@@ -23,15 +23,20 @@ const OTHER_LIMIT = 160
 /** В списке «по времени» — не больше стольких матчей: сначала топ-лиги, потом остальные с линией. */
 const TIME_LIMIT = 200
 
-/** Слово перед цифрой метки на обложке: «3+ гола · 62%», «серия 8». */
+/** Слово над главной цифрой карточки на полке тега: «3+ гола · 62%», «дома без поражений · 8» (`StatCardBody`). */
 const BADGE_WORD: Record<string, string> = {
-  'tb-2-5': '3+ гола · ',
-  'tm-2-5': 'до 2 голов · ',
-  'obe-zabyut': 'обе забьют · ',
-  favorit: 'фаворит · ',
-  seriya: 'серия ',
-  'top-match': 'места ',
-  krepost: 'дома без поражений ',
+  'tb-2-5': '3+ гола',
+  'tm-2-5': 'до 2 голов',
+  'obe-zabyut': 'обе забьют',
+  favorit: 'шанс фаворита',
+  progruz: 'кэф упал',
+  value: 'перевес',
+  seriya: 'матчей в серии',
+  'top-match': 'места в таблице',
+  krepost: 'дома без поражений',
+  kadry: 'игроков не сыграют',
+  andedog: 'разница в очках',
+  h2h: 'побед в личных встречах',
 }
 
 export type DaySort = 'league' | 'time'
@@ -178,13 +183,13 @@ export async function DayView({
   const shelfMore = Object.fromEntries(
     shelfGroups.map((g) => [g.key, g.key === 'live' ? list : g.key === 'top' ? undefined : `/tag/${g.key}`]),
   )
-  // метка в углу обложки — главная цифра (голое «62%» непонятно — к цифре короткое слово) матча в истории («−17%», «62%»); только если в ней есть число
+  // главная цифра матча в истории для карточки полки тега: «кэф упал · −17%» (голое «62%» непонятно — над цифрой короткое слово); только если в ней есть число
   const shelfStats: Record<string, string> = {}
   for (const g of shelfGroups)
     for (const x of g.items.slice(0, 12)) {
       const st = x.focus ? statFor(x.focus.slug, x.focus.reason) : ''
       if (g.key === 'live' || g.key === 'top' || !/\d/.test(st)) continue
-      shelfStats[`${g.key}:${x.id}`] = g.key === 'kadry' ? `без ${st.replace(/\D/g, '')} игроков` : (BADGE_WORD[g.key] ?? '') + st
+      shelfStats[`${g.key}:${x.id}`] = BADGE_WORD[g.key] ? `${BADGE_WORD[g.key]} · ${g.key === 'kadry' ? st.replace(/\D/g, '') : st}` : st
     }
   // «Скоро начнутся» — без матчей из «В игре» и «Топ дня»
   const soon =
