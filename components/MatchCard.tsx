@@ -1,8 +1,7 @@
-import { formatTime, ymdInTz } from '@/lib/format'
+import { formatTime } from '@/lib/format'
 import type { Match } from '@/lib/types'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
-import { CardTint } from './shell/tint'
 
 const live = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
@@ -16,23 +15,17 @@ export function MatchCardBody({
   sub,
   dim = false,
   badge,
-  tint,
 }: {
   m: Match
   sub: string
   dim?: boolean
   /** главная цифра истории в углу обложки («−17%», «62%»); hot — янтарём (кэф упал) */
   badge?: { text: string; hot?: boolean } | null
-  /** цвета клубов — обложка с эмблемами окрашена, как обложка альбома у Spotify (хозяева слева, гости справа),
-      сама карточка — графит; не успели с сервера — догружаются (CardTint) */
-  tint?: { home: string; away: string } | null
 }) {
   const played = Boolean(m.score) && (live(m) || m.status === 'finished')
   return (
     <>
       <span className={`relative grid h-[132px] grid-cols-[1fr_auto_1fr] items-center overflow-hidden rounded-tile bg-panel-3 px-3 ${dim ? 'opacity-60' : ''}`}>
-        {/* обложка в цветах клубов, как обложка альбома у Spotify: хозяева светят слева, гости справа */}
-        <CardTint id={m.id} ymd={ymdInTz(m.ts)} initial={tint} />
         {badge ? (
           <span className={`num absolute left-2 top-2 rounded-ctl px-2 py-0.5 text-[12.5px] font-semibold ${badge.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.08] text-fg'}`}>
             {badge.text}

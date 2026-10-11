@@ -5,8 +5,7 @@ import { matchColors } from '@/lib/team-colors'
 export const dynamic = 'force-dynamic'
 
 /**
- * Цвета клубов матча для градиента центральной панели (components/shell/tint.tsx): ?id=<матч>&d=<YYYY-MM-DD>;
- * пачкой для карточек на полках — ?ids=1,2,3&d=….
+ * Цвета клубов матча для градиента центральной панели (components/shell/tint.tsx): ?id=<матч>&d=<YYYY-MM-DD>.
  * Страница ждёт цвета не дольше 1,5 с; не успели (эмблемы с чужого сервера, холодный кэш) — догружает отсюда.
  * Цвета эмблемы считаются один раз и хранятся месяц (lib/team-colors.ts).
  */
@@ -30,7 +29,6 @@ export async function GET(req: Request) {
       }),
     )
   } catch {}
-  // ?id= — один матч (градиент панели), ?ids= — пачка (карточки на полках)
   const tint = tints[ids[0]] ?? null
   const done = Object.keys(tints).length === ids.length
   return Response.json({ tint, tints }, { headers: { 'Cache-Control': done ? 'public, max-age=86400' : 'no-store', 'X-Robots-Tag': 'noindex' } })
