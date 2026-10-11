@@ -8,6 +8,7 @@ import { Header } from '@/components/Header'
 import { Metrika } from '@/components/Metrika'
 import { LeftPanel } from '@/components/shell/LeftPanel'
 import { RightPanel } from '@/components/shell/RightPanel'
+import { ShellFrame } from '@/components/shell/ShellFrame'
 import { FEATURED_LEAGUES } from '@/config/leagues'
 import { addDays, todayYmd } from '@/lib/format'
 import { TAGS } from '@/lib/tags'
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ru">
       <body className="min-h-dvh antialiased">
         <Header />
+        <ShellFrame />
         {/* каркас, как у Spotify (от xl): слева «Мои команды» и турниры, в центре — серая панель страницы с градиентом
             сверху, справа служебная «Своя подборка» (фильтр страницы «Матчи») — по одной панели на всю высоту; уже — обычная страница во всю ширину */}
         <div className="xl:grid xl:grid-cols-[248px_minmax(0,1fr)_288px] xl:gap-2 xl:px-2 xl:pb-2 xl:pt-2">

@@ -266,7 +266,7 @@ export async function DayView({
           На очень высоких мониторах — не выше 50rem (хватает на обычное окно браузера на экране 1080p), чтобы плитки не раздувались. */}
       {view === 'home' ? (
         <>
-      <div className={hasSummary ? 'flex flex-col [--gain:clamp(80px,calc(100vh_-_600px),160px)] lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
+      <div className={hasSummary ? 'flex flex-col [--gain:clamp(64px,calc(100vh_-_600px),160px)] lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <section className="min-w-0 pt-1 sm:pt-0">
           <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
