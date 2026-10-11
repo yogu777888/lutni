@@ -192,8 +192,6 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
     : []
   const base = dayHref(ymd, today)
 
-  // временно: варианты первого экрана для сравнения (FS_VARIANT=a|b)
-  const fs = process.env.FS_VARIANT === 'a' || process.env.FS_VARIANT === 'b' ? process.env.FS_VARIANT : null
   return (
     <>
       {/* пока на этой странице идут матчи — счёт и минуты обновляются сами, без перезагрузки */}
@@ -201,11 +199,11 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
       {/* первый экран: заголовок, кружки и сводка. На компьютере сводка тянется до низа окна —
           заходишь и сразу видишь всё нужное, а «Все матчи дня» начинаются ниже, по прокрутке.
           На очень высоких мониторах — не выше 50rem (хватает на обычное окно браузера на экране 1080p), чтобы плитки не раздувались. */}
-      <div className={hasSummary ? `flex flex-col lg:min-h-[min(calc(100svh-7rem),50rem)] ${fs === 'a' ? '[--gain:40px]' : fs === 'b' ? '[--gain:100px]' : ''}` : undefined}>
-        <div className={`flex flex-wrap items-end justify-between gap-x-6 gap-y-3 ${fs === 'b' ? 'lg:flex-nowrap' : ''}`}>
-        <section className="min-w-0 shrink-0 pt-1 sm:pt-0">
+      <div className={hasSummary ? 'flex flex-col [--gain:40px] lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <section className="min-w-0 pt-1 sm:pt-0">
           <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
-          <h1 className={`mt-1.5 font-bold leading-[1.08] tracking-[-0.03em] ${fs ? 'text-[30px] sm:text-[34px] lg:text-[clamp(26px,calc(7vh_-_22px),34px)]' : 'text-[32px] sm:text-[42px] lg:text-[clamp(28px,calc(9vh_-_30px),42px)]'}`}>
+          <h1 className="mt-1.5 text-[30px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[34px] lg:text-[clamp(26px,calc(7vh_-_22px),34px)]">
             <span className="rise">
               <span>
                 {heading.title}
@@ -215,18 +213,13 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
             </span>
           </h1>
         </section>
-        {fs === 'b' && storyGroups.length ? (
-          <section aria-label="Истории дня" className="hidden min-w-0 lg:block">
-            <StoryCircles groups={storyGroups} covers={storyCovers()} compact />
-          </section>
-        ) : null}
         </div>
 
         {storyGroups.length ? (
           // кружки понятны и без подписи «Истории дня» — так первый экран влезает целиком;
           // отступ сверху — у ряда (pt-1.5): ряд прокручивается и обрезал бы круг фокуса у кружка
-          <section aria-label="Истории дня" className={`mt-4 sm:mt-5 lg:mt-[clamp(6px,2.2vh,20px)] ${fs === 'b' ? 'lg:hidden' : ''}`}>
-            <StoryCircles groups={storyGroups} covers={storyCovers()} compact={Boolean(fs)} />
+          <section aria-label="Истории дня" className="mt-4 sm:mt-5 lg:mt-[clamp(6px,2.2vh,20px)]">
+            <StoryCircles groups={storyGroups} covers={storyCovers()}  />
           </section>
         ) : null}
 
@@ -244,7 +237,6 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
               move: moveExample(items, snapOf),
               movesCovered: items.filter((it) => lineMoves(snapOf(it.match.id)).length > 0).length,
             }}
-            quiet={Boolean(fs)}
             className="mt-5 lg:mt-[clamp(10px,2.4vh,20px)] lg:flex-1"
           />
         ) : null}
