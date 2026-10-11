@@ -394,7 +394,7 @@
   }
 }
 .ticker {
-  mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 56px, #000 calc(100% - 56px), transparent);
 }
 .ticker-track {
   animation: ticker 40s linear infinite;

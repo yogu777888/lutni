@@ -1,6 +1,5 @@
 /**
- * Цвета клубов из эмблем. Сейчас на сайте не используются: вид «Афиша» (фон «Главных матчей» цветами клубов) владелец
- * сменил на графит с эмблемами-тиснением; модуль с тестами оставлен на случай, если цвета клубов понадобятся снова.
+ * Цвета клубов из эмблем — для мягкого свечения за командами в «Главных матчах» и на табло матча (`.hero-tint`).
  * Главный цвет — из эмблемы, автоматически для всех команд.
  * Картинку уменьшаем до 32 px и ищем самый «весомый» насыщенный оттенок; серые, белые и чёрные пиксели не
  * считаем, золото — только если других цветов почти нет. Считаем один раз на эмблему и храним месяц (`cache`). Нет эмблемы или она серая — графит.
@@ -142,10 +141,18 @@ export async function logoColor(src: string | null | undefined): Promise<Hsl | n
 
 /** Цвет для фона: без неона и без «грязи» — насыщенность и светлота в спокойных пределах. */
 const css = (c: Hsl, darker = 0, accent = false) => {
-  // жёлтые и лаймовые оттенки темнее: на них белый текст иначе не читается; второму цвету (пятну) можно светлее —
-  // иначе золото эмблемы превращается в грязно-оливковое
-  const top = c.h >= 40 && c.h <= 90 ? (accent ? 0.47 : 0.4) : accent ? 0.52 : 0.48
-  return `hsl(${Math.round(c.h)} ${Math.round(Math.min(0.8, Math.max(0.45, c.s)) * 100)}% ${Math.round((Math.min(top, Math.max(0.32, c.l)) - darker) * 100)}%)`
+  // это свечение на графите, а не фон под текстом: жёлтый — светлее, иначе выходит болотно-оливковый
+  const yellow = c.h >= 40 && c.h <= 90
+  const top = yellow ? 0.55 : accent ? 0.52 : 0.48
+  return `hsl(${Math.round(c.h)} ${Math.round(Math.min(0.8, Math.max(0.45, c.s)) * 100)}% ${Math.round((Math.min(top, Math.max(yellow ? 0.5 : 0.32, c.l)) - darker) * 100)}%)`
+}
+
+/** Золото — окантовка, корона, полоса флага: если у эмблемы есть второй, не жёлтый цвет, клубный — он
+    (настоящая эмблема «Барселоны» больше всего золотая, а клуб — сине-гранатовый). Только жёлтые — как есть. */
+const goldHue = (c: Hsl) => c.h >= 35 && c.h <= 75
+function clubFirst(p: Hsl[]): Hsl[] {
+  const i = p.findIndex((c) => !goldHue(c))
+  return i > 0 ? [p[i], ...p.filter((_, j) => j !== i)] : p
 }
 
 /**
@@ -153,7 +160,7 @@ const css = (c: Hsl, darker = 0, accent = false) => {
  * соперников (разница меньше 25°) — гостей темнее, чтобы цвета не слились в одно пятно. У команды без цвета — графит.
  */
 export async function matchColors(m: Match): Promise<MatchColors | null> {
-  const [a, b] = await Promise.all([logoPalette(m.home.logo).catch(() => []), logoPalette(m.away.logo).catch(() => [])])
+  const [a, b] = (await Promise.all([logoPalette(m.home.logo).catch(() => []), logoPalette(m.away.logo).catch(() => [])])).map(clubFirst)
   if (!a.length && !b.length) return null
   const dh = a.length && b.length ? Math.abs(a[0].h - b[0].h) : 180
   const d = Math.min(dh, 360 - dh) < 25 ? 0.14 : 0

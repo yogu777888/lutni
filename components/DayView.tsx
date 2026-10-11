@@ -199,7 +199,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
       {/* первый экран: заголовок, кружки и сводка. На компьютере сводка тянется до низа окна —
           заходишь и сразу видишь всё нужное, а «Все матчи дня» начинаются ниже, по прокрутке.
           На очень высоких мониторах — не выше 50rem (хватает на обычное окно браузера на экране 1080p), чтобы плитки не раздувались. */}
-      <div className={hasSummary ? 'flex flex-col [--gain:40px] lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
+      <div className={hasSummary ? 'flex flex-col [--gain:clamp(40px,calc(100vh_-_665px),110px)] lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <section className="min-w-0 pt-1 sm:pt-0">
           <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
