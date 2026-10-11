@@ -715,3 +715,22 @@ html[data-shell-lc] .shell-l-rail,
 html[data-shell-rc] .shell-r-rail {
   display: flex;
 }
+
+/* облако эмблем в панели входа (components/shell/RightPanel.tsx): едва покачиваются, каждая со своим сдвигом */
+@keyframes crest-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+.crest-bob {
+  animation: crest-bob 6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .crest-bob {
+    animation: none;
+  }
+}

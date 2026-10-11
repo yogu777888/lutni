@@ -71,6 +71,7 @@ async function suggestTeams(): Promise<FavTeam[]> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const suggest = await suggestTeams()
   return (
     // suppressHydrationWarning: ширину и свёрнутость боковых панелей скрипт ниже ставит до отрисовки
     <html lang="ru" suppressHydrationWarning>
@@ -86,7 +87,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <aside aria-label="Мои команды и турниры" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
               <ResizeHandle side="l" />
-              <LeftPanel today={todayYmd()} suggest={await suggestTeams()} />
+              <LeftPanel today={todayYmd()} suggest={suggest} />
             </div>
           </aside>
           <div className="shell-center min-w-0">
@@ -96,7 +97,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <aside aria-label="Вход на сайт" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
               <ResizeHandle side="r" />
-              <RightPanel />
+              <RightPanel teams={suggest} />
             </div>
           </aside>
         </div>
