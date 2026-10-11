@@ -6,7 +6,7 @@ import { addDays, appNow, diffDays, formatDayMonth, formatWeekdayLong, pluralN, 
 import { lineMoves, type OddsSnap, type X12Line } from '@/lib/lines'
 import { isLive, liveRank } from '@/lib/rank'
 import { dayCounts, goalsPicks, mainMatches, moveExample, soonMatches } from '@/lib/day-summary'
-import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
+import { buildStoryGroups, mainCircles, statFor } from '@/lib/story-groups'
 import { matchColors } from '@/lib/team-colors'
 import { handNotes, type HandNotes } from '@/lib/hand-notes'
 import { buildForm } from '@/lib/stats'
@@ -25,6 +25,17 @@ import { SoonShelf } from './SoonShelf'
 const OTHER_LIMIT = 160
 /** В списке «по времени» — не больше стольких матчей: сначала топ-лиги, потом остальные с линией. */
 const TIME_LIMIT = 200
+
+/** Слово перед цифрой метки на обложке: «3+ гола · 62%», «серия 8». */
+const BADGE_WORD: Record<string, string> = {
+  'tb-2-5': '3+ гола · ',
+  'tm-2-5': 'до 2 голов · ',
+  'obe-zabyut': 'обе забьют · ',
+  favorit: 'фаворит · ',
+  seriya: 'серия ',
+  krepost: 'дома без поражений ',
+  kadry: 'игроков ',
+}
 
 export type DaySort = 'league' | 'time'
 const LIVE_LIMIT = 6
@@ -201,6 +212,13 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
   const shelfMore = Object.fromEntries(
     shelfGroups.map((g) => [g.key, g.key === 'live' ? `${base}#matches` : g.key === 'top' ? undefined : `/tag/${g.key}`]),
   )
+  // метка в углу обложки — главная цифра (голое «62%» непонятно — к цифре короткое слово) матча в истории («−17%», «62%»); только если в ней есть число
+  const shelfStats: Record<string, string> = {}
+  for (const g of shelfGroups)
+    for (const x of g.items.slice(0, 12)) {
+      const st = x.focus ? statFor(x.focus.slug, x.focus.reason) : ''
+      if (/\d/.test(st)) shelfStats[`${g.key}:${x.id}`] = (BADGE_WORD[g.key] ?? '') + st
+    }
   const picks = {
     ymd,
     dayHref: base,
@@ -247,10 +265,10 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
 
       {/* истории — полками, как «Скоро начнутся»: «В игре», «Топ дня», потом «Скоро начнутся» и «Выгодно сегодня»,
           потом остальные истории (у «Выгодно» своя полка с кэфами — история-дубль не нужна) */}
-      <StoryShelves groups={shelfGroups} show={['live', 'top']} matches={shelfMatches} more={shelfMore} />
+      <StoryShelves groups={shelfGroups} show={['live', 'top']} matches={shelfMatches} more={shelfMore} stats={shelfStats} />
       {past ? null : <SoonShelf items={soonMatches(items, new Set([...mains.map((x) => x.it.match.id), ...shelfGroups.filter((g) => g.key === 'top' || g.key === 'live').flatMap((g) => g.items.slice(0, 12).map((x) => x.id))]))} allHref={`${base}?sort=time#matches`} />}
       <ValueBoard items={values} />
-      <StoryShelves groups={shelfGroups} show={shelfGroups.map((g) => g.key).filter((k) => k !== 'live' && k !== 'top')} matches={shelfMatches} more={shelfMore} />
+      <StoryShelves groups={shelfGroups} show={shelfGroups.map((g) => g.key).filter((k) => k !== 'live' && k !== 'top')} matches={shelfMatches} more={shelfMore} stats={shelfStats} />
 
       {/* без сводки (в этот день нет ни одного «взрослого» матча) список идёт сразу под заголовком страницы — второй заголовок не нужен */}
       {/* светлая плита (ритм страницы плитами, как у reg.ru): класс bg-panel даёт внутри токены светлой поверхности

@@ -22,6 +22,7 @@ export function StoryShelves({
   show,
   matches,
   more,
+  stats = {},
 }: {
   /** все истории по порядку — для очереди просмотра */
   groups: StoryGroup[]
@@ -31,6 +32,8 @@ export function StoryShelves({
   matches: Record<number, Match>
   /** «Показать все» у полки по ключу истории */
   more: Record<string, string | undefined>
+  /** главная цифра матча в истории (`statFor`) по ключу «история:матч» — метка в углу обложки */
+  stats?: Record<string, string>
 }) {
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
   useEffect(() => {
@@ -77,7 +80,12 @@ export function StoryShelves({
                   onClick={(e) => open(gi, it.id, e)}
                   className={`${SHELF_CARD} group gap-3 !p-3 transition-colors hover:bg-panel-3`}
                 >
-                  <MatchCardBody m={m} sub={m.league.name} dim={seen.has(seenKey(g.key, it.id))} />
+                  <MatchCardBody
+                    m={m}
+                    sub={m.league.name}
+                    dim={seen.has(seenKey(g.key, it.id))}
+                    badge={stats[`${g.key}:${it.id}`] ? { text: stats[`${g.key}:${it.id}`], hot: g.key === 'progruz' } : null}
+                  />
                 </a>
               )
             })}
