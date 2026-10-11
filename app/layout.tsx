@@ -45,12 +45,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // suppressHydrationWarning: data-look ставит скрипт ниже до отрисовки (сравнение цветовых версий)
     <html lang="ru" suppressHydrationWarning>
       <head>
-        {/* Эксперимент с цветами: по умолчанию — светлая голубовато-серая версия; ?look=dark — прежняя графитовая
-            (запоминается в браузере), ?look=light — вернуть светлую. Ставим до отрисовки — без мигания. */}
+        {/* Цветовые версии: по умолчанию — тёмная спортивная (графит и лайм); ?look=light — голубая светлая
+            (запоминается в браузере), ?look=dark — обратно на тёмную. Ставим до отрисовки — без мигания. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var q=new URLSearchParams(location.search).get('look');if(q==='dark')localStorage.setItem('tb-look','dark');else if(q)localStorage.removeItem('tb-look');if(localStorage.getItem('tb-look')==='dark')document.documentElement.dataset.look='dark'}catch(e){}",
+              "try{var q=new URLSearchParams(location.search).get('look');if(q==='light')localStorage.setItem('tb-look','light');else if(q)localStorage.removeItem('tb-look');if(localStorage.getItem('tb-look')==='light')document.documentElement.dataset.look='light'}catch(e){}",
           }}
         />
       </head>

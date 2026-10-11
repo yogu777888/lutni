@@ -13,7 +13,7 @@ import { NavCapsule, NavLinks } from './NavCapsule'
  * 18+ и «Бонус». Плашки лежат на голубом фоне отдельными карточками, а не полосой во всю ширину. Плашки — `bg-panel-3`:
  * внутри них токены светлой поверхности (тёмный текст, голубая кнопка). Ниже lg меню — капсулой во втором ряду.
  */
-const ISLAND = 'bg-panel-3 flex h-12 shrink-0 items-center rounded-[16px] shadow-[0_8px_24px_rgb(8_40_80/0.16)]'
+const ISLAND = 'hdr-island bg-panel-2 flex h-12 shrink-0 items-center rounded-[16px] shadow-[0_8px_24px_rgb(8_40_80/0.16)]'
 
 export function Header() {
   const partner = primaryPartner()

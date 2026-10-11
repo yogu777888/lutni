@@ -158,7 +158,7 @@
 
 /* ─── Цветовые версии (эксперимент владельца) ───────────────────────────────────────────────────────────────
    По умолчанию — светлая голубовато-серая: меню — графит #1E2A36, истории и карточка «Главных матчей» — светлые,
-   карточки — #F3F8FC/#EAF3FA, текст #18222D/#5D6C7B. Прежняя графитовая версия — html[data-look='dark']
+   карточки — #F3F8FC/#EAF3FA, текст #18222D/#5D6C7B. Прежняя графитовая версия — html:not([data-look='light'])
    (?look=dark, запоминается в браузере; ?look=light — обратно; скрипт в app/layout.tsx). Значения ниже без
    html:not(…) — прежняя версия; удалить её — убрать их и скрипт. */
 @layer base {
@@ -186,7 +186,7 @@
     background: linear-gradient(180deg, #263443, #17212c);
   }
   /* подкраска цветами клубов — только в светлой версии */
-  html[data-look='dark'] .hero-tint {
+  html:not([data-look='light']) .hero-tint {
     display: none;
   }
   /* силуэт эмблемы цветом клуба — в светлой версии; в графитовой — прежнее тиснение картинкой */
@@ -194,10 +194,10 @@
     display: none;
     opacity: var(--mark-opacity);
   }
-  html:not([data-look='dark']) .hero-mark-sil {
+  html[data-look='light'] .hero-mark-sil {
     display: block;
   }
-  html:not([data-look='dark']) .hero-mark-img {
+  html[data-look='light'] .hero-mark-img {
     display: none;
   }
   /* диск истории: заливка цветом категории (StoryCircles), блик по верхнему краю, тонкая граница, мягкая тень */
@@ -209,12 +209,12 @@
   }
 
   /* светлая версия */
-  html:not([data-look='dark']) {
+  html[data-look='light'] {
     --color-panel: #eaf3fa;
     --color-panel-2: #f3f8fc;
     --color-panel-3: #eaf3fa;
   }
-  html:not([data-look='dark']) :is(.card, [class^='bg-panel'], [class*=' bg-panel']):not(.on-dark, .on-dark *) {
+  html[data-look='light'] :is(.card, [class^='bg-panel'], [class*=' bg-panel']):not(.on-dark, .on-dark *) {
     --color-fg: #18222d;
     --color-chalk: #2b3946;
     --color-dim: #5d6c7b;
@@ -223,12 +223,12 @@
     --color-edge-2: rgb(24 34 45 / 0.14);
     --color-white: #18222d;
   }
-  html:not([data-look='dark']) :is(.card, .surface) {
+  html[data-look='light'] :is(.card, .surface) {
     border-color: rgb(24 34 45 / 0.08);
   }
   /* меню — светлая полупрозрачная капсула на голубом, как переключатель в iOS: пункты белые, выбранный раздел —
      белая «таблетка» с тёмным текстом (в пару к белой кнопке «Бонус»). Чёрное меню владельцу не понравилось */
-  html:not([data-look='dark']) :is(.nav-capsule, .nav-capsule [class^='bg-panel'], .nav-capsule [class*=' bg-panel']) {
+  html[data-look='light'] :is(.nav-capsule, .nav-capsule [class^='bg-panel'], .nav-capsule [class*=' bg-panel']) {
     --color-panel: rgb(255 255 255 / 0.16);
     --color-panel-2: rgb(255 255 255 / 0.14);
     --color-panel-3: #ffffff;
@@ -236,15 +236,15 @@
     --color-fg: #18222d;
     --color-dim: rgb(255 255 255 / 0.92);
   }
-  html:not([data-look='dark']) .nav-capsule {
+  html[data-look='light'] .nav-capsule {
     backdrop-filter: blur(14px);
   }
-  html:not([data-look='dark']) .nav-capsule a:not([aria-current]):hover {
+  html[data-look='light'] .nav-capsule a:not([aria-current]):hover {
     color: #ffffff;
   }
   /* «Главные матчи» — светлая карточка: тёмный текст, графитовая кнопка «Разбор матча», эмблемы-тиснение — тихой
      серой печатью (multiply) */
-  html:not([data-look='dark']) :is(.hero, .hero [class^='bg-panel'], .hero [class*=' bg-panel']) {
+  html[data-look='light'] :is(.hero, .hero [class^='bg-panel'], .hero [class*=' bg-panel']) {
     --color-panel: #eaf3fa;
     --color-panel-2: #f3f8fc;
     --color-panel-3: #e3eef8;
@@ -264,7 +264,7 @@
     --color-good: #0b7e3c;
     color: var(--color-fg);
   }
-  html:not([data-look='dark']) .hero {
+  html[data-look='light'] .hero {
     --paint-1: #eef6fb;
     --paint-2: #e3eef8;
     --paint-3: #f3f8fc;
@@ -275,7 +275,7 @@
     --mark-filter: none;
   }
   /* истории — светлые голубовато-серые, счётчик тёмный */
-  html:not([data-look='dark']) .story-cover {
+  html[data-look='light'] .story-cover {
     background: linear-gradient(180deg, #e6f2fa, #d7e7f3);
     --color-fg: #18222d;
     --color-dim: #5d6c7b;
@@ -737,7 +737,97 @@
 
 /* Светлая версия: шапка после прокрутки — голубое стекло вместо графитового (вне @layer — иначе утилита
    data-[scrolled]:bg-ink/75 в HeaderShell перебивает) */
-html:not([data-look='dark']) header[data-scrolled] {
+html[data-look='light'] header[data-scrolled] {
   background-color: rgb(12 132 228 / 0.82);
   border-color: rgb(255 255 255 / 0.18);
+}
+
+/* ─── Тёмная спортивная версия — основная (владелец: «некрасивый сайт», выбрали тёмную с лаймом) ───────────────
+   Почти чёрный графитовый фон, карточки — графит на тон светлее, единственный акцент — лайм бренда (кнопки,
+   «выгодно», кольца новых историй), красный — только LIVE. Голубая светлая версия — ?look=light. Правила без
+   слоя: должны перебить и токены светлых поверхностей, и утилиты Tailwind. */
+html:not([data-look='light']) {
+  color-scheme: dark;
+  --color-ink: #0b0f14;
+  --color-panel: #10151b;
+  --color-panel-2: #151b22;
+  --color-panel-3: #1c242d;
+  --color-fg: #eef2f6;
+  --color-chalk: #d5dde7;
+  --color-dim: rgb(238 242 246 / 0.68);
+  --color-mute: rgb(238 242 246 / 0.48);
+  --color-edge: rgb(255 255 255 / 0.07);
+  --color-edge-2: rgb(255 255 255 / 0.12);
+  --color-white: #ffffff;
+  --color-btn: #c8ff2e;
+  --color-btn-ink: #141a00;
+  --color-btn-hover: #d8ff6b;
+  --color-focus: #c8ff2e;
+  --color-good: #c8ff2e;
+  --color-live: #ff5d5d;
+  --color-hot: #ffb020;
+}
+html:not([data-look='light']) body {
+  background: #090c10 radial-gradient(1100px 520px at 50% -180px, rgb(200 255 46 / 0.06), transparent 70%) no-repeat;
+}
+/* карточки и всё с фоном bg-panel* — тёмные поверхности с теми же токенами */
+html:not([data-look='light']) :is(.card, [class^='bg-panel'], [class*=' bg-panel']) {
+  --color-fg: #eef2f6;
+  --color-chalk: #d5dde7;
+  --color-dim: rgb(238 242 246 / 0.66);
+  --color-mute: rgb(238 242 246 / 0.48);
+  --color-edge: rgb(255 255 255 / 0.07);
+  --color-edge-2: rgb(255 255 255 / 0.12);
+  --color-white: #ffffff;
+  --color-btn: #c8ff2e;
+  --color-btn-ink: #141a00;
+  --color-btn-hover: #d8ff6b;
+  --color-focus: #c8ff2e;
+  --color-good: #c8ff2e;
+  --color-hot: #ffb020;
+  --color-live: #ff5d5d;
+  --color-loss: #ff5d5d;
+  --color-win: #2ed47a;
+  --color-draw: #8a94a3;
+  --color-tie: #5d6672;
+}
+html:not([data-look='light']) :is(.card, .surface) {
+  border-color: rgb(255 255 255 / 0.06);
+  box-shadow: none;
+}
+/* истории и значки подборок — монохромные графитовые диски с белым знаком: радуга из семи цветов спорила со всем */
+html:not([data-look='light']) .story-disc {
+  background: linear-gradient(180deg, #232c37, #161c24) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    inset 0 0 0 1px rgb(255 255 255 / 0.05) !important;
+}
+html:not([data-look='light']) {
+  --ring-new: #c8ff2e;
+}
+/* табло матчей в шапке: в тёмной версии — такой же графитовый остров, как соседние плашки */
+.ticker-island {
+  background: rgb(10 42 78 / 0.55);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.1),
+    0 8px 24px rgb(8 40 80 / 0.16);
+}
+html:not([data-look='light']) .ticker-island {
+  background: #151b22;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+}
+html:not([data-look='light']) .hdr-island {
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+}
+/* плита «Все матчи дня»: в голубой версии — на тон темнее светлых карточек; в тёмной — графит чуть светлее фона */
+html[data-look='light'] .list-slab {
+  background: #e4eef7;
+}
+html:not([data-look='light']) .list-slab {
+  background: #0e1318;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.04);
+}
+/* эмблемы-тиснение за командами в карточке главного матча — тише: крупный оттиск спорил со счётом */
+html:not([data-look='light']) .hero {
+  --mark-opacity: 0.16;
 }

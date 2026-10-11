@@ -63,7 +63,7 @@ export function LiveTicker({ className = '' }: { className?: string }) {
     <div
       role="region"
       aria-label={data.mode === 'live' ? 'Матчи в игре' : 'Ближайшие матчи'}
-      className={`flex min-w-0 items-center bg-[rgb(10_42_78/0.55)] pl-3.5 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.1),0_8px_24px_rgb(8_40_80/0.16)] backdrop-blur-md ${className}`}
+      className={`flex min-w-0 items-center ticker-island pl-3.5 backdrop-blur-md ${className}`}
     >
       <span className="flex shrink-0 items-center gap-1.5 pr-1.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-fg/80">
         {data.mode === 'live' ? <span className="h-2 w-2 animate-pulse rounded-full bg-[#ff5c63]" /> : null}

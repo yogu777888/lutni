@@ -245,8 +245,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
           (тёмный текст), фон — на тон темнее карточек, чтобы карточки турниров на ней читались */}
       <section
         id="matches"
-        className={`bg-panel scroll-mt-24 rounded-[28px] px-3 py-7 sm:rounded-[40px] sm:px-10 sm:py-12 ${listHead ? 'mt-10 sm:mt-14' : 'mt-5 sm:mt-6'}`}
-        style={{ background: '#e4eef7' }}
+        className={`list-slab bg-panel scroll-mt-24 rounded-[28px] px-3 py-7 sm:rounded-[40px] sm:px-10 sm:py-12 ${listHead ? 'mt-10 sm:mt-14' : 'mt-5 sm:mt-6'}`}
       >
         {listHead ? (
           <h2 className="h2 px-1 text-[32px] sm:px-0 sm:text-[48px]">

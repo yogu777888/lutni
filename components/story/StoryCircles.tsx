@@ -16,7 +16,8 @@ const D = 76
 /** Кольцо 2px по радиусу 36.5: между кольцом и диском — 3px воздуха. */
 const R = 36.5
 /** Не смотрели — белое кольцо (на голубом фоне это и есть акцент), LIVE — красное, просмотрено — полупрозрачное. */
-const UNSEEN = '#ffffff'
+// новые матчи: в тёмной версии — лайм бренда, в голубой — белое (--ring-new в app/globals.css)
+const UNSEEN = 'var(--ring-new, #ffffff)'
 const LIVE = '#ff5c63'
 const SEEN = 'rgb(255 255 255 / 0.38)'
 
@@ -30,8 +31,8 @@ function Ring({ kind, n, seen }: { kind: CircleKind; n: number; seen: number }) 
   const c = { cx: D / 2, cy: D / 2, r: R, fill: 'none', strokeWidth: 2, pathLength: 100, vectorEffect: 'non-scaling-stroke' } as const
   return (
     <svg aria-hidden viewBox={`0 0 ${D} ${D}`} className="absolute inset-0 h-full w-full -rotate-90 overflow-visible">
-      <circle {...c} stroke={done > 0 ? SEEN : color} />
-      {done > 0 && done < 100 ? <circle {...c} stroke={color} strokeLinecap="round" strokeDasharray={`${100 - done} ${done}`} strokeDashoffset={-done} /> : null}
+      <circle {...c} style={{ stroke: done > 0 ? SEEN : color }} />
+      {done > 0 && done < 100 ? <circle {...c} style={{ stroke: color }} strokeLinecap="round" strokeDasharray={`${100 - done} ${done}`} strokeDashoffset={-done} /> : null}
     </svg>
   )
 }
