@@ -831,3 +831,13 @@ html:not([data-look='light']) .list-slab {
 html:not([data-look='light']) .hero {
   --mark-opacity: 0.16;
 }
+/* «Главные матчи» без оттисков эмблем (владелец: «а эмблемы стоит убрать?» — рябили и спорили со счётом);
+   вместо них — мягкое свечение цветом клубов за командами, как в Apple Sports */
+html:not([data-look='light']) .hero-mark {
+  display: none;
+}
+html:not([data-look='light']) .hero-tint {
+  display: block;
+  opacity: 0.85;
+  mix-blend-mode: screen;
+}
