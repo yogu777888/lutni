@@ -98,7 +98,7 @@ export function MatchHero({
         <div className="text-center">
           {played ? (
             <>
-              <div className="num whitespace-nowrap text-[44px] font-semibold leading-none tracking-[-0.03em] sm:text-[76px]">
+              <div className="num display-num whitespace-nowrap text-[44px] font-semibold leading-none tracking-[-0.03em] sm:text-[76px]">
                 <Tick v={m.score!.home} />
                 <span className="mx-1.5 text-mute sm:mx-3">:</span>
                 <Tick v={m.score!.away} />
@@ -114,7 +114,7 @@ export function MatchHero({
           ) : (
             <>
               <div className="text-[13px] text-dim">Начало</div>
-              <div className="num mt-1 text-[40px] font-semibold leading-none tracking-[-0.03em] sm:text-[68px]">{formatTime(m.ts)}</div>
+              <div className="num display-num mt-1 text-[40px] font-semibold leading-none tracking-[-0.03em] sm:text-[68px]">{formatTime(m.ts)}</div>
               <div className="mt-2 text-[13px] text-dim">{SITE.tzLabel.toLowerCase()}</div>
             </>
           )}

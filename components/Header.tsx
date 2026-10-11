@@ -19,7 +19,10 @@ export function Header() {
     <HeaderShell>
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-5 lg:gap-5">
         <Link href="/" aria-label="tag.bet — на главную" className="shrink-0 text-fg transition-opacity hover:opacity-80">
-          <LogoMark size={26} />
+          <span className="flex items-center gap-2">
+            <LogoMark size={26} />
+            <span className="wordmark hidden">tag.bet</span>
+          </span>
         </Link>
         <NavLinks className="hidden shrink-0 lg:flex" />
         <span aria-hidden className="hidden h-5 w-px shrink-0 bg-edge-2 lg:block" />

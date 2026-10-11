@@ -116,7 +116,7 @@ function MatchSlide({ item }: { item: MainItem }) {
   const minute = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'
   // после свистка проигравший чуть тусклее; до матча и при ничьей — обе одинаково
   const lead = score && score.home !== score.away ? (score.home > score.away ? 'home' : 'away') : null
-  const BIG = 'num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[36px] sm:text-[44px] lg:text-[clamp(28px,calc(14vh_-_62px_+_var(--gain,0px)_*_0.25),68px)]'
+  const BIG = 'num display-num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[36px] sm:text-[44px] lg:text-[clamp(28px,calc(14vh_-_62px_+_var(--gain,0px)_*_0.25),68px)]'
   // эмблема на матовом светлом круге, как в Apple Sports: тёмные эмблемы не тонут в цвете фона
   const team = (t: Match['home'], k: 'home' | 'away') => (
     <span className={`flex min-w-0 flex-col items-center gap-3 text-center lg:gap-4 ${lead && lead !== k ? 'opacity-70' : ''}`}>

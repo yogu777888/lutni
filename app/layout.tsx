@@ -1,4 +1,6 @@
 import '@fontsource-variable/onest'
+import '@fontsource-variable/unbounded'
+import '@fontsource-variable/oswald'
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Footer } from '@/components/Footer'
@@ -41,7 +43,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru">
+    // временно: варианты фирменного шрифта для сравнения (FONT_VARIANT=a|b)
+    <html lang="ru" data-font={process.env.FONT_VARIANT || undefined}>
       <body className="min-h-dvh antialiased">
         <Header />
         <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6">{children}</main>

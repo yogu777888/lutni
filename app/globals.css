@@ -677,3 +677,49 @@
     animation: none;
   }
 }
+
+/* временно: варианты фирменного шрифта (FONT_VARIANT=a — Unbounded, b — Oswald; app/layout.tsx) */
+html[data-font] :is(h1, h2:not([class*='text-[13px]'])),
+html[data-font] .display-num,
+html[data-font] .wordmark {
+  font-family: var(--font-brand);
+}
+html[data-font] .wordmark {
+  display: inline;
+  color: var(--color-fg);
+  line-height: 1;
+}
+html[data-font='a'] {
+  --font-brand: 'Unbounded Variable', var(--font-sans);
+}
+html[data-font='a'] :is(h1, h2:not([class*='text-[13px]'])) {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+html[data-font='a'] .display-num {
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+html[data-font='a'] .wordmark {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+html[data-font='b'] {
+  --font-brand: 'Oswald Variable', var(--font-sans);
+}
+html[data-font='b'] :is(h1, h2:not([class*='text-[13px]'])) {
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+}
+html[data-font='b'] .display-num {
+  font-weight: 500;
+  letter-spacing: 0;
+}
+html[data-font='b'] .wordmark {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
