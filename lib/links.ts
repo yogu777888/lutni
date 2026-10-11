@@ -8,3 +8,5 @@ export const leagueHref = (l: Pick<League, 'id' | 'original' | 'country'>) =>
   `/league/${l.id}-${slugify(`${l.original} ${l.country && !/^world$/i.test(l.country) ? l.country : ''}`)}`
 
 export const dayHref = (ymd: string, today: string) => (ymd === today ? '/' : `/matches/${ymd}`)
+/** Полный список матчей дня (страница «Матчи»): сегодня — /matches, другие дни — /matches/<дата>/all. */
+export const listHref = (ymd: string, today: string) => (ymd === today ? '/matches' : `/matches/${ymd}/all`)

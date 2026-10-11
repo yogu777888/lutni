@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { countryRank, featuredRank } from '@/config/leagues'
 import { daySnaps, getLiveOdds, getMatchesByDate, getStandings, getTeamGames, peekOddsSnap, tagsFor, waitOddsSnap, type FeedItem } from '@/lib/data'
-import { dayHref } from '@/lib/links'
+import { dayHref, listHref } from '@/lib/links'
 import { addDays, appNow, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdInTz, ymdToNoonTs } from '@/lib/format'
 import { lineMoves, type OddsSnap, type X12Line } from '@/lib/lines'
 import { isLive, liveRank } from '@/lib/rank'
@@ -33,14 +33,17 @@ const BADGE_WORD: Record<string, string> = {
   'obe-zabyut': 'обе забьют · ',
   favorit: 'фаворит · ',
   seriya: 'серия ',
+  'top-match': 'места ',
   krepost: 'дома без поражений ',
-  kadry: 'игроков ',
 }
 
 export type DaySort = 'league' | 'time'
 const LIVE_LIMIT = 6
 
 /** Заголовок дня в две строки: вторая — светлее, как на афише. */
+/** Заголовок страницы «Матчи»: «Футбол сегодня» → «Все матчи сегодня»; у прошедших дней — как есть. */
+export const listTitle = (title: string) => title.replace(/^Футбол/, 'Все матчи')
+
 export function dayTitleLines(ymd: string, today: string): [string, string] {
   const d = diffDays(ymd, today)
   const ts = ymdToNoonTs(ymd)
@@ -101,7 +104,18 @@ async function liveLineFor(m: Match): Promise<X12Line | null> {
   return { bookmaker: 'PARI', slug: 'pari', at: appNow(), home: odds.home, draw: odds.draw, away: odds.away }
 }
 
-export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; today: string; sort?: DaySort }) {
+export async function DayView({
+  ymd,
+  today,
+  sort = 'league',
+  view = 'home',
+}: {
+  ymd: string
+  today: string
+  sort?: DaySort
+  /** home — витрина дня (табло, подборки, полки), list — страница «Матчи»: полный список дня */
+  view?: 'home' | 'list'
+}) {
   let matches: Match[] = []
   let failed = false
   try {
@@ -140,8 +154,8 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
   const totalOthers = othersAll.reduce((s, g) => s + g.items.length, 0)
 
   const open = items.filter((i) => i.match.status === 'scheduled' || i.match.status === 'live')
-  // на первом экране — только главные кружки, остальные теги — по «Все теги»
-  const storyGroups = mainCircles(buildStoryGroups(items))
+  // все истории дня — полками на главной, главные теги первыми
+  const storyGroups = mainCircles(buildStoryGroups(items), 99)
   const values = open
     .filter((i) => i.summary?.pick?.kind === 'value' && i.match.status === 'scheduled')
     .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
@@ -158,7 +172,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
   // линия для подборок: топ-турниры без снимка догружаются (не дольше 1,2 с, остальное — в фоне, к следующему открытию)
   const [mains, day] = await Promise.all([
     Promise.all(
-      mainMatches(items).map(async (it): Promise<MainItem> => {
+      (view === 'home' ? mainMatches(items) : []).map(async (it): Promise<MainItem> => {
         const m = it.match
         // цвета клубов — для мягкой подкраски половин карточки (светлая версия); ждём не дольше 1,5 с, иначе без неё
         const colors = Promise.race([matchColors(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))])
@@ -166,11 +180,14 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         return { it, snap, tint: tint ? { home: tint.home, away: tint.away } : null, notes, liveOdds }
       }),
     ),
-    daySnaps(matches, 1200),
+    view === 'home' ? daySnaps(matches, 1200) : { snaps: new Map<number, OddsSnap>(), pending: 0 },
   ])
   const hasSummary = mains.length > 0
   // заголовок «Все матчи дня» — когда над списком есть что-то ещё (сводка, выгодные ставки)
-  const listHead = hasSummary || values.length > 0
+  // список — на странице «Матчи»; на главной — только если витрины нет (в этот день нет «взрослых» матчей)
+  const showList = view === 'list' || !hasSummary
+  // заголовок «Все матчи дня» над списком — когда на главной над ним есть что-то ещё (выгодные ставки)
+  const listHead = view === 'home' && values.length > 0
   // красная точка у «Сегодня»: на главной знаем сами, на других днях — из того же кэша матчей
   let liveToday = ymd === today && liveAll.length > 0
   if (ymd !== today) {
@@ -202,6 +219,8 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         .sort((a, b) => a.match.ts - b.match.ts || leagueOrder(a) - leagueOrder(b))
     : []
   const base = dayHref(ymd, today)
+  // полный список дня — страница «Матчи»
+  const list = listHref(ymd, today)
 
   // полки историй: без «Выгодно» (у него своя полка с кэфами), по 12 матчей; «Показать все» — страница тега, у «В игре» — список
   const shelfGroups = storyGroups.filter((g) => g.key !== 'value')
@@ -210,18 +229,19 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
     shelfGroups.flatMap((g) => g.items.slice(0, 12).map((x) => [x.id, byId.get(x.id)])).filter((e) => e[1]),
   ) as Record<number, (typeof items)[number]['match']>
   const shelfMore = Object.fromEntries(
-    shelfGroups.map((g) => [g.key, g.key === 'live' ? `${base}#matches` : g.key === 'top' ? undefined : `/tag/${g.key}`]),
+    shelfGroups.map((g) => [g.key, g.key === 'live' ? list : g.key === 'top' ? undefined : `/tag/${g.key}`]),
   )
   // метка в углу обложки — главная цифра (голое «62%» непонятно — к цифре короткое слово) матча в истории («−17%», «62%»); только если в ней есть число
   const shelfStats: Record<string, string> = {}
   for (const g of shelfGroups)
     for (const x of g.items.slice(0, 12)) {
       const st = x.focus ? statFor(x.focus.slug, x.focus.reason) : ''
-      if (/\d/.test(st)) shelfStats[`${g.key}:${x.id}`] = (BADGE_WORD[g.key] ?? '') + st
+      if (g.key === 'live' || g.key === 'top' || !/\d/.test(st)) continue
+      shelfStats[`${g.key}:${x.id}`] = g.key === 'kadry' ? `без ${st.replace(/\D/g, '')} игроков` : (BADGE_WORD[g.key] ?? '') + st
     }
   const picks = {
     ymd,
-    dayHref: base,
+    listHref: list,
     past,
     counts: dayCounts(items),
     goals: goalsPicks(items, snapOf),
@@ -235,6 +255,8 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
       {/* первый экран: заголовок, кружки и сводка. На компьютере сводка тянется до низа окна —
           заходишь и сразу видишь всё нужное, а «Все матчи дня» начинаются ниже, по прокрутке.
           На очень высоких мониторах — не выше 50rem (хватает на обычное окно браузера на экране 1080p), чтобы плитки не раздувались. */}
+      {view === 'home' ? (
+        <>
       <div className={hasSummary ? 'flex flex-col [--gain:clamp(80px,calc(100vh_-_600px),160px)] lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <section className="min-w-0 pt-1 sm:pt-0">
@@ -266,13 +288,26 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
       {/* истории — полками, как «Скоро начнутся»: «В игре», «Топ дня», потом «Скоро начнутся» и «Выгодно сегодня»,
           потом остальные истории (у «Выгодно» своя полка с кэфами — история-дубль не нужна) */}
       <StoryShelves groups={shelfGroups} show={['live', 'top']} matches={shelfMatches} more={shelfMore} stats={shelfStats} />
-      {past ? null : <SoonShelf items={soonMatches(items, new Set([...mains.map((x) => x.it.match.id), ...shelfGroups.filter((g) => g.key === 'top' || g.key === 'live').flatMap((g) => g.items.slice(0, 12).map((x) => x.id))]))} allHref={`${base}?sort=time#matches`} />}
+      {past ? null : <SoonShelf items={soonMatches(items, new Set([...mains.map((x) => x.it.match.id), ...shelfGroups.filter((g) => g.key === 'top' || g.key === 'live').flatMap((g) => g.items.slice(0, 12).map((x) => x.id))]))} allHref={`${list}?sort=time`} />}
       <ValueBoard items={values} />
       <StoryShelves groups={shelfGroups} show={shelfGroups.map((g) => g.key).filter((k) => k !== 'live' && k !== 'top')} matches={shelfMatches} more={shelfMore} stats={shelfStats} />
 
+        </>
+      ) : null}
       {/* без сводки (в этот день нет ни одного «взрослого» матча) список идёт сразу под заголовком страницы — второй заголовок не нужен */}
       {/* светлая плита (ритм страницы плитами, как у reg.ru): класс bg-panel даёт внутри токены светлой поверхности
           (тёмный текст), фон — на тон темнее карточек, чтобы карточки турниров на ней читались */}
+      {view === 'list' ? (
+        // страница «Матчи»: заголовок — как на главной, но про список
+        <section className="min-w-0 pt-1 sm:pt-0">
+          <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
+          <h1 className="mt-1.5 text-[30px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[34px]">
+            {listTitle(heading.title)}
+            <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
+          </h1>
+        </section>
+      ) : null}
+      {showList ? (
       <section
         id="matches"
         className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : 'mt-5 sm:mt-6'}`}
@@ -284,15 +319,15 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         {/* выбор дня — и здесь, у списка (как и чип в «Главных матчах», ведёт на страницу дня); рядом — порядок списка */}
         <div className={`flex flex-wrap items-center justify-between gap-x-6 gap-y-3 ${listHead ? 'mt-5' : ''}`}>
           <div className="w-full min-w-0 sm:w-auto">
-            <DateTabs active={ymd} today={today} liveToday={liveToday} hash="#matches" />
+            <DateTabs active={ymd} today={today} liveToday={liveToday} {...(view === 'list' ? { section: 'all' } : { hash: '#matches' })} />
           </div>
           {past || !matches.length ? null : (
             // порядок списка — обычными ссылками (?sort=time): работает без JS, у страницы один canonical
             <nav aria-label="Порядок матчей" className="flex items-center gap-1 rounded-full bg-white/[0.04] p-1 text-[14px] font-medium">
               {(
                 [
-                  ['league', 'По турнирам', `${base}#matches`],
-                  ['time', 'По времени', `${base}?sort=time#matches`],
+                  ['league', 'По турнирам', view === 'list' ? list : `${base}#matches`],
+                  ['time', 'По времени', view === 'list' ? `${list}?sort=time` : `${base}?sort=time#matches`],
                 ] as const
               ).map(([k, label, href]) => (
                 <Link
@@ -361,6 +396,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
           <Sidebar />
         </div>
       </section>
+      ) : null}
     </>
   )
 }

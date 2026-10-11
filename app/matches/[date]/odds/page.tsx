@@ -9,7 +9,7 @@ import { daySnaps, getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { linePicks } from '@/lib/day-summary'
 import { diffDays, formatDayMonth, isYmd, todayYmd, ymdToNoonTs } from '@/lib/format'
 import { moveOutcome, periodEndLabel, type LineMove, type MoveKey } from '@/lib/lines'
-import { dayHref, matchHref } from '@/lib/links'
+import { dayHref, listHref, matchHref } from '@/lib/links'
 
 export const dynamic = 'force-dynamic'
 
@@ -198,7 +198,7 @@ export default async function OddsMovesPage({ params, searchParams }: Props) {
         букмекера. 18+
       </p>
       <p className="mt-4">
-        <Link href={`${dayHref(date, today)}#matches`} className="text-[14px] font-medium text-fg transition-colors hover:text-good">
+        <Link href={listHref(date, today)} className="text-[14px] font-medium text-fg transition-colors hover:text-good">
           ← Все матчи дня
         </Link>
       </p>

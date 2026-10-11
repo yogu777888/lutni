@@ -4,16 +4,16 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 export const NAV = [
-  { href: '/', label: 'Матчи' },
+  { href: '/matches', label: 'Матчи' },
   { href: '/tags', label: 'Теги' },
   { href: '/tag/value', label: 'Выгодно' },
   { href: '/leagues', label: 'Лиги' },
   { href: '/bookmakers', label: 'Букмекеры' },
 ] as const
 
-/** Какой пункт меню подсветить: страница матча и дни — это «Матчи», страницы тегов — «Теги». */
+/** Какой пункт меню подсветить: список, дни и страница матча — «Матчи», страницы тегов — «Теги». Главная — логотип. */
 export function activeNav(path: string): string | null {
-  if (path === '/' || path.startsWith('/matches') || path.startsWith('/match/')) return '/'
+  if (path.startsWith('/matches') || path.startsWith('/match/')) return '/matches'
   if (path === '/tag/value') return '/tag/value'
   if (path === '/tags' || path.startsWith('/tag/')) return '/tags'
   if (path === '/leagues' || path.startsWith('/league/')) return '/leagues'

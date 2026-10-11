@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { SITE } from '@/config/site'
 import { addDays, diffDays, formatWeekday, ymdToNoonTs } from '@/lib/format'
-import { dayHref } from '@/lib/links'
+import { dayHref, listHref } from '@/lib/links'
 import { DatePicker } from './DatePicker'
 
 /** «28 сент» — день вне полосы вкладок (выбран через календарь). */
@@ -36,7 +36,7 @@ export function DateTabs({
   /** подборка дня (`goals`, `odds`): вкладки ведут на ту же подборку другого дня */
   section?: string
 }) {
-  const href = (d: string) => (section ? `/matches/${d}/${section}` : `${dayHref(d, today)}${hash}`)
+  const href = (d: string) => (section === 'all' ? listHref(d, today) : section ? `/matches/${d}/${section}` : `${dayHref(d, today)}${hash}`)
   const strip = Array.from({ length: SITE.daysAhead + 2 }, (_, i) => addDays(today, i - 1))
   // день, выбранный через календарь, — отдельной вкладкой с датой: раньше полосы или после неё
   const days = strip.includes(active) ? strip : active < strip[0] ? [active, ...strip] : [...strip, active]

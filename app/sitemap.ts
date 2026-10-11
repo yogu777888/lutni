@@ -22,6 +22,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...TAGS.map((t) => ({ url: `${base}/tag/${t.slug}`, lastModified: now, changeFrequency: 'hourly' as const, priority: 0.8 })),
     ...PARTNERS.map((p) => ({ url: `${base}/bookmakers/${p.slug}`, changeFrequency: 'weekly' as const, priority: 0.6 })),
     ...days.filter((d) => d !== today).map((d) => ({ url: `${base}/matches/${d}`, lastModified: now, changeFrequency: 'hourly' as const, priority: 0.6 })),
+    // полный список матчей: сегодня — /matches, другие дни — /matches/<дата>/all
+    { url: `${base}/matches`, lastModified: now, changeFrequency: 'hourly' as const, priority: 0.9 },
+    ...days.filter((d) => d !== today).map((d) => ({ url: `${base}/matches/${d}/all`, lastModified: now, changeFrequency: 'hourly' as const, priority: 0.5 })),
     // подборки дня: голевые матчи и движение линии — и на сегодня тоже
     ...days.flatMap((d) => ['goals', 'odds'].map((p) => ({ url: `${base}/matches/${d}/${p}`, lastModified: now, changeFrequency: 'hourly' as const, priority: 0.5 }))),
   ]

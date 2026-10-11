@@ -49,7 +49,7 @@ export function DatePicker({ active, today, min, max, hash = '', section }: { ac
         max={max}
         onChange={(e) => {
           const d = e.target.value
-          if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d >= min && d <= max) router.push(section ? `/matches/${d}/${section}` : `${d === today ? '/' : `/matches/${d}`}${hash}`)
+          if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d >= min && d <= max) router.push(section === 'all' ? (d === today ? '/matches' : `/matches/${d}/all`) : section ? `/matches/${d}/${section}` : `${d === today ? '/' : `/matches/${d}`}${hash}`)
         }}
       />
     </span>

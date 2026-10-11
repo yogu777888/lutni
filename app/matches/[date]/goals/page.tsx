@@ -8,7 +8,7 @@ import { featuredInfo, isFeatured } from '@/config/leagues'
 import { daySnaps, getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { goalsPicks } from '@/lib/day-summary'
 import { diffDays, formatDayMonth, formatTime, isYmd, pct, pluralN, todayYmd, ymdInTz, ymdToNoonTs } from '@/lib/format'
-import { dayHref, matchHref } from '@/lib/links'
+import { dayHref, listHref, matchHref } from '@/lib/links'
 
 export const dynamic = 'force-dynamic'
 
@@ -190,7 +190,7 @@ export default async function GoalsPage({ params, searchParams }: Props) {
         букмекера. 18+
       </p>
       <p className="mt-4">
-        <Link href={`${dayHref(date, today)}#matches`} className="text-[14px] font-medium text-fg transition-colors hover:text-good">
+        <Link href={listHref(date, today)} className="text-[14px] font-medium text-fg transition-colors hover:text-good">
           ← Все матчи дня
         </Link>
       </p>
