@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { dayHeading } from '@/components/DayView'
-import { Coverage, Filters, MatchWhen, PickHead, STAGES, STAGE_LABEL, pickParam, stageOf, withParam, type StageKey } from '@/components/picks/Shared'
+import { Coverage, Crests, Filters, MatchWhen, PickHead, STAGES, STAGE_LABEL, pickParam, stageOf, withParam, type StageKey } from '@/components/picks/Shared'
 import { featuredInfo, isFeatured } from '@/config/leagues'
 import { daySnaps, getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { linePicks } from '@/lib/day-summary'
@@ -90,15 +90,19 @@ export default async function OddsMovesPage({ params, searchParams }: Props) {
           { href: base, label: 'Движение коэффициентов' },
         ]}
       />
-      <PickHead ymd={date} today={today} date={heading.date} title="Движение коэффициентов" section="odds">
-        <p>Как менялась линия на матчи дня: коэффициент открытия и последнее значение у одного букмекера — по исходам и тоталу 2,5.</p>
-        <p className="text-[14px] text-mute">
-          Это доматчевая линия: у ещё не начавшихся матчей — до момента, когда мы её взяли, у начавшихся — до начала матча. LIVE-коэффициенты здесь не
-          сравниваем. Истории по часам у нас пока нет, поэтому на графиках — две честные точки, без кривой между ними.
-        </p>
+      <PickHead ymd={date} today={today} date={heading.date} title="Движение коэффициентов" icon="pick-moves" section="odds"
+        how={
+          <>
+            Это доматчевая линия: у ещё не начавшихся матчей — до момента, когда мы её взяли, у начавшихся — до начала матча. LIVE-коэффициенты здесь не
+          сравниваем. На мини-графике — две точки (открытие и последнее значение); подробная история линии по времени — на странице матча, где
+          матч есть в линии PARI.
+          </>
+        }
+      >
+        Как менялась линия на матчи дня: коэффициент открытия и последнее значение у одного букмекера — по исходам и тоталу 2,5.
       </PickHead>
 
-      <div className="mt-8 space-y-4">
+      <div className="card mt-4 space-y-4 p-4 sm:p-5">
         <Filters
           groups={[
             {
@@ -151,11 +155,14 @@ export default async function OddsMovesPage({ params, searchParams }: Props) {
                 <li key={`${m.id}:${mv.key}`} className="relative border-b border-edge last:border-b-0 transition-colors hover:bg-white/[0.02]">
                   <div className="grid grid-cols-[56px_minmax(0,1fr)] gap-x-4 gap-y-2 px-4 py-3.5 lg:grid-cols-[72px_minmax(0,1fr)_minmax(0,0.8fr)_150px_88px_minmax(0,0.9fr)] lg:gap-x-6 lg:items-center lg:px-5">
                     <MatchWhen m={m} />
-                    <span className="min-w-0">
+                    <span className="flex min-w-0 items-center gap-3">
+                      <Crests m={m} />
+                      <span className="min-w-0">
                       <Link href={matchHref(m)} prefetch={false} className="block truncate text-[15px] font-semibold text-fg after:absolute after:inset-0 after:content-['']">
                         {m.home.name} — {m.away.name}
                       </Link>
                       <span className="block truncate text-[13px] text-mute">{featuredInfo(m.league)?.short || m.league.name}</span>
+                      </span>
                     </span>
                     <span className="col-start-2 truncate text-[14px] text-chalk lg:col-start-auto">{moveOutcome(mv.key, { home: m.home.name, away: m.away.name })}</span>
                     <span className="col-start-2 flex items-center gap-3 lg:col-start-auto">

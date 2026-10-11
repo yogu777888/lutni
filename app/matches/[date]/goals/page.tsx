@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { dayHeading } from '@/components/DayView'
-import { Coverage, Filters, MatchWhen, PickHead, STAGES, STAGE_LABEL, pickParam, stageOf, withParam, type StageKey } from '@/components/picks/Shared'
+import { Coverage, Crests, Filters, MatchWhen, PickHead, STAGES, STAGE_LABEL, pickParam, stageOf, withParam, type StageKey } from '@/components/picks/Shared'
 import { featuredInfo, isFeatured } from '@/config/leagues'
 import { daySnaps, getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { goalsPicks } from '@/lib/day-summary'
@@ -80,15 +80,18 @@ export default async function GoalsPage({ params, searchParams }: Props) {
           { href: base, label: 'Голевые матчи' },
         ]}
       />
-      <PickHead ymd={date} today={today} date={heading.date} title="Голевые матчи" section="goals">
-        <p>Матчи дня, где по линии букмекера вероятнее 3 гола и больше. Сравнивайте шанс, коэффициенты и время матчей в одной таблице.</p>
-        <p className="text-[14px] text-mute">
-          Шанс — из пары коэффициентов «больше 2,5 / меньше 2,5» одного букмекера в одном снимке линии, без маржи: (1/ТБ) ÷ (1/ТБ + 1/ТМ). Средние голы команд
+      <PickHead ymd={date} today={today} date={heading.date} title="Голевые матчи" icon="pick-goals" section="goals"
+        how={
+          <>
+            Шанс — из пары коэффициентов «больше 2,5 / меньше 2,5» одного букмекера в одном снимке линии, без маржи: (1/ТБ) ÷ (1/ТБ + 1/ТМ). Средние голы команд
           вероятность не подменяют. У начавшихся матчей — линия перед началом.
-        </p>
+          </>
+        }
+      >
+        Матчи дня, где по линии букмекера вероятнее 3 гола и больше. Сравнивайте шанс, коэффициенты и время матчей в одной таблице.
       </PickHead>
 
-      <div className="mt-8 space-y-4">
+      <div className="card mt-4 space-y-4 p-4 sm:p-5">
         <Filters
           groups={[
             { label: 'Шанс от', options: MINS.map((v) => ({ label: `${v}%`, href: withParam(base, q, 'min', v, '55'), on: v === min })) },
@@ -133,13 +136,16 @@ export default async function GoalsPage({ params, searchParams }: Props) {
                 <li key={m.id} className="relative border-b border-edge last:border-b-0 transition-colors hover:bg-white/[0.02]">
                   <div className="grid grid-cols-[56px_minmax(0,1fr)] gap-x-4 gap-y-2 px-4 py-3.5 md:grid-cols-[72px_minmax(0,1fr)_120px_96px_96px_150px] md:items-center md:px-5">
                     <MatchWhen m={m} />
-                    <span className="min-w-0">
+                    <span className="flex min-w-0 items-center gap-3">
+                      <Crests m={m} />
+                      <span className="min-w-0">
                       <Link href={matchHref(m)} prefetch={false} className="block truncate text-[15px] font-semibold text-fg after:absolute after:inset-0 after:content-['']">
                         {m.home.name} — {m.away.name}
                       </Link>
                       <span className="block truncate text-[13px] text-mute">
                         {featuredInfo(m.league)?.short || m.league.name}
                         {result ? ` · ${result}` : ''}
+                      </span>
                       </span>
                     </span>
                     <span className="col-start-2 flex items-center gap-3 md:col-start-auto">
