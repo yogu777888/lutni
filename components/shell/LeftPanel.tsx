@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react'
 import type { CompactMatch } from '@/lib/compact'
 import { useFavorites } from '../favorites'
 import { TeamLogo } from '../TeamLogo'
+import { toggleShell } from './shell-state'
+import { PanelToggle } from './PanelToggle'
 
 export type PanelLeague = { id: number; short: string; href: string }
 
@@ -38,13 +40,35 @@ export function LeftPanel({ leagues, today }: { leagues: PanelLeague[]; today: s
 
   return (
     // одна панель на всю высоту, как «Моя медиатека» у Spotify: свои команды, под чертой — турниры
-    <div className="scrollbar-none h-full overflow-y-auto rounded-card bg-panel p-4">
+    <div className="h-full rounded-card bg-panel">
+      {/* свёрнута — полоска, как у Spotify: кнопка «развернуть» и эмблемы избранных команд */}
+      <div className="shell-l-rail scrollbar-none h-full flex-col items-center gap-2 overflow-y-auto py-3">
+        <PanelToggle side="l" open={false} />
+        {favs.map((t) => {
+          const g = gameOf(t.id)
+          return (
+            <Link
+              key={t.id}
+              href={g?.href ?? '#'}
+              prefetch={false}
+              title={t.name}
+              onClick={(e) => (g ? null : (e.preventDefault(), toggleShell('l')))}
+              className="relative grid h-10 w-10 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
+            >
+              <TeamLogo name={t.name} src={t.logo ?? null} size={24} />
+              {g?.live ? <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-live ring-2 ring-panel" /> : null}
+            </Link>
+          )
+        })}
+      </div>
+    <div className="shell-l-full scrollbar-none h-full overflow-y-auto p-4">
       <section>
         <h2 className="flex items-center gap-2 text-[15px] font-semibold">
           <svg viewBox="0 0 24 24" className="h-4 w-4 text-acid" fill="currentColor" aria-hidden>
             <path d="M12 3.6l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.5l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z" />
           </svg>
           Мои команды
+          <PanelToggle side="l" open className="ml-auto" />
         </h2>
         {favs.length ? (
           <ul className="mt-3 space-y-1">
@@ -105,6 +129,7 @@ export function LeftPanel({ leagues, today }: { leagues: PanelLeague[]; today: s
           Все турниры →
         </Link>
       </section>
+    </div>
     </div>
   )
 }

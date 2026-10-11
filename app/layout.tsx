@@ -9,6 +9,8 @@ import { Metrika } from '@/components/Metrika'
 import { LeftPanel } from '@/components/shell/LeftPanel'
 import { RightPanel } from '@/components/shell/RightPanel'
 import { ShellFrame } from '@/components/shell/ShellFrame'
+import { ResizeHandle } from '@/components/shell/ResizeHandle'
+import { SHELL_SCRIPT } from '@/components/shell/shell-state'
 import { FEATURED_LEAGUES } from '@/config/leagues'
 import { addDays, todayYmd } from '@/lib/format'
 import { TAGS } from '@/lib/tags'
@@ -49,15 +51,20 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru">
+    // suppressHydrationWarning: ширину и свёрнутость боковых панелей скрипт ниже ставит до отрисовки
+    <html lang="ru" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SHELL_SCRIPT }} />
+      </head>
       <body className="min-h-dvh antialiased">
         <Header />
         <ShellFrame />
         {/* каркас, как у Spotify (от xl): слева «Мои команды» и турниры, в центре — серая панель страницы с градиентом
             сверху, справа служебная «Своя подборка» (фильтр страницы «Матчи») — по одной панели на всю высоту; уже — обычная страница во всю ширину */}
-        <div className="xl:grid xl:grid-cols-[248px_minmax(0,1fr)_288px] xl:gap-2 xl:px-2 xl:pb-2 xl:pt-2">
+        <div className="xl:grid xl:grid-cols-[var(--shell-l)_minmax(0,1fr)_var(--shell-r)] xl:gap-2 xl:px-2 xl:pb-2 xl:pt-2">
           <aside aria-label="Мои команды и турниры" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
+              <ResizeHandle side="l" />
               <LeftPanel today={todayYmd()} leagues={FEATURED_LEAGUES.map((l) => ({ id: l.id, short: l.short, href: leagueHref({ id: l.id, original: l.name, country: l.country }) }))} />
             </div>
           </aside>
@@ -67,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <aside aria-label="Своя подборка" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
+              <ResizeHandle side="r" />
               <RightPanel
                 days={[
                   { ymd: addDays(todayYmd(), -1), label: 'Вчера' },

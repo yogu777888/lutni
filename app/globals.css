@@ -697,3 +697,21 @@
       --tint-b 0.8s ease;
   }
 }
+
+/* боковые панели каркаса: ширина — переменные (components/shell/shell-state.ts), свёрнутая — полоска */
+:root {
+  --shell-l: 248px;
+  --shell-r: 288px;
+}
+.shell-l-rail,
+.shell-r-rail {
+  display: none;
+}
+html[data-shell-lc] .shell-l-full,
+html[data-shell-rc] .shell-r-full {
+  display: none;
+}
+html[data-shell-lc] .shell-l-rail,
+html[data-shell-rc] .shell-r-rail {
+  display: flex;
+}
