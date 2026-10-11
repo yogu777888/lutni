@@ -80,7 +80,7 @@ function Mark({ src, side, drift, color }: { src: string; side: 'left' | 'right'
   const ink = color ? darken(color) : '#18222d'
   return (
     <div
-      className={`hero-mark absolute top-1/2 aspect-square h-[56%] -translate-y-1/2 sm:h-[112%] ${
+      className={`hero-mark absolute top-1/2 hidden aspect-square h-[56%] -translate-y-1/2 sm:block sm:h-[112%] ${
         side === 'left' ? 'left-0 -translate-x-1/2 sm:-translate-x-[38%]' : 'right-0 translate-x-1/2 sm:translate-x-[38%]'
       }`}
     >

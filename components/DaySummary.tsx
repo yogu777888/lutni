@@ -45,12 +45,12 @@ export type MainItem = {
  * к эмблеме. Текст уходит от края карточки к центру: у хозяев — вправо, у гостей — влево (зеркально). Поверх —
  * на высоту табло не влияет.
  */
-function HandNote({ text, side }: { text: string; side: 'home' | 'away' }) {
+function HandNote({ text, side, short }: { text: string; side: 'home' | 'away'; short: boolean }) {
   const away = side === 'away'
   return (
     <span
       aria-hidden
-      className={`pointer-events-none absolute bottom-[calc(100%-4px)] flex flex-col text-live ${away ? 'right-[18%] items-end' : 'left-[18%] items-start'}`}
+      className={`pointer-events-none absolute bottom-[calc(100%-4px)] flex-col text-live ${short ? 'flex' : 'hidden sm:flex'} ${away ? 'right-[18%] items-end' : 'left-[18%] items-start'}`}
     >
       {/* на телефоне длинная приписка — в две строки (иначе заходит на счёт), на компьютере — в одну */}
       <span
@@ -153,7 +153,8 @@ function MatchSlide({ item }: { item: MainItem }) {
   const team = (t: Match['home'], k: 'home' | 'away') => (
     <span className={`flex min-w-0 flex-col items-center gap-3 text-center lg:gap-4 ${lead && lead !== k ? 'opacity-70' : ''}`}>
       <span className="relative grid h-[var(--disc)] w-[var(--disc)] shrink-0 place-items-center rounded-full bg-white/[0.16] ring-1 ring-white/25 backdrop-blur-md">
-        {notes?.[k] ? <HandNote text={notes[k]} side={k} /> : null}
+        {/* на телефоне — только короткие приписки («лидер», «2-е место»): длинные в две строки налезали на всё вокруг */}
+        {notes?.[k] ? <HandNote text={notes[k]} side={k} short={notes[k].length <= 12} /> : null}
         {/* при перелистывании эмблема вздрагивает, как желе: сжимается и разжимается с отскоком; гости — чуть позже */}
         <span className={`jelly grid place-items-center ${k === 'away' ? '[--jelly-delay:0.06s]' : ''}`}>
           <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />

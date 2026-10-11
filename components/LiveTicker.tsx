@@ -63,7 +63,7 @@ export function LiveTicker({ className = '' }: { className?: string }) {
     <div
       role="region"
       aria-label={data.mode === 'live' ? 'Матчи в игре' : 'Ближайшие матчи'}
-      className={`flex min-w-0 items-center ${className}`}
+      className={`min-w-0 items-center ${className}`}
     >
       <span className="flex shrink-0 items-center gap-1.5 pr-1.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-fg/80">
         {data.mode === 'live' ? <span className="h-2 w-2 animate-pulse rounded-full bg-[#ff5c63]" /> : null}
