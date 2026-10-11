@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { countryRank, featuredRank } from '@/config/leagues'
 import { daySnaps, getLiveOdds, getMatchesByDate, getStandings, getTeamGames, peekOddsSnap, tagsFor, waitOddsSnap, type FeedItem } from '@/lib/data'
 import { dayHref, listHref } from '@/lib/links'
+import { applyListFilter, filterQuery, isEmptyFilter, type ListFilter } from '@/lib/list-filter'
 import { addDays, appNow, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdInTz, ymdToNoonTs } from '@/lib/format'
 import { lineMoves, type OddsSnap, type X12Line } from '@/lib/lines'
 import { isLive, liveRank } from '@/lib/rank'
@@ -109,10 +110,13 @@ export async function DayView({
   today,
   sort = 'league',
   view = 'home',
+  filter,
 }: {
   ymd: string
   today: string
   sort?: DaySort
+  /** «Своя подборка» из правой панели — только для страницы «Матчи» */
+  filter?: ListFilter
   /** home — витрина дня (табло, подборки, полки), list — страница «Матчи»: полный список дня */
   view?: 'home' | 'list'
 }) {
@@ -125,8 +129,13 @@ export async function DayView({
   }
 
   const items: FeedItem[] = matches.map((m) => ({ match: m, ...tagsFor(m) }))
+  // список страницы «Матчи» — с учётом «Своей подборки»; витрина и красная точка «Сегодня» — по всему дню
+  const filtered = view === 'list' && filter && !isEmptyFilter(filter)
+  const listItems = filtered ? applyListFilter(items, filter) : items
+  // фильтр — и в ссылках порядка «По турнирам / По времени»
+  const fq = filtered ? filterQuery(filter) : ''
   const groups = new Map<number, { league: League; items: FeedItem[]; rank: number }>()
-  for (const it of items) {
+  for (const it of listItems) {
     const l = it.match.league
     let g = groups.get(l.id)
     if (!g) groups.set(l.id, (g = { league: l, items: [], rank: featuredRank(l) }))
@@ -161,7 +170,7 @@ export async function DayView({
     .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
     .slice(0, 5)
 
-  const liveAll = items.filter((i) => isLive(i.match))
+  const liveAll = listItems.filter((i) => isLive(i.match))
   // в «Сейчас в игре» — сначала топ-лиги, потом матчи с линией; женские и молодёжные — в конец
   const liveTop = [...liveAll].sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts).slice(0, LIVE_LIMIT)
 
@@ -189,7 +198,7 @@ export async function DayView({
   // заголовок «Все матчи дня» над списком — когда на главной над ним есть что-то ещё (выгодные ставки)
   const listHead = view === 'home' && values.length > 0
   // красная точка у «Сегодня»: на главной знаем сами, на других днях — из того же кэша матчей
-  let liveToday = ymd === today && liveAll.length > 0
+  let liveToday = ymd === today && items.some((i) => isLive(i.match))
   if (ymd !== today) {
     try {
       liveToday = (await getMatchesByDate(today)).some(isLive)
@@ -305,6 +314,14 @@ export async function DayView({
             {listTitle(heading.title)}
             <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
           </h1>
+          {filtered ? (
+            <p className="mt-2 text-[14px] text-dim">
+              Своя подборка: {pluralN(listItems.length, ['матч', 'матча', 'матчей'])} из {items.length} ·{' '}
+              <Link href={list} className="font-semibold text-fg underline decoration-edge-2 underline-offset-4 hover:decoration-fg">
+                показать все
+              </Link>
+            </p>
+          ) : null}
         </section>
       ) : null}
       {showList ? (
@@ -326,8 +343,8 @@ export async function DayView({
             <nav aria-label="Порядок матчей" className="flex items-center gap-1 rounded-full bg-white/[0.04] p-1 text-[14px] font-medium">
               {(
                 [
-                  ['league', 'По турнирам', view === 'list' ? list : `${base}#matches`],
-                  ['time', 'По времени', view === 'list' ? `${list}?sort=time` : `${base}?sort=time#matches`],
+                  ['league', 'По турнирам', view === 'list' ? `${list}${fq ? `?${fq}` : ''}` : `${base}#matches`],
+                  ['time', 'По времени', view === 'list' ? `${list}?sort=time${fq ? `&${fq}` : ''}` : `${base}?sort=time#matches`],
                 ] as const
               ).map(([k, label, href]) => (
                 <Link

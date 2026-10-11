@@ -1,81 +1,195 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import type { CompactMatch } from '@/lib/compact'
-import { TeamLogo } from '../TeamLogo'
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+export type PanelOption = { key: string; label: string };
+type Day = { ymd: string; label: string };
+
+const STATUS: PanelOption[] = [
+  { key: "", label: "Все" },
+  { key: "live", label: "В игре" },
+  { key: "ahead", label: "Впереди" },
+  { key: "done", label: "Сыграны" },
+];
+
+/** Чип выбора: выбранный — светлый, остальные — тихие. */
+function Chip({
+  on,
+  onClick,
+  children,
+}: {
+  on: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      className={`h-8 rounded-ctl px-3 text-[13px] font-medium transition-colors ${on ? "bg-white text-ink" : "bg-white/[0.06] text-dim hover:bg-white/[0.1] hover:text-fg"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Group({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <fieldset className="mt-5 first:mt-3">
+      <legend className="mb-2 text-[12px] font-medium text-mute">
+        {title}
+      </legend>
+      <div className="flex flex-wrap gap-1.5">{children}</div>
+    </fieldset>
+  );
+}
 
 /**
- * Правая панель каркаса (как «Сейчас играет» у Spotify; от xl): «Сейчас в игре» — идущие матчи со счётом и минутой,
- * главные первыми, раз в 30 с, только пока вкладка на экране; ничего не идёт — «Скоро начнутся» со временем.
- * Одна панель на всю высоту, как «Сейчас играет» у Spotify.
+ * Правая панель каркаса (от xl) — служебная: «Своя подборка». День, что показывать (в игре / впереди / сыграны),
+ * турниры, теги и порядок — кнопка «Показать матчи» открывает страницу «Матчи» с этим фильтром в адресе
+ * (lib/list-filter.ts). На странице «Матчи» панель подхватывает текущий фильтр из адреса.
  */
-export function RightPanel() {
-  const [data, setData] = useState<{ items: CompactMatch[]; upcoming: boolean } | null>(null)
+export function RightPanel({
+  days,
+  leagues,
+  tags,
+}: {
+  days: Day[];
+  leagues: PanelOption[];
+  tags: PanelOption[];
+}) {
+  const router = useRouter();
+  const path = usePathname();
+  const today = days.find((d) => d.label === "Сегодня")?.ymd ?? days[0].ymd;
+  const [day, setDay] = useState(today);
+  const [st, setSt] = useState("");
+  const [lg, setLg] = useState<string[]>([]);
+  const [tg, setTg] = useState<string[]>([]);
+  const [sort, setSort] = useState<"league" | "time">("league");
 
+  // на странице «Матчи» — подхватить фильтр из адреса
   useEffect(() => {
-    let stop = false
-    const load = () => {
-      if (document.visibilityState !== 'visible') return
-      fetch('/api/live')
-        .then((r) => r.json())
-        .then((d) => !stop && setData(d))
-        .catch(() => {})
-    }
-    load()
-    const t = setInterval(load, 30_000)
-    return () => {
-      stop = true
-      clearInterval(t)
-    }
-  }, [])
+    if (!path.startsWith("/matches")) return;
+    const q = new URLSearchParams(window.location.search);
+    const m = /^\/matches\/(\d{4}-\d{2}-\d{2})\/all/.exec(path);
+    setDay(m ? m[1] : today);
+    setSt(q.get("st") ?? "");
+    setLg((q.get("lg") ?? "").split(",").filter(Boolean));
+    setTg((q.get("tag") ?? "").split(",").filter(Boolean));
+    setSort(q.get("sort") === "time" ? "time" : "league");
+  }, [path, today]);
 
-  const items = data?.items ?? []
+  const flip = (list: string[], set: (v: string[]) => void, k: string) =>
+    set(list.includes(k) ? list.filter((x) => x !== k) : [...list, k]);
+  const touched = Boolean(
+    st || lg.length || tg.length || sort !== "league" || day !== today,
+  );
+
+  const show = () => {
+    const q = new URLSearchParams();
+    if (sort === "time") q.set("sort", "time");
+    if (st) q.set("st", st);
+    if (lg.length) q.set("lg", lg.join(","));
+    if (tg.length) q.set("tag", tg.join(","));
+    const qs = q.toString().replace(/%2C/g, ",");
+    router.push(
+      `${day === today ? "/matches" : `/matches/${day}/all`}${qs ? `?${qs}` : ""}`,
+    );
+  };
+  const reset = () => {
+    setDay(today);
+    setSt("");
+    setLg([]);
+    setTg([]);
+    setSort("league");
+  };
+
   return (
-    <div className="scrollbar-none h-full overflow-y-auto rounded-card bg-panel p-4">
-      <section>
-        <h2 className="flex items-center gap-2 text-[15px] font-semibold">
-          {data?.upcoming ? null : <span className="h-2 w-2 animate-pulse-live rounded-full bg-live" />}
-          {data?.upcoming ? 'Скоро начнутся' : 'Сейчас в игре'}
+    <div className="flex h-full flex-col overflow-hidden rounded-card bg-panel">
+      <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto p-4">
+        <h2 className="flex items-center justify-between text-[15px] font-semibold">
+          Своя подборка
+          {touched ? (
+            <button
+              type="button"
+              onClick={reset}
+              className="text-[12.5px] font-medium text-dim hover:text-fg"
+            >
+              Сбросить
+            </button>
+          ) : null}
         </h2>
-        {items.length ? (
-          <ul className="mt-2 divide-y divide-edge">
-            {items.map((m) => (
-              <li key={m.id}>
-                <Link href={m.href} prefetch={false} className="-mx-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 rounded-tile px-2 py-2 transition-colors hover:bg-white/[0.05]">
-                  <span className="min-w-0 space-y-1">
-                    {[m.home, m.away].map((t) => (
-                      <span key={t.id} className="flex min-w-0 items-center gap-2 text-[13.5px]">
-                        <TeamLogo name={t.name} src={t.logo} size={16} />
-                        <span className="truncate">{t.name}</span>
-                      </span>
-                    ))}
-                  </span>
-                  <span className="text-right">
-                    {m.live && m.score ? (
-                      <>
-                        <span className="num block text-[15px] font-semibold leading-tight">
-                          {m.score[0]}
-                          <br />
-                          {m.score[1]}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="num text-[14px] font-semibold text-chalk">{m.time}</span>
-                    )}
-                  </span>
-                  <span className="col-span-2 mt-1 truncate text-[11.5px] text-mute">
-                    {m.live ? <span className="text-live">{m.minute} · </span> : null}
-                    {m.league}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-[13px] text-dim">{data ? 'Сегодня матчей больше нет.' : 'Загружаем…'}</p>
-        )}
-      </section>
+        <p className="mt-1 text-[12.5px] leading-snug text-mute">
+          Соберите список матчей под себя
+        </p>
+
+        <Group title="День">
+          {days.map((d) => (
+            <Chip key={d.ymd} on={day === d.ymd} onClick={() => setDay(d.ymd)}>
+              {d.label}
+            </Chip>
+          ))}
+        </Group>
+        <Group title="Матчи">
+          {STATUS.map((s) => (
+            <Chip
+              key={s.key || "all"}
+              on={st === s.key}
+              onClick={() => setSt(s.key)}
+            >
+              {s.label}
+            </Chip>
+          ))}
+        </Group>
+        <Group title="Турниры">
+          {leagues.map((l) => (
+            <Chip
+              key={l.key}
+              on={lg.includes(l.key)}
+              onClick={() => flip(lg, setLg, l.key)}
+            >
+              {l.label}
+            </Chip>
+          ))}
+        </Group>
+        <Group title="Теги">
+          {tags.map((t) => (
+            <Chip
+              key={t.key}
+              on={tg.includes(t.key)}
+              onClick={() => flip(tg, setTg, t.key)}
+            >
+              {t.label}
+            </Chip>
+          ))}
+        </Group>
+        <Group title="Порядок">
+          <Chip on={sort === "league"} onClick={() => setSort("league")}>
+            По турнирам
+          </Chip>
+          <Chip on={sort === "time"} onClick={() => setSort("time")}>
+            По времени
+          </Chip>
+        </Group>
+      </div>
+      {/* кнопка — внизу панели, вне прокрутки: всегда под рукой и ничего не закрывает */}
+      <div className="border-t border-edge p-4">
+        <button
+          type="button"
+          onClick={show}
+          className="h-11 w-full rounded-ctl bg-white text-[15px] font-semibold text-ink transition-colors hover:bg-white/85"
+        >
+          Показать матчи
+        </button>
+      </div>
     </div>
-  )
+  );
 }

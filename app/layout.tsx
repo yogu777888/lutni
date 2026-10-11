@@ -9,7 +9,8 @@ import { Metrika } from '@/components/Metrika'
 import { LeftPanel } from '@/components/shell/LeftPanel'
 import { RightPanel } from '@/components/shell/RightPanel'
 import { FEATURED_LEAGUES } from '@/config/leagues'
-import { todayYmd } from '@/lib/format'
+import { addDays, todayYmd } from '@/lib/format'
+import { TAGS } from '@/lib/tags'
 import { leagueHref } from '@/lib/links'
 import { StoryViewer } from '@/components/story/StoryViewer'
 import { SITE } from '@/config/site'
@@ -51,8 +52,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-dvh antialiased">
         <Header />
         {/* каркас, как у Spotify (от xl): слева «Мои команды» и турниры, в центре — серая панель страницы с градиентом
-            сверху, справа «Сейчас в игре» — по одной панели на всю высоту; уже — обычная страница во всю ширину */}
-        <div className="xl:grid xl:grid-cols-[248px_minmax(0,1fr)_288px] xl:gap-2 xl:px-2 xl:pb-2">
+            сверху, справа служебная «Своя подборка» (фильтр страницы «Матчи») — по одной панели на всю высоту; уже — обычная страница во всю ширину */}
+        <div className="xl:grid xl:grid-cols-[248px_minmax(0,1fr)_288px] xl:gap-2 xl:px-2 xl:pb-2 xl:pt-2">
           <aside aria-label="Мои команды и турниры" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
               <LeftPanel today={todayYmd()} leagues={FEATURED_LEAGUES.map((l) => ({ id: l.id, short: l.short, href: leagueHref({ id: l.id, original: l.name, country: l.country }) }))} />
@@ -62,9 +63,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6">{children}</main>
             <Footer />
           </div>
-          <aside aria-label="Сейчас в игре" className="hidden xl:block">
+          <aside aria-label="Своя подборка" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
-              <RightPanel />
+              <RightPanel
+                days={[
+                  { ymd: addDays(todayYmd(), -1), label: 'Вчера' },
+                  { ymd: todayYmd(), label: 'Сегодня' },
+                  { ymd: addDays(todayYmd(), 1), label: 'Завтра' },
+                ]}
+                leagues={FEATURED_LEAGUES.slice(0, 8).map((l) => ({ key: String(l.id), label: l.short }))}
+                tags={TAGS.map((t) => ({ key: t.slug, label: t.label.replace(/^#/, '') }))}
+              />
             </div>
           </aside>
         </div>
