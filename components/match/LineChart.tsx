@@ -124,7 +124,7 @@ export function LineChart({ series, end }: { series: LineSeries[]; end: number }
       </svg>
       {hover != null && hoverT != null ? (
         <div
-          className="pointer-events-none absolute top-1 z-10 rounded-[10px] border border-edge bg-panel-2 px-3 py-2 text-[12.5px] shadow-[0_8px_24px_rgb(8_25_46/0.12)]"
+          className="pointer-events-none absolute top-1 z-10 rounded-ctl border border-edge bg-panel-2 px-3 py-2 text-[12.5px] shadow-[0_8px_24px_rgb(8_25_46/0.12)]"
           style={{ left: Math.min(hover + 12, w - 170) }}
         >
           <div className="mb-1 text-mute">{fmt(hoverT)}</div>

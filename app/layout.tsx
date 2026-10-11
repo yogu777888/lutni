@@ -34,25 +34,14 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0b0b09',
+  themeColor: '#090c10',
   width: 'device-width',
   initialScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // suppressHydrationWarning: data-look ставит скрипт ниже до отрисовки (сравнение цветовых версий)
-    <html lang="ru" suppressHydrationWarning>
-      <head>
-        {/* Цветовые версии: по умолчанию — тёмная спортивная (графит и лайм); ?look=light — голубая светлая
-            (запоминается в браузере), ?look=dark — обратно на тёмную. Ставим до отрисовки — без мигания. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "try{var q=new URLSearchParams(location.search).get('look');if(q==='light')localStorage.setItem('tb-look','light');else if(q)localStorage.removeItem('tb-look');if(localStorage.getItem('tb-look')==='light')document.documentElement.dataset.look='light'}catch(e){}",
-          }}
-        />
-      </head>
+    <html lang="ru">
       <body className="min-h-dvh antialiased">
         <Header />
         <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6">{children}</main>

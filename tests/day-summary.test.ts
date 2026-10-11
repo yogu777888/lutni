@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activeNav } from '@/components/NavCapsule'
+import { activeNav } from '@/components/NavLinks'
 import type { FeedItem, MatchSummary } from '@/lib/data'
 import { dayCounts, goalsPicks, linePicks, mainMatches, moveExample } from '@/lib/day-summary'
 import type { OddsSnap } from '@/lib/lines'

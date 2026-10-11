@@ -36,7 +36,7 @@ export function LiveTicker({ className = '' }: { className?: string }) {
           <StoryLink
             id={it.id}
             href={it.href}
-            className="flex items-center gap-1.5 whitespace-nowrap rounded-[8px] px-2.5 py-1 text-[13.5px] text-fg/90 transition-colors hover:bg-white/15 hover:text-fg"
+            className="flex items-center gap-1.5 whitespace-nowrap rounded-ctl px-2.5 py-1 text-[13.5px] text-fg/90 transition-colors hover:bg-white/15 hover:text-fg"
           >
             <span>{it.home}</span>
             {it.score ? (

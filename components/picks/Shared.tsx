@@ -34,7 +34,7 @@ export function Filters({ groups }: { groups: FilterGroup[] }) {
               prefetch={false}
               scroll={false}
               aria-current={o.on ? 'true' : undefined}
-              className={`inline-flex h-8 items-center rounded-[10px] px-3 text-[13px] font-medium transition-colors ${o.on ? 'bg-white/[0.1] text-fg' : 'text-dim hover:bg-white/[0.05] hover:text-fg'}`}
+              className={`inline-flex h-8 items-center rounded-ctl px-3 text-[13px] font-medium transition-colors ${o.on ? 'bg-white/[0.1] text-fg' : 'text-dim hover:bg-white/[0.05] hover:text-fg'}`}
             >
               {o.label}
             </Link>

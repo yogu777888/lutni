@@ -2,10 +2,10 @@
  * Кнопки и чипы внутри карточек — одна система: 32px, углы 10px, мягкая заливка без обводки.
  * Без 'use client': нужны и серверному слайду «Главных матчей», и клиентской ленте.
  */
-export const CHIP = 'inline-flex h-8 items-center rounded-[10px] bg-white/[0.07] text-[13px] font-medium text-fg transition-colors hover:bg-white/[0.11]'
+export const CHIP = 'inline-flex h-8 items-center rounded-ctl bg-white/[0.07] text-[13px] font-medium text-fg transition-colors hover:bg-white/[0.11]'
 
 /** «Выгодно» — лаймовый чип. */
-export const VALUE_CHIP = 'inline-flex h-8 min-w-0 items-center gap-1.5 rounded-[10px] bg-acid/[0.12] px-3 text-[13px] font-semibold text-good'
+export const VALUE_CHIP = 'inline-flex h-8 min-w-0 items-center gap-1.5 rounded-ctl bg-acid/[0.12] px-3 text-[13px] font-semibold text-good'
 
 /** Содержимое кнопки «Разбор за минуту»: светлый квадрат с «плей» и подпись. */
 export function StoryChipFace() {

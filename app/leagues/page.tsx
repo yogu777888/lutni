@@ -55,7 +55,7 @@ export default async function LeaguesPage() {
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {countries.map(([country, list]) => (
               <details key={country} className="card group">
-                <summary className="flex cursor-pointer items-center justify-between rounded-[18px] px-4 py-3.5 text-sm font-medium transition-colors hover:bg-panel-3">
+                <summary className="flex cursor-pointer items-center justify-between rounded-tile px-4 py-3.5 text-sm font-medium transition-colors hover:bg-panel-3">
                   {country}
                   <span className="text-[12px] text-mute">
                     {list.length} <span className="inline-block transition group-open:rotate-180">▾</span>

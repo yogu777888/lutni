@@ -386,7 +386,7 @@ export function StoryViewer() {
       </button>
 
       <div
-        className="st-glow relative isolate flex h-dvh w-full select-none flex-col overflow-hidden transition-[background] duration-500 sm:h-[min(92dvh,860px)] sm:w-auto sm:aspect-[9/16] sm:rounded-[22px] sm:shadow-2xl sm:ring-1 sm:ring-edge-2"
+        className="st-glow relative isolate flex h-dvh w-full select-none flex-col overflow-hidden transition-[background] duration-500 sm:h-[min(92dvh,860px)] sm:w-auto sm:aspect-[9/16] sm:rounded-card sm:shadow-2xl sm:ring-1 sm:ring-edge-2"
         style={panelBg ? { background: panelBg } : undefined}
       >
         {group?.cover ? (
@@ -503,7 +503,7 @@ export function StoryViewer() {
                   href={story.cta.href}
                   target="_blank"
                   rel={SPONSORED_REL}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-btn px-3 py-3.5 text-[15px] font-bold text-btn-ink shadow-[0_8px_28px_-8px_rgb(244_241_230/0.35)] transition hover:bg-white active:scale-[0.98]"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-tile bg-btn px-3 py-3.5 text-[15px] font-bold text-btn-ink shadow-[0_8px_28px_-8px_rgb(244_241_230/0.35)] transition hover:bg-white active:scale-[0.98]"
                 >
                   {story.cta.text}
                   <span className="font-semibold opacity-65">· {story.cta.partner}</span>
@@ -514,7 +514,7 @@ export function StoryViewer() {
             <a
               href={story.href}
               onClick={goFull}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-panel/60 py-2.5 text-[13px] font-semibold text-fg/85 ring-1 ring-inset ring-edge-2 transition hover:bg-panel-2"
+              className="flex items-center justify-center gap-1.5 rounded-tile bg-panel/60 py-2.5 text-[13px] font-semibold text-fg/85 ring-1 ring-inset ring-edge-2 transition hover:bg-panel-2"
             >
               Полный разбор матча
               <Icon d={ICONS.next} className="h-4 w-4" />

@@ -40,10 +40,10 @@ export function ChanceChart({ bins, className = '' }: { bins: ChanceBin[]; class
   const b = cur !== null ? byAt.get(slots[cur]) : undefined
   const mid = (k: number) => ((k + 0.5) / CHANCE_BINS) * 100
   return (
-    <div className={`relative flex min-h-0 flex-col rounded-[14px] bg-white/[0.035] px-3 pb-2.5 pt-3 ${className}`}>
+    <div className={`relative flex min-h-0 flex-col rounded-tile bg-white/[0.035] px-3 pb-2.5 pt-3 ${className}`}>
       {/* подсказка — над графиком (поверх фразы карточки), уголок — над корзиной */}
       {b && cur !== null ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(100%+10px)] z-10 rounded-[10px] border border-edge bg-panel-3 px-3 py-2 shadow-[0_12px_32px_rgb(0_0_0/0.45)]">
+        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(100%+10px)] z-10 rounded-ctl border border-edge bg-panel-3 px-3 py-2 shadow-[0_12px_32px_rgb(0_0_0/0.45)]">
           <p className="flex items-baseline justify-between gap-3">
             <span className="text-[15px] font-semibold text-fg">сбылось {pc(b.hit)}</span>
             <span className="text-[13px] text-dim">давали {pc(b.p)}</span>
@@ -64,7 +64,7 @@ export function ChanceChart({ bins, className = '' }: { bins: ChanceBin[]; class
         tabIndex={0}
         role="group"
         aria-label={`Давали и сбылось по шансам: ${bins.map((x) => `около ${x.at}% — сбылось ${pc(x.hit)}`).join(', ')}. Стрелками — по корзинам.`}
-        className="relative min-h-0 flex-1 touch-pan-y rounded-md outline-none focus-visible:ring-2 focus-visible:ring-acid/50"
+        className="relative min-h-0 flex-1 touch-pan-y rounded-ctl outline-none focus-visible:ring-2 focus-visible:ring-acid/50"
         onPointerMove={(e) => pick(e.clientX)}
         onPointerDown={(e) => pick(e.clientX)}
         // палец «уходит» с графика сразу после касания — подсказку с тапа убирает только тап мимо (blur)

@@ -34,7 +34,7 @@ export function CookieNotice() {
     <div
       role="region"
       aria-label="Cookie"
-      className={`${state === 'out' ? 'cookie-out' : 'cookie-in'} fixed inset-x-3 bottom-3 z-[60] rounded-[22px] bg-[#161c24]/90 p-4 text-[#eef2f6] shadow-[0_20px_60px_rgb(0_0_0/0.5),inset_0_0_0_1px_rgb(255_255_255/0.08),inset_0_1px_0_rgb(255_255_255/0.06)] backdrop-blur-xl sm:inset-x-auto sm:bottom-5 sm:left-5 sm:w-[360px] sm:p-5`}
+      className={`${state === 'out' ? 'cookie-out' : 'cookie-in'} fixed inset-x-3 bottom-3 z-[60] rounded-card bg-[#161c24]/90 p-4 text-[#eef2f6] shadow-[0_20px_60px_rgb(0_0_0/0.5),inset_0_0_0_1px_rgb(255_255_255/0.08),inset_0_1px_0_rgb(255_255_255/0.06)] backdrop-blur-xl sm:inset-x-auto sm:bottom-5 sm:left-5 sm:w-[360px] sm:p-5`}
     >
       <div className="flex gap-3.5">
         <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-b from-[#232c37] to-[#161c24] shadow-[inset_0_1px_0_rgb(255_255_255/0.08),inset_0_0_0_1px_rgb(255_255_255/0.06)]">
@@ -54,14 +54,14 @@ export function CookieNotice() {
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Link
           href="/privacy"
-          className="inline-flex h-10 items-center justify-center rounded-[12px] bg-white/[0.07] text-[14px] font-medium text-[#eef2f6]/85 transition-colors hover:bg-white/[0.12] hover:text-[#eef2f6]"
+          className="inline-flex h-10 items-center justify-center rounded-ctl bg-white/[0.07] text-[14px] font-medium text-[#eef2f6]/85 transition-colors hover:bg-white/[0.12] hover:text-[#eef2f6]"
         >
           Подробнее
         </Link>
         <button
           type="button"
           onClick={close}
-          className="inline-flex h-10 items-center justify-center rounded-[12px] bg-[#c8ff2e] text-[14px] font-semibold text-[#141a00] transition-colors hover:bg-[#d8ff6b]"
+          className="inline-flex h-10 items-center justify-center rounded-ctl bg-[#c8ff2e] text-[14px] font-semibold text-[#141a00] transition-colors hover:bg-[#d8ff6b]"
         >
           Хорошо
         </button>

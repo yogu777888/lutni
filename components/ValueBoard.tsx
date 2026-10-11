@@ -22,7 +22,7 @@ const Chip = ({ children }: { children: React.ReactNode }) => (
 export function ValueBoard({ items }: { items: FeedItem[] }) {
   if (!items.length) return null
   return (
-    <section className="on-dark mt-14 rounded-[28px] bg-[#11161d] px-4 py-8 sm:mt-20 sm:rounded-[40px] sm:px-10 sm:py-12">
+    <section className="on-dark mt-14 rounded-slab bg-[#11161d] px-4 py-8 sm:mt-20 sm:px-10 sm:py-12">
       <div className="mx-auto max-w-[44rem] text-center">
         <h2 className="h2 text-[32px] sm:text-[48px]">
           <span className="text-acid">Выгодно</span> сегодня
@@ -39,7 +39,7 @@ export function ValueBoard({ items }: { items: FeedItem[] }) {
           const partner = p.partnerSlug ? getPartner(p.partnerSlug) : undefined
           const odd = p.odd ? p.odd.toFixed(2) : '—'
           return (
-            <article key={m.id} className="flex flex-col rounded-[22px] bg-white/[0.05] p-5 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.06)] sm:rounded-[26px] sm:p-6">
+            <article key={m.id} className="flex flex-col rounded-card bg-white/[0.05] p-5 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.06)] sm:p-6">
               <div className="flex flex-wrap gap-1.5">
                 <Chip>{m.league.name}</Chip>
                 <Chip>{formatTime(m.ts)}</Chip>
@@ -67,7 +67,7 @@ export function ValueBoard({ items }: { items: FeedItem[] }) {
                   href={goHref(partner, 'value', m.id)}
                   target="_blank"
                   rel={SPONSORED_REL}
-                  className="mt-5 inline-flex h-11 items-center justify-between rounded-[14px] bg-btn px-4 text-[15px] font-semibold text-btn-ink transition-colors hover:bg-btn-hover"
+                  className="mt-5 inline-flex h-11 items-center justify-between rounded-ctl bg-btn px-4 text-[15px] font-semibold text-btn-ink transition-colors hover:bg-btn-hover"
                 >
                   Перейти в {partner.name}
                   <span aria-hidden>→</span>

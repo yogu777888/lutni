@@ -1,13 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CHIP, StoryChipFace } from './Chips'
 import { openStory } from './story/events'
 
 /** Матч слайда — для шапки и кнопки разбора: турнир и разбор — про матч, который сейчас на экране. */
 export type MainSlide = { id: number; href: string; live: boolean; caption: string; title: string }
-/** Эмблемы команд матча — крупным тиснением на фоне карточки (хозяева слева, гости справа). */
+/** Эмблемы и цвета клубов матча: цвета — свечение за командами (хозяева слева, гости справа). */
 export type Marks = { home: string | null; away: string | null; tint?: { home: string; away: string } | null }
 /** День в чипе: переход на страницу дня — вся страница (блок, подборки, список) про один и тот же день. */
 export type DayLink = { key: string; label: string; href: string; current: boolean; live?: boolean }
@@ -26,11 +26,11 @@ const SCRIM = 'hero-scrim absolute inset-0'
 /**
  * Фон карточки матча, как живые обои Apple, но монохром: графитовая заливка и четыре графитовых пятна разной
  * светлоты, плюс светлый блик. Пятна плывут каждое своим путём (`drift-a…d`, 19–27 с) — фон переливается. Поверх —
- * эмблемы команд тиснением (`Mark`). Свечения вокруг карточки нет: на голубом фоне оно читалось тяжёлой тенью.
+ * мягкое свечение цветами клубов (`.hero-tint`). Оттисков эмблем нет: рябили и спорили со счётом.
  * Цвета клубов (вид «Афиша») владелец сменил на графит: увидел карточку до того, как цвета догрузились, и выбрал так.
  */
 function Paint({ marks, drift = false }: { marks?: Marks; drift?: boolean }) {
-  // цвета — CSS-переменные .hero (app/globals.css): светлая версия и прежняя графитовая (?look=dark)
+  // цвета — CSS-переменные .hero (app/globals.css)
   const home = 'var(--paint-1)'
   const away = 'var(--paint-2)'
   const home2 = 'var(--paint-3)'
@@ -53,68 +53,7 @@ function Paint({ marks, drift = false }: { marks?: Marks; drift?: boolean }) {
           }}
         />
       ) : null}
-      {marks?.home ? <Mark src={marks.home} side="left" drift={drift} color={marks.tint?.home} /> : null}
-      {marks?.away ? <Mark src={marks.away} side="right" drift={drift} color={marks.tint?.away} /> : null}
     </>
-  )
-}
-
-/**
- * Эмблема команды крупно за ней — чуть выше карточки (обрезана сверху и снизу едва-едва), а сбоку
- * наполовину за краем: видна часть, обращённая к центру. Серая, в режиме «мягкий свет» — окрашивается в цвет
- * фона, как тиснение. Контрастный трафарет (серая, контраст ×3): настоящие эмблемы маленькие, при таком
- * увеличении они мутные; контраст делает из этого чёткий оттиск с гладкими краями, как печать. Просто без фильтра
- * видны пиксели, а размытие владелец счёл «плохим фото». Едва покачивается (`drift-mark`, правая —
- * со сдвигом по времени, не в такт левой). Смешивание — у обёртки: она и сдвинута (transform), и смешивается с
- * фоном целиком. На телефоне эмблемы меньше — иначе сходятся в середине, под временем.
- */
-/** Тёмный оттенок цвета клуба для силуэта (цвета — `hsl(h s% l%)` из lib/team-colors.ts): светлота ×0.75.
-    Фильтру нужен готовый цвет; непонятный формат — графит. */
-function darken(c: string): string {
-  const m = /^hsl\(\s*([\d.]+)\s+([\d.]+)%\s+([\d.]+)%\s*\)$/i.exec(c.trim())
-  return m ? `hsl(${m[1]} ${m[2]}% ${Math.round(Number(m[3]) * 0.75)}%)` : '#18222d'
-}
-
-function Mark({ src, side, drift, color }: { src: string; side: 'left' | 'right'; drift: boolean; color?: string }) {
-  const fid = `crest-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
-  const ink = color ? darken(color) : '#18222d'
-  return (
-    <div
-      className={`hero-mark absolute top-1/2 hidden aspect-square h-[56%] -translate-y-1/2 sm:block sm:h-[112%] ${
-        side === 'left' ? 'left-0 -translate-x-1/2 sm:-translate-x-[38%]' : 'right-0 translate-x-1/2 sm:translate-x-[38%]'
-      }`}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt=""
-        aria-hidden
-        decoding="async"
-        className={`hero-mark-img h-full w-full object-contain ${drift ? `drift-mark ${side === 'right' ? '[animation-delay:-9s]' : ''}` : ''}`}
-      />
-      {/* светлая версия: силуэт эмблемы одним ровным тоном — тёмным оттенком цвета клуба (нет цвета — графит).
-          Фильтр, а не CSS-маска: маска грузит картинку с CORS, и эмблемы с чужого сервера без него пропадают.
-          Форма — по прозрачности, край сглажен: детали маленькой эмблемы при увеличении дают пиксели и рябь */}
-      <svg aria-hidden className="pointer-events-none absolute h-0 w-0">
-        <filter id={fid} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="soft" />
-          <feComponentTransfer in="soft" result="shape">
-            <feFuncA type="table" tableValues="0 0 0 1 1" />
-          </feComponentTransfer>
-          <feFlood floodColor={ink} result="ink" />
-          <feComposite in="ink" in2="shape" operator="in" />
-        </filter>
-      </svg>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt=""
-        aria-hidden
-        decoding="async"
-        style={{ filter: `url(#${fid})` }}
-        className={`hero-mark-sil h-full w-full object-contain ${drift ? `drift-mark ${side === 'right' ? '[animation-delay:-9s]' : ''}` : ''}`}
-      />
-    </div>
   )
 }
 
@@ -257,7 +196,7 @@ export function TopCarousel({
                 </svg>
               </button>
               {open ? (
-                <nav aria-label="День" className="absolute right-0 top-[calc(100%+6px)] min-w-[180px] rounded-[14px] border border-edge bg-panel-2 p-1.5 shadow-[0_16px_40px_rgb(0_0_0/0.5)]">
+                <nav aria-label="День" className="absolute right-0 top-[calc(100%+6px)] min-w-[180px] rounded-tile border border-edge bg-panel-2 p-1.5 shadow-[0_16px_40px_rgb(0_0_0/0.5)]">
                   {days.map((d) => (
                     <Link
                       key={d.key}
@@ -265,7 +204,7 @@ export function TopCarousel({
                       prefetch={false}
                       aria-current={d.current ? 'page' : undefined}
                       onClick={() => setOpen(false)}
-                      className={`flex w-full items-center justify-between gap-3 rounded-[10px] px-3 py-2 text-left text-[14px] transition-colors hover:bg-white/[0.06] ${d.current ? 'text-fg' : 'text-chalk'}`}
+                      className={`flex w-full items-center justify-between gap-3 rounded-ctl px-3 py-2 text-left text-[14px] transition-colors hover:bg-white/[0.06] ${d.current ? 'text-fg' : 'text-chalk'}`}
                     >
                       <span className="flex items-center gap-2">
                         {d.label}

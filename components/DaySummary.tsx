@@ -17,9 +17,9 @@ import { TopCarousel, type DayLink, type MainSlide } from './TopCarousel'
 import { Tick } from './Live'
 
 /** Ссылка-накладка: вся карточка кликабельна, а текст ссылки — понятное название. */
-const COVER = "after:absolute after:inset-0 after:rounded-[22px] after:content-['']"
+const COVER = "after:absolute after:inset-0 after:rounded-card after:content-['']"
 /** Карточки сводки без обводки: фон светлее страницы; прозрачная рамка видна только в режиме высокой контрастности. */
-const SURFACE = 'surface rounded-[22px] border bg-panel-2'
+const SURFACE = 'surface rounded-card border bg-panel-2'
 
 const MATCHES = ['матч', 'матча', 'матчей'] as const
 const leagueShort = (l: League) => featuredInfo(l)?.short || l.name
@@ -70,7 +70,7 @@ function OddsLine({ line, m, live = false }: { line: X12Line; m: Match; live?: b
       target="_blank"
       rel={SPONSORED_REL}
       title={live ? `Live-коэффициенты ${line.bookmaker} на ${formatTime(line.at)}` : `Коэффициенты ${line.bookmaker}, линия на ${snapTime(line.at)}`}
-      className="relative z-[2] mx-auto mt-4 flex w-fit max-w-full flex-wrap items-baseline justify-center gap-x-4 gap-y-1 rounded-[12px] px-3 py-1.5 transition-colors hover:bg-white/[0.07] lg:mt-[clamp(6px,1.8vh,16px)]"
+      className="relative z-[2] mx-auto mt-4 flex w-fit max-w-full flex-wrap items-baseline justify-center gap-x-4 gap-y-1 rounded-ctl px-3 py-1.5 transition-colors hover:bg-white/[0.07] lg:mt-[clamp(6px,1.8vh,16px)]"
     >
       {live ? (
         <span className="flex items-center gap-1.5 self-center text-[13px] font-medium text-live">
@@ -159,7 +159,7 @@ function MatchSlide({ item }: { item: MainItem }) {
             </>
           )}
           {/* вся карточка — ссылка на сторис, поэтому это подпись, а не отдельная кнопка; на телефоне — кнопка под лентой */}
-          <span aria-hidden className="mt-5 hidden h-11 lg:mt-[clamp(6px,calc(4vh_-_12px),20px)] lg:h-[clamp(32px,calc(8vh_-_20px),44px)] shrink-0 items-center gap-2 whitespace-nowrap rounded-[12px] bg-btn px-5 text-[15px] font-semibold text-btn-ink lg:inline-flex">
+          <span aria-hidden className="mt-5 hidden h-11 lg:mt-[clamp(6px,calc(4vh_-_12px),20px)] lg:h-[clamp(32px,calc(8vh_-_20px),44px)] shrink-0 items-center gap-2 whitespace-nowrap rounded-ctl bg-btn px-5 text-[15px] font-semibold text-btn-ink lg:inline-flex">
             Разбор матча
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M7 17 17 7" />

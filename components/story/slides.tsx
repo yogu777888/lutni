@@ -185,7 +185,7 @@ function Cover({ s, story, focus }: { s: S<'cover'>; story: StoryData; focus: St
           </p>
         ) : null}
         {focus ? (
-          <div className="st-rise mx-auto mt-5 max-w-[20rem] rounded-2xl bg-panel/80 p-3 text-left ring-1 ring-inset ring-edge-2" style={wait(650)}>
+          <div className="st-rise mx-auto mt-5 max-w-[20rem] rounded-tile bg-panel/80 p-3 text-left ring-1 ring-inset ring-edge-2" style={wait(650)}>
             <span className={tagChipClass(focus.kind, 'sm')}>
               <span className={tagHashClass(focus.kind)}>#</span>
               {focus.label.replace(/^#/, '')}
@@ -249,7 +249,7 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
                 {it.label}
               </div>
               <div className="truncate text-[12px] text-dim">{it.name}</div>
-              <div className="mt-2 rounded-lg bg-panel-2 px-1 py-1.5 ring-1 ring-inset ring-edge">
+              <div className="mt-2 rounded-ctl bg-panel-2 px-1 py-1.5 ring-1 ring-inset ring-edge">
                 <div className="num text-[15px] font-bold">{it.best ? it.best.toFixed(2) : '—'}</div>
                 <div className="text-[10px] text-mute">лучший кэф</div>
               </div>
@@ -269,7 +269,7 @@ function Meter({ p, label, alt, delay }: { p: number; label: string; alt: string
   const r = 50
   const c = 2 * Math.PI * r
   return (
-    <div className="st-rise flex flex-col items-center rounded-2xl bg-panel/70 px-2 py-3 ring-1 ring-inset ring-edge" style={wait(delay)}>
+    <div className="st-rise flex flex-col items-center rounded-tile bg-panel/70 px-2 py-3 ring-1 ring-inset ring-edge" style={wait(delay)}>
       <div className="relative h-[min(15dvh,120px)] w-[min(15dvh,120px)]">
         <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" aria-hidden>
           <circle cx="60" cy="60" r={r} fill="none" stroke="rgb(200 255 46 / 0.14)" strokeWidth="11" />
@@ -356,7 +356,7 @@ function Scores({ s, story }: { s: S<'scores'>; story: StoryData }) {
                 return (
                   <div
                     key={j}
-                    className={`st-pop flex aspect-square flex-col items-center justify-center rounded-md ${top ? 'ring-2 ring-fg' : ''}`}
+                    className={`st-pop flex aspect-square flex-col items-center justify-center rounded-ctl ${top ? 'ring-2 ring-fg' : ''}`}
                     style={{ background: `rgb(200 255 46 / ${a})`, color: a > 0.5 ? 'var(--color-acid-ink)' : 'var(--color-fg)', ...wait(200 + (i + j) * 70) }}
                     title={`${story.home.name} ${i}:${j} ${story.away.name} — ${(p * 100).toFixed(1)}%`}
                   >
@@ -394,13 +394,13 @@ const RES: Record<Res, { letter: string; cls: string; title: string }> = {
 
 function FormTeam({ team, side, f, base }: { team: StoryTeam; side: Side; f: FormSide | null; base: number }) {
   if (!f) {
-    return <div className="rounded-2xl bg-panel/70 p-3.5 text-[13px] text-dim ring-1 ring-inset ring-edge">Нет свежих матчей: {team.name}</div>
+    return <div className="rounded-tile bg-panel/70 p-3.5 text-[13px] text-dim ring-1 ring-inset ring-edge">Нет свежих матчей: {team.name}</div>
   }
   // в данных свежие первыми, на экране — слева направо по времени
   const last = [...f.last5].reverse()
   const scores = f.scores.slice(0, last.length).reverse()
   return (
-    <div className="st-rise rounded-2xl bg-panel/70 p-3.5 ring-1 ring-inset ring-edge" style={wait(base)}>
+    <div className="st-rise rounded-tile bg-panel/70 p-3.5 ring-1 ring-inset ring-edge" style={wait(base)}>
       <div className="flex items-center gap-2">
         <Swatch side={side} />
         <TeamLogo name={team.name} src={team.logo} size={22} />
@@ -410,7 +410,7 @@ function FormTeam({ team, side, f, base }: { team: StoryTeam; side: Side; f: For
       <div className="mt-3 grid grid-cols-5 gap-1.5">
         {last.map((r, i) => (
           <div key={i} className="st-pop flex flex-col items-center" style={wait(base + 150 + i * 90)}>
-            <span className={`flex h-10 w-full items-center justify-center rounded-lg text-[15px] font-semibold ${RES[r].cls}`} title={RES[r].title}>
+            <span className={`flex h-10 w-full items-center justify-center rounded-ctl text-[15px] font-semibold ${RES[r].cls}`} title={RES[r].title}>
               {RES[r].letter}
             </span>
             <span className="num mt-1 text-[11px] text-dim">{scores[i]}</span>
@@ -524,7 +524,7 @@ function H2H({ s, story }: { s: S<'h2h'>; story: StoryData }) {
     <Frame>
       <Head eyebrow="Личные встречи" title={s.title} sub={s.sub} />
       <div className="my-auto py-4">
-        <div className="st-grow-x flex h-10 gap-0.5 overflow-hidden rounded-xl" style={wait(250)}>
+        <div className="st-grow-x flex h-10 gap-0.5 overflow-hidden rounded-tile" style={wait(250)}>
           {segs
             .filter((x) => x.v > 0)
             .map((x) => (
@@ -548,12 +548,12 @@ function H2H({ s, story }: { s: S<'h2h'>; story: StoryData }) {
             return (
               <li
                 key={i}
-                className={`st-rise grid grid-cols-[4.6rem_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 rounded-lg border-l-[3px] bg-panel/70 py-1.5 pl-2 pr-2.5 text-[13px] ${border[g.winner]}`}
+                className={`st-rise grid grid-cols-[4.6rem_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 rounded-ctl border-l-[3px] bg-panel/70 py-1.5 pl-2 pr-2.5 text-[13px] ${border[g.winner]}`}
                 style={wait(500 + i * 80)}
               >
                 <span className="num text-[11px] text-mute">{g.date}</span>
                 <span className={`truncate text-right ${a > b ? 'font-bold' : 'text-fg/70'}`}>{g.home}</span>
-                <span className="num rounded-md bg-panel-3 px-1.5 py-0.5 text-[13px] font-bold">{g.score}</span>
+                <span className="num rounded-ctl bg-panel-3 px-1.5 py-0.5 text-[13px] font-bold">{g.score}</span>
                 <span className={`truncate ${b > a ? 'font-bold' : 'text-fg/70'}`}>{g.away}</span>
               </li>
             )
@@ -662,7 +662,7 @@ function GoalsTimeline({ s, story }: { s: S<'goalsTimeline'>; story: StoryData }
             {shown.map((g, i) => (
               <li key={i} className="st-rise grid grid-cols-[1fr_auto_1fr] items-center gap-2.5" style={wait(300 + i * 160)}>
                 <span className="flex min-w-0 justify-end">{g.side === 'home' ? label(g) : null}</span>
-                <span className="num flex h-10 w-14 flex-col items-center justify-center rounded-lg bg-panel-2 ring-1 ring-inset ring-edge-2">
+                <span className="num flex h-10 w-14 flex-col items-center justify-center rounded-ctl bg-panel-2 ring-1 ring-inset ring-edge-2">
                   <span className="text-[11px] text-dim">{g.label}</span>
                   <span className="text-[14px] font-bold leading-none">{g.score}</span>
                 </span>
@@ -729,15 +729,15 @@ function PickSlide({ s }: { s: S<'pick'> }) {
         </div>
 
         <dl className="st-rise mt-5 grid w-full grid-cols-3 gap-2" style={wait(800)}>
-          <div className="rounded-xl bg-panel-2 px-1 py-2 ring-1 ring-inset ring-edge">
+          <div className="rounded-tile bg-panel-2 px-1 py-2 ring-1 ring-inset ring-edge">
             <dt className="text-[10px] text-dim">Стоит</dt>
             <dd className="num text-[17px] font-bold">{s.fairOdd.toFixed(2)}</dd>
           </div>
-          <div className="rounded-xl bg-panel-2 px-1 py-2 ring-1 ring-inset ring-edge">
+          <div className="rounded-tile bg-panel-2 px-1 py-2 ring-1 ring-inset ring-edge">
             <dt className="truncate text-[10px] text-dim">{s.bookmaker ? `Кэф · ${s.bookmaker}` : 'Лучший кэф'}</dt>
             <dd className="num text-[17px] font-bold">{s.odd ? s.odd.toFixed(2) : '—'}</dd>
           </div>
-          <div className="rounded-xl bg-panel-2 px-1 py-2 ring-1 ring-inset ring-edge">
+          <div className="rounded-tile bg-panel-2 px-1 py-2 ring-1 ring-inset ring-edge">
             <dt className="text-[10px] text-dim">Выгода</dt>
             <dd className={`num text-[17px] font-bold ${s.ev != null && s.ev > 0 ? 'text-good' : ''}`}>
               {s.ev != null ? `${s.ev >= 0 ? '+' : '−'}${dec(Math.abs(s.ev) * 100)}%` : '—'}

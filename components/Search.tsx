@@ -70,7 +70,7 @@ export function Search() {
         onClick={() => setOpen(true)}
         aria-label="Поиск команды или турнира"
         title="Поиск (⌘K)"
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] text-dim transition-colors hover:bg-white/[0.08] hover:text-fg"
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[0.08] hover:text-fg"
       >
         <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
           <circle cx="11" cy="11" r="6.5" />
@@ -93,7 +93,7 @@ export function Search() {
                 placeholder="Команда или турнир: «Спартак», «Ла Лига»"
                 className="h-14 w-full bg-transparent text-[16px] text-fg outline-none placeholder:text-mute"
               />
-              <button type="button" onClick={() => setOpen(false)} className="rounded-md px-2 py-1 text-[12px] text-mute hover:text-fg">
+              <button type="button" onClick={() => setOpen(false)} className="rounded-ctl px-2 py-1 text-[12px] text-mute hover:text-fg">
                 Esc
               </button>
             </div>

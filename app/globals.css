@@ -1,36 +1,29 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Цветовая система: ярко-голубой фон страницы, светлые карточки, графитовые «острова» (меню, карточка матча,
-     сторис). Токены на :root — для текста прямо на голубом; внутри светлых поверхностей и графитовых островов те же
-     имена переопределены ниже (@layer base) — компоненты пишут text-fg / text-dim / bg-panel-2 и не знают, где
-     стоят. Имя ink, не base: в Tailwind v4 text-base — размер шрифта. ink — графит (текст на белых кнопках, стекло
-     шапки). */
-  --color-brand: #119af5;
-  --color-brand-deep: #0c84e4;
-  --color-brand-soft: #45b8ff;
-  --color-ink: #11161d;
-  /* поверхности: светлая карточка, вторичный фон, наведение */
-  --color-panel: #eaf4ff;
-  --color-panel-2: #f7fbff;
-  --color-panel-3: #eaf4ff;
-  --color-edge: rgb(255 255 255 / 0.2);
-  --color-edge-2: rgb(255 255 255 / 0.32);
-  /* текст на голубом */
-  --color-fg: #ffffff;
-  --color-chalk: rgb(255 255 255 / 0.94);
-  --color-dim: rgb(255 255 255 / 0.88);
-  --color-mute: rgb(255 255 255 / 0.78);
-  /* кнопки: на голубом — белая с графитовым текстом, на светлой карточке — голубая */
-  --color-btn: #ffffff;
-  --color-btn-ink: #11161d;
-  --color-btn-hover: #eaf4ff;
-  --color-focus: #ffffff;
-  /* акценты. good — текст «выгодно» (на светлой карточке — тёмно-зелёный, лайм там не читается);
-     acid — лаймовая плашка «выгодно» с тёмными цифрами */
+  /* Одна версия — тёмная спортивная: почти чёрный графитовый фон, карточки — графит на тон светлее, единственный
+     акцент — лайм бренда (кнопки, «выгодно», кольца новых историй), красный — только LIVE. Внутри поверхностей
+     (.card, bg-panel*) и графитовых островов (.on-dark) те же имена уточнены ниже — компоненты пишут text-fg /
+     text-dim / bg-panel-2 и не знают, где стоят. Имя ink, не base: в Tailwind v4 text-base — размер шрифта. */
+  --color-ink: #0b0f14;
+  --color-panel: #10151b;
+  --color-panel-2: #151b22;
+  --color-panel-3: #1c242d;
+  --color-edge: rgb(255 255 255 / 0.07);
+  --color-edge-2: rgb(255 255 255 / 0.12);
+  --color-fg: #eef2f6;
+  --color-chalk: #d5dde7;
+  --color-dim: rgb(238 242 246 / 0.68);
+  --color-mute: rgb(238 242 246 / 0.48);
+  --color-white: #ffffff;
+  --color-btn: #c8ff2e;
+  --color-btn-ink: #141a00;
+  --color-btn-hover: #d8ff6b;
+  --color-focus: #c8ff2e;
+  /* акценты. good — текст «выгодно»; acid — лаймовая плашка «выгодно» с тёмными цифрами */
   --color-acid: #c8ff2e;
   --color-acid-ink: #141a00;
-  --color-good: #d8ff6b;
+  --color-good: #c8ff2e;
   --color-live: #ff5d5d;
   --color-hot: #ffb020;
   --color-win: #2ed47a;
@@ -43,7 +36,13 @@
 
   --font-sans: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-hand: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+
+  /* скругления — одна шкала: ctl — кнопки, чипы, поля и мелкие плашки; tile — плашки внутри карточек и меню;
+     card — карточки; slab — большие плиты главной. Мелочь графиков (2–6px) — по месту */
+  --radius-ctl: 10px;
+  --radius-tile: 14px;
+  --radius-card: 20px;
+  --radius-slab: 28px;
 
   --animate-pulse-live: pulse-live 2s ease-in-out infinite;
   @keyframes pulse-live {
@@ -59,13 +58,14 @@
 
 @layer base {
   html {
-    color-scheme: light;
+    color-scheme: dark;
+    --ring-new: #c8ff2e;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    /* деликатный градиент по всей странице, без свечения и шума */
-    background: var(--color-brand-deep) linear-gradient(180deg, var(--color-brand) 0%, var(--color-brand-deep) 100%);
+    /* почти чёрный графит с едва заметным лаймовым светом сверху */
+    background: #090c10 radial-gradient(1100px 520px at 50% -180px, rgb(200 255 46 / 0.06), transparent 70%) no-repeat;
     min-height: 100%;
     color: var(--color-fg);
     font-family: var(--font-sans);
@@ -99,31 +99,12 @@
   }
 }
 
-/* Светлые поверхности: карточки и всё с фоном bg-panel* (кроме hover:bg-panel*). Внутри — тёмный текст,
-   плашки bg-white/[…] становятся графитовыми полупрозрачными, «выгодно» — тёмно-зелёным, кнопка — голубой. */
+/* Поверхности: карточки и всё с фоном bg-panel* (кроме hover:bg-panel*) — токены в блоке «Поверхности» в конце файла
+   (без слоя: должны перебить и острова, и утилиты Tailwind). */
 @layer base {
   .card,
   [class^='bg-panel'],
   [class*=' bg-panel'] {
-    --color-fg: #0f1722;
-    --color-chalk: #2a3441;
-    --color-dim: #617184;
-    --color-mute: #65758a;
-    --color-edge: rgb(17 22 29 / 0.08);
-    --color-edge-2: rgb(17 22 29 / 0.14);
-    --color-white: #11161d;
-    --color-btn: #119af5;
-    --color-btn-ink: #ffffff;
-    --color-btn-hover: #0c84e4;
-    --color-focus: #0c84e4;
-    --color-good: #0b7e3c;
-    --color-acid-ink: #141a00;
-    --color-hot: #a35f00;
-    --color-live: #d93636;
-    --color-loss: #d93636;
-    --color-win: #1e8a4c;
-    --color-draw: #617184;
-    --color-tie: #b8c3cf;
     color: var(--color-fg);
   }
   /* графитовые острова: меню-капсула, карточка «Главных матчей», сторис, табло цифр */
@@ -156,131 +137,16 @@
   }
 }
 
-/* ─── Цветовые версии (эксперимент владельца) ───────────────────────────────────────────────────────────────
-   По умолчанию — светлая голубовато-серая: меню — графит #1E2A36, истории и карточка «Главных матчей» — светлые,
-   карточки — #F3F8FC/#EAF3FA, текст #18222D/#5D6C7B. Прежняя графитовая версия — html:not([data-look='light'])
-   (?look=dark, запоминается в браузере; ?look=light — обратно; скрипт в app/layout.tsx). Значения ниже без
-   html:not(…) — прежняя версия; удалить её — убрать их и скрипт. */
+/* «Главные матчи»: графитовый фон-«обои» (Paint в TopCarousel.tsx берёт --paint-1…4) и затемнение снизу */
 @layer base {
   .hero {
     --paint-1: hsl(214 15% 25%);
     --paint-2: hsl(214 16% 19%);
     --paint-3: hsl(214 14% 32%);
     --paint-4: hsl(214 15% 27%);
-    --scrim: linear-gradient(to top, rgb(11 11 9 / 0.55), rgb(11 11 9 / 0.12) 45%, rgb(11 11 9 / 0.08));
-    --mark-blend: soft-light;
-    --mark-opacity: 0.32;
-    --mark-filter: grayscale(1) contrast(3) brightness(1.1);
   }
   .hero-scrim {
-    background: var(--scrim);
-  }
-  .hero-mark {
-    mix-blend-mode: var(--mark-blend);
-  }
-  .hero-mark-img {
-    opacity: var(--mark-opacity);
-    filter: var(--mark-filter);
-  }
-  .story-cover {
-    background: linear-gradient(180deg, #263443, #17212c);
-  }
-  /* подкраска цветами клубов — только в светлой версии */
-  html:not([data-look='light']) .hero-tint {
-    display: none;
-  }
-  /* силуэт эмблемы цветом клуба — в светлой версии; в графитовой — прежнее тиснение картинкой */
-  .hero-mark-sil {
-    display: none;
-    opacity: var(--mark-opacity);
-  }
-  html[data-look='light'] .hero-mark-sil {
-    display: block;
-  }
-  html[data-look='light'] .hero-mark-img {
-    display: none;
-  }
-  /* диск истории: заливка цветом категории (StoryCircles), блик по верхнему краю, тонкая граница, мягкая тень */
-  .story-disc {
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.35),
-      inset 0 0 0 1px rgb(0 0 0 / 0.06),
-      0 4px 12px rgb(27 45 68 / 0.12);
-  }
-
-  /* светлая версия */
-  html[data-look='light'] {
-    --color-panel: #eaf3fa;
-    --color-panel-2: #f3f8fc;
-    --color-panel-3: #eaf3fa;
-  }
-  html[data-look='light'] :is(.card, [class^='bg-panel'], [class*=' bg-panel']):not(.on-dark, .on-dark *) {
-    --color-fg: #18222d;
-    --color-chalk: #2b3946;
-    --color-dim: #5d6c7b;
-    --color-mute: #627283;
-    --color-edge: rgb(24 34 45 / 0.08);
-    --color-edge-2: rgb(24 34 45 / 0.14);
-    --color-white: #18222d;
-  }
-  html[data-look='light'] :is(.card, .surface) {
-    border-color: rgb(24 34 45 / 0.08);
-  }
-  /* меню — светлая полупрозрачная капсула на голубом, как переключатель в iOS: пункты белые, выбранный раздел —
-     белая «таблетка» с тёмным текстом (в пару к белой кнопке «Бонус»). Чёрное меню владельцу не понравилось */
-  html[data-look='light'] :is(.nav-capsule, .nav-capsule [class^='bg-panel'], .nav-capsule [class*=' bg-panel']) {
-    --color-panel: rgb(255 255 255 / 0.16);
-    --color-panel-2: rgb(255 255 255 / 0.14);
-    --color-panel-3: #ffffff;
-    --color-edge: rgb(255 255 255 / 0.24);
-    --color-fg: #18222d;
-    --color-dim: rgb(255 255 255 / 0.92);
-  }
-  html[data-look='light'] .nav-capsule {
-    backdrop-filter: blur(14px);
-  }
-  html[data-look='light'] .nav-capsule a:not([aria-current]):hover {
-    color: #ffffff;
-  }
-  /* «Главные матчи» — светлая карточка: тёмный текст, графитовая кнопка «Разбор матча», эмблемы-тиснение — тихой
-     серой печатью (multiply) */
-  html[data-look='light'] :is(.hero, .hero [class^='bg-panel'], .hero [class*=' bg-panel']) {
-    --color-panel: #eaf3fa;
-    --color-panel-2: #f3f8fc;
-    --color-panel-3: #e3eef8;
-    --color-fg: #18222d;
-    --color-chalk: #2b3946;
-    --color-dim: #5d6c7b;
-    --color-mute: #7a8896;
-    --color-edge: rgb(24 34 45 / 0.08);
-    --color-edge-2: rgb(24 34 45 / 0.14);
-    --color-white: #18222d;
-    --color-btn: #1e2a36;
-    --color-btn-ink: #ffffff;
-    --color-btn-hover: #324456;
-    --color-focus: #0c84e4;
-    --color-live: #d93636;
-    --color-hot: #a35f00;
-    --color-good: #0b7e3c;
-    color: var(--color-fg);
-  }
-  html[data-look='light'] .hero {
-    --paint-1: #eef6fb;
-    --paint-2: #e3eef8;
-    --paint-3: #f3f8fc;
-    --paint-4: #e7f1f9;
-    --scrim: none;
-    --mark-blend: normal;
-    --mark-opacity: 0.1;
-    --mark-filter: none;
-  }
-  /* истории — светлые голубовато-серые, счётчик тёмный */
-  html[data-look='light'] .story-cover {
-    background: linear-gradient(180deg, #e6f2fa, #d7e7f3);
-    --color-fg: #18222d;
-    --color-dim: #5d6c7b;
-    --color-live: #d93636;
-    --color-white: #18222d;
+    background: linear-gradient(to top, rgb(11 11 9 / 0.55), rgb(11 11 9 / 0.12) 45%, rgb(11 11 9 / 0.08));
   }
 }
 
@@ -289,14 +155,12 @@
      контрастности (Windows) — там карточки не сливаются. Плашки внутри карточки — bg-white/[0.04], не panel-2 */
   .card {
     background: var(--color-panel-2);
-    border: 1px solid rgb(17 22 29 / 0.08);
-    border-radius: 18px;
-    box-shadow: 0 10px 30px rgb(8 25 46 / 0.08);
+    border: 1px solid rgb(255 255 255 / 0.06);
+    border-radius: var(--radius-card);
   }
-  /* карточка верхнего уровня без класса .card (плитки сводки): та же рамка и едва заметная тень */
+  /* карточка верхнего уровня без класса .card (плитки сводки): та же рамка */
   .surface {
-    border-color: rgb(17 22 29 / 0.08);
-    box-shadow: 0 10px 30px rgb(8 25 46 / 0.08);
+    border-color: rgb(255 255 255 / 0.06);
   }
   /* моноширинные цифры: коэффициенты и счёт не «прыгают» */
   .num {
@@ -522,19 +386,6 @@
 .drift-d {
   animation: drift-d 24s ease-in-out infinite;
 }
-/* «Эмблемы»: крупная эмблема за командой едва покачивается — чуть сдвиг, поворот на 2° и «дыхание» */
-@keyframes drift-mark {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-  }
-  50% {
-    transform: translate3d(2.5%, -2.5%, 0) rotate(-2deg) scale(1.05);
-  }
-}
-.drift-mark {
-  animation: drift-mark 16s ease-in-out infinite;
-}
 /* бегущая строка матчей в шапке (components/LiveTicker.tsx): едет по кругу, при наведении и фокусе стоит, края тают;
    при «уменьшить движение» не едет — её можно прокрутить */
 @keyframes ticker {
@@ -604,8 +455,7 @@
   .drift-a,
   .drift-b,
   .drift-c,
-  .drift-d,
-  .drift-mark {
+  .drift-d {
     animation: none;
   }
 }
@@ -735,43 +585,10 @@
   }
 }
 
-/* Светлая версия: шапка после прокрутки — голубое стекло вместо графитового (вне @layer — иначе утилита
-   data-[scrolled]:bg-ink/75 в HeaderShell перебивает) */
-html[data-look='light'] header[data-scrolled] {
-  background-color: rgb(12 132 228 / 0.82);
-  border-color: rgb(255 255 255 / 0.18);
-}
-
-/* ─── Тёмная спортивная версия — основная (владелец: «некрасивый сайт», выбрали тёмную с лаймом) ───────────────
-   Почти чёрный графитовый фон, карточки — графит на тон светлее, единственный акцент — лайм бренда (кнопки,
-   «выгодно», кольца новых историй), красный — только LIVE. Голубая светлая версия — ?look=light. Правила без
-   слоя: должны перебить и токены светлых поверхностей, и утилиты Tailwind. */
-html:not([data-look='light']) {
-  color-scheme: dark;
-  --color-ink: #0b0f14;
-  --color-panel: #10151b;
-  --color-panel-2: #151b22;
-  --color-panel-3: #1c242d;
-  --color-fg: #eef2f6;
-  --color-chalk: #d5dde7;
-  --color-dim: rgb(238 242 246 / 0.68);
-  --color-mute: rgb(238 242 246 / 0.48);
-  --color-edge: rgb(255 255 255 / 0.07);
-  --color-edge-2: rgb(255 255 255 / 0.12);
-  --color-white: #ffffff;
-  --color-btn: #c8ff2e;
-  --color-btn-ink: #141a00;
-  --color-btn-hover: #d8ff6b;
-  --color-focus: #c8ff2e;
-  --color-good: #c8ff2e;
-  --color-live: #ff5d5d;
-  --color-hot: #ffb020;
-}
-html:not([data-look='light']) body {
-  background: #090c10 radial-gradient(1100px 520px at 50% -180px, rgb(200 255 46 / 0.06), transparent 70%) no-repeat;
-}
-/* карточки и всё с фоном bg-panel* — тёмные поверхности с теми же токенами */
-html:not([data-look='light']) :is(.card, [class^='bg-panel'], [class*=' bg-panel']) {
+/* ─── Поверхности ────────────────────────────────────────────────────────────────────────────────────────────
+   Карточки и всё с фоном bg-panel* — графит на тон светлее страницы, без теней. Без слоя: должны перебить токены
+   графитовых островов (.on-dark) и утилиты Tailwind. */
+:root :is(.card, [class^='bg-panel'], [class*=' bg-panel']) {
   --color-fg: #eef2f6;
   --color-chalk: #d5dde7;
   --color-dim: rgb(238 242 246 / 0.66);
@@ -791,58 +608,26 @@ html:not([data-look='light']) :is(.card, [class^='bg-panel'], [class*=' bg-panel
   --color-draw: #8a94a3;
   --color-tie: #5d6672;
 }
-html:not([data-look='light']) :is(.card, .surface) {
-  border-color: rgb(255 255 255 / 0.06);
-  box-shadow: none;
-}
-/* истории и значки подборок — монохромные графитовые диски с белым знаком: радуга из семи цветов спорила со всем */
-html:not([data-look='light']) .story-disc {
+/* истории и значки подборок — монохромные графитовые диски с белым знаком: радуга из семи цветов спорила со всем
+   (заливка категории приходит инлайн-стилем из StoryCircles — отсюда !important) */
+:root .story-disc {
   background: linear-gradient(180deg, #232c37, #161c24) !important;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.08),
     inset 0 0 0 1px rgb(255 255 255 / 0.05) !important;
 }
-html:not([data-look='light']) {
-  --ring-new: #c8ff2e;
-}
-/* табло матчей в шапке: в тёмной версии — такой же графитовый остров, как соседние плашки */
-.ticker-island {
-  background: rgb(10 42 78 / 0.55);
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.1),
-    0 8px 24px rgb(8 40 80 / 0.16);
-}
-html:not([data-look='light']) .ticker-island {
-  background: #151b22;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
-}
-html:not([data-look='light']) .hdr-island {
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
-}
-/* плита «Все матчи дня»: в голубой версии — на тон темнее светлых карточек; в тёмной — графит чуть светлее фона */
-html[data-look='light'] .list-slab {
-  background: #e4eef7;
-}
-html:not([data-look='light']) .list-slab {
+/* плита «Все матчи дня» — графит чуть светлее фона */
+.list-slab {
   background: #0e1318;
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.04);
 }
-/* эмблемы-тиснение за командами в карточке главного матча — тише: крупный оттиск спорил со счётом */
-html:not([data-look='light']) .hero {
-  --mark-opacity: 0.16;
-}
-/* «Главные матчи» без оттисков эмблем (владелец: «а эмблемы стоит убрать?» — рябили и спорили со счётом);
-   вместо них — мягкое свечение цветом клубов за командами, как в Apple Sports */
-html:not([data-look='light']) .hero-mark {
-  display: none;
-}
-html:not([data-look='light']) .hero-tint {
-  display: block;
-  opacity: 1;
+/* «Главные матчи» и табло матча: мягкое свечение цветом клубов за командами, как в Apple Sports. Подкраска
+   в разметке — 20–32% цвета клуба; на графите её почти не видно — насыщеннее и ярче */
+.hero-tint {
   mix-blend-mode: screen;
-  /* подкраска в разметке — 20% цвета клуба (её же берёт голубая версия); на графите её почти не видно — насыщеннее */
   filter: saturate(1.6) brightness(1.5);
 }
+
 /* изменившийся счёт (Tick в components/Live.tsx): цифра въезжает сверху и на секунду горит лаймом */
 @keyframes tick-in {
   0% {

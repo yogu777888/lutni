@@ -5,7 +5,7 @@ import { CtaLink } from './CtaLink'
 import { HeaderShell } from './HeaderShell'
 import { LogoMark } from './Logo'
 import { LiveTicker } from './LiveTicker'
-import { NavLinks } from './NavCapsule'
+import { NavLinks } from './NavLinks'
 import { Search } from './Search'
 
 /**
@@ -32,7 +32,7 @@ export function Header() {
             18+
           </span>
           {partner ? (
-            <CtaLink href={goHref(partner, 'header')} size="sm" className="h-9 rounded-[11px] px-4 text-[14px]">
+            <CtaLink href={goHref(partner, 'header')} size="sm" className="h-9 rounded-ctl px-4 text-[14px]">
               Бонус
             </CtaLink>
           ) : null}
