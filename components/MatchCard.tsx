@@ -13,19 +13,23 @@ const live = (m: Match) => m.status === 'live' || m.status === 'suspended'
 export function MatchCardBody({
   m,
   sub,
-  dim = false,
+  seen = false,
   badge,
 }: {
   m: Match
   sub: string
-  dim?: boolean
+  /** матч уже смотрели в этой истории — отметка в углу обложки (эмблемы не тускнеют: это читалось как ошибка) */
+  seen?: boolean
   /** главная цифра истории в углу обложки («−17%», «62%»); hot — янтарём (кэф упал) */
   badge?: { text: string; hot?: boolean } | null
 }) {
   const played = Boolean(m.score) && (live(m) || m.status === 'finished')
   return (
     <>
-      <span className={`relative grid h-[132px] grid-cols-[1fr_auto_1fr] items-center overflow-hidden rounded-tile bg-panel-3 px-3 ${dim ? 'opacity-60' : ''}`}>
+      <span className={`relative grid h-[132px] grid-cols-[1fr_auto_1fr] items-center overflow-hidden rounded-tile bg-panel-3 px-3`}>
+        {seen ? (
+          <span className="absolute right-2 top-2 rounded-ctl bg-white/[0.08] px-2 py-0.5 text-[12px] font-medium text-dim">✓ Просмотрено</span>
+        ) : null}
         {badge ? (
           <span className={`num absolute left-2 top-2 rounded-ctl px-2 py-0.5 text-[12.5px] font-semibold ${badge.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.08] text-fg'}`}>
             {badge.text}
@@ -33,7 +37,10 @@ export function MatchCardBody({
         ) : null}
         {[m.home, m.away].map((t, i) => (
           <span key={t.id} className={`relative grid place-items-center transition-transform duration-300 group-hover:scale-105 ${i ? 'order-3' : ''}`}>
-            <TeamLogo name={t.name} src={t.logo} size={64} />
+            {/* эмблема на матовом светлом круге, как в табло: тёмные эмблемы («Мец») не сливаются с графитом */}
+            <span className="grid h-[76px] w-[76px] place-items-center rounded-full bg-white/[0.14] ring-1 ring-white/15">
+              <TeamLogo name={t.name} src={t.logo} size={50} />
+            </span>
           </span>
         ))}
         <span className="relative order-2 flex flex-col items-center gap-1.5">
