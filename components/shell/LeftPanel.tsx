@@ -37,8 +37,9 @@ export function LeftPanel({ leagues, today }: { leagues: PanelLeague[]; today: s
   const gameOf = (id: number) => (ids ? games.find((g) => g.home.id === id || g.away.id === id) : undefined)
 
   return (
-    <div className="flex flex-col gap-2">
-      <section className="rounded-card bg-panel p-4">
+    // одна панель на всю высоту, как «Моя медиатека» у Spotify: свои команды, под чертой — турниры
+    <div className="scrollbar-none h-full overflow-y-auto rounded-card bg-panel p-4">
+      <section>
         <h2 className="flex items-center gap-2 text-[15px] font-semibold">
           <svg viewBox="0 0 24 24" className="h-4 w-4 text-acid" fill="currentColor" aria-hidden>
             <path d="M12 3.6l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.5l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z" />
@@ -89,7 +90,7 @@ export function LeftPanel({ leagues, today }: { leagues: PanelLeague[]; today: s
           </div>
         )}
       </section>
-      <section className="rounded-card bg-panel p-4">
+      <section className="mt-4 border-t border-edge pt-4">
         <h2 className="text-[15px] font-semibold">Топ-турниры</h2>
         <ul className="mt-2">
           {leagues.map((l) => (

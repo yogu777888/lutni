@@ -8,9 +8,9 @@ import { TeamLogo } from '../TeamLogo'
 /**
  * Правая панель каркаса (как «Сейчас играет» у Spotify; от xl): «Сейчас в игре» — идущие матчи со счётом и минутой,
  * главные первыми, раз в 30 с, только пока вкладка на экране; ничего не идёт — «Скоро начнутся» со временем.
- * Ниже — `children` (карточка бонуса, приходит с сервера).
+ * Одна панель на всю высоту, как «Сейчас играет» у Spotify.
  */
-export function RightPanel({ children }: { children?: React.ReactNode }) {
+export function RightPanel() {
   const [data, setData] = useState<{ items: CompactMatch[]; upcoming: boolean } | null>(null)
 
   useEffect(() => {
@@ -32,8 +32,8 @@ export function RightPanel({ children }: { children?: React.ReactNode }) {
 
   const items = data?.items ?? []
   return (
-    <div className="flex flex-col gap-2">
-      <section className="rounded-card bg-panel p-4">
+    <div className="scrollbar-none h-full overflow-y-auto rounded-card bg-panel p-4">
+      <section>
         <h2 className="flex items-center gap-2 text-[15px] font-semibold">
           {data?.upcoming ? null : <span className="h-2 w-2 animate-pulse-live rounded-full bg-live" />}
           {data?.upcoming ? 'Скоро начнутся' : 'Сейчас в игре'}
@@ -76,7 +76,6 @@ export function RightPanel({ children }: { children?: React.ReactNode }) {
           <p className="mt-2 text-[13px] text-dim">{data ? 'Сегодня матчей больше нет.' : 'Загружаем…'}</p>
         )}
       </section>
-      {children}
     </div>
   )
 }

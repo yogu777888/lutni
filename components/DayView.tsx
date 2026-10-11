@@ -393,10 +393,7 @@ export async function DayView({
               </div>
             ) : null}
           </div>
-          {/* «Где ставить» на широком экране — в правой панели каркаса */}
-          <div className="xl:hidden">
-            <Sidebar />
-          </div>
+          <Sidebar />
         </div>
       </section>
       ) : null}
