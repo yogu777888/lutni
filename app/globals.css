@@ -838,6 +838,8 @@ html:not([data-look='light']) .hero-mark {
 }
 html:not([data-look='light']) .hero-tint {
   display: block;
-  opacity: 0.85;
+  opacity: 1;
   mix-blend-mode: screen;
+  /* подкраска в разметке — 20% цвета клуба (её же берёт голубая версия); на графите её почти не видно — насыщеннее */
+  filter: saturate(1.6) brightness(1.5);
 }
