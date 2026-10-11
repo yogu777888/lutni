@@ -40,36 +40,22 @@ export type MainItem = {
   liveOdds?: X12Line | null
 }
 
+/** Хороший факт для команды или плохой — по словам приписки (lib/hand-notes.ts): цвет точки в метке. */
+const noteTone = (t: string) => (/поражен|без побед|вылет/.test(t) ? 'bg-live' : 'bg-acid')
+
 /**
- * Приписка над эмблемой, как от руки: красным рукописным шрифтом (Caveat), чуть наискось, и кривая стрелка вниз
- * к эмблеме. Текст уходит от края карточки к центру: у хозяев — вправо, у гостей — влево (зеркально). Поверх —
- * на высоту табло не влияет.
+ * Метка-факт над эмблемой: небольшой чип обычным шрифтом, тихий текст и цветная точка (лайм — хороший факт,
+ * красная — плохой). Рукописные красные приписки на графите владелец счёл некрасивыми — читались как ошибка.
+ * Поверх, по центру над кругом — высоту табло не меняет.
  */
-function HandNote({ text, side, short }: { text: string; side: 'home' | 'away'; short: boolean }) {
-  const away = side === 'away'
+function HandNote({ text, short }: { text: string; short: boolean }) {
   return (
     <span
       aria-hidden
-      className={`pointer-events-none absolute bottom-[calc(100%-4px)] flex-col text-live ${short ? 'flex' : 'hidden sm:flex'} ${away ? 'right-[18%] items-end' : 'left-[18%] items-start'}`}
+      className={`pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-white/[0.06] px-2.5 py-1 text-[12.5px] font-medium leading-none text-dim shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] backdrop-blur-sm lg:text-[13px] ${short ? 'flex' : 'hidden sm:flex'}`}
     >
-      {/* на телефоне длинная приписка — в две строки (иначе заходит на счёт), на компьютере — в одну */}
-      <span
-        className={`font-hand block w-max max-w-[7.5rem] text-balance text-[21px] leading-[0.9] sm:max-w-none sm:whitespace-nowrap lg:text-[clamp(20px,3vh,28px)] ${away ? 'mr-3.5 rotate-[6deg] text-right' : 'ml-3.5 -rotate-[6deg]'}`}
-      >
-        {text}
-      </span>
-      <svg
-        viewBox="0 0 24 28"
-        className={`-mt-0.5 h-[17px] w-[15px] sm:h-[22px] sm:w-[19px] lg:h-[clamp(18px,2.6vh,26px)] lg:w-auto ${away ? '-scale-x-100' : ''}`}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M15 2.5c-4.5 3.5-1.5 8.5-4.2 13.4-1 1.9-2.4 4.4-3.3 8.1" />
-        <path d="M3.4 19.6l4 5.1 3.6-5" />
-      </svg>
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${noteTone(text)}`} />
+      {text}
     </span>
   )
 }
@@ -153,8 +139,8 @@ function MatchSlide({ item }: { item: MainItem }) {
   const team = (t: Match['home'], k: 'home' | 'away') => (
     <span className={`flex min-w-0 flex-col items-center gap-3 text-center lg:gap-4 ${lead && lead !== k ? 'opacity-70' : ''}`}>
       <span className="relative grid h-[var(--disc)] w-[var(--disc)] shrink-0 place-items-center rounded-full bg-white/[0.16] ring-1 ring-white/25 backdrop-blur-md">
-        {/* на телефоне — только короткие приписки («лидер», «2-е место»): длинные в две строки налезали на всё вокруг */}
-        {notes?.[k] ? <HandNote text={notes[k]} side={k} short={notes[k].length <= 12} /> : null}
+        {/* на телефоне — только короткие метки («лидер», «2-е место»): длинные не влезают над узкой колонкой */}
+        {notes?.[k] ? <HandNote text={notes[k]} short={notes[k].length <= 12} /> : null}
         {/* при перелистывании эмблема вздрагивает, как желе: сжимается и разжимается с отскоком; гости — чуть позже */}
         <span className={`jelly grid place-items-center ${k === 'away' ? '[--jelly-delay:0.06s]' : ''}`}>
           <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
