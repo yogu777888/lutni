@@ -116,7 +116,7 @@ function MatchSlide({ item }: { item: MainItem }) {
   const minute = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'
   // после свистка проигравший чуть тусклее; до матча и при ничьей — обе одинаково
   const lead = score && score.home !== score.away ? (score.home > score.away ? 'home' : 'away') : null
-  const BIG = 'num display-num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[36px] sm:text-[44px] lg:text-[clamp(28px,calc(14vh_-_62px_+_var(--gain,0px)_*_0.25),68px)]'
+  const BIG = 'num display-num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[36px] sm:text-[44px] lg:text-[clamp(28px,calc(14vh_-_62px_+_var(--gain,0px)_*_0.25),84px)]'
   // эмблема на матовом светлом круге, как в Apple Sports: тёмные эмблемы не тонут в цвете фона
   const team = (t: Match['home'], k: 'home' | 'away') => (
     <span className={`flex min-w-0 flex-col items-center gap-3 text-center lg:gap-4 ${lead && lead !== k ? 'opacity-70' : ''}`}>
@@ -137,7 +137,7 @@ function MatchSlide({ item }: { item: MainItem }) {
       <StoryLink
         id={m.id}
         href={matchHref(m)}
-        className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 py-2 [--disc:64px] sm:gap-x-6 sm:[--disc:80px] lg:gap-x-10 lg:[--disc:clamp(36px,calc(26vh_-_136px_+_var(--gain,0px)_*_0.6),112px)] ${COVER}`}
+        className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 py-2 [--disc:64px] sm:gap-x-6 sm:[--disc:80px] lg:gap-x-10 lg:[--disc:clamp(36px,calc(26vh_-_136px_+_var(--gain,0px)_*_0.6),140px)] ${COVER}`}
       >
         {team(m.home, 'home')}
         <span className="flex flex-col items-center text-center">
@@ -321,7 +321,20 @@ export type DayPicks = {
  * матчи» и широкий «Движение коэффициентов». Истории — короткий просмотр матчей, подборки — полные списки дня со
  * сравнением и фильтрами.
  */
-export function DaySummary({ mains, days, picks, className = '' }: { mains: MainItem[]; days: DayLink[]; picks: DayPicks; className?: string }) {
+export function DaySummary({
+  mains,
+  days,
+  picks,
+  stories,
+  className = '',
+}: {
+  mains: MainItem[]
+  days: DayLink[]
+  picks: DayPicks
+  /** истории дня карточками — вместо подборок под «Главными матчами» (подборки тогда — `PicksRow` ниже) */
+  stories?: React.ReactNode
+  className?: string
+}) {
   if (!mains.length) return null
   return (
     <section aria-label="Сводка дня" className={`flex flex-col ${className}`}>
@@ -332,10 +345,20 @@ export function DaySummary({ mains, days, picks, className = '' }: { mains: Main
         marks={mains.map(({ it, tint }) => ({ home: it.match.home.logo, away: it.match.away.logo, tint: tint ?? null }))}
         className={`lg:flex-1 ${SURFACE}`}
       />
-      {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг; к плиткам ближе, чем к блоку сверху */}
+      {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг; к ряду ближе, чем к блоку сверху */}
       <h2 className="mb-2.5 mt-4 text-[13px] font-medium text-mute lg:mb-[clamp(6px,1.2vh,10px)] lg:mt-[clamp(8px,1.8vh,16px)]">
-        Подборки
+        {stories ? 'Истории дня' : 'Подборки'}
       </h2>
+      {stories ?? <IconPicks p={picks} />}
+    </section>
+  )
+}
+
+/** «Подборки» под первым экраном — когда их место внизу первого экрана заняли истории. */
+export function PicksRow({ picks }: { picks: DayPicks }) {
+  return (
+    <section aria-label="Подборки" className="mt-10 sm:mt-12">
+      <h2 className="mb-2.5 text-[13px] font-medium text-mute">Подборки</h2>
       <IconPicks p={picks} />
     </section>
   )

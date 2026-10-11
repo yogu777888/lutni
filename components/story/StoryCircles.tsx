@@ -6,6 +6,7 @@ import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
 import { discBackground, StorySymbol, symbolColor } from './StorySymbol'
+import { TeamLogo } from '../TeamLogo'
 
 /**
  * Истории — круглые входы в подборки, в духе iOS: светлый диск (#FFFFFF → #EAF2F8, тонкая граница, мягкая тень), в
@@ -78,7 +79,16 @@ function Disc({ k, cover }: { k: string; cover?: string }) {
  * Это обычные ссылки (на страницу тега / матча) — для поисковиков и без JS;
  * клик открывает сторис матчей кружка, затем следующих кружков.
  */
-export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; covers?: Record<string, string> }) {
+export function StoryCircles({
+  groups,
+  covers = {},
+  layout = 'circles',
+}: {
+  groups: StoryGroup[]
+  covers?: Record<string, string>
+  /** cards — карточки в ряд внизу первого экрана (кружок со знаком, название, эмблемы матчей и число матчей) */
+  layout?: 'circles' | 'cards'
+}) {
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
@@ -100,6 +110,45 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
     // очередь: матчи этого кружка, потом следующих; начинаем с первого непросмотренного в этом кружке
     const { queue, startId } = circleQueue(groups, gi, seen, covers)
     openStory({ id: startId, href: groups[gi].href, opener: e.currentTarget, queue })
+  }
+
+  if (layout === 'cards') {
+    return (
+      <nav aria-label="Истории дня" className="scrollbar-none -mx-4 flex gap-3 overflow-x-auto px-4 py-0.5 [mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)] sm:mx-0 sm:px-0">
+        {groups.map((g, gi) => {
+          const n = seenCount(g, seen)
+          const done = n === g.items.length
+          return (
+            <a
+              key={g.key}
+              href={g.href}
+              onClick={(e) => open(gi, e)}
+              title={g.hint.includes(':') ? g.hint : `${g.hint}: ${g.items.length} ${plural(g.items.length)}`}
+              aria-label={`${g.label}. ${g.hint}. Смотреть истории`}
+              className="group flex w-[184px] shrink-0 items-center gap-3 rounded-card border border-edge px-3 py-3 transition-colors hover:bg-white/[0.04] lg:py-[clamp(8px,1.8vh,14px)]"
+            >
+              <span className="relative block h-12 w-12 shrink-0 rounded-full transition-transform duration-300 group-hover:scale-105 group-active:scale-95">
+                <Ring kind={g.kind} n={g.items.length} seen={n} />
+                <Disc k={g.key} cover={covers[g.key]} />
+              </span>
+              <span className={`min-w-0 ${done ? 'opacity-60' : ''}`}>
+                <span className="block truncate text-[15px] font-semibold leading-tight">{g.label}</span>
+                <span className="mt-1 flex items-center gap-1.5 text-[12.5px] leading-none text-dim">
+                  {g.crests?.length ? (
+                    <span className="flex -space-x-1">
+                      {g.crests.slice(0, 2).map((c) => (
+                        <TeamLogo key={c.name} name={c.name} src={c.logo} size={16} />
+                      ))}
+                    </span>
+                  ) : null}
+                  {g.items.length} {plural(g.items.length)}
+                </span>
+              </span>
+            </a>
+          )
+        })}
+      </nav>
+    )
   }
 
   return (

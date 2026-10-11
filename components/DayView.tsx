@@ -15,7 +15,7 @@ import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { LiveRefresh } from './Live'
 import { FavMatches } from './FavMatches'
-import { DaySummary, type MainItem } from './DaySummary'
+import { DaySummary, PicksRow, type MainItem } from './DaySummary'
 import type { DayLink } from './TopCarousel'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
@@ -193,6 +193,15 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
     : []
   const base = dayHref(ymd, today)
 
+  const picks = {
+    ymd,
+    dayHref: base,
+    past,
+    counts: dayCounts(items),
+    goals: goalsPicks(items, snapOf),
+    move: moveExample(items, snapOf),
+    movesCovered: items.filter((it) => lineMoves(snapOf(it.match.id)).length > 0).length,
+  }
   return (
     <>
       {/* пока на этой странице идут матчи — счёт и минуты обновляются сами, без перезагрузки */}
@@ -200,7 +209,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
       {/* первый экран: заголовок, кружки и сводка. На компьютере сводка тянется до низа окна —
           заходишь и сразу видишь всё нужное, а «Все матчи дня» начинаются ниже, по прокрутке.
           На очень высоких мониторах — не выше 50rem (хватает на обычное окно браузера на экране 1080p), чтобы плитки не раздувались. */}
-      <div className={hasSummary ? 'flex flex-col [--gain:clamp(40px,calc(100vh_-_665px),110px)] lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
+      <div className={hasSummary ? 'flex flex-col [--gain:clamp(80px,calc(100vh_-_600px),160px)] lg:min-h-[min(calc(100svh-7rem),50rem)]' : undefined}>
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <section className="min-w-0 pt-1 sm:pt-0">
           <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
@@ -216,33 +225,21 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         </section>
         </div>
 
-        {storyGroups.length ? (
-          // кружки понятны и без подписи «Истории дня» — так первый экран влезает целиком;
-          // отступ сверху — у ряда (pt-1.5): ряд прокручивается и обрезал бы круг фокуса у кружка
-          <section aria-label="Истории дня" className="mt-4 sm:mt-5 lg:mt-[clamp(6px,2.2vh,20px)]">
-            <StoryCircles groups={storyGroups} covers={storyCovers()}  />
-          </section>
-        ) : null}
 
         {/* на невысоком окне (ниже 800px) отступ над сводкой меньше — так она влезает целиком */}
         {hasSummary ? (
           <DaySummary
             mains={mains}
             days={dayLinks}
-            picks={{
-              ymd,
-              dayHref: base,
-              past,
-              counts: dayCounts(items),
-              goals: goalsPicks(items, snapOf),
-              move: moveExample(items, snapOf),
-              movesCovered: items.filter((it) => lineMoves(snapOf(it.match.id)).length > 0).length,
-            }}
+            picks={picks}
+            // истории — карточками внизу первого экрана, на месте подборок (кружки сверху съедали место у табло)
+            stories={storyGroups.length ? <StoryCircles groups={storyGroups} covers={storyCovers()} layout="cards" /> : undefined}
             className="mt-5 lg:mt-[clamp(10px,2.4vh,20px)] lg:flex-1"
           />
         ) : null}
       </div>
 
+      {hasSummary && storyGroups.length ? <PicksRow picks={picks} /> : null}
       {past ? null : <SoonShelf items={soonMatches(items, new Set(mains.map((x) => x.it.match.id)))} allHref={`${base}?sort=time#matches`} />}
       <ValueBoard items={values} />
 
