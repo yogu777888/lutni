@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from 'react'
 
 /** Избранные команды — в памяти браузера, без регистрации. Меняются звёздочкой (FavStar), читаются блоком FavMatches. */
-export type FavTeam = { id: number; name: string }
+export type FavTeam = { id: number; name: string; logo?: string | null }
 
 const KEY = 'tb-fav-teams'
 const EVENT = 'tb-fav'

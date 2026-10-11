@@ -63,7 +63,7 @@ export function MatchHero({
         <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
       </span>
       <span className={`line-clamp-2 max-w-full hyphens-auto break-words font-semibold leading-tight tracking-[-0.02em] sm:text-[26px] ${phoneSize(t.name)}`}>{t.name}</span>
-      <FavStar id={t.id} name={t.name} className="-mt-1" />
+      <FavStar id={t.id} name={t.name} logo={t.logo} className="-mt-1" />
     </div>
   )
   return (

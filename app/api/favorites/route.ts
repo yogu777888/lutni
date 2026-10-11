@@ -1,7 +1,6 @@
 import { getMatchesByDate } from '@/lib/data'
-import { formatTime, todayYmd } from '@/lib/format'
-import { matchHref } from '@/lib/links'
-import { isLive } from '@/lib/rank'
+import { compactMatch } from '@/lib/compact'
+import { todayYmd } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,18 +22,7 @@ export async function GET(req: Request) {
     items = ms
       .filter((m) => ids.has(m.home.id) || ids.has(m.away.id))
       .sort((a, b) => a.ts - b.ts)
-      .map((m) => ({
-        id: m.id,
-        href: matchHref(m),
-        league: m.league.name,
-        home: { name: m.home.name, logo: m.home.logo },
-        away: { name: m.away.name, logo: m.away.logo },
-        time: formatTime(m.ts),
-        live: isLive(m),
-        finished: m.status === 'finished',
-        minute: isLive(m) ? (m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}′` : 'идёт') : null,
-        score: m.score ? [m.score.home, m.score.away] : null,
-      }))
+      .map(compactMatch)
   } catch {}
   return Response.json({ items }, { headers: { 'Cache-Control': 'private, max-age=30', 'X-Robots-Tag': 'noindex' } })
 }

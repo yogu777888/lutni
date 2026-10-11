@@ -67,7 +67,7 @@ export default async function LeaguePage({ params }: Props) {
           {year ? `Сезон ${year}/${String(year + 1).slice(2)} · ` : ''}таблица, расписание, результаты и прогнозы на матчи
         </p>
       </div>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-5">
           <section className="card overflow-hidden">
             <h2 className="border-b border-edge px-4 py-3.5 text-[15px] font-semibold">Ближайшие матчи</h2>

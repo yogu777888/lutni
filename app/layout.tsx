@@ -6,6 +6,12 @@ import { Footer } from '@/components/Footer'
 import { CookieNotice } from '@/components/CookieNotice'
 import { Header } from '@/components/Header'
 import { Metrika } from '@/components/Metrika'
+import { LeftPanel } from '@/components/shell/LeftPanel'
+import { RightPanel } from '@/components/shell/RightPanel'
+import { WhereToBet } from '@/components/shell/WhereToBet'
+import { FEATURED_LEAGUES } from '@/config/leagues'
+import { todayYmd } from '@/lib/format'
+import { leagueHref } from '@/lib/links'
 import { StoryViewer } from '@/components/story/StoryViewer'
 import { SITE } from '@/config/site'
 import { IS_MOCK } from '@/lib/sstats/client'
@@ -45,8 +51,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ru">
       <body className="min-h-dvh antialiased">
         <Header />
-        <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6">{children}</main>
-        <Footer />
+        {/* каркас, как у Spotify (от xl): слева «Мои команды» и турниры, в центре — серая панель страницы с градиентом
+            сверху, справа «Сейчас в игре» и «Где ставить»; уже — обычная страница во всю ширину */}
+        <div className="xl:grid xl:grid-cols-[248px_minmax(0,1fr)_288px] xl:gap-2 xl:px-2 xl:pb-2">
+          <aside aria-label="Мои команды и турниры" className="hidden xl:block">
+            <div className="scrollbar-none sticky top-[72px] max-h-[calc(100dvh-80px)] overflow-y-auto">
+              <LeftPanel today={todayYmd()} leagues={FEATURED_LEAGUES.map((l) => ({ id: l.id, short: l.short, href: leagueHref({ id: l.id, original: l.name, country: l.country }) }))} />
+            </div>
+          </aside>
+          <div className="shell-center min-w-0">
+            <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6">{children}</main>
+            <Footer />
+          </div>
+          <aside aria-label="Сейчас в игре и букмекеры" className="hidden xl:block">
+            <div className="scrollbar-none sticky top-[72px] max-h-[calc(100dvh-80px)] overflow-y-auto">
+              <RightPanel>
+                <WhereToBet />
+              </RightPanel>
+            </div>
+          </aside>
+        </div>
         <CookieNotice />
         <StoryViewer />
         {SITE.metrikaId ? <Metrika id={SITE.metrikaId} /> : null}

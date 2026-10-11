@@ -3,12 +3,12 @@
 import { toggleFavorite, useFavorites } from './favorites'
 
 /** Звёздочка «в избранное» у команды: матчи избранных команд — первыми в «Все матчи дня» (FavMatches). */
-export function FavStar({ id, name, className = '' }: { id: number; name: string; className?: string }) {
+export function FavStar({ id, name, logo = null, className = '' }: { id: number; name: string; logo?: string | null; className?: string }) {
   const on = useFavorites().some((t) => t.id === id)
   return (
     <button
       type="button"
-      onClick={() => toggleFavorite({ id, name })}
+      onClick={() => toggleFavorite({ id, name, logo })}
       aria-pressed={on}
       aria-label={on ? `Убрать «${name}» из избранного` : `Добавить «${name}» в избранное`}
       title={on ? 'В избранном' : 'В избранное'}

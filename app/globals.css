@@ -671,3 +671,14 @@
   letter-spacing: 0.01em;
   text-transform: uppercase;
 }
+
+/* Каркас, как у Spotify (app/layout.tsx, от xl): центральная панель — графит чуть светлее фона страницы, сверху
+   мягко спускается лаймовый свет; боковые панели — bg-panel */
+@media (min-width: 1280px) {
+  .shell-center {
+    border-radius: var(--radius-card);
+    background:
+      linear-gradient(180deg, rgb(200 255 46 / 0.07), rgb(200 255 46 / 0) 360px),
+      #0e1318;
+  }
+}

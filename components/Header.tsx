@@ -16,7 +16,7 @@ export function Header() {
   const partner = primaryPartner()
   return (
     <HeaderShell>
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-5 lg:gap-5">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-5 lg:gap-5 xl:max-w-none xl:px-6">
         <Link href="/" aria-label="tag.bet — на главную" className="shrink-0 text-fg transition-opacity hover:opacity-80">
           <span className="flex items-center gap-2">
             <LogoMark size={26} />

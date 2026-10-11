@@ -344,7 +344,7 @@ export async function DayView({
             </nav>
           )}
         </div>
-        <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="min-w-0 space-y-5">
             {failed ? (
               <div className="card p-5 text-[15px] text-dim">
@@ -393,7 +393,10 @@ export async function DayView({
               </div>
             ) : null}
           </div>
-          <Sidebar />
+          {/* «Где ставить» на широком экране — в правой панели каркаса */}
+          <div className="xl:hidden">
+            <Sidebar />
+          </div>
         </div>
       </section>
       ) : null}

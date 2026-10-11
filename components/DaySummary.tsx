@@ -293,10 +293,10 @@ function IconPicks({ p }: { p: DayPicks }) {
   }
   return (
     // 1 : 1 : 1.6, а не 1 : 1 : 2: строке маленьких плиток нужно место, а у широкой середина пустовала
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)]">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] xl:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)]">
       <IconTile sym="pick-all" title="Все матчи" href={p.listHref} line={all} />
       <IconTile sym="pick-goals" title="Голевые матчи" href={`/matches/${p.ymd}/goals`} line={goals} />
-      <div className="min-w-0 sm:col-span-2 lg:col-span-1">
+      <div className="min-w-0 sm:col-span-2 lg:col-span-1 xl:col-span-2 2xl:col-span-1">
         <IconTile sym="pick-moves" title="Движение коэффициентов" href={`/matches/${p.ymd}/odds`} line={move} aside={aside} hint={hint} />
       </div>
     </div>
