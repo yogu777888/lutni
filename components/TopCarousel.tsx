@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { CHIP, StoryChipFace } from './Chips'
 import { openStory } from './story/events'
-import { setShellTint } from './shell/tint'
+import { setShellTint, useMatchTint } from './shell/tint'
 
 /** Матч слайда — для шапки и кнопки разбора: турнир и разбор — про матч, который сейчас на экране. */
 export type MainSlide = { id: number; href: string; live: boolean; caption: string; title: string }
@@ -70,6 +70,7 @@ export function TopCarousel({
   panels,
   days,
   marks,
+  ymd,
   className = '',
 }: {
   slides: MainSlide[]
@@ -77,6 +78,8 @@ export function TopCarousel({
   days: DayLink[]
   /** эмблемы команд каждого матча — для тиснения на фоне */
   marks: Marks[]
+  /** день матчей — чтобы догрузить цвета клубов, если страница их не дождалась */
+  ymd?: string
   className?: string
 }) {
   const track = useRef<HTMLDivElement>(null)
@@ -116,7 +119,7 @@ export function TopCarousel({
   }
 
   // градиент центральной панели каркаса (от xl) — цветами клубов матча на экране, как у Spotify — цветом обложки
-  const tint = marks[cur]?.tint
+  const tint = useMatchTint(slides[cur]?.id, ymd, marks[cur]?.tint)
   useEffect(() => {
     setShellTint(tint?.home, tint?.away)
   }, [tint?.home, tint?.away])

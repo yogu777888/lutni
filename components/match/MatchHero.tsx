@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { SITE } from '@/config/site'
-import { formatDateLong, formatTime, formatWeekdayLong } from '@/lib/format'
+import { formatDateLong, formatTime, formatWeekdayLong, ymdInTz } from '@/lib/format'
 import { leagueHref } from '@/lib/links'
 import { split100 } from '@/lib/verdict'
 import type { MatchFull } from '@/lib/types'
@@ -70,7 +70,7 @@ export function MatchHero({
   return (
     <section className="card relative overflow-hidden p-5 sm:p-7">
       {/* от xl градиент центральной панели — в цветах этих клубов, как у Spotify — цветом обложки */}
-      <ShellTint home={tint?.home} away={tint?.away} />
+      <ShellTint id={m.id} ymd={ymdInTz(m.ts)} home={tint?.home} away={tint?.away} />
       {tint ? (
         <div
           aria-hidden

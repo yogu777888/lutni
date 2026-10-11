@@ -341,6 +341,7 @@ export function DaySummary({
         panels={mains.map((x) => <MatchSlide key={x.it.match.id} item={x} />)}
         days={days}
         marks={mains.map(({ it, tint }) => ({ home: it.match.home.logo, away: it.match.away.logo, tint: tint ?? null }))}
+        ymd={picks.ymd}
         className={`lg:flex-1 ${SURFACE} xl:!border-transparent xl:!bg-transparent`}
       />
       {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг; к ряду ближе, чем к блоку сверху */}
