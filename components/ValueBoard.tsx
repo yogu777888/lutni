@@ -8,6 +8,7 @@ import { edgeTone, Flaps } from './Flaps'
 import { SHELF_CARD, Shelf } from './Shelf'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
+import { ShelfIcon } from './story/StorySymbol'
 
 const edge = (ev: number) => `${ev >= 0 ? '+' : '−'}${Math.abs(ev * 100).toFixed(1).replace('.', ',')}%`
 
@@ -25,6 +26,7 @@ export function ValueBoard({ items }: { items: FeedItem[] }) {
   if (!items.length) return null
   return (
     <Shelf
+      icon={<ShelfIcon k="value" />}
       title={
         <>
           <span className="text-acid">Выгодно</span> сегодня

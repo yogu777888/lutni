@@ -29,7 +29,7 @@ export function Shelf({
   return (
     <section id={id} className="mt-12 scroll-mt-24 sm:mt-14">
       <div className="flex items-end justify-between gap-4">
-        <h2 className="h2 flex items-center gap-3 text-[24px] leading-none sm:text-[28px]">
+        <h2 className="h2 flex items-center gap-2.5 text-[24px] leading-none sm:text-[28px]">
           {icon}
           {title}
         </h2>

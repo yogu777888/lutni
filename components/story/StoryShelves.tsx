@@ -8,7 +8,7 @@ import { SHELF_BASE, SHELF_W, Shelf } from '../Shelf'
 import { openStory } from './events'
 import { circleQueue } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
-import { discBackground, StorySymbol, symbolColor } from './StorySymbol'
+import { ShelfIcon } from './StorySymbol'
 
 /**
  * Истории дня — полками, как «Скоро начнутся» (владелец: «чтобы всё в одном стиле»): «В игре» с идущими матчами,
@@ -63,11 +63,7 @@ export function StoryShelves({
           <Shelf
             key={g.key}
             title={g.label}
-            icon={
-              <span aria-hidden className="story-disc grid h-8 w-8 shrink-0 place-items-center rounded-full" style={{ background: discBackground(symbolColor(g.key)) }}>
-                <StorySymbol k={g.key} tone="#ffffff" className="h-[58%] w-[58%]" />
-              </span>
-            }
+            icon={<ShelfIcon k={g.key} />}
             more={more[g.key] ? { href: more[g.key]! } : undefined}
           >
             {items.map((it) => {

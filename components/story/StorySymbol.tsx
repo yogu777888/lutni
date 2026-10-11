@@ -132,11 +132,24 @@ const SYMBOLS: Record<string, Sym> = {
     color: '#ff9500',
     draw: <path d="M8 19V5M4.5 8.5L8 5l3.5 3.5M16 5v14M12.5 15.5L16 19l3.5-3.5" {...LINE} />,
   },
+  // Скоро начнутся: циферблат со стрелками
+  soon: {
+    color: '#64748b',
+    draw: (
+      <>
+        <circle cx="12" cy="12" r="8.2" {...LINE} />
+        <path d="M12 7.5V12l3 2" {...LINE} />
+      </>
+    ),
+  },
   // Личные встречи: стрелки навстречу
   h2h: { color: '#64748b', draw: <path d="M3.5 12h6M7 8.7L10.2 12 7 15.3M20.5 12h-6M17 8.7L13.8 12l3.2 3.3" {...LINE} /> },
 }
 
 const FALLBACK: Sym = { color: '#64748b', draw: <path d="M9.5 4.5l-2 15M16.5 4.5l-2 15M5 9h14.5M4.5 15H19" {...LINE} /> }
+
+/** Значок в заголовке полки: белый знак без подложки, размером с заглавные буквы заголовка (владелец: без кружков — кружок похож на кнопку). */
+export const ShelfIcon = ({ k }: { k: string }) => <StorySymbol k={k} tone="currentColor" className="h-[22px] w-[22px] shrink-0 sm:h-6 sm:w-6" />
 
 /** Заливка диска, как иконки Apple: цвет категории — светлее сверху, глубже снизу. */
 export const discBackground = (c: string) =>
