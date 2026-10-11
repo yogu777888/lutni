@@ -867,3 +867,28 @@ html:not([data-look='light']) .hero-tint {
     animation: none;
   }
 }
+/* плашка про cookie (components/CookieNotice.tsx): выезжает снизу и так же уезжает */
+@keyframes cookie-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+@keyframes cookie-out {
+  to {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+.cookie-in {
+  animation: cookie-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.cookie-out {
+  animation: cookie-out 0.25s ease-in forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cookie-in,
+  .cookie-out {
+    animation: none;
+  }
+}
