@@ -5,7 +5,7 @@ import { dayHref } from '@/lib/links'
 import { addDays, appNow, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdInTz, ymdToNoonTs } from '@/lib/format'
 import { lineMoves, type OddsSnap, type X12Line } from '@/lib/lines'
 import { isLive, liveRank } from '@/lib/rank'
-import { dayCounts, goalsPicks, mainMatches, moveExample } from '@/lib/day-summary'
+import { dayCounts, goalsPicks, mainMatches, moveExample, soonMatches } from '@/lib/day-summary'
 import { storyCovers } from '@/lib/story-covers'
 import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import { matchColors } from '@/lib/team-colors'
@@ -21,6 +21,7 @@ import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
 import { StoryCircles } from './story/StoryCircles'
 import { ValueBoard } from './ValueBoard'
+import { SoonShelf } from './SoonShelf'
 
 const OTHER_LIMIT = 160
 /** В списке «по времени» — не больше стольких матчей: сначала топ-лиги, потом остальные с линией. */
@@ -242,6 +243,7 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
         ) : null}
       </div>
 
+      {past ? null : <SoonShelf items={soonMatches(items, new Set(mains.map((x) => x.it.match.id)))} allHref={`${base}?sort=time#matches`} />}
       <ValueBoard items={values} />
 
       {/* без сводки (в этот день нет ни одного «взрослого» матча) список идёт сразу под заголовком страницы — второй заголовок не нужен */}
@@ -249,20 +251,11 @@ export async function DayView({ ymd, today, sort = 'league' }: { ymd: string; to
           (тёмный текст), фон — на тон темнее карточек, чтобы карточки турниров на ней читались */}
       <section
         id="matches"
-        className={`list-slab bg-panel scroll-mt-24 rounded-slab px-3 py-7 sm:px-10 sm:py-12 ${listHead ? 'mt-10 sm:mt-14' : 'mt-5 sm:mt-6'}`}
+        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : 'mt-5 sm:mt-6'}`}
       >
         {listHead ? (
-          <h2 className="h2 px-1 text-[32px] sm:px-0 sm:text-[48px]">
-            {past ? (
-              <>
-                Как <span className="text-btn">сыграли</span>
-              </>
-            ) : (
-              <>
-                Все матчи <span className="text-btn">дня</span>
-              </>
-            )}
-          </h2>
+          // заголовок — как у полок выше: одна схема на всю страницу
+          <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
         ) : null}
         {/* выбор дня — и здесь, у списка (как и чип в «Главных матчах», ведёт на страницу дня); рядом — порядок списка */}
         <div className={`flex flex-wrap items-center justify-between gap-x-6 gap-y-3 ${listHead ? 'mt-5' : ''}`}>

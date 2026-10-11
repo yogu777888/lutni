@@ -44,6 +44,19 @@ export function mainMatches(items: FeedItem[], limit = MAINS_SHOWN): FeedItem[] 
   return [...first, ...rest].slice(0, limit)
 }
 
+/**
+ * «Скоро начнутся» — полка под первым экраном: ближайшие «взрослые» матчи по времени начала, сначала из
+ * топ-турниров (их мало — добираем остальными), без тех, что уже в «Главных матчах».
+ */
+export function soonMatches(items: FeedItem[], skip: Set<number> = new Set(), limit = 12, now = appNow()): FeedItem[] {
+  const pool = items
+    .filter((it) => it.match.status === 'scheduled' && it.match.ts >= now && !isMinor(it.match) && !skip.has(it.match.id))
+    .sort((a, b) => a.match.ts - b.match.ts)
+  const top = pool.filter((it) => featuredRank(it.match.league) >= 0)
+  const picked = top.length >= limit / 2 ? top : [...top, ...pool.filter((it) => featuredRank(it.match.league) < 0)]
+  return picked.slice(0, limit).sort((a, b) => a.match.ts - b.match.ts)
+}
+
 // ─── «Все матчи» ─────────────────────────────────────────────────────────────
 
 export type DayCounts = { total: number; live: number; finished: number; leagues: number; next: FeedItem | null }
