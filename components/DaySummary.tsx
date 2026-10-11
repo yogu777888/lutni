@@ -341,7 +341,7 @@ export function DaySummary({
         panels={mains.map((x) => <MatchSlide key={x.it.match.id} item={x} />)}
         days={days}
         marks={mains.map(({ it, tint }) => ({ home: it.match.home.logo, away: it.match.away.logo, tint: tint ?? null }))}
-        className={`lg:flex-1 ${SURFACE}`}
+        className={`lg:flex-1 ${SURFACE} xl:!border-transparent xl:!bg-transparent`}
       />
       {/* маленькая подпись над рядом — как «Топ-турниры» на странице лиг; к ряду ближе, чем к блоку сверху */}
       <h2 className="mb-2.5 mt-4 text-[13px] font-medium text-mute lg:mb-[clamp(6px,1.2vh,10px)] lg:mt-[clamp(8px,1.8vh,16px)]">

@@ -9,6 +9,7 @@ import { HandNote } from '../FactChip'
 import type { HandNotes } from '@/lib/hand-notes'
 import { Tick } from '../Live'
 import { FavStar } from '../FavStar'
+import { ShellTint } from '../shell/tint'
 
 /** Ячейка табло: шанс исхода, лучший коэффициент и честная цена; hot — платят больше честного. */
 export type BoardCell = {
@@ -68,6 +69,8 @@ export function MatchHero({
   )
   return (
     <section className="card relative overflow-hidden p-5 sm:p-7">
+      {/* от xl градиент центральной панели — в цветах этих клубов, как у Spotify — цветом обложки */}
+      <ShellTint home={tint?.home} away={tint?.away} />
       {tint ? (
         <div
           aria-hidden

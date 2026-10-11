@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { CHIP, StoryChipFace } from './Chips'
 import { openStory } from './story/events'
+import { setShellTint } from './shell/tint'
 
 /** Матч слайда — для шапки и кнопки разбора: турнир и разбор — про матч, который сейчас на экране. */
 export type MainSlide = { id: number; href: string; live: boolean; caption: string; title: string }
@@ -114,6 +115,13 @@ export function TopCarousel({
     hop(next)
   }
 
+  // градиент центральной панели каркаса (от xl) — цветами клубов матча на экране, как у Spotify — цветом обложки
+  const tint = marks[cur]?.tint
+  useEffect(() => {
+    setShellTint(tint?.home, tint?.away)
+  }, [tint?.home, tint?.away])
+  useEffect(() => () => setShellTint(null, null), [])
+
   // меню дня закрывается кликом мимо и Esc
   useEffect(() => {
     if (!open) return
@@ -170,7 +178,8 @@ export function TopCarousel({
       {/* у каждого матча свой фон — графит, поверх медленно плывут пятна и блик (CSS) и эмблемы команд тиснением;
           при листании фоны плавно сменяют друг друга; снизу лёгкое затемнение.
           Фон заходит и под прозрачную рамку карточки — иначе по краю видна тёмная полоска */}
-      <div aria-hidden className="pointer-events-none absolute -inset-px overflow-hidden rounded-[inherit]">
+      {/* от xl карточка стоит прямо на градиенте центральной панели (он в цветах этого матча) — своего фона нет */}
+      <div aria-hidden className="pointer-events-none absolute -inset-px overflow-hidden rounded-[inherit] xl:hidden">
         {marks.map((mk, k) => (
           <div key={k} className={`absolute inset-0 transition-opacity duration-700 ${k === cur ? 'opacity-100' : 'opacity-0'}`}>
             <Paint marks={mk} drift />
