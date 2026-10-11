@@ -159,7 +159,7 @@ function MatchSlide({ item }: { item: MainItem }) {
             </>
           )}
           {/* вся карточка — ссылка на сторис, поэтому это подпись, а не отдельная кнопка; на телефоне — кнопка под лентой */}
-          <span aria-hidden className="mt-5 hidden h-11 lg:mt-[clamp(6px,calc(4vh_-_12px),20px)] lg:h-[clamp(32px,calc(8vh_-_20px),44px)] shrink-0 items-center gap-2 whitespace-nowrap rounded-ctl bg-btn px-5 text-[15px] font-semibold text-btn-ink lg:inline-flex">
+          <span aria-hidden className="mt-5 hidden h-11 lg:mt-[clamp(6px,calc(4vh_-_12px),20px)] lg:h-[clamp(32px,calc(8vh_-_20px),44px)] shrink-0 items-center gap-2 whitespace-nowrap rounded-ctl bg-white px-5 text-[15px] font-semibold text-ink lg:inline-flex">
             Разбор матча
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M7 17 17 7" />

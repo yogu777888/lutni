@@ -523,7 +523,7 @@ export function StoryViewer() {
         ) : null}
 
         {toast ? (
-          <div className="pointer-events-none absolute left-1/2 top-16 -translate-x-1/2 rounded-full bg-btn px-3 py-1.5 text-[13px] font-semibold text-btn-ink shadow-lg">
+          <div className="pointer-events-none absolute left-1/2 top-16 -translate-x-1/2 rounded-full bg-white px-3 py-1.5 text-[13px] font-semibold text-ink shadow-lg">
             {toast}
           </div>
         ) : null}
