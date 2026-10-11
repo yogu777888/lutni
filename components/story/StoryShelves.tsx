@@ -7,15 +7,14 @@ import { LiveCardBody, MatchCardBody, PosterCardBody, StatCardBody } from '../Ma
 import { SHELF_BASE, SHELF_W, Shelf } from '../Shelf'
 import { openStory } from './events'
 import { circleQueue } from './queue'
-import { readSeen, SEEN_EVENT, seenKey } from './seen'
+import { readSeen, SEEN_EVENT } from './seen'
 import { discBackground, StorySymbol, symbolColor } from './StorySymbol'
 
 /**
  * Истории дня — полками, как «Скоро начнутся» (владелец: «чтобы всё в одном стиле»): «В игре» с идущими матчами,
  * «Топ дня» с его матчами, дальше по полке на тег. Заголовок — со знаком истории, карточки — матчи с «обложкой» из
  * эмблем, под ней матч и страна с турниром — как на всех полках (повод, почему матч в истории, — внутри сторис). Клик по карточке открывает сторис с этого
- * матча, дальше — остальные матчи истории и следующие истории (та же очередь, что была у кружков); просмотренные
- * в этой истории карточки — с отметкой «✓ Просмотрено». Без JS карточка — обычная ссылка на страницу матча.
+ * матча, дальше — остальные матчи истории и следующие истории (та же очередь, что была у кружков); отметки «просмотрено» на карточках нет (владелец убрал), просмотренные учитываются только в очереди. Без JS карточка — обычная ссылка на страницу матча.
  */
 export function StoryShelves({
   groups,
@@ -73,7 +72,6 @@ export function StoryShelves({
           >
             {items.map((it) => {
               const m = matches[it.id]
-              const isSeen = seen.has(seenKey(g.key, it.id))
               const stat = stats[`${g.key}:${it.id}`]
               // у каждой полки свой вид карточек (владелец: «блоки игр в подборках все одинаково выглядят»)
               const kind = g.key === 'top' ? 'poster' : g.key === 'live' ? 'live' : stat ? 'stat' : 'cover'
@@ -85,13 +83,13 @@ export function StoryShelves({
                   className={`${SHELF_BASE} ${kind === 'poster' ? SHELF_W.poster : SHELF_W.card} group ${kind === 'live' || kind === 'stat' ? 'p-4' : 'gap-3 p-3'} transition-colors hover:bg-panel-3`}
                 >
                   {kind === 'live' ? (
-                    <LiveCardBody m={m} seen={isSeen} />
+                    <LiveCardBody m={m} />
                   ) : kind === 'poster' ? (
-                    <PosterCardBody m={m} seen={isSeen} />
+                    <PosterCardBody m={m} />
                   ) : kind === 'stat' ? (
-                    <StatCardBody m={m} stat={stat} hot={g.key === 'progruz'} seen={isSeen} />
+                    <StatCardBody m={m} stat={stat} hot={g.key === 'progruz'} />
                   ) : (
-                    <MatchCardBody m={m} sub={m.league.name} seen={isSeen} />
+                    <MatchCardBody m={m} sub={m.league.name} />
                   )}
                 </a>
               )

@@ -13,13 +13,10 @@ const live = (m: Match) => m.status === 'live' || m.status === 'suspended'
 export function MatchCardBody({
   m,
   sub,
-  seen = false,
   badge,
 }: {
   m: Match
   sub: string
-  /** матч уже смотрели в этой истории — отметка в углу обложки (эмблемы не тускнеют: это читалось как ошибка) */
-  seen?: boolean
   /** главная цифра истории в углу обложки («−17%», «62%»); hot — янтарём (кэф упал) */
   badge?: { text: string; hot?: boolean } | null
 }) {
@@ -27,9 +24,6 @@ export function MatchCardBody({
   return (
     <>
       <span className={`relative grid h-[132px] grid-cols-[1fr_auto_1fr] items-center overflow-hidden rounded-tile bg-panel-3 px-3`}>
-        {seen ? (
-          <span className="absolute right-2 top-2 rounded-ctl bg-white/[0.08] px-2 py-0.5 text-[12px] font-medium text-dim">✓ Просмотрено</span>
-        ) : null}
         {badge ? (
           <span className={`num absolute left-2 top-2 rounded-ctl px-2 py-0.5 text-[12.5px] font-semibold ${badge.hot ? 'bg-hot/[0.14] text-hot' : 'bg-white/[0.08] text-fg'}`}>
             {badge.text}
@@ -92,19 +86,16 @@ function Pair({ m, d, logo }: { m: Match; d: number; logo: number }) {
   )
 }
 
-const Seen = () => <span className="absolute right-2 top-2 z-10 rounded-ctl bg-white/[0.08] px-2 py-0.5 text-[12px] font-medium text-dim">✓ Просмотрено</span>
-
 /**
  * «В игре» — табло, как в Apple Sports: две строки команд (эмблема, название, счёт крупно), красная минута и полоска
  * хода матча (минута из 90). Проигрывающий — тусклее.
  */
-export function LiveCardBody({ m, seen = false }: { m: Match; seen?: boolean }) {
+export function LiveCardBody({ m }: { m: Match }) {
   const s = m.score
   const min = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}′` : 'идёт'
   const pct = m.statusCode === 4 ? 50 : Math.min(100, ((m.elapsed ?? 0) / 90) * 100)
   return (
     <>
-      {seen ? <Seen /> : null}
       <span className="flex items-center gap-2 text-[13px] font-semibold text-live">
         <span aria-hidden className="h-2 w-2 animate-pulse rounded-full bg-live" />
         LIVE · {min}
@@ -135,12 +126,11 @@ export function LiveCardBody({ m, seen = false }: { m: Match; seen?: boolean }) 
  * «Топ дня» — крупный плакат: эмблемы 104px и названия под ними, между ними время или счёт крупно; под обложкой —
  * турнир. Карточка шире обычной — полка главных матчей дня выделяется среди остальных.
  */
-export function PosterCardBody({ m, seen = false }: { m: Match; seen?: boolean }) {
+export function PosterCardBody({ m }: { m: Match }) {
   const played = Boolean(m.score) && (live(m) || m.status === 'finished')
   return (
     <>
       <span className="relative grid grid-cols-[1fr_auto_1fr] items-start gap-2 overflow-hidden rounded-tile bg-panel-3 px-3 pb-5 pt-7">
-        {seen ? <Seen /> : null}
         {[m.home, m.away].map((t, i) => (
           <span key={t.id} className={`flex min-w-0 flex-col items-center gap-3 ${i ? 'order-3' : ''}`}>
             <Disc t={t} logo={60} className="h-[76px] w-[76px] transition-transform duration-300 group-hover:scale-105 sm:h-[104px] sm:w-[104px]" />
@@ -192,13 +182,12 @@ export function RowCardBody({ m }: { m: Match }) {
  * Полки тегов — главная цифра крупно: «62%» под словом «3+ гола», «−17%» янтарём на «Кэф упал»; справа эмблемы
  * внахлёст, ниже матч и турнир. Цифра — то, ради чего матч на полке; без цифры полка берёт обычную обложку.
  */
-export function StatCardBody({ m, stat, hot = false, seen = false }: { m: Match; stat: string; hot?: boolean; seen?: boolean }) {
+export function StatCardBody({ m, stat, hot = false }: { m: Match; stat: string; hot?: boolean }) {
   const cut = stat.lastIndexOf(' · ')
   const word = cut > 0 ? stat.slice(0, cut) : ''
   const big = cut > 0 ? stat.slice(cut + 3) : stat
   return (
     <>
-      {seen ? <Seen /> : null}
       <span className="flex items-start justify-between gap-3">
         <span className="min-w-0">
           {word ? <span className="block truncate text-[13px] text-dim first-letter:uppercase">{word}</span> : null}
@@ -206,9 +195,7 @@ export function StatCardBody({ m, stat, hot = false, seen = false }: { m: Match;
             {big}
           </span>
         </span>
-        <span className={seen ? 'mt-8' : ''}>
-          <Pair m={m} d={44} logo={28} />
-        </span>
+        <Pair m={m} d={44} logo={28} />
       </span>
       <span className="mt-auto block min-w-0 pt-6">
         <span className="block truncate text-[16px] font-semibold">
