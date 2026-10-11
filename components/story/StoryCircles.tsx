@@ -45,13 +45,15 @@ const plural = (n: number) => {
 }
 
 /** Подпись: название в одну строку и тихое число матчей под ним. */
-function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
+function Caption({ g, dim, compact }: { g: StoryGroup; dim: boolean; compact?: boolean }) {
   return (
     <>
-      <span className={`block truncate text-[12.5px] font-semibold leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>{g.label}</span>
-      <span className="mt-0.5 block text-[11px] font-medium leading-tight text-white/75">
-        {g.items.length} {plural(g.items.length)}
-      </span>
+      <span className={`block truncate font-semibold leading-tight ${compact ? 'text-[12px]' : 'text-[12.5px]'} ${dim ? 'text-white/70' : 'text-white'}`}>{g.label}</span>
+      {compact ? null : (
+        <span className="mt-0.5 block text-[11px] font-medium leading-tight text-white/75">
+          {g.items.length} {plural(g.items.length)}
+        </span>
+      )}
     </>
   )
 }
@@ -81,7 +83,7 @@ function Disc({ k, cover }: { k: string; cover?: string }) {
  * Это обычные ссылки (на страницу тега / матча) — для поисковиков и без JS;
  * клик открывает сторис матчей кружка, затем следующих кружков.
  */
-export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; covers?: Record<string, string> }) {
+export function StoryCircles({ groups, covers = {}, compact = false }: { groups: StoryGroup[]; covers?: Record<string, string>; compact?: boolean }) {
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
@@ -117,15 +119,15 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             onClick={(e) => open(gi, e)}
             title={g.hint}
             aria-label={`${g.label}. ${g.hint}. Смотреть истории`}
-            className="group flex w-[88px] shrink-0 flex-col items-center focus-visible:outline-none max-sm:w-[78px]"
+            className={`group flex shrink-0 flex-col items-center focus-visible:outline-none ${compact ? 'w-[80px]' : 'w-[88px] max-sm:w-[78px]'}`}
           >
             {/* фокус с клавиатуры — белым кругом вокруг кружка */}
-            <span className="relative block h-[76px] w-[76px] rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 max-sm:h-[68px] max-sm:w-[68px] lg:h-[clamp(48px,calc(20vh_-_85px),76px)] lg:w-[clamp(48px,calc(20vh_-_85px),76px)]">
+            <span className={`relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 ${compact ? 'h-[58px] w-[58px] lg:h-[clamp(46px,calc(14vh_-_50px),58px)] lg:w-[clamp(46px,calc(14vh_-_50px),58px)]' : 'h-[76px] w-[76px] max-sm:h-[68px] max-sm:w-[68px] lg:h-[clamp(48px,calc(20vh_-_85px),76px)] lg:w-[clamp(48px,calc(20vh_-_85px),76px)]'}`}>
               <Ring kind={g.kind} n={g.items.length} seen={n} />
               <Disc k={g.key} cover={covers[g.key]} />
             </span>
             <span className="mt-1.5 w-full px-0.5 text-center">
-              <Caption g={g} dim={done} />
+              <Caption g={g} dim={done} compact={compact} />
             </span>
           </a>
         )

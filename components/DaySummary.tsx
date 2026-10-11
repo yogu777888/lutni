@@ -116,7 +116,7 @@ function MatchSlide({ item }: { item: MainItem }) {
   const minute = m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}-я минута` : 'идёт'
   // после свистка проигравший чуть тусклее; до матча и при ничьей — обе одинаково
   const lead = score && score.home !== score.away ? (score.home > score.away ? 'home' : 'away') : null
-  const BIG = 'num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[36px] sm:text-[44px] lg:text-[clamp(28px,calc(14vh_-_62px),68px)]'
+  const BIG = 'num whitespace-nowrap font-semibold leading-none tracking-[-0.03em] text-fg text-[36px] sm:text-[44px] lg:text-[clamp(28px,calc(14vh_-_62px_+_var(--gain,0px)_*_0.25),68px)]'
   // эмблема на матовом светлом круге, как в Apple Sports: тёмные эмблемы не тонут в цвете фона
   const team = (t: Match['home'], k: 'home' | 'away') => (
     <span className={`flex min-w-0 flex-col items-center gap-3 text-center lg:gap-4 ${lead && lead !== k ? 'opacity-70' : ''}`}>
@@ -137,7 +137,7 @@ function MatchSlide({ item }: { item: MainItem }) {
       <StoryLink
         id={m.id}
         href={matchHref(m)}
-        className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 py-2 [--disc:64px] sm:gap-x-6 sm:[--disc:80px] lg:gap-x-10 lg:[--disc:clamp(36px,calc(26vh_-_136px),112px)] ${COVER}`}
+        className={`grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 py-2 [--disc:64px] sm:gap-x-6 sm:[--disc:80px] lg:gap-x-10 lg:[--disc:clamp(36px,calc(26vh_-_136px_+_var(--gain,0px)_*_0.6),112px)] ${COVER}`}
       >
         {team(m.home, 'home')}
         <span className="flex flex-col items-center text-center">
@@ -198,7 +198,9 @@ function IconTile({
   line,
   aside,
   hint,
+  quiet,
 }: {
+  quiet?: boolean
   /** знак — ключ StorySymbol (pick-all, pick-goals, pick-moves) */
   sym: string
   title: string
@@ -213,7 +215,7 @@ function IconTile({
       href={href}
       prefetch={false}
       title={hint}
-      className={`group grid h-full min-w-0 grid-cols-[40px_minmax(0,1fr)] content-center items-center gap-x-3 p-[18px] transition-colors hover:bg-panel-3 lg:py-[clamp(10px,2.2vh,18px)] ${aside ? 'sm:grid-cols-[40px_minmax(0,1fr)_auto]' : ''} ${SURFACE}`}
+      className={`group grid h-full min-w-0 grid-cols-[40px_minmax(0,1fr)] content-center items-center gap-x-3 p-[18px] transition-colors lg:py-[clamp(10px,2.2vh,18px)] ${aside ? 'sm:grid-cols-[40px_minmax(0,1fr)_auto]' : ''} ${quiet ? 'rounded-card border border-edge hover:bg-white/[0.04]' : `hover:bg-panel-3 ${SURFACE}`}`}
     >
       {/* при наведении — чуть крупнее */}
       <span
@@ -239,7 +241,7 @@ function IconTile({
  * эмблемы матча и исход, справа от названия — «1.28 → 1.51» и метка «+18%» (упал — янтарь, вырос — серый); букмекер
  * и период («с открытия линии до 19:30») — в подсказке.
  */
-function IconPicks({ p }: { p: DayPicks }) {
+function IconPicks({ p, quiet }: { p: DayPicks; quiet?: boolean }) {
   const c = p.counts
   const g = p.goals
   const total = pluralN(c.total, MATCHES)
@@ -294,10 +296,10 @@ function IconPicks({ p }: { p: DayPicks }) {
   return (
     // 1 : 1 : 1.6, а не 1 : 1 : 2: строке маленьких плиток нужно место, а у широкой середина пустовала
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)]">
-      <IconTile sym="pick-all" title="Все матчи" href={`${p.dayHref}#matches`} line={all} />
-      <IconTile sym="pick-goals" title="Голевые матчи" href={`/matches/${p.ymd}/goals`} line={goals} />
+      <IconTile quiet={quiet} sym="pick-all" title="Все матчи" href={`${p.dayHref}#matches`} line={all} />
+      <IconTile quiet={quiet} sym="pick-goals" title="Голевые матчи" href={`/matches/${p.ymd}/goals`} line={goals} />
       <div className="min-w-0 sm:col-span-2 lg:col-span-1">
-        <IconTile sym="pick-moves" title="Движение коэффициентов" href={`/matches/${p.ymd}/odds`} line={move} aside={aside} hint={hint} />
+        <IconTile quiet={quiet} sym="pick-moves" title="Движение коэффициентов" href={`/matches/${p.ymd}/odds`} line={move} aside={aside} hint={hint} />
       </div>
     </div>
   )
@@ -321,7 +323,7 @@ export type DayPicks = {
  * матчи» и широкий «Движение коэффициентов». Истории — короткий просмотр матчей, подборки — полные списки дня со
  * сравнением и фильтрами.
  */
-export function DaySummary({ mains, days, picks, className = '' }: { mains: MainItem[]; days: DayLink[]; picks: DayPicks; className?: string }) {
+export function DaySummary({ mains, days, picks, quiet = false, className = '' }: { mains: MainItem[]; days: DayLink[]; picks: DayPicks; quiet?: boolean; className?: string }) {
   if (!mains.length) return null
   return (
     <section aria-label="Сводка дня" className={`flex flex-col ${className}`}>
@@ -336,7 +338,7 @@ export function DaySummary({ mains, days, picks, className = '' }: { mains: Main
       <h2 className="mb-2.5 mt-4 text-[13px] font-medium text-mute lg:mb-[clamp(6px,1.2vh,10px)] lg:mt-[clamp(8px,1.8vh,16px)]">
         Подборки
       </h2>
-      <IconPicks p={picks} />
+      <IconPicks p={picks} quiet={quiet} />
     </section>
   )
 }
