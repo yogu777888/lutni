@@ -2,6 +2,7 @@ import '@fontsource-variable/onest'
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Footer } from '@/components/Footer'
+import { CookieNotice } from '@/components/CookieNotice'
 import { Header } from '@/components/Header'
 import { Metrika } from '@/components/Metrika'
 import { StoryViewer } from '@/components/story/StoryViewer'
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6">{children}</main>
         <Footer />
+        <CookieNotice />
         <StoryViewer />
         {SITE.metrikaId ? <Metrika id={SITE.metrikaId} /> : null}
       </body>

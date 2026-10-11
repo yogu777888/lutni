@@ -34,6 +34,7 @@ export function Footer() {
           <span className="mb-1 text-[12px] font-medium text-mute">Информация</span>
           <Link href="/about" className="text-dim hover:text-fg">Как мы считаем</Link>
           <Link href="/responsible-gaming" className="text-dim hover:text-fg">Ответственная игра</Link>
+          <Link href="/privacy" className="text-dim hover:text-fg">Cookie и конфиденциальность</Link>
           {SITE.telegramUrl ? (
             <a href={SITE.telegramUrl} target="_blank" rel="noopener" className="text-dim hover:text-fg">Telegram-канал</a>
           ) : null}
