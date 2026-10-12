@@ -126,18 +126,17 @@ export function MatchRow({
   }
 
   // Одна строка — одно правило по состоянию матча (владелец: «в центральных блоках логическая каша»):
-  // до начала — одна подпись (выгодная ставка, иначе кто сильнее) и кэфы; идёт и сыгран — только счёт,
+  // до начала — кэфы и подпись только у выгодной ставки; идёт и сыгран — только счёт,
   // без доматчевых кэфов и тегов (после стартового свистка они уже ничего не говорят). Теги — в «Подборках дня».
   const v = m.status === 'scheduled' ? buildVerdict({ match: m, tags, pick: pick?.kind === 'value' ? pick : null }) : null
   const bet = v?.bet
-  // выгодная ставка — словами и лаймовой ячейкой; тогда «кто сильнее» не пишем: два вывода в строке спорили
+  // подпись — только у выгодной ставки (объясняет лаймовую ячейку); «кто сильнее» словами не пишем — это видно по кэфам
+  // (владелец: «а подпись под командами тоже убрать?»)
   const note = bet ? (
     <span className="text-good">
       Выгодно: {bet.text}
       {bet.odd && !hotKey ? <span className="num ml-1 font-semibold">{bet.odd.toFixed(2)}</span> : null}
     </span>
-  ) : v ? (
-    <span className="text-dim">{v.headline}</span>
   ) : null
   const meta = showLeague || note
   const upcoming = m.status === 'scheduled'
