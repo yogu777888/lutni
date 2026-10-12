@@ -229,6 +229,20 @@ export async function DayView({
     const f = it.summary?.facts?.[0]?.text ?? [...it.tags].sort((a, b) => b.score - a.score)[0]?.reason
     if (f && gridMatches[it.match.id]) gridFacts[it.match.id] = f
   }
+  // цвета клубов для карточек сетки: что успели за 1,2 с (цвета эмблем кэшируются на месяц), остальное догрузит клиент
+  const gridTints: Record<number, { home: string; away: string }> = {}
+  if (view === 'home')
+    await within(
+      Promise.all(
+        Object.values(gridMatches)
+          .slice(0, 40)
+          .map(async (m) => {
+            const c = await matchColors(m).catch(() => null)
+            if (c) gridTints[m.id] = distinctPair(c)
+          }),
+      ),
+      1200,
+    )
   // список — на странице «Матчи»; на главной — только если полок нет (в этот день нет «взрослых» матчей)
   const showList = view === 'list' || (!hero.length && !gridGroups.length && !values.length)
   return (
@@ -262,7 +276,7 @@ export async function DayView({
           потом остальные истории (у «Выгодно» своя полка с кэфами — история-дубль не нужна) */}
       {hero.length ? <DayHero items={hero} ymd={ymd} /> : null}
       {/* матчи дня — одной сеткой с фильтрами вместо десятка полок (идея владельца: «матч = сторис») */}
-      <MatchGrid groups={gridGroups} matches={gridMatches} facts={gridFacts} listHref={list} />
+      <MatchGrid groups={gridGroups} matches={gridMatches} facts={gridFacts} tints={gridTints} ymd={ymd} listHref={list} />
       <ValueBoard items={values} />
 
         </>

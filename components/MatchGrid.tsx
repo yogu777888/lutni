@@ -13,6 +13,15 @@ import { readSeen, SEEN_EVENT } from './story/seen'
 import { StorySymbol } from './story/StorySymbol'
 
 const live = (m: Match) => m.status === 'live' || m.status === 'suspended'
+type Tint = { home: string; away: string }
+
+/** Разделы сетки: порядок понятен с одного взгляда — сначала идущие, потом впереди по времени, потом сыгранные. */
+const SECTIONS = [
+  { key: 0, title: 'Идут сейчас' },
+  { key: 1, title: 'Впереди' },
+  { key: 2, title: 'Завершились' },
+] as const
+const stateOf = (m: Match) => (live(m) ? 0 : m.status === 'finished' ? 2 : 1)
 /** Сколько карточек в сетке у одного фильтра; дальше — «Все матчи дня» на странице «Матчи». */
 const LIMIT = 24
 
@@ -60,13 +69,37 @@ function Team({ t, dim }: { t: Match['home']; dim: boolean }) {
  * Карточка-сторис: турнир и время / LIVE с минутой, эмблемы и названия, счёт; внизу — факт, ради которого матч стоит
  * открыть («Обе забивали в 70% последних матчей команд»), и кэфы. Вся карточка — переход: клик открывает сторис.
  */
-function Card({ m, href, fact, onOpen }: { m: Match; href: string; fact: string | null; onOpen: (e: React.MouseEvent<HTMLAnchorElement>) => void }) {
+function Card({
+  m,
+  href,
+  fact,
+  tint,
+  onOpen,
+}: {
+  m: Match
+  href: string
+  fact: string | null
+  tint: Tint | null
+  onOpen: (e: React.MouseEvent<HTMLAnchorElement>) => void
+}) {
   const played = Boolean(m.score) && (live(m) || m.status === 'finished')
   const lead = played && m.score!.home !== m.score!.away ? (m.score!.home > m.score!.away ? 'home' : 'away') : null
   const x = m.odds?.x12
   const odds = x?.home && x.draw && x.away && m.status === 'scheduled' ? [x.home.value, x.draw.value, x.away.value] : null
   return (
-    <a href={href} onClick={onOpen} className="card group flex flex-col p-4 transition-colors hover:bg-panel-3">
+    <a
+      href={href}
+      onClick={onOpen}
+      className="card group flex flex-col p-4 transition-colors hover:bg-panel-3"
+      // мягкий свет цветами клубов сверху: слева хозяева, справа гости (владелец: «все карточки одинаково серые»)
+      style={
+        tint
+          ? {
+              backgroundImage: `radial-gradient(70% 55% at 0% 0%, color-mix(in oklab, ${tint.home} 30%, transparent), transparent 75%), radial-gradient(70% 55% at 100% 0%, color-mix(in oklab, ${tint.away} 30%, transparent), transparent 75%)`,
+            }
+          : undefined
+      }
+    >
       <span className="flex items-center justify-between gap-3 text-[13px]">
         <span className="flex min-w-0 items-center gap-1.5 text-dim">
           <span aria-hidden className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white text-ink">
@@ -81,9 +114,9 @@ function Card({ m, href, fact, onOpen }: { m: Match; href: string; fact: string 
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-live" />
             {m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}′` : 'LIVE'}
           </span>
-        ) : (
-          <span className="num shrink-0 font-semibold">{m.status === 'finished' ? 'итог' : formatTime(m.ts)}</span>
-        )}
+        ) : m.status === 'finished' ? (
+          <span className="shrink-0 text-mute">итог</span>
+        ) : null}
       </span>
 
       <span className="mt-4 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
@@ -96,16 +129,16 @@ function Card({ m, href, fact, onOpen }: { m: Match; href: string; fact: string 
               <Tick v={m.score!.away} />
             </span>
           ) : (
-            <span aria-hidden className="h-8 w-px bg-white/15" />
+            <span className="num display-num text-[26px] leading-none">{formatTime(m.ts)}</span>
           )}
         </span>
         <Team t={m.away} dim={lead === 'home'} />
       </span>
 
-      <span className="mt-auto block pt-4">
-        {fact ? <span className="line-clamp-2 text-[13.5px] leading-snug text-fg/80 first-letter:uppercase">{fact}</span> : null}
+      {fact ? <span className="mt-4 line-clamp-2 text-[13.5px] leading-snug text-fg/80 first-letter:uppercase">{fact}</span> : null}
+      <span className="mt-auto block">
         {odds ? (
-          <span className="mt-3 grid grid-cols-3 gap-1.5 text-center">
+          <span className="mt-3 grid grid-cols-3 gap-1.5 pt-0 text-center">
             {(['Хозяева', 'Ничья', 'Гости'] as const).map((l, i) => (
               <span key={l} className="rounded-ctl bg-white/[0.05] px-1 py-1.5">
                 <span className="block text-[11.5px] leading-none text-mute">{l}</span>
@@ -129,6 +162,8 @@ export function MatchGrid({
   groups,
   matches,
   facts,
+  tints: initialTints,
+  ymd,
   listHref,
 }: {
   /** истории дня по порядку (и псевдо-история «Скоро начнутся») */
@@ -136,9 +171,13 @@ export function MatchGrid({
   matches: Record<number, Match>
   /** самый яркий факт матча — для фильтра «Все» */
   facts: Record<number, string>
+  /** цвета клубов, что сервер успел посчитать; остальные догружаем одним запросом */
+  tints: Record<number, Tint>
+  ymd: string
   listHref: string
 }) {
   const [key, setKey] = useState(ALL)
+  const [tints, setTints] = useState(initialTints)
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
   useEffect(() => {
     const update = () => setSeen(readSeen())
@@ -151,19 +190,31 @@ export function MatchGrid({
   const gi = shown.findIndex((g) => g.key === key)
   const group = gi >= 0 ? shown[gi] : null
   const all: { id: number; href: string; fact: string | null }[] = []
-  if (!group) {
-    const ids = new Set<number>()
-    for (const g of shown)
-      for (const it of g.items)
-        if (matches[it.id] && !ids.has(it.id)) {
-          ids.add(it.id)
-          all.push({ id: it.id, href: it.href, fact: facts[it.id] ?? null })
-        }
-  }
-  const cards = (group ? group.items.filter((it) => matches[it.id]).map((it) => ({ id: it.id, href: it.href, fact: it.focus?.reason ?? facts[it.id] ?? null })) : all).slice(
-    0,
-    LIMIT,
-  )
+  const ids = new Set<number>()
+  for (const g of shown)
+    for (const it of g.items)
+      if (matches[it.id] && !ids.has(it.id)) {
+        ids.add(it.id)
+        all.push({ id: it.id, href: it.href, fact: facts[it.id] ?? null })
+      }
+  const cards = (group ? group.items.filter((it) => matches[it.id]).map((it) => ({ id: it.id, href: it.href, fact: it.focus?.reason ?? facts[it.id] ?? null })) : all)
+    .slice(0, LIMIT)
+    .sort((a, b) => stateOf(matches[a.id]) - stateOf(matches[b.id]) || matches[a.id].ts - matches[b.id].ts)
+
+  // цвета, которые сервер не успел посчитать (эмблемы с чужого сервера), — одним запросом на видимые карточки
+  const missing = cards.filter((c) => !tints[c.id]).map((c) => c.id)
+  const missingKey = missing.join(',')
+  useEffect(() => {
+    if (!missingKey) return
+    let stop = false
+    fetch(`/api/tint?ids=${missingKey}&d=${ymd}`)
+      .then((r) => r.json())
+      .then((d: { tints?: Record<number, Tint> }) => !stop && d.tints && setTints((t) => ({ ...t, ...d.tints })))
+      .catch(() => {})
+    return () => {
+      stop = true
+    }
+  }, [missingKey, ymd])
 
   const open = (id: number, e: React.MouseEvent<HTMLAnchorElement>) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
@@ -172,22 +223,37 @@ export function MatchGrid({
     openStory({ id, href: e.currentTarget.href, opener: e.currentTarget, queue })
   }
 
+
   return (
     <section aria-label="Матчи дня" className="mt-10">
-      <div className="scrollbar-none -mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 py-1 sm:mx-0 sm:flex-wrap sm:px-0">
+      {/* фильтры — одним рядом, листаются вбок (в два ряда выходило рвано), правый край тает */}
+      <div className="scrollbar-none -mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 py-1 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:scroll-px-0 sm:px-0">
         <Chip k={ALL} label="Все" n={all.length} on={!group} onClick={() => setKey(ALL)} />
         {shown.map((g) => (
           <Chip key={g.key} k={g.key} label={g.label} n={g.items.length} on={group?.key === g.key} onClick={() => setKey(g.key)} />
         ))}
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-[repeat(auto-fill,minmax(270px,1fr))]">
-        {cards.map((c) => (
-          <Card key={c.id} m={matches[c.id]} href={c.href} fact={c.fact} onOpen={(e) => open(c.id, e)} />
-        ))}
-      </div>
+      {SECTIONS.map((sec) => {
+        const list = cards.filter((c) => stateOf(matches[c.id]) === sec.key)
+        if (!list.length) return null
+        return (
+          <div key={sec.key} className="mt-6">
+            <h3 className="flex items-center gap-2 text-[14px] font-semibold text-dim">
+              {sec.key === 0 ? <span className="h-2 w-2 animate-pulse rounded-full bg-live" /> : null}
+              {sec.title}
+              <span className="font-normal text-mute">{list.length}</span>
+            </h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-[repeat(auto-fill,minmax(270px,1fr))]">
+              {list.map((c) => (
+                <Card key={c.id} m={matches[c.id]} href={c.href} fact={c.fact} tint={tints[c.id] ?? null} onOpen={(e) => open(c.id, e)} />
+              ))}
+            </div>
+          </div>
+        )
+      })}
 
-      <div className="mt-5 flex justify-center">
+      <div className="mt-6 flex justify-center">
         <Link href={listHref} prefetch={false} className="inline-flex h-11 items-center rounded-full bg-white/[0.08] px-5 text-[14px] font-semibold transition-colors hover:bg-white/[0.14]">
           Все матчи дня →
         </Link>
