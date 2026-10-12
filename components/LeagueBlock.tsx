@@ -43,7 +43,7 @@ export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }
       </header>
       <div className="divide-y divide-edge">
         {items.map((it) => (
-          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} showLeague />
+          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} />
         ))}
       </div>
     </section>
