@@ -46,10 +46,11 @@ const live = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
 /** Кэфы одной строкой — переход к букмекеру (реклама). */
 function OddsLine({ line, m, isLive }: { line: X12Line; m: Match; isLive: boolean }) {
+  // названия команд вместо «Хозяева/Гости»
   const odds = [
-    ['Хозяева', line.home],
+    [m.home.name, line.home],
     ['Ничья', line.draw],
-    ['Гости', line.away],
+    [m.away.name, line.away],
   ] as const
   return (
     <a

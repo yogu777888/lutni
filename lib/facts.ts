@@ -96,3 +96,16 @@ export function pickFacts(team: Fact[], line: Fact | null, limit = 2): string[] 
   if (line) out.push(line)
   return out.slice(0, limit).map((f) => f.text)
 }
+
+/**
+ * Факт с названием команды вместо «Хозяева»/«Гости» (владелец: «а может не писать хозяева, гости?»): «Хозяева
+ * забивали в 9 из 10…» → «Команда «Лилль» забивала в 9 из 10…». Названия — только в именительном падеже, поэтому
+ * через «команда»; глагол после подлежащего — в женский род («забивали» → «забивала», «не забили» → «не забила»).
+ * Остальные факты — как есть.
+ */
+export function namedFact(text: string, home: string, away: string): string {
+  const m = /^(Хозяева|Гости) (не )?(\S+ли)(\s|$)/.exec(text)
+  if (!m) return text
+  const name = m[1] === 'Хозяева' ? home : away
+  return `Команда «${name}» ${m[2] ?? ''}${m[3].slice(0, -2)}ла${text.slice(m[0].length - m[4].length)}`
+}

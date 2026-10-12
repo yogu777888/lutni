@@ -6,6 +6,7 @@ import { applyListFilter, filterQuery, isEmptyFilter, type ListFilter } from '@/
 import { appNow, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdInTz, ymdToNoonTs } from '@/lib/format'
 import { isLive, liveRank } from '@/lib/rank'
 import { mainMatches, soonMatches } from '@/lib/day-summary'
+import { namedFact } from '@/lib/facts'
 import { handNotes, type HandNotes } from '@/lib/hand-notes'
 import { x12Line, type X12Line } from '@/lib/lines'
 import { buildForm } from '@/lib/stats'
@@ -227,7 +228,8 @@ export async function DayView({
   const gridFacts: Record<number, string> = {}
   for (const it of items) {
     const f = it.summary?.facts?.[0]?.text ?? [...it.tags].sort((a, b) => b.score - a.score)[0]?.reason
-    if (f && gridMatches[it.match.id]) gridFacts[it.match.id] = f
+    // «Хозяева/Гости» — названием команды (владелец: «а может не писать хозяева, гости?»)
+    if (f && gridMatches[it.match.id]) gridFacts[it.match.id] = namedFact(f, it.match.home.name, it.match.away.name)
   }
   // цвета клубов для карточек сетки: что успели за 1,2 с (цвета эмблем кэшируются на месяц), остальное догрузит клиент
   const gridTints: Record<number, { home: string; away: string }> = {}

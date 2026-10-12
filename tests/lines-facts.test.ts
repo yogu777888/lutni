@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lineFact, pickFacts, teamFacts } from '@/lib/facts'
+import { lineFact, namedFact, pickFacts, teamFacts } from '@/lib/facts'
 import { biggestMove, goalsLine, lineMoves, periodEnd, x12Line, type OddsSnap } from '@/lib/lines'
 import type { BookOdds } from '@/lib/odds'
 import type { FormGame, H2H, TeamForm } from '@/lib/stats'
@@ -103,5 +103,14 @@ describe('факты о командах', () => {
     expect(pickFacts(team, null)).toEqual(['A1', 'B1'])
     expect(pickFacts(team, line)).toEqual(['A1', line!.text])
     expect(pickFacts([], null)).toEqual([])
+  })
+})
+
+describe('namedFact', () => {
+  it('ставит название команды вместо «Хозяева»/«Гости» и согласует глагол', () => {
+    expect(namedFact('Хозяева забивали в 9 из 10 последних домашних матчей', 'Лилль', 'Марсель')).toBe('Команда «Лилль» забивала в 9 из 10 последних домашних матчей')
+    expect(namedFact('Гости не забили в 5 из 10 последних выездных матчей', 'Лилль', 'Ланс')).toBe('Команда «Ланс» не забила в 5 из 10 последних выездных матчей')
+    expect(namedFact('Гости выиграли 4 из 5', 'А', 'Б')).toBe('Команда «Б» выиграла 4 из 5')
+    expect(namedFact('Скорее будет 3 гола и больше', 'А', 'Б')).toBe('Скорее будет 3 гола и больше')
   })
 })

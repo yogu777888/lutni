@@ -137,12 +137,13 @@ function Card({
         <span className="mt-auto block">
           {odds ? (
             <span className="mt-3 grid grid-cols-3 gap-1.5 pt-0 text-center">
-              {(['Хозяева', 'Ничья', 'Гости'] as const).map((l, i) => (
-                <span key={l} className="rounded-ctl bg-white/[0.05] px-1 py-1.5">
-                  <span className="block text-[11.5px] leading-none text-mute">{l}</span>
-                  <span className="num mt-1 block text-[14px] font-semibold leading-none">{odds[i].toFixed(2)}</span>
-                </span>
-              ))}
+              {/* вместо «Хозяева/Гости» — маленькие эмблемы команд, посередине «Ничья» */}
+            {[m.home, null, m.away].map((t, i) => (
+              <span key={i} className="flex h-9 items-center justify-center gap-1.5 rounded-ctl bg-white/[0.05] px-1" title={t ? `Победа «${t.name}»` : 'Ничья'}>
+                {t ? <TeamLogo name={t.name} src={t.logo} size={16} /> : <span className="text-[12px] text-mute">Ничья</span>}
+                <span className="num text-[14px] font-semibold leading-none">{odds[i].toFixed(2)}</span>
+              </span>
+            ))}
             </span>
           ) : null}
         </span>
