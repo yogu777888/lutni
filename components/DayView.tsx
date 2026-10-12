@@ -10,7 +10,7 @@ import { handNotes, type HandNotes } from '@/lib/hand-notes'
 import { x12Line, type X12Line } from '@/lib/lines'
 import { buildForm } from '@/lib/stats'
 import { distinctPair, matchColors } from '@/lib/team-colors'
-import { buildStoryGroups, mainCircles, statFor } from '@/lib/story-groups'
+import { buildStoryGroups, mainCircles, type StoryGroup } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { DayHero, type HeroItem } from './DayHero'
@@ -18,31 +18,14 @@ import { LiveRefresh } from './Live'
 import { FavMatches } from './FavMatches'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
-import { StoryShelves } from './story/StoryShelves'
 import { ValueBoard } from './ValueBoard'
-import { SoonShelf } from './SoonShelf'
 import { MatchFilter } from './MatchFilter'
+import { MatchGrid } from './MatchGrid'
 import { TAGS } from '@/lib/tags'
 
 const OTHER_LIMIT = 160
 /** В списке «по времени» — не больше стольких матчей: сначала топ-лиги, потом остальные с линией. */
 const TIME_LIMIT = 200
-
-/** Слово над главной цифрой карточки на полке тега: «3+ гола · 62%», «дома без поражений · 8» (`StatCardBody`). */
-const BADGE_WORD: Record<string, string> = {
-  'tb-2-5': '3+ гола',
-  'tm-2-5': 'до 2 голов',
-  'obe-zabyut': 'обе забьют',
-  favorit: 'шанс фаворита',
-  progruz: 'кэф упал',
-  value: 'перевес',
-  seriya: 'матчей в серии',
-  'top-match': 'места в таблице',
-  krepost: 'дома без поражений',
-  kadry: 'игроков не сыграют',
-  andedog: 'разница в очках',
-  h2h: 'побед в личных встречах',
-}
 
 export type DaySort = 'league' | 'time'
 const LIVE_LIMIT = 6
@@ -223,30 +206,31 @@ export async function DayView({
   // полный список дня — страница «Матчи»
   const list = listHref(ymd, today)
 
-  // полки историй: без «Выгодно» (у него своя полка с кэфами), по 12 матчей; «Показать все» — страница тега, у «В игре» — список
-  const shelfGroups = storyGroups.filter((g) => g.key !== 'value')
   const byId = new Map(items.map((it) => [it.match.id, it.match]))
-  const shelfMatches = Object.fromEntries(
-    shelfGroups.flatMap((g) => g.items.slice(0, 12).map((x) => [x.id, byId.get(x.id)])).filter((e) => e[1]),
-  ) as Record<number, (typeof items)[number]['match']>
-  const shelfMore = Object.fromEntries(
-    shelfGroups.map((g) => [g.key, g.key === 'live' ? list : g.key === 'top' ? undefined : `/tag/${g.key}`]),
-  )
-  // главная цифра матча в истории для карточки полки тега: «кэф упал · −17%» (голое «62%» непонятно — над цифрой короткое слово); только если в ней есть число
-  const shelfStats: Record<string, string> = {}
-  for (const g of shelfGroups)
-    for (const x of g.items.slice(0, 12)) {
-      const st = x.focus ? statFor(x.focus.slug, x.focus.reason) : ''
-      if (g.key === 'live' || g.key === 'top' || !/\d/.test(st)) continue
-      shelfStats[`${g.key}:${x.id}`] = BADGE_WORD[g.key] ? `${BADGE_WORD[g.key]} · ${g.key === 'kadry' ? st.replace(/\D/g, '') : st}` : st
-    }
-  // «Скоро начнутся» — без матчей «Матча дня», «В игре» и «Топ дня»
-  const soon =
-    view === 'home' && !past
-      ? soonMatches(items, new Set([...hero.map((x) => x.m.id), ...shelfGroups.filter((g) => g.key === 'top' || g.key === 'live').flatMap((g) => g.items.slice(0, 12).map((x) => x.id))]))
-      : []
+  // сетка матчей с фильтрами (MatchGrid): все истории дня и «Скоро» — ближайшие матчи по времени
+  const gridSoon = view === 'home' && !past ? soonMatches(items, new Set(), 24) : []
+  const soonGroup: StoryGroup | null = gridSoon.length
+    ? {
+        key: 'soon',
+        label: 'Скоро',
+        kind: 'top',
+        hint: `Скоро начнутся: ${gridSoon.length}`,
+        href: `${list}?sort=time`,
+        stat: '',
+        items: gridSoon.map((it) => ({ id: it.match.id, href: matchHref(it.match), focus: null })),
+      }
+    : null
+  const isLead = (g: StoryGroup) => g.key === 'live' || g.key === 'top'
+  const gridGroups = [...storyGroups.filter(isLead), ...(soonGroup ? [soonGroup] : []), ...storyGroups.filter((g) => !isLead(g))]
+  const gridMatches = Object.fromEntries(gridGroups.flatMap((g) => g.items.map((x) => [x.id, byId.get(x.id)])).filter((e) => e[1])) as Record<number, Match>
+  // факт для фильтра «Все»: самый яркий факт с выборкой (lib/facts.ts), иначе повод самого сильного тега
+  const gridFacts: Record<number, string> = {}
+  for (const it of items) {
+    const f = it.summary?.facts?.[0]?.text ?? [...it.tags].sort((a, b) => b.score - a.score)[0]?.reason
+    if (f && gridMatches[it.match.id]) gridFacts[it.match.id] = f
+  }
   // список — на странице «Матчи»; на главной — только если полок нет (в этот день нет «взрослых» матчей)
-  const showList = view === 'list' || (!hero.length && !shelfGroups.length && !soon.length && !values.length)
+  const showList = view === 'list' || (!hero.length && !gridGroups.length && !values.length)
   return (
     <>
       {/* пока на этой странице идут матчи — счёт и минуты обновляются сами, без перезагрузки */}
@@ -277,10 +261,9 @@ export async function DayView({
       {/* «Матч дня» (DayHero) — главный матч крупно и вкладки с остальными; он заменяет полку «Топ дня». Дальше истории — полками: «В игре», (без «Матча дня» — «Топ дня»), потом «Скоро начнутся» и «Выгодно сегодня»,
           потом остальные истории (у «Выгодно» своя полка с кэфами — история-дубль не нужна) */}
       {hero.length ? <DayHero items={hero} ymd={ymd} /> : null}
-      <StoryShelves groups={shelfGroups} show={hero.length ? ['live'] : ['live', 'top']} matches={shelfMatches} more={shelfMore} stats={shelfStats} />
-      {past ? null : <SoonShelf items={soon} allHref={`${list}?sort=time`} />}
+      {/* матчи дня — одной сеткой с фильтрами вместо десятка полок (идея владельца: «матч = сторис») */}
+      <MatchGrid groups={gridGroups} matches={gridMatches} facts={gridFacts} listHref={list} />
       <ValueBoard items={values} />
-      <StoryShelves groups={shelfGroups} show={shelfGroups.map((g) => g.key).filter((k) => k !== 'live' && k !== 'top')} matches={shelfMatches} more={shelfMore} stats={shelfStats} />
 
         </>
       ) : null}
