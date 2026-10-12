@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { FeedItem } from '@/lib/data'
-import { formatTime, pluralN } from '@/lib/format'
+import { formatTime } from '@/lib/format'
 import { leagueHref } from '@/lib/links'
 import type { League } from '@/lib/types'
 import { flagCode } from '@/lib/flags'
@@ -24,7 +24,6 @@ export function LeagueBlock({ league, items }: { league: League; items: FeedItem
             →
           </span>
         </Link>
-        <span className="shrink-0 text-[12px] text-mute">{pluralN(items.length, ['матч', 'матча', 'матчей'])}</span>
       </header>
       <div className="divide-y divide-edge">
         {items.map((it) => (
@@ -46,9 +45,8 @@ export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }
           </span>
           Сейчас в игре
         </span>
-        <span className="text-[12px] text-mute">
-          {total > items.length ? `${items.length} из ${total}` : pluralN(total, ['матч', 'матча', 'матчей'])}
-        </span>
+        {/* число матчей не пишем (владелец: «число матчей справа убрать?») — только если показаны не все */}
+        {total > items.length ? <span className="text-[12px] text-mute">{`${items.length} из ${total}`}</span> : null}
       </header>
       <div className="divide-y divide-edge">
         {items.map((it) => (
@@ -75,7 +73,6 @@ export function TimeBlock({ items }: { items: FeedItem[] }) {
         <div key={h}>
           <h3 className="flex items-baseline justify-between gap-3 border-b border-edge bg-white/[0.02] px-4 py-2.5 sm:px-5">
             <span className="num text-[15px] font-bold">{h}</span>
-            <span className="text-[12px] text-mute">{pluralN(list.length, ['матч', 'матча', 'матчей'])}</span>
           </h3>
           <div className="divide-y divide-edge border-b border-edge last:border-b-0">
             {list.map((it) => (
