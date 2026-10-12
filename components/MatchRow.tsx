@@ -37,18 +37,12 @@ export function StatusCell({ m }: { m: Match }) {
   return <span className={`${base} text-fg`}>{formatTime(m.ts)}</span>
 }
 
-/** Какой исход сыграл (по основному времени) — у сыгранного матча эта ячейка кэфа светлее. */
-const resultKey = (m: Match) =>
-  m.status === 'finished' && m.score ? (m.score.home > m.score.away ? 'home' : m.score.home < m.score.away ? 'away' : 'draw') : null
-
 /**
- * Кэфы 1X2 — у каждой строки. До начала — обычные (выгодный — лаймом); у идущих и сыгранных — те же кэфы до матча,
- * приглушённые, у сыгранного светлее ячейка исхода, который сыграл.
+ * Кэфы 1X2. До начала — обычные (выгодный — лаймом); у идущих — те же кэфы до матча, приглушённые. У сыгранных кэфов нет.
  */
 function Odds({ m, hotKey, hotOdd = null }: { m: Match; hotKey: string | null; hotOdd?: number | null }) {
   const x = m.odds?.x12
   const pre = m.status === 'scheduled'
-  const won = resultKey(m)
   return (
     <span className="grid grid-cols-3 gap-1.5" title={pre ? undefined : 'Коэффициенты до матча'}>
       {(['home', 'draw', 'away'] as const).map((k) => {
@@ -59,9 +53,7 @@ function Odds({ m, hotKey, hotOdd = null }: { m: Match; hotKey: string | null; h
           ? 'bg-acid text-acid-ink'
           : pre
             ? 'bg-white/[0.05] text-fg/90'
-            : won === k
-              ? 'bg-white/[0.08] text-fg/80'
-              : 'bg-white/[0.03] text-mute/70'
+            : 'bg-white/[0.03] text-mute/70'
         return (
           <span
             key={k}
@@ -177,7 +169,11 @@ export function MatchRow({
       <div className="sm:text-center">
         <Score m={m} big />
       </div>
-      {noOdds ? null : (
+      {/* у сыгранных кэфов нет (владелец: «а кэфы у сыгранных может вообще убрать?») — место колонки остаётся пустым */}
+      {noOdds ? null : m.status === 'finished' ? (
+        // пустое место высотой ячейки кэфа — строки одной высоты
+        <span className="hidden h-[34px] sm:block" />
+      ) : (
         <div className="col-span-2 col-start-2 sm:col-span-1 sm:col-start-auto">
           <Odds m={m} hotKey={hotKey} hotOdd={pick?.odd ?? null} />
         </div>
