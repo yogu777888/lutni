@@ -2,7 +2,6 @@ import type { MatchSummary } from '@/lib/data'
 import { formatOdd, formatTime } from '@/lib/format'
 import { matchHref } from '@/lib/links'
 import type { TagHit } from '@/lib/tags'
-import { buildVerdict } from '@/lib/verdict'
 import type { Match } from '@/lib/types'
 import { StoryLink } from './story/StoryLink'
 import { Tick } from './Live'
@@ -84,7 +83,6 @@ function Score({ m, big = false }: { m: Match; big?: boolean }) {
 
 export function MatchRow({
   m,
-  tags,
   summary,
   showLeague = false,
   compact = false,
@@ -131,9 +129,7 @@ export function MatchRow({
   }
 
   // Каждая строка устроена одинаково: время · матч · счёт · кэфы (владелец: «криво — время везде по-разному, кэфы
-  // не везде есть, счёт не везде есть»). Подпись «выгодно» — коротко в той же строке, высота строк одна.
-  const v = m.status === 'scheduled' && hotKey ? buildVerdict({ match: m, tags, pick: pick?.kind === 'value' ? pick : null }) : null
-  const bet = v?.bet
+  // не везде есть, счёт не везде есть»). Выгодный кэф — только лаймовой ячейкой, без подписи (объяснение — в подсказке).
   return (
     <div
       className={`relative grid items-center gap-x-4 gap-y-2.5 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : ROW_COLS}`}
@@ -152,11 +148,6 @@ export function MatchRow({
           {name(m.home, Boolean(awayWon))}
           <span className="mx-1.5 hidden shrink-0 font-normal text-mute sm:inline">—</span>
           {name(m.away, Boolean(homeWon))}
-          {bet ? (
-            <span className="ml-3 hidden shrink-0 text-[12.5px] font-medium text-good sm:inline" title={`Выгодно: ${bet.text}`}>
-              выгодно
-            </span>
-          ) : null}
         </StoryLink>
         {showLeague ? <div className="mt-1 truncate text-[12.5px] text-mute">{m.league.name}</div> : null}
       </div>
