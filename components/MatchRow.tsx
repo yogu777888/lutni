@@ -18,7 +18,8 @@ const isLive = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
 /** Время — одной строкой одного размера: начало / минута красным / у сыгранных начало серым. */
 export function StatusCell({ m }: { m: Match }) {
-  const base = 'num block whitespace-nowrap text-[15px] font-semibold leading-none'
+  // Oswald, как счёт справа: цифры табло — время слева, счёт справа; кэфы — обычным шрифтом
+  const base = 'num display-num block whitespace-nowrap text-[18px] leading-none'
   if (isLive(m))
     return (
       <span className={`${base} flex items-center gap-1.5 text-live`} title="Идёт">
@@ -34,7 +35,7 @@ export function StatusCell({ m }: { m: Match }) {
         <span className="sr-only"> · итог</span>
       </span>
     )
-  if (m.status === 'postponed' || m.status === 'cancelled') return <span className={`${base} text-[12px] text-loss`}>{m.statusLabel}</span>
+  if (m.status === 'postponed' || m.status === 'cancelled') return <span className="block text-[12px] font-medium leading-tight text-loss">{m.statusLabel}</span>
   return <span className={`${base} text-fg`}>{formatTime(m.ts)}</span>
 }
 
