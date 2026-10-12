@@ -12,6 +12,16 @@ import { readSeen, SEEN_EVENT } from './story/seen'
 import { ShelfIcon } from './story/StorySymbol'
 import { Shelf } from './Shelf'
 
+/**
+ * Подпись простыми словами: технический повод тега «Выгодно» («Победа «X» за 2.73 (Winline) при честной цене 2.53:
+ * выгода +8.1%») — коротко «Выгодно: победа «X», +8%» (владелец: «текст плохо читается, грязно»). Остальное — как есть.
+ */
+function plainFact(t: string): string {
+  const v = /^(.+?) за [\d.]+ \([^)]*\) при честной цене [\d.]+: выгода \+([\d.,]+)%/.exec(t)
+  if (v) return `Выгодно: ${v[1].charAt(0).toLowerCase()}${v[1].slice(1)}, +${Math.round(Number(v[2].replace(',', '.')))}%`
+  return t
+}
+
 const live = (m: Match) => m.status === 'live' || m.status === 'suspended'
 type Tint = { home: string; away: string }
 
@@ -46,8 +56,6 @@ function Card({
 }) {
   const played = Boolean(m.score) && (live(m) || m.status === 'finished')
   const lead = played && m.score!.home !== m.score!.away ? (m.score!.home > m.score!.away ? 'home' : 'away') : null
-  const x = m.odds?.x12
-  const odds = x?.home && x.draw && x.away && m.status === 'scheduled' ? [x.home.value, x.draw.value, x.away.value] : null
   return (
     <a href={href} onClick={onOpen} className="group flex w-[82%] shrink-0 snap-start flex-col sm:w-[290px]">
       <span
@@ -96,24 +104,11 @@ function Card({
           <Team t={m.away} dim={lead === 'home'} />
         </span>
 
-        <span className="mt-auto block">
-          {odds ? (
-            <span className="mt-3 grid grid-cols-3 gap-1.5 pt-0 text-center">
-              {/* вместо «Хозяева/Гости» — маленькие эмблемы команд, посередине «Ничья» */}
-            {[m.home, null, m.away].map((t, i) => (
-              <span key={i} className="flex h-9 items-center justify-center gap-1.5 rounded-ctl bg-white/[0.05] px-1" title={t ? `Победа «${t.name}»` : 'Ничья'}>
-                {t ? <TeamLogo name={t.name} src={t.logo} size={16} /> : <span className="text-[12px] text-mute">Ничья</span>}
-                <span className="num text-[14px] font-semibold leading-none">{odds[i].toFixed(2)}</span>
-              </span>
-            ))}
-            </span>
-          ) : null}
-        </span>
       </span>
       {/* факт — под карточкой, подписью, как название под обложкой (владелец: «факт о матче выносить под матч») */}
       {fact ? (
-        <span className="mt-2.5 line-clamp-2 h-[2.75em] px-1 text-[13.5px] leading-snug text-dim first-letter:uppercase transition-colors group-hover:text-fg">
-          {fact}
+        <span className="mt-3 line-clamp-2 h-[2.8em] px-1 text-[14.5px] leading-snug text-fg/85 first-letter:uppercase transition-colors group-hover:text-white">
+          {plainFact(fact)}
         </span>
       ) : null}
     </a>
