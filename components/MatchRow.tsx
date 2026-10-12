@@ -75,7 +75,7 @@ function Score({ m, big = false }: { m: Match; big?: boolean }) {
   const cls = `num whitespace-nowrap text-center font-bold ${big ? 'text-[20px]' : 'text-[16px]'}`
   if (!m.score || m.status === 'scheduled') return null
   return (
-    <span className={`${cls} ${isLive(m) ? 'text-live' : 'text-fg'}`}>
+    <span className={`${cls} ${isLive(m) ? 'text-live' : 'text-fg/60'}`}>
       <Tick v={m.score.home} />
       <span className="mx-1 text-mute">:</span>
       <Tick v={m.score.away} />
@@ -102,14 +102,16 @@ export function MatchRow({
 }) {
   const live = isLive(m)
   const played = Boolean(m.score) && (live || m.status === 'finished')
+  const done = m.status === 'finished'
   const homeWon = m.status === 'finished' && m.score && m.score.home > m.score.away
   const awayWon = m.status === 'finished' && m.score && m.score.away > m.score.home
   const pick = m.status === 'scheduled' ? summary?.pick : null
   const hotKey = pick?.kind === 'value' && ['home', 'draw', 'away'].includes(pick.key) ? pick.key : null
   // эмблема перед названием — матч узнаётся глазами раньше, чем прочитан
   const name = (t: Match['home'], lost: boolean) => (
-    <span className={`flex min-w-0 items-center gap-1.5 ${lost ? 'text-fg/55' : ''}`}>
-      <span className={`shrink-0 ${lost ? 'opacity-60' : ''}`}>
+    // сыгранный матч — весь тише (прошлое на странице дня второстепенно); внутри победитель светлее проигравшего
+    <span className={`flex min-w-0 items-center gap-1.5 ${lost ? 'text-fg/40' : done ? 'text-fg/65' : ''}`}>
+      <span className={`shrink-0 ${lost ? 'opacity-45' : done ? 'opacity-75' : ''}`}>
         <TeamLogo name={t.name} src={t.logo} size={18} />
       </span>
       <span className="truncate">{t.name}</span>
