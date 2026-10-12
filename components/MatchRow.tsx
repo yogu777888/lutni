@@ -16,7 +16,7 @@ const ROW_COLS_NO_ODDS = 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3
 
 const isLive = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
-/** Время — одной строкой одного размера: начало / минута красным; у сыгранных пусто. */
+/** Время — одной строкой одного размера: начало / минута красным / у сыгранных начало серым. */
 export function StatusCell({ m }: { m: Match }) {
   const base = 'num block whitespace-nowrap text-[15px] font-semibold leading-none'
   if (isLive(m))
@@ -26,8 +26,14 @@ export function StatusCell({ m }: { m: Match }) {
         {m.statusCode === 4 ? 'пер.' : m.elapsed ? `${m.elapsed}′` : 'LIVE'}
       </span>
     )
-  // у сыгранных колонка пустая — о конце матча говорит счёт (владелец: «а время у сыгранных убрать?»)
-  if (m.status === 'finished') return <span className="sr-only">Итог</span>
+  // у сыгранных — время начала серым: пустая колонка выглядела как «не загрузилось» (владелец согласился)
+  if (m.status === 'finished')
+    return (
+      <span className={`${base} text-mute`} title="Матч сыгран">
+        {formatTime(m.ts)}
+        <span className="sr-only"> · итог</span>
+      </span>
+    )
   if (m.status === 'postponed' || m.status === 'cancelled') return <span className={`${base} text-[12px] text-loss`}>{m.statusLabel}</span>
   return <span className={`${base} text-fg`}>{formatTime(m.ts)}</span>
 }
