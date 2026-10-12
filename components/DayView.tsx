@@ -222,7 +222,8 @@ export async function DayView({
       }
     : null
   const isLead = (g: StoryGroup) => g.key === 'live' || g.key === 'top'
-  const gridGroups = [...storyGroups.filter(isLead), ...(soonGroup ? [soonGroup] : []), ...storyGroups.filter((g) => !isLead(g))]
+  // «Выгодно» — своей полкой с кнопками к букмекеру ниже (ValueBoard), категорией не дублируем
+  const gridGroups = [...storyGroups.filter(isLead), ...(soonGroup ? [soonGroup] : []), ...storyGroups.filter((g) => !isLead(g) && g.key !== 'value')]
   const gridMatches = Object.fromEntries(gridGroups.flatMap((g) => g.items.map((x) => [x.id, byId.get(x.id)])).filter((e) => e[1])) as Record<number, Match>
   // факт для фильтра «Все»: самый яркий факт с выборкой (lib/facts.ts), иначе повод самого сильного тега
   const gridFacts: Record<number, string> = {}
@@ -231,6 +232,10 @@ export async function DayView({
     // «Хозяева/Гости» — названием команды (владелец: «а может не писать хозяева, гости?»)
     if (f && gridMatches[it.match.id]) gridFacts[it.match.id] = namedFact(f, it.match.home.name, it.match.away.name)
   }
+  // «Показать все» у категории: у тегов — страница тега, у «В игре» — список дня, у «Скоро» — список по времени
+  const gridMore = Object.fromEntries(
+    gridGroups.map((g) => [g.key, g.key === 'live' ? list : g.key === 'soon' ? `${list}?sort=time` : g.key === 'top' ? undefined : `/tag/${g.key}`]),
+  )
   // цвета клубов для карточек сетки: что успели за 1,2 с (цвета эмблем кэшируются на месяц), остальное догрузит клиент
   const gridTints: Record<number, { home: string; away: string }> = {}
   if (view === 'home')
@@ -277,8 +282,8 @@ export async function DayView({
       {/* «Матч дня» (DayHero) — главный матч крупно и вкладки с остальными; он заменяет полку «Топ дня». Дальше истории — полками: «В игре», (без «Матча дня» — «Топ дня»), потом «Скоро начнутся» и «Выгодно сегодня»,
           потом остальные истории (у «Выгодно» своя полка с кэфами — история-дубль не нужна) */}
       {hero.length ? <DayHero items={hero} ymd={ymd} /> : null}
-      {/* матчи дня — одной сеткой с фильтрами вместо десятка полок (идея владельца: «матч = сторис») */}
-      <MatchGrid groups={gridGroups} matches={gridMatches} facts={gridFacts} tints={gridTints} ymd={ymd} listHref={list} />
+      {/* матчи дня — по категориям, у каждой один ряд карточек-сторис (владелец: «категории текстом, матчи в один ряд») */}
+      <MatchGrid groups={gridGroups} matches={gridMatches} facts={gridFacts} tints={gridTints} more={gridMore} ymd={ymd} />
       <ValueBoard items={values} />
 
         </>

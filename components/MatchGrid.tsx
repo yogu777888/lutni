@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { formatTime } from '@/lib/format'
 import type { StoryGroup } from '@/lib/story-groups'
@@ -10,48 +9,11 @@ import { TeamLogo } from './TeamLogo'
 import { openStory } from './story/events'
 import { circleQueue } from './story/queue'
 import { readSeen, SEEN_EVENT } from './story/seen'
-import { StorySymbol } from './story/StorySymbol'
+import { ShelfIcon } from './story/StorySymbol'
+import { Shelf } from './Shelf'
 
 const live = (m: Match) => m.status === 'live' || m.status === 'suspended'
 type Tint = { home: string; away: string }
-
-/** Разделы сетки: порядок понятен с одного взгляда — сначала идущие, потом впереди по времени, потом сыгранные. */
-const SECTIONS = [
-  { key: 0, title: 'Идут сейчас' },
-  { key: 1, title: 'Впереди' },
-  { key: 2, title: 'Завершились' },
-] as const
-const stateOf = (m: Match) => (live(m) ? 0 : m.status === 'finished' ? 2 : 1)
-/** Сколько карточек в сетке у одного фильтра; дальше — «Все матчи дня» на странице «Матчи». */
-const LIMIT = 24
-
-/** Ключ фильтра «Все» — матчи всех историй по порядку, без повторов. */
-const ALL = 'all'
-
-/** Главная кнопка-фильтр: значок истории, подпись и число матчей; выбранная — светлее и с белой рамкой. */
-function Chip({ k, label, n, on, onClick }: { k: string; label: string; n: number; on: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={on}
-      className={`flex h-[84px] w-[104px] shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-tile px-2 text-center transition-colors ${on ? 'bg-white/[0.12] ring-2 ring-white/80' : 'bg-panel-2 hover:bg-panel-3'}`}
-    >
-      {k === ALL ? (
-        <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="currentColor">
-          <rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2" />
-          <rect x="13" y="3.5" width="7.5" height="7.5" rx="2" />
-          <rect x="3.5" y="13" width="7.5" height="7.5" rx="2" />
-          <rect x="13" y="13" width="7.5" height="7.5" rx="2" />
-        </svg>
-      ) : (
-        <StorySymbol k={k} tone="currentColor" className="h-6 w-6" />
-      )}
-      <span className="w-full truncate text-[13px] font-medium leading-none">{label}</span>
-      <span className="sr-only">: {n}</span>
-    </button>
-  )
-}
 
 /** Команда на карточке: эмблема на светлом круге (настоящий размер эмблемы — чёткая) и название под ней. */
 function Team({ t, dim }: { t: Match['home']; dim: boolean }) {
@@ -87,7 +49,7 @@ function Card({
   const x = m.odds?.x12
   const odds = x?.home && x.draw && x.away && m.status === 'scheduled' ? [x.home.value, x.draw.value, x.away.value] : null
   return (
-    <a href={href} onClick={onOpen} className="group flex flex-col">
+    <a href={href} onClick={onOpen} className="group flex w-[82%] shrink-0 snap-start flex-col sm:w-[290px]">
       <span
         className="card flex flex-1 flex-col p-4 transition-colors group-hover:bg-panel-3"
         // мягкий свет цветами клубов сверху: слева хозяева, справа гости (владелец: «все карточки одинаково серые»)
@@ -150,7 +112,7 @@ function Card({
       </span>
       {/* факт — под карточкой, подписью, как название под обложкой (владелец: «факт о матче выносить под матч») */}
       {fact ? (
-        <span className="mt-2.5 line-clamp-2 px-1 text-[13.5px] leading-snug text-dim first-letter:uppercase transition-colors group-hover:text-fg">
+        <span className="mt-2.5 line-clamp-2 h-[2.75em] px-1 text-[13.5px] leading-snug text-dim first-letter:uppercase transition-colors group-hover:text-fg">
           {fact}
         </span>
       ) : null}
@@ -158,31 +120,34 @@ function Card({
   )
 }
 
+/** Сколько карточек в ряду категории; дальше — «Показать все». */
+const LIMIT = 12
+
 /**
- * Матчи дня сеткой с фильтрами (идея владельца, сделанная в ChatGPT: «матч = сторис», одна сетка вместо десятка
- * полок): ряд кнопок-фильтров («Все», «В игре», «Топ дня», «Скоро», теги дня) и под ним карточки по 3 в ряд.
- * Фильтр меняет сетку на месте; факт в карточке — повод этой истории (у «Все» — самый яркий факт матча). Клик —
- * сторис с этого матча и дальше по очереди выбранной истории.
+ * Матчи дня по категориям (владелец: «вернуть категории текстом и чтоб матчи были в один ряд»; сетка с кнопками-
+ * фильтрами выглядела как сортировка, которой нет): заголовок категории («В игре», «Топ дня», «Скоро», теги дня) со
+ * значком и числом матчей, «Показать все», под ним один ряд карточек вбок. Карточка — сторис: клик открывает разбор
+ * с этого матча и дальше по категории. Под карточкой — факт, ради которого матч в категории.
  */
 export function MatchGrid({
   groups,
   matches,
   facts,
   tints: initialTints,
+  more,
   ymd,
-  listHref,
 }: {
-  /** истории дня по порядку (и псевдо-история «Скоро начнутся») */
+  /** категории по порядку: «В игре», «Топ дня», «Скоро», теги дня */
   groups: StoryGroup[]
   matches: Record<number, Match>
-  /** самый яркий факт матча — для фильтра «Все» */
+  /** самый яркий факт матча — если у категории нет своего повода */
   facts: Record<number, string>
   /** цвета клубов, что сервер успел посчитать; остальные догружаем одним запросом */
   tints: Record<number, Tint>
+  /** «Показать все» у категории */
+  more: Record<string, string | undefined>
   ymd: string
-  listHref: string
 }) {
-  const [key, setKey] = useState(ALL)
   const [tints, setTints] = useState(initialTints)
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
   useEffect(() => {
@@ -193,25 +158,13 @@ export function MatchGrid({
   }, [])
 
   const shown = groups.filter((g) => g.items.some((it) => matches[it.id]))
-  const gi = shown.findIndex((g) => g.key === key)
-  const group = gi >= 0 ? shown[gi] : null
-  const all: { id: number; href: string; fact: string | null }[] = []
-  const ids = new Set<number>()
-  for (const g of shown)
-    for (const it of g.items)
-      if (matches[it.id] && !ids.has(it.id)) {
-        ids.add(it.id)
-        all.push({ id: it.id, href: it.href, fact: facts[it.id] ?? null })
-      }
-  const cards = (
-    group ? group.items.filter((it) => matches[it.id]).map((it) => ({ id: it.id, href: it.href, fact: it.focus?.reason ?? facts[it.id] ?? null })) : all
-  )
-    .slice(0, LIMIT)
-    .sort((a, b) => stateOf(matches[a.id]) - stateOf(matches[b.id]) || matches[a.id].ts - matches[b.id].ts)
+  const rows = shown.map((g) => ({ g, items: g.items.filter((it) => matches[it.id]).slice(0, LIMIT) }))
 
-  // цвета, которые сервер не успел посчитать (эмблемы с чужого сервера), — одним запросом на видимые карточки
-  const missing = cards.filter((c) => !tints[c.id]).map((c) => c.id)
-  const missingKey = missing.join(',')
+  // цвета, которые сервер не успел посчитать (эмблемы с чужого сервера), — одним запросом
+  const missingKey = [...new Set(rows.flatMap((r) => r.items.map((it) => it.id)))]
+    .filter((id) => !tints[id])
+    .slice(0, 60)
+    .join(',')
   useEffect(() => {
     if (!missingKey) return
     let stop = false
@@ -224,51 +177,38 @@ export function MatchGrid({
     }
   }, [missingKey, ymd])
 
-  const open = (id: number, e: React.MouseEvent<HTMLAnchorElement>) => {
+  const open = (gi: number, id: number, e: React.MouseEvent<HTMLAnchorElement>) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
     e.preventDefault()
-    const queue = group ? circleQueue(shown, gi, seen).queue : undefined
-    openStory({ id, href: e.currentTarget.href, opener: e.currentTarget, queue })
+    openStory({ id, href: e.currentTarget.href, opener: e.currentTarget, queue: circleQueue(shown, gi, seen).queue })
   }
 
   return (
-    <section aria-label="Матчи дня" className="mt-10">
-      {/* фильтры — одним рядом, листаются вбок (в два ряда выходило рвано), правый край тает */}
-      <div className="scrollbar-none -mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 py-1 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:scroll-px-0 sm:px-0">
-        <Chip k={ALL} label="Все" n={all.length} on={!group} onClick={() => setKey(ALL)} />
-        {shown.map((g) => (
-          <Chip key={g.key} k={g.key} label={g.label} n={g.items.length} on={group?.key === g.key} onClick={() => setKey(g.key)} />
-        ))}
-      </div>
-
-      {SECTIONS.map((sec) => {
-        const list = cards.filter((c) => stateOf(matches[c.id]) === sec.key)
-        if (!list.length) return null
-        return (
-          <div key={sec.key} className="mt-6">
-            <h3 className="flex items-center gap-2 text-[14px] font-semibold text-dim">
-              {sec.key === 0 ? <span className="h-2 w-2 animate-pulse rounded-full bg-live" /> : null}
-              {sec.title}
-              <span className="font-normal text-mute">{list.length}</span>
-            </h3>
-            <div className="mt-3 grid gap-x-3 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(270px,1fr))]">
-              {list.map((c) => (
-                <Card key={c.id} m={matches[c.id]} href={c.href} fact={c.fact} tint={tints[c.id] ?? null} onOpen={(e) => open(c.id, e)} />
-              ))}
-            </div>
-          </div>
-        )
-      })}
-
-      <div className="mt-6 flex justify-center">
-        <Link
-          href={listHref}
-          prefetch={false}
-          className="inline-flex h-11 items-center rounded-full bg-white/[0.08] px-5 text-[14px] font-semibold transition-colors hover:bg-white/[0.14]"
+    <>
+      {rows.map(({ g, items }, gi) => (
+        <Shelf
+          key={g.key}
+          title={
+            <>
+              {g.label}
+              <span className="font-sans text-[15px] font-medium normal-case tracking-normal text-mute">{g.items.length}</span>
+            </>
+          }
+          icon={<ShelfIcon k={g.key} />}
+          more={more[g.key] ? { href: more[g.key]! } : undefined}
         >
-          Все матчи дня →
-        </Link>
-      </div>
-    </section>
+          {items.map((it) => (
+            <Card
+              key={it.id}
+              m={matches[it.id]}
+              href={it.href}
+              fact={it.focus?.reason ?? facts[it.id] ?? null}
+              tint={tints[it.id] ?? null}
+              onOpen={(e) => open(gi, it.id, e)}
+            />
+          ))}
+        </Shelf>
+      ))}
+    </>
   )
 }
