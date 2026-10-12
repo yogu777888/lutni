@@ -1,9 +1,8 @@
-import Link from 'next/link'
 import type { MatchSummary } from '@/lib/data'
 import { formatOdd, formatTime } from '@/lib/format'
 import { matchHref } from '@/lib/links'
 import { fair1x2 } from '@/lib/odds'
-import { TAG_BY_SLUG, type TagHit } from '@/lib/tags'
+import type { TagHit } from '@/lib/tags'
 import { buildVerdict, split100 } from '@/lib/verdict'
 import type { Match } from '@/lib/types'
 import { StoryLink } from './story/StoryLink'
@@ -103,27 +102,6 @@ function Score({ m, big = false }: { m: Match; big?: boolean }) {
   )
 }
 
-/** Теги строкой, как хэштеги: решётка value — лаймовая, прогруза — янтарная. */
-export function Hashtags({ tags, max = 3 }: { tags: TagHit[]; max?: number }) {
-  if (!tags.length) return null
-  return (
-    <>
-      {tags.slice(0, max).map((t) => {
-        const def = TAG_BY_SLUG.get(t.slug)
-        if (!def) return null
-        const hash = def.kind === 'accent' ? 'text-good' : def.kind === 'hot' ? 'text-hot' : 'text-mute'
-        return (
-          <Link key={t.slug} href={`/tag/${t.slug}`} prefetch={false} title={t.reason} className="whitespace-nowrap text-dim transition-colors hover:text-fg">
-            <span className={hash}>#</span>
-            {def.label.replace(/^#/, '')}
-          </Link>
-        )
-      })}
-      {tags.length > max ? <span className="text-mute">+{tags.length - max}</span> : null}
-    </>
-  )
-}
-
 export function MatchRow({
   m,
   tags,
@@ -172,21 +150,31 @@ export function MatchRow({
     )
   }
 
-  // вывод словами — только до начала матча: кто сильнее и что выгодно.
-  // Обычный прогноз модели в строке не пишем: он бывает «против» вывода и путает — он на странице матча.
+  // Одна строка — одно правило по состоянию матча (владелец: «в центральных блоках логическая каша»):
+  // до начала — одна подпись (выгодная ставка, иначе кто сильнее) и кэфы; идёт и сыгран — только счёт,
+  // без доматчевых кэфов и тегов (после стартового свистка они уже ничего не говорят). Теги — в «Подборках дня».
   const v = m.status === 'scheduled' ? buildVerdict({ match: m, tags, pick: pick?.kind === 'value' ? pick : null }) : null
   const bet = v?.bet
-  // 1X2: выгодный кэф горит лаймом в своей ячейке — в тексте только «что выгодно»
-  const inCell = Boolean(hotKey)
-  const betText = bet ? (inCell && v.side && pick?.key === v.side ? 'выгодно' : `выгодно: ${bet.text}`) : null
-  // теги, которые повторяют сказанное словами, не дублируем
-  const said = new Set([bet ? 'value' : '', v?.level === 'strong' ? 'favorit' : '', v?.level === 'even' ? 'ravnye' : ''])
-  const shownTags = tags.filter((t) => !said.has(t.slug))
-  const meta = showLeague || v || shownTags.length
+  // выгодная ставка — словами и лаймовой ячейкой; тогда «кто сильнее» не пишем: два вывода в строке спорили
+  const note = bet ? (
+    <span className="text-good">
+      Выгодно: {bet.text}
+      {bet.odd && !hotKey ? <span className="num ml-1 font-semibold">{bet.odd.toFixed(2)}</span> : null}
+    </span>
+  ) : v ? (
+    <span className="text-dim">{v.headline}</span>
+  ) : null
+  const meta = showLeague || note
+  const upcoming = m.status === 'scheduled'
   return (
     <div
       className={`relative grid items-center gap-x-4 gap-y-2.5 px-4 py-3.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${
-        noOdds ? 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_auto]' : ROW_COLS
+        noOdds
+          ? 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_auto]'
+          : played
+            ? // на телефоне счёт — справа в той же строке, на компьютере — в колонке «Счёт · шансы»
+              'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_7.5rem_11.25rem]'
+            : ROW_COLS
       }`}
     >
       <div className="self-start pt-0.5 sm:self-center sm:pt-0">
@@ -197,46 +185,36 @@ export function MatchRow({
         <StoryLink
           id={m.id}
           href={matchHref(m)}
-          className="flex min-w-0 items-center text-[15px] font-semibold after:absolute after:inset-0 after:content-[''] sm:text-[16px]"
+          // у начавшихся на телефоне справа счёт — команды в две строки, иначе названия обрезаются («Барсел… — Лева…»)
+          className={`flex min-w-0 text-[15px] font-semibold after:absolute after:inset-0 after:content-[''] sm:flex-row sm:items-center sm:text-[16px] ${
+            played ? 'flex-col items-start gap-1' : 'items-center'
+          } sm:gap-0`}
         >
           {name(m.home, Boolean(awayWon))}
-          <span className="mx-1.5 shrink-0 font-normal text-mute">—</span>
+          <span className={`mx-1.5 shrink-0 font-normal text-mute ${played ? 'hidden sm:inline' : ''}`}>—</span>
           {name(m.away, Boolean(homeWon))}
         </StoryLink>
         {meta ? (
           <div className="relative z-10 mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12.5px]">
             {showLeague ? <span className="text-mute">{m.league.name}</span> : null}
-            {v ? <span className="font-medium text-chalk">{v.headline}</span> : null}
-            {betText ? (
-              <span className="text-good">
-                {betText}
-                {bet!.odd && !inCell ? <span className="num ml-1 font-semibold">{bet!.odd.toFixed(2)}</span> : null}
-              </span>
-            ) : null}
-            <Hashtags tags={shownTags} max={v ? 2 : 3} />
+            {note}
           </div>
         ) : null}
       </div>
 
       {noOdds ? (
         played ? <Score m={m} big /> : <span />
+      ) : played ? (
+        <>
+          <div className="sm:text-center">
+            <Score m={m} big />
+          </div>
+          <span className="hidden sm:block" />
+        </>
       ) : (
         <>
-          <div className="hidden sm:block">{played ? <Score m={m} big /> : <Chances m={m} />}</div>
-          <div className="col-start-2 sm:col-start-auto">
-            {played ? (
-              <div className="flex items-center justify-between gap-3 sm:block">
-                <span className="sm:hidden">
-                  <Score m={m} big />
-                </span>
-                <span className="block w-[10.5rem] opacity-70 sm:w-auto">
-                  <Odds m={m} hotKey={null} />
-                </span>
-              </div>
-            ) : (
-              <Odds m={m} hotKey={hotKey} hotOdd={pick?.odd ?? null} />
-            )}
-          </div>
+          <div className="hidden sm:block">{upcoming ? <Chances m={m} /> : null}</div>
+          <div className="col-start-2 sm:col-start-auto">{upcoming ? <Odds m={m} hotKey={hotKey} hotOdd={pick?.odd ?? null} /> : null}</div>
         </>
       )}
     </div>
