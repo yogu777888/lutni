@@ -110,7 +110,7 @@ export function DayHero({ items, ymd }: { items: HeroItem[]; ymd: string }) {
       ].join(', ')
     : undefined
   return (
-    <section aria-label="Матч дня" className="mt-4 sm:mt-5">
+    <section aria-label="Матч дня" className="mt-4 sm:mt-5 xl:mt-0">
       <div
         key={m.id}
         className="fade-up relative isolate overflow-hidden rounded-card bg-panel-3 transition-[background] duration-700"

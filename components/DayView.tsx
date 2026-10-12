@@ -212,12 +212,15 @@ export async function DayView({
     <>
       {/* пока на этой странице идут матчи — счёт и минуты обновляются сами, без перезагрузки */}
       {liveAll.length ? <LiveRefresh /> : null}
+      {/* главная от xl — без общей подложки центра: баннер, «Сейчас в игре» и лиги — отдельными блоками на фоне
+          страницы, как боковые панели (владелец: «чтобы не делать блок в блоке»; правила — .bare-page в app/globals.css) */}
+      {view === 'home' ? <span hidden className="bare-page" /> : null}
       {view === 'home' ? (
         <>
           {/* главная — как у Spotify: заголовок с датой и сразу полки; с «Матчем дня» заголовок — тихая строка над баннером
               (главный на экране — матч, а не слово «сегодня») */}
           {hero.length ? (
-            <h1 className="h1-quiet fade-up pt-1 text-[15px] text-dim sm:pt-0">
+            <h1 className="h1-quiet fade-up pt-1 text-[15px] text-dim sm:pt-0 xl:sr-only">
               {heading.title} · {heading.date.charAt(0).toLowerCase() + heading.date.slice(1)}
             </h1>
           ) : (
@@ -245,7 +248,11 @@ export async function DayView({
           <StoryCircles groups={storyGroups} />
         </div>
       ) : null}
-      <ValueBoard items={values} />
+      {values.length ? (
+        <div className="bare-shelf">
+          <ValueBoard items={values} />
+        </div>
+      ) : null}
 
         </>
       ) : null}
@@ -282,8 +289,9 @@ export async function DayView({
       {showList ? (
       <section
         id="matches"
-        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : 'mt-5 sm:mt-6'}`}
+        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : 'mt-5 sm:mt-6'} ${view === 'home' ? 'xl:mt-2' : ''}`}
       >
+        <div className={view === 'home' ? 'bare-panel' : undefined}>
         {listHead ? (
           // заголовок — как у полок выше: одна схема на всю страницу
           <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
@@ -316,8 +324,11 @@ export async function DayView({
             </nav>
           )}
         </div>
-        <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="min-w-0 space-y-5">
+        </div>
+        <div
+          className={`mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-2 xl:!grid-cols-1 xl:gap-2' : ''}`}
+        >
+          <div className={`min-w-0 space-y-5 ${view === 'home' ? 'xl:space-y-2' : ''}`}>
             {failed ? (
               <div className="card p-5 text-[15px] text-dim">
                 Не удалось загрузить матчи: источник данных временно недоступен. Обновите страницу через минуту.
@@ -365,7 +376,10 @@ export async function DayView({
               </div>
             ) : null}
           </div>
-          <Sidebar />
+          {/* на главной от xl «Где ставить» и прочее — не нужно: подборки и вход — в правой панели */}
+          <div className={view === 'home' ? 'xl:hidden' : undefined}>
+            <Sidebar />
+          </div>
         </div>
       </section>
       ) : null}

@@ -742,3 +742,41 @@ html[data-shell-rc] .shell-r-rail {
     animation: none;
   }
 }
+
+/* Главная от xl — без общей подложки центра (владелец: «по центру матч дня и ниже блоки лиг и матчей в лайве, на
+   ширину старого одного блока, чтобы не делать блок в блоке»): центр прозрачный и без отступов, каждый раздел —
+   отдельная графитовая панель, как боковые (bg-panel, скругление карточки), зазор 8px — как у панелей каркаса.
+   Карточки лиг — тоже панели; турниры внутри «Других турниров» — строками без своих рамок. Метка — .bare-page в DayView. */
+@media (min-width: 1280px) {
+  .shell-center:has(.bare-page) {
+    background: transparent;
+  }
+  .shell-center:has(.bare-page) > main {
+    max-width: none;
+    padding: 0 0 7rem;
+  }
+  .shell-center:has(.bare-page) .bare-panel {
+    margin-top: 8px;
+    border-radius: var(--radius-card);
+    background: var(--color-panel);
+    padding: 20px 24px 24px;
+  }
+  /* полка «Выгодно сегодня» — без своей подложки: заголовок на фоне страницы, карточки — панелями */
+  .shell-center:has(.bare-page) .bare-shelf > section {
+    margin-top: 28px;
+  }
+  .shell-center:has(.bare-page) .bare-shelf .card {
+    border-color: transparent;
+    background: var(--color-panel);
+  }
+  .shell-center:has(.bare-page) #matches .card {
+    border-color: transparent;
+    background: var(--color-panel);
+  }
+  .shell-center:has(.bare-page) #matches details .card {
+    border-radius: 0;
+    border-width: 1px 0 0;
+    border-color: var(--color-edge);
+    background: transparent;
+  }
+}
