@@ -26,7 +26,7 @@ import { goHref } from '@/lib/affiliate'
 import { getMatchInsights, getMatchesByDate, getPariHistory, settle } from '@/lib/data'
 import { LineChart } from '@/components/match/LineChart'
 import { LiveRefresh } from '@/components/Live'
-import { matchColors } from '@/lib/team-colors'
+import { distinctPair, matchColors } from '@/lib/team-colors'
 import { handNotes } from '@/lib/hand-notes'
 import { appNow, formatDateShort, formatTime, idFromSlug, pct, pluralN, ymdInTz } from '@/lib/format'
 import { isValue } from '@/lib/model'
@@ -158,7 +158,7 @@ export default async function MatchPage({ params }: Props) {
       <h1 className="display mb-5 mt-2 text-[24px] sm:text-[32px]">{h1}</h1>
 
       {/* сначала табло, как в «Главных матчах»: команды, время или счёт, шансы; ниже — ответ словами */}
-      <MatchHero full={full} cells={cells} books={cons.books} tint={tint ? { home: tint.home, away: tint.away } : null} notes={notes}>
+      <MatchHero full={full} cells={cells} books={cons.books} tint={tint ? distinctPair(tint) : null} notes={notes}>
         {hasStory || tags.length ? (
           <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-edge pt-5">
             {hasStory ? <StoryButton id={m.id} href={canonical} className="mr-2" /> : null}

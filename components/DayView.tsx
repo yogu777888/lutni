@@ -9,7 +9,7 @@ import { mainMatches, soonMatches } from '@/lib/day-summary'
 import { handNotes, type HandNotes } from '@/lib/hand-notes'
 import { x12Line, type X12Line } from '@/lib/lines'
 import { buildForm } from '@/lib/stats'
-import { matchColors } from '@/lib/team-colors'
+import { distinctPair, matchColors } from '@/lib/team-colors'
 import { buildStoryGroups, mainCircles, statFor } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
@@ -123,7 +123,7 @@ function heroItems(items: FeedItem[]): Promise<HeroItem[]> {
         notesFor(m),
         liveLineFor(m),
       ])
-      return { m, href: matchHref(m), tint: tint ? { home: tint.home, away: tint.away } : null, notes, line: x12Line(snap), liveLine }
+      return { m, href: matchHref(m), tint: tint ? distinctPair(tint) : null, notes, line: x12Line(snap), liveLine }
     }),
   )
 }

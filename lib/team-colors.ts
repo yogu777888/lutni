@@ -147,6 +147,26 @@ const css = (c: Hsl, darker = 0, accent = false) => {
   return `hsl(${Math.round(c.h)} ${Math.round(Math.min(0.8, Math.max(0.45, c.s)) * 100)}% ${Math.round((Math.min(top, Math.max(yellow ? 0.5 : 0.32, c.l)) - darker) * 100)}%)`
 }
 
+const hueOf = (c: string) => Number(/hsl\((\d+)/.exec(c)?.[1] ?? NaN)
+const hueGap = (a: string, b: string) => {
+  const d = Math.abs(hueOf(a) - hueOf(b))
+  return Number.isNaN(d) ? 180 : Math.min(d, 360 - d)
+}
+
+/**
+ * Два различимых цвета матча (баннер «Матча дня», градиент панели): если главные цвета соперников почти одного
+ * оттенка (у «Барселоны» и «Леванте» оба красные — баннер выходил одним бордовым), берём второй цвет гостей.
+ * Цвет хозяев не подменяем: он — заливка баннера, а второй цвет эмблемы бывает серым («Барселона» выходила графитовой).
+ * Ничего не различается — как есть.
+ */
+export function distinctPair(c: MatchColors, minGap = 35): { home: string; away: string } {
+  if (hueGap(c.home, c.away) >= minGap) return { home: c.home, away: c.away }
+  // золото второго цвета — обычно окантовка или корона, а на тёмном фоне — оливковое пятно: его не берём
+  const gold = (x: string) => hueOf(x) >= 35 && hueOf(x) <= 75
+  if (!gold(c.away2) && hueGap(c.home, c.away2) >= minGap) return { home: c.home, away: c.away2 }
+  return { home: c.home, away: c.away }
+}
+
 /** Золото — окантовка, корона, полоса флага: если у эмблемы есть второй, не жёлтый цвет, клубный — он
     (настоящая эмблема «Барселоны» больше всего золотая, а клуб — сине-гранатовый). Только жёлтые — как есть. */
 const goldHue = (c: Hsl) => c.h >= 35 && c.h <= 75

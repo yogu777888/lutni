@@ -1,6 +1,6 @@
 import { getMatchesByDate } from '@/lib/data'
 import { isYmd } from '@/lib/format'
-import { matchColors } from '@/lib/team-colors'
+import { distinctPair, matchColors } from '@/lib/team-colors'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
       ids.map(async (id) => {
         const m = day.find((x) => x.id === id)
         const c = m ? await matchColors(m).catch(() => null) : null
-        if (c) tints[id] = { home: c.home, away: c.away }
+        if (c) tints[id] = distinctPair(c)
       }),
     )
   } catch {}

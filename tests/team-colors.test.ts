@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { logoColor, logoPalette, matchColors } from '@/lib/team-colors'
+import { distinctPair, logoColor, logoPalette, matchColors } from '@/lib/team-colors'
 import type { Match } from '@/lib/types'
 
 const svg = (fill: string, fill2 = fill) =>
@@ -56,5 +56,32 @@ describe('цвета клубов из эмблем', () => {
     const light = (s: string) => Number(/(\d+)%\)$/.exec(s)![1])
     expect(light(close!.away)).toBeLessThan(light(close!.home))
     expect(await matchColors(m(null, null))).toBeNull()
+  })
+})
+
+describe('distinctPair', () => {
+  it('оставляет разные цвета как есть', () => {
+    expect(distinctPair({ home: 'hsl(220 60% 40%)', away: 'hsl(0 70% 45%)', home2: 'hsl(0 0% 50%)', away2: 'hsl(0 0% 50%)' })).toEqual({
+      home: 'hsl(220 60% 40%)',
+      away: 'hsl(0 70% 45%)',
+    })
+  })
+  it('у похожих соперников берёт второй цвет гостей', () => {
+    expect(distinctPair({ home: 'hsl(355 70% 45%)', away: 'hsl(5 70% 40%)', home2: 'hsl(230 60% 40%)', away2: 'hsl(215 60% 40%)' })).toEqual({
+      home: 'hsl(355 70% 45%)',
+      away: 'hsl(215 60% 40%)',
+    })
+  })
+  it('цвет хозяев не подменяет: и второй цвет гостей близок — как есть', () => {
+    expect(distinctPair({ home: 'hsl(355 70% 45%)', away: 'hsl(5 70% 40%)', home2: 'hsl(230 60% 40%)', away2: 'hsl(10 60% 50%)' })).toEqual({
+      home: 'hsl(355 70% 45%)',
+      away: 'hsl(5 70% 40%)',
+    })
+  })
+  it('золотой второй цвет не берёт — оливковое пятно', () => {
+    expect(distinctPair({ home: 'hsl(355 70% 45%)', away: 'hsl(5 70% 40%)', home2: 'hsl(225 60% 40%)', away2: 'hsl(48 70% 50%)' })).toEqual({
+      home: 'hsl(355 70% 45%)',
+      away: 'hsl(5 70% 40%)',
+    })
   })
 })

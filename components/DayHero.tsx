@@ -24,6 +24,12 @@ export type HeroItem = {
   liveLine: X12Line | null
 }
 
+/**
+ * Эмблема для баннера: у SStats картинки 150×150 — растянутые браузером до 190px (на ретине ×2), они мыльные;
+ * берём увеличенную на сервере (`/api/crest`). Другие источники (демо — svg) — как есть.
+ */
+const big = (src: string | null) => (src && /^https:\/\/(?:[a-z0-9-]+\.)?sstats\.net\/assets\/logos\/\d+\.png$/.test(src) ? `/api/crest?u=${encodeURIComponent(src)}&w=384` : src)
+
 const live = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
 /** Кэфы одной строкой — переход к букмекеру (реклама). */
@@ -81,11 +87,16 @@ export function DayHero({ items, ymd }: { items: HeroItem[]; ymd: string }) {
   const played = Boolean(m.score) && (live(m) || m.status === 'finished')
   const line = live(m) ? it.liveLine : m.status === 'scheduled' ? it.line : null
   const facts = (['home', 'away'] as const).filter((k) => it.notes?.[k]).map((k) => ({ team: m[k].name, text: it.notes![k]! }))
-  const mix = (c: string, p: number) => `color-mix(in oklab, ${c} ${p}%, #0e1318)`
+  const mix = (c: string, p: number) => `color-mix(in oklab, ${c} ${p}%, #0b0f14)`
+  // как у Spotify — один насыщенный цвет на весь баннер (хозяева), без смешивания двух клубов в бурое; цвет гостей —
+  // мягким светом за эмблемами справа (свой у двух красных клубов не берём — `distinctPair` даст другой или тот же)
   const fill = t
-    ? `linear-gradient(90deg, rgb(8 11 14 / 0.55), transparent 62%), linear-gradient(115deg, ${mix(t.home, 62)} 0%, ${mix(t.home, 30)} 42%, ${mix(t.away, 34)} 70%, ${mix(t.away, 58)} 100%)`
+    ? [
+        `radial-gradient(42% 70% at 82% 50%, ${mix(t.away, 55)}, transparent 70%)`,
+        `linear-gradient(90deg, rgb(11 15 20 / 0.35), transparent 55%)`,
+        `linear-gradient(160deg, ${mix(t.home, 82)} 0%, ${mix(t.home, 58)} 45%, ${mix(t.home, 30)} 100%)`,
+      ].join(', ')
     : undefined
-
   return (
     <section aria-label="Матч дня" className="mt-4 sm:mt-5">
       <div
@@ -96,10 +107,10 @@ export function DayHero({ items, ymd }: { items: HeroItem[]; ymd: string }) {
         {/* эмблемы — «обложка» справа: крупно, внахлёст, срезаны краем карточки */}
         <div aria-hidden className="pointer-events-none relative flex h-[150px] items-center justify-center gap-0 sm:absolute sm:inset-y-0 sm:right-0 sm:h-auto sm:w-[46%] sm:justify-end">
           <span className="relative z-[1] drop-shadow-[0_18px_30px_rgb(0_0_0/0.45)] sm:-mr-6 sm:-mt-16">
-            <TeamLogo name={m.home.name} src={m.home.logo} size="clamp(96px, 13vw, 190px)" />
+            <TeamLogo name={m.home.name} src={big(m.home.logo)} size="clamp(96px, 11vw, 168px)" />
           </span>
           <span className="drop-shadow-[0_18px_30px_rgb(0_0_0/0.45)] sm:-mb-24 sm:-mr-10">
-            <TeamLogo name={m.away.name} src={m.away.logo} size="clamp(84px, 11.5vw, 170px)" />
+            <TeamLogo name={m.away.name} src={big(m.away.logo)} size="clamp(84px, 9.5vw, 148px)" />
           </span>
         </div>
 
