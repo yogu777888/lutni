@@ -6,18 +6,17 @@ import { formatTime } from '@/lib/format'
 import type { HandNotes } from '@/lib/hand-notes'
 import type { X12Line } from '@/lib/lines'
 import type { Match } from '@/lib/types'
-import { HandNote } from './FactChip'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
-import { setShellTint, useMatchTint } from './shell/tint'
+import { useMatchTint } from './shell/tint'
 import { StoryLink } from './story/StoryLink'
 
 export type HeroItem = {
   m: Match
   href: string
-  /** цвета клубов (lib/team-colors) — градиент центральной панели и свечение за карточкой */
+  /** цвета клубов (lib/team-colors) — заливка баннера: слева цвет хозяев, справа гостей */
   tint: { home: string; away: string } | null
-  /** метки-факты над эмблемами (lib/hand-notes.ts) */
+  /** факты о командах (lib/hand-notes.ts) — строкой под счётом */
   notes: HandNotes | null
   /** кэфы одного букмекера до начала */
   line: X12Line | null
@@ -26,12 +25,6 @@ export type HeroItem = {
 }
 
 const live = (m: Match) => m.status === 'live' || m.status === 'suspended'
-
-/** На телефоне длинное название мельче, а не перенос по букве. */
-function phoneSize(name: string): string {
-  const longest = Math.max(...name.split(/[\s-]+/).map((w) => w.length))
-  return longest >= 12 ? 'text-[14px]' : longest >= 10 ? 'text-[16px]' : 'text-[18px]'
-}
 
 /** Кэфы одной строкой — переход к букмекеру (реклама). */
 function OddsLine({ line, m, isLive }: { line: X12Line; m: Match; isLive: boolean }) {
@@ -46,7 +39,7 @@ function OddsLine({ line, m, isLive }: { line: X12Line; m: Match; isLive: boolea
       target="_blank"
       rel={SPONSORED_REL}
       title={`Коэффициенты ${line.bookmaker} на ${formatTime(line.at)}`}
-      className="mx-auto flex w-fit max-w-full flex-wrap items-baseline justify-center gap-x-4 gap-y-1 rounded-ctl px-3 py-1.5 transition-colors hover:bg-white/[0.07]"
+      className="flex w-fit max-w-full flex-wrap items-baseline gap-x-4 gap-y-1 text-white/90 transition-opacity hover:opacity-80"
     >
       {isLive ? (
         <span className="flex items-center gap-1.5 self-center text-[13px] font-medium text-live">
@@ -56,143 +49,163 @@ function OddsLine({ line, m, isLive }: { line: X12Line; m: Match; isLive: boolea
       ) : null}
       {odds.map(([label, odd]) => (
         <span key={label} className="flex items-baseline gap-1.5">
-          <span className="text-[14px] text-fg/70">{label}</span>
-          <span className="num text-[16px] font-semibold text-fg">{odd.toFixed(2)}</span>
+          <span className="text-[14px] text-white/65">{label}</span>
+          <span className="num text-[16px] font-semibold text-white">{odd.toFixed(2)}</span>
         </span>
       ))}
-      <span className="text-[13px] text-fg/55">{line.bookmaker} · Реклама</span>
+      <span className="text-[13px] text-white/50">{line.bookmaker} · Реклама</span>
     </a>
   )
 }
 
+/** Хороший факт или плохой — цвет точки (как у меток-фактов на странице матча). */
+const noteTone = (t: string) => (/поражен|без побед|вылет/.test(t) ? 'bg-live' : 'bg-acid')
+
+/** Минута / «перерыв» / «итог» рядом со счётом. */
+const stateText = (m: Match) => (live(m) ? (m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}′` : 'идёт') : 'итог')
+
 /**
- * «Матч дня» — один главный матч крупно на первом экране главной, как обложка у Spotify: карточка без своего фона
- * стоит прямо на градиенте центральной панели, а градиент окрашивается цветами клубов этого матча (`setShellTint`).
- * Ниже xl панели нет — за карточкой своё мягкое свечение теми же цветами. Эмблемы на светлых кругах, над ними
- * метки-факты, между ними время / счёт и минута / итог; под табло — кэфы одной строкой и белая «Разбор за минуту»
- * (сторис матча). Под карточкой — вкладки с остальными главными матчами дня: клик меняет матч и цвет градиента.
+ * «Матч дня» — баннер, как шапка плейлиста у Spotify или Apple TV (владелец: «как бы ты сделал красиво матч дня?»):
+ * карточка во всю ширину, залитая тёмным градиентом цветов клубов (слева хозяева, справа гости; цвет — внутри
+ * карточки, а не на всю страницу). Слева текст: «Матч дня · турнир · тур», крупно название матча (Oswald), счёт и
+ * минута / время начала, факты о командах, белая «Разбор за минуту» и кэфы одной строкой. Справа — две большие
+ * эмблемы внахлёст, срезанные краем карточки, как обложка альбома. Всё выровнено по левому краю, как полки ниже.
+ * Под баннером — «Ещё главные матчи» плитками: клик подменяет матч в баннере.
  */
 export function DayHero({ items, ymd }: { items: HeroItem[]; ymd: string }) {
   const [i, setI] = useState(0)
   const it = items[Math.min(i, items.length - 1)]
   const t = useMatchTint(it?.m.id, ymd, it?.tint)
-  useEffect(() => {
-    setShellTint(t?.home, t?.away)
-  }, [t?.home, t?.away])
-  useEffect(() => () => setShellTint(null, null), [])
   if (!it) return null
   const m = it.m
   const played = Boolean(m.score) && (live(m) || m.status === 'finished')
-  const lead = played && m.score!.home !== m.score!.away ? (m.score!.home > m.score!.away ? 'home' : 'away') : null
   const line = live(m) ? it.liveLine : m.status === 'scheduled' ? it.line : null
-
-  const team = (k: 'home' | 'away') => {
-    const tm = m[k]
-    const note = it.notes?.[k]
-    return (
-      <div className={`flex min-w-0 flex-col items-center gap-3 text-center transition-opacity ${lead && lead !== k ? 'opacity-60' : ''}`}>
-        <span className="relative grid h-[var(--disc)] w-[var(--disc)] place-items-center rounded-full bg-white/[0.14] ring-1 ring-white/15 [--disc:84px] sm:[--disc:120px] lg:[--disc:136px]">
-          {note ? <HandNote text={note} short={note.length <= 12} /> : null}
-          <TeamLogo name={tm.name} src={tm.logo} size="calc(var(--disc) * 0.62)" />
-        </span>
-        <span className={`line-clamp-2 max-w-full hyphens-auto text-balance break-words font-semibold leading-tight tracking-[-0.02em] sm:text-[22px] lg:text-[26px] ${phoneSize(tm.name)}`}>
-          {tm.name}
-        </span>
-      </div>
-    )
-  }
+  const facts = (['home', 'away'] as const).filter((k) => it.notes?.[k]).map((k) => ({ team: m[k].name, text: it.notes![k]! }))
+  const mix = (c: string, p: number) => `color-mix(in oklab, ${c} ${p}%, #0e1318)`
+  const fill = t
+    ? `linear-gradient(90deg, rgb(8 11 14 / 0.55), transparent 62%), linear-gradient(115deg, ${mix(t.home, 62)} 0%, ${mix(t.home, 30)} 42%, ${mix(t.away, 34)} 70%, ${mix(t.away, 58)} 100%)`
+    : undefined
 
   return (
-    <section aria-label="Матч дня" className="relative mx-auto mt-6 max-w-[880px] sm:mt-8">
-      {/* ниже xl градиента панели нет — своё свечение цветами клубов за карточкой */}
-      {t ? (
-        <div
-          aria-hidden
-          className="hero-tint pointer-events-none absolute -inset-x-4 -top-28 bottom-0 transition-[background] duration-700 xl:hidden"
-          style={{
-            background: `radial-gradient(55% 80% at 15% 40%, color-mix(in oklab, ${t.home} 22%, transparent), transparent 70%), radial-gradient(55% 80% at 85% 40%, color-mix(in oklab, ${t.away} 22%, transparent), transparent 70%)`,
-          }}
-        />
-      ) : null}
-
-      <div key={m.id} className="fade-up relative">
-        <p className="flex items-center justify-center gap-2 text-[13px] font-medium text-dim">
-          {live(m) ? <span className="h-1.5 w-1.5 rounded-full bg-live" /> : null}
-          <span className="truncate">
-            {m.league.name}
-            {m.round ? ` · ${m.round}` : ''}
+    <section aria-label="Матч дня" className="mt-4 sm:mt-5">
+      <div
+        key={m.id}
+        className="fade-up relative isolate overflow-hidden rounded-card bg-panel-3 transition-[background] duration-700"
+        style={fill ? { background: fill } : undefined}
+      >
+        {/* эмблемы — «обложка» справа: крупно, внахлёст, срезаны краем карточки */}
+        <div aria-hidden className="pointer-events-none relative flex h-[150px] items-center justify-center gap-0 sm:absolute sm:inset-y-0 sm:right-0 sm:h-auto sm:w-[46%] sm:justify-end">
+          <span className="relative z-[1] drop-shadow-[0_18px_30px_rgb(0_0_0/0.45)] sm:-mr-6 sm:-mt-16">
+            <TeamLogo name={m.home.name} src={m.home.logo} size="clamp(96px, 13vw, 190px)" />
           </span>
-        </p>
+          <span className="drop-shadow-[0_18px_30px_rgb(0_0_0/0.45)] sm:-mb-24 sm:-mr-10">
+            <TeamLogo name={m.away.name} src={m.away.logo} size="clamp(84px, 11.5vw, 170px)" />
+          </span>
+        </div>
 
-        <div className="mt-9 grid grid-cols-[1fr_auto_1fr] items-start gap-3 sm:mt-11 sm:gap-6">
-          {team('home')}
-          <StoryLink id={m.id} href={it.href} className="flex h-[var(--disc)] flex-col items-center justify-center gap-2 [--disc:84px] sm:[--disc:120px] lg:[--disc:136px]">
+        <div className="relative px-5 pb-6 pt-1 sm:max-w-[60%] sm:px-8 sm:py-8 lg:px-10 lg:py-10">
+          <p className="flex items-center gap-2 text-[13px] font-medium text-white/75">
+            <span className="font-semibold uppercase tracking-[0.08em] text-white">Матч дня</span>
+            <span aria-hidden>·</span>
+            <span className="truncate">
+              {m.league.name}
+              {m.round ? ` · ${m.round}` : ''}
+            </span>
+          </p>
+          <StoryLink id={m.id} href={it.href} className="mt-3 block">
+            <span className="h2 block text-balance text-[34px] leading-[1.02] text-white sm:text-[44px] lg:text-[56px]">
+              {m.home.name} — {m.away.name}
+            </span>
+          </StoryLink>
+
+          <div className="mt-4 flex items-baseline gap-3">
             {played ? (
               <>
-                <span className="num display-num whitespace-nowrap text-[44px] leading-none text-white sm:text-[64px] lg:text-[76px]">
+                <span className="num display-num whitespace-nowrap text-[40px] leading-none text-white sm:text-[48px]">
                   <Tick v={m.score!.home} />
-                  <span className="mx-1.5 text-mute">:</span>
+                  <span className="mx-1 text-white/45">:</span>
                   <Tick v={m.score!.away} />
                 </span>
-                <span className={`text-[13px] font-medium leading-none ${live(m) ? 'text-live' : 'text-mute'}`}>
-                  {live(m) ? (m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}′` : 'идёт') : 'итог'}
+                <span className={`flex items-center gap-1.5 text-[14px] font-semibold ${live(m) ? 'text-live' : 'text-white/60'}`}>
+                  {live(m) ? <span className="h-2 w-2 animate-pulse rounded-full bg-live" /> : null}
+                  {stateText(m)}
                 </span>
               </>
             ) : (
               <>
-                <span className="num display-num text-[44px] leading-none sm:text-[64px] lg:text-[76px]">{formatTime(m.ts)}</span>
-                <span className="text-[13px] leading-none text-mute">начало, мск</span>
+                <span className="num display-num text-[40px] leading-none text-white sm:text-[48px]">{formatTime(m.ts)}</span>
+                <span className="text-[14px] text-white/60">начало, мск</span>
               </>
             )}
-          </StoryLink>
-          {team('away')}
-        </div>
+          </div>
 
-        <div className="mt-6 flex flex-col items-center gap-3">
-          {line ? <OddsLine line={line} m={m} isLive={live(m)} /> : null}
-          <StoryLink
-            id={m.id}
-            href={it.href}
-            className="inline-flex h-10 items-center gap-2.5 rounded-full bg-white pl-1.5 pr-4 text-[14px] font-semibold text-ink transition-colors hover:bg-white/85"
-          >
-            <span aria-hidden className="grid h-7 w-7 place-items-center rounded-full bg-ink text-white">
-              <svg viewBox="0 0 24 24" className="ml-0.5 h-3 w-3" fill="currentColor">
-                <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" />
-              </svg>
-            </span>
-            Разбор за минуту
-          </StoryLink>
+          {facts.length ? (
+            <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-[14px] text-white/80">
+              {facts.map((f) => (
+                <li key={f.team} className="flex items-center gap-2">
+                  <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${noteTone(f.text)}`} />
+                  <span>
+                    <span className="font-semibold text-white">{f.team}</span> — {f.text}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <div className="mt-6 flex flex-col items-start gap-4">
+            <StoryLink
+              id={m.id}
+              href={it.href}
+              className="inline-flex h-11 items-center gap-2.5 rounded-full bg-white pl-1.5 pr-5 text-[15px] font-semibold text-ink transition-colors hover:bg-white/85"
+            >
+              <span aria-hidden className="grid h-8 w-8 place-items-center rounded-full bg-ink text-white">
+                <svg viewBox="0 0 24 24" className="ml-0.5 h-3.5 w-3.5" fill="currentColor">
+                  <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" />
+                </svg>
+              </span>
+              Разбор за минуту
+            </StoryLink>
+            {line ? <OddsLine line={line} m={m} isLive={live(m)} /> : null}
+          </div>
         </div>
       </div>
 
       {items.length > 1 ? (
-        <div role="tablist" aria-label="Главные матчи дня" className="scrollbar-none relative -mx-4 mt-8 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:justify-center sm:px-0">
-          {items.map((x, j) => {
-            const on = j === i
-            const xl = live(x.m)
-            return (
-              <button
-                key={x.m.id}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                title={`${x.m.home.name} — ${x.m.away.name}`}
-                onClick={() => setI(j)}
-                className={`flex h-11 shrink-0 items-center gap-2 rounded-full pl-1.5 pr-3.5 transition-colors ${on ? 'bg-white/[0.16] ring-1 ring-white/25' : 'bg-white/[0.05] hover:bg-white/[0.1]'}`}
-              >
-                <span className="flex -space-x-2">
-                  {[x.m.home, x.m.away].map((tm) => (
-                    <span key={tm.id} className="grid h-8 w-8 place-items-center rounded-full bg-panel-3 ring-2 ring-panel-2">
-                      <TeamLogo name={tm.name} src={tm.logo} size={20} />
+        <div className="mt-4">
+          <p className="text-[13px] font-medium text-mute">Ещё главные матчи</p>
+          <div className="scrollbar-none -mx-4 mt-2 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 2xl:grid-cols-4">
+            {items.map((x, j) => {
+              if (j === i) return null
+              const xm = x.m
+              const xl = live(xm)
+              return (
+                <button
+                  key={xm.id}
+                  type="button"
+                  title="Показать в «Матче дня»"
+                  onClick={() => setI(j)}
+                  className="card flex w-[78%] shrink-0 items-center gap-3 p-3 text-left transition-colors hover:bg-panel-3 sm:w-auto"
+                >
+                  <span className="flex shrink-0 -space-x-3">
+                    {[xm.home, xm.away].map((tm) => (
+                      <span key={tm.id} className="grid h-9 w-9 place-items-center rounded-full bg-panel-3 ring-2 ring-panel-2">
+                        <TeamLogo name={tm.name} src={tm.logo} size={22} />
+                      </span>
+                    ))}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14px] font-semibold">
+                      {xm.home.name} — {xm.away.name}
                     </span>
-                  ))}
-                </span>
-                <span className={`num text-[13.5px] font-semibold ${xl ? 'text-live' : on ? 'text-fg' : 'text-dim'}`}>
-                  {xl ? (x.m.score ? `${x.m.score.home}:${x.m.score.away}` : 'LIVE') : x.m.status === 'finished' && x.m.score ? `${x.m.score.home}:${x.m.score.away}` : formatTime(x.m.ts)}
-                </span>
-              </button>
-            )
-          })}
+                    <span className="block truncate text-[12.5px] text-dim">{xm.league.name}</span>
+                  </span>
+                  <span className={`num shrink-0 text-[15px] font-semibold ${xl ? 'text-live' : ''}`}>
+                    {(xl || xm.status === 'finished') && xm.score ? `${xm.score.home}:${xm.score.away}` : formatTime(xm.ts)}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
       ) : null}
     </section>

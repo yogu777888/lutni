@@ -659,6 +659,13 @@
   letter-spacing: 0.005em;
   text-transform: uppercase;
 }
+/* тихий h1 — строка с датой над «Матчем дня»: главный на экране — матч, а не заголовок */
+h1.h1-quiet {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
 .display-num {
   font-weight: 500;
   letter-spacing: 0;

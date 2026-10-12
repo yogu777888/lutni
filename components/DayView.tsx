@@ -253,19 +253,26 @@ export async function DayView({
       {liveAll.length ? <LiveRefresh /> : null}
       {view === 'home' ? (
         <>
-          {/* главная — как у Spotify: заголовок с датой (сверху — мягкий градиент центральной панели) и сразу полки */}
-          <section className="min-w-0 pt-1 sm:pt-0">
-            <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
-            <h1 className="mt-1.5 text-[30px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[34px]">
-              <span className="rise">
-                <span>
-                  {heading.title}
-                  {/* дата — и в заголовке для поисковиков */}
-                  <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
-                </span>
-              </span>
+          {/* главная — как у Spotify: заголовок с датой и сразу полки; с «Матчем дня» заголовок — тихая строка над баннером
+              (главный на экране — матч, а не слово «сегодня») */}
+          {hero.length ? (
+            <h1 className="h1-quiet fade-up pt-1 text-[15px] text-dim sm:pt-0">
+              {heading.title} · {heading.date.charAt(0).toLowerCase() + heading.date.slice(1)}
             </h1>
-          </section>
+          ) : (
+            <section className="min-w-0 pt-1 sm:pt-0">
+              <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
+              <h1 className="mt-1.5 text-[30px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[34px]">
+                <span className="rise">
+                  <span>
+                    {heading.title}
+                    {/* дата — и в заголовке для поисковиков */}
+                    <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
+                  </span>
+                </span>
+              </h1>
+            </section>
+          )}
 
       {/* «Матч дня» (DayHero) — главный матч крупно и вкладки с остальными; он заменяет полку «Топ дня». Дальше истории — полками: «В игре», (без «Матча дня» — «Топ дня»), потом «Скоро начнутся» и «Выгодно сегодня»,
           потом остальные истории (у «Выгодно» своя полка с кэфами — история-дубль не нужна) */}
