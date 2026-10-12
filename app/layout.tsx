@@ -7,16 +7,13 @@ import { CookieNotice } from '@/components/CookieNotice'
 import { Header } from '@/components/Header'
 import { Metrika } from '@/components/Metrika'
 import { LeftPanel } from '@/components/shell/LeftPanel'
+import { dayLeagues } from '@/lib/day-leagues'
 import { dayPicks } from '@/lib/day-picks'
 import { RightPanel } from '@/components/shell/RightPanel'
 import { ShellFrame } from '@/components/shell/ShellFrame'
 import { ResizeHandle } from '@/components/shell/ResizeHandle'
 import { SHELL_SCRIPT } from '@/components/shell/shell-state'
-import { featuredRank } from '@/config/leagues'
 import { todayYmd } from '@/lib/format'
-import { getMatchesByDate } from '@/lib/data'
-import { isMinor } from '@/lib/rank'
-import type { FavTeam } from '@/components/favorites'
 import { StoryViewer } from '@/components/story/StoryViewer'
 import { SITE } from '@/config/site'
 import { IS_MOCK } from '@/lib/sstats/client'
@@ -51,28 +48,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-/** «Популярные сегодня» для левой панели: команды из матчей топ-турниров дня, главные турниры первыми (кэш слоя данных). */
-async function suggestTeams(): Promise<FavTeam[]> {
-  try {
-    const ms = (await getMatchesByDate(todayYmd()))
-      .filter((m) => featuredRank(m.league) >= 0 && !isMinor(m))
-      .sort((a, b) => featuredRank(a.league) - featuredRank(b.league) || a.ts - b.ts)
-    const seen = new Set<number>()
-    const out: FavTeam[] = []
-    for (const m of ms)
-      for (const t of [m.home, m.away])
-        if (!seen.has(t.id) && out.length < 12) {
-          seen.add(t.id)
-          out.push({ id: t.id, name: t.name, logo: t.logo })
-        }
-    return out
-  } catch {
-    return []
-  }
-}
-
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [suggest, picks] = await Promise.all([suggestTeams(), dayPicks()])
+  const [day, picks] = await Promise.all([dayLeagues(), dayPicks()])
   return (
     // suppressHydrationWarning: ширину и свёрнутость боковых панелей скрипт ниже ставит до отрисовки
     <html lang="ru" suppressHydrationWarning>
@@ -85,10 +62,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* каркас, как у Spotify (от xl): слева «Мои команды» и турниры, в центре — серая панель страницы с градиентом
             сверху, справа — вход на сайт (виджет, как у Spotify «Зарегистрируйся») — по одной панели на всю высоту; уже — обычная страница во всю ширину */}
         <div className="xl:grid xl:grid-cols-[var(--shell-l)_minmax(0,1fr)_var(--shell-r)] xl:gap-2 xl:px-2 xl:pb-2 xl:pt-2">
-          <aside aria-label="Мои команды и турниры" className="hidden xl:block">
+          <aside aria-label="Турниры дня" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
               <ResizeHandle side="l" />
-              <LeftPanel today={todayYmd()} suggest={suggest} />
+              <LeftPanel today={todayYmd()} day={day} />
             </div>
           </aside>
           <div className="shell-center min-w-0">

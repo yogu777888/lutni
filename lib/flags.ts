@@ -10,3 +10,6 @@ export function flagCode(l: Pick<League, 'country' | 'countryCode'>): string | n
   const code = UK[country] ?? (country === 'europe' ? 'eu' : l.countryCode.trim().toLowerCase())
   return code && FLAG_CODES.has(code) ? code : null
 }
+
+/** «Испания. Ла Лига» → «Ла Лига»: часть до первой точки — страна (её говорит флаг). */
+export const leagueTitle = (name: string) => name.replace(/^[^.]+\.\s+/, '') || name

@@ -3,17 +3,15 @@ import type { FeedItem } from '@/lib/data'
 import { formatTime } from '@/lib/format'
 import { leagueHref } from '@/lib/links'
 import type { League } from '@/lib/types'
-import { flagCode } from '@/lib/flags'
+import { flagCode, leagueTitle } from '@/lib/flags'
 import { Flag } from './Flag'
 import { MatchRow } from './MatchRow'
 
-/** «Испания. Ла Лига» → «Ла Лига»: часть до первой точки — страна. */
-const leagueTitle = (name: string) => name.replace(/^[^.]+\.\s+/, '') || name
-
 export function LeagueBlock({ league, items }: { league: League; items: FeedItem[]; featured?: boolean }) {
   return (
-    <section className="card overflow-hidden">
-      <header className="flex items-baseline justify-between gap-3 border-b border-edge px-4 py-4 sm:px-5">
+    // id — для «Турниров дня» в левой панели (клик прокручивает сюда)
+    <section id={`league-${league.id}`} className="card scroll-mt-24 overflow-hidden">
+      <header className="flex items-center justify-between gap-3 border-b border-edge px-4 py-4 sm:px-5">
         <Link href={leagueHref(league)} prefetch={false} className="group flex min-w-0 items-center gap-2.5">
           <Flag league={league} />
           {/* страну говорит флаг — в названии без неё («Испания. Ла Лига» → «Ла Лига»; владелец: «название страны убрать, если есть флаг?») */}
