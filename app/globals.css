@@ -756,7 +756,7 @@ html[data-shell-rc] .shell-r-rail {
     padding: 0 0 7rem;
   }
   .shell-center:has(.bare-page) .bare-panel {
-    margin-top: 8px;
+    margin-top: 0;
     border-radius: var(--radius-card);
     background: var(--color-panel);
     padding: 20px 24px 24px;

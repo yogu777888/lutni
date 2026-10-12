@@ -1,24 +1,17 @@
 import Link from 'next/link'
 import { countryRank, FEATURED_LEAGUES, featuredRank } from '@/config/leagues'
-import { getLiveOdds, getMatchesByDate, getStandings, getTeamGames, tagsFor, waitOddsSnap, type FeedItem } from '@/lib/data'
-import { dayHref, listHref, matchHref } from '@/lib/links'
+import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
+import { dayHref, listHref } from '@/lib/links'
 import { applyListFilter, filterQuery, isEmptyFilter, type ListFilter } from '@/lib/list-filter'
-import { appNow, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdInTz, ymdToNoonTs } from '@/lib/format'
+import { diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { isLive, liveRank } from '@/lib/rank'
-import { mainMatches } from '@/lib/day-summary'
-import { handNotes, type HandNotes } from '@/lib/hand-notes'
-import { x12Line, type X12Line } from '@/lib/lines'
-import { buildForm } from '@/lib/stats'
-import { distinctPair, matchColors } from '@/lib/team-colors'
 import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
-import { DayHero, type HeroItem } from './DayHero'
 import { LiveRefresh } from './Live'
 import { FavMatches } from './FavMatches'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
-import { ValueBoard } from './ValueBoard'
 import { MatchFilter } from './MatchFilter'
 import { StoryCircles } from './story/StoryCircles'
 import { TAGS } from '@/lib/tags'
@@ -67,48 +60,6 @@ const hasOdds = (items: FeedItem[]) => items.some((i) => i.match.odds)
 const leagueOrder = (it: FeedItem) => {
   const r = featuredRank(it.match.league)
   return r < 0 ? 1e3 : r
-}
-
-/** Не ждать дольше `ms`: не успели — null (страница не стоит из-за медленного источника). */
-const within = <T,>(p: Promise<T>, ms: number): Promise<T | null> => Promise.race([p.catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), ms))])
-
-/** Метки-факты над эмблемами «Матча дня» (lib/hand-notes.ts): таблица и прошедшие матчи обеих команд, ≤1,5 с. */
-function notesFor(m: Match): Promise<HandNotes | null> {
-  return within(
-    (async () => {
-      const [st, games] = await Promise.all([
-        m.season?.year ? getStandings(m.league.id, m.season.year).catch(() => null) : null,
-        getTeamGames(m.home.id, m.away.id, ymdInTz(m.ts)).catch(() => [] as Match[]),
-      ])
-      // свой же матч и будущие в форму не берём: факты — до этого матча
-      const past = games.filter((g) => g.id !== m.id && g.ts < m.ts)
-      return handNotes({ homeId: m.home.id, awayId: m.away.id, standings: st, homeForm: buildForm(m.home.id, past), awayForm: buildForm(m.away.id, past) })
-    })(),
-    1500,
-  )
-}
-
-/** Live-кэфы PARI идущего матча (≤1,2 с); нет всех трёх исходов — без строки. */
-async function liveLineFor(m: Match): Promise<X12Line | null> {
-  if (!isLive(m)) return null
-  const odds = await within(getLiveOdds(m), 1200)
-  if (!odds?.home || !odds.draw || !odds.away) return null
-  return { bookmaker: 'PARI', slug: 'pari', at: appNow(), home: odds.home, draw: odds.draw, away: odds.away }
-}
-
-/** «Матч дня» и вкладки — главные матчи дня (`mainMatches`) с цветами клубов, фактами и кэфами. */
-function heroItems(items: FeedItem[]): Promise<HeroItem[]> {
-  return Promise.all(
-    mainMatches(items).map(async ({ match: m }) => {
-      const [snap, tint, notes, liveLine] = await Promise.all([
-        m.status === 'scheduled' ? waitOddsSnap(m) : null,
-        within(matchColors(m), 1500),
-        notesFor(m),
-        liveLineFor(m),
-      ])
-      return { m, href: matchHref(m), tint: tint ? distinctPair(tint) : null, notes, line: x12Line(snap), liveLine }
-    }),
-  )
 }
 
 export async function DayView({
@@ -168,24 +119,18 @@ export async function DayView({
   const shownOthers = others.reduce((s, g) => s + g.items.length, 0)
   const totalOthers = othersAll.reduce((s, g) => s + g.items.length, 0)
 
-  const open = items.filter((i) => i.match.status === 'scheduled' || i.match.status === 'live')
   // все истории дня — полками на главной, главные теги первыми
   const storyGroups = mainCircles(buildStoryGroups(items), 99)
-  const values = open
-    .filter((i) => i.summary?.pick?.kind === 'value' && i.match.status === 'scheduled')
-    .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
-    .slice(0, 5)
 
   const liveAll = listItems.filter((i) => isLive(i.match))
   // в «Сейчас в игре» — сначала топ-лиги, потом матчи с линией; женские и молодёжные — в конец
   const liveTop = [...liveAll].sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts).slice(0, LIVE_LIMIT)
 
   const heading = dayHeading(ymd, today)
-  // «Матч дня» — первый экран главной: главный матч крупно и вкладки с остальными (на странице «Матчи» его нет)
-  const hero = view === 'home' ? await heroItems(items) : []
   const past = diffDays(ymd, today) < 0
-  // заголовок «Все матчи дня» над списком — когда на главной над ним есть что-то ещё (выгодные ставки)
-  const listHead = view === 'home' && (hero.length > 0 || values.length > 0)
+  // заголовок «Все матчи дня» над списком не нужен: на главной в центре — только матчи (владелец: «по центру только лайв
+  // и матчи лиг, без матча дня и выгодно сегодня»; «Матч дня» — DayHero, «Выгодно сегодня» — ValueBoard остались в коде)
+  const listHead = false
   // красная точка у «Сегодня»: на главной знаем сами, на других днях — из того же кэша матчей
   let liveToday = ymd === today && items.some((i) => isLive(i.match))
   if (ymd !== today) {
@@ -217,40 +162,15 @@ export async function DayView({
       {view === 'home' ? <span hidden className="bare-page" /> : null}
       {view === 'home' ? (
         <>
-          {/* главная — как у Spotify: заголовок с датой и сразу полки; с «Матчем дня» заголовок — тихая строка над баннером
-              (главный на экране — матч, а не слово «сегодня») */}
-          {hero.length ? (
-            <h1 className="h1-quiet fade-up pt-1 text-[15px] text-dim sm:pt-0 xl:sr-only">
-              {heading.title} · {heading.date.charAt(0).toLowerCase() + heading.date.slice(1)}
-            </h1>
-          ) : (
-            <section className="min-w-0 pt-1 sm:pt-0">
-              <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
-              <h1 className="mt-1.5 text-[30px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[34px]">
-                <span className="rise">
-                  <span>
-                    {heading.title}
-                    {/* дата — и в заголовке для поисковиков */}
-                    <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
-                  </span>
-                </span>
-              </h1>
-            </section>
-          )}
+          {/* заголовок — тихая строка с датой (на xl — только для поисковиков): главное на экране — матчи */}
+          <h1 className="h1-quiet fade-up pt-1 text-[15px] text-dim sm:pt-0 xl:sr-only">
+            {heading.title} · {heading.date.charAt(0).toLowerCase() + heading.date.slice(1)}
+          </h1>
 
-      {/* «Матч дня» (DayHero) — главный матч крупно и вкладки с остальными; он заменяет полку «Топ дня». Дальше истории — полками: «В игре», (без «Матча дня» — «Топ дня»), потом «Скоро начнутся» и «Выгодно сегодня»,
-          потом остальные истории (у «Выгодно» своя полка с кэфами — история-дубль не нужна) */}
-      {hero.length ? <DayHero items={hero} ymd={ymd} /> : null}
-      {/* матчи дня — по категориям, у каждой один ряд карточек-сторис (владелец: «категории текстом, матчи в один ряд») */}
       {/* подборки дня — в правой панели каркаса (RightPanel); ниже xl панели нет — кружками историй */}
       {storyGroups.length ? (
-        <div className="mt-8 xl:hidden">
+        <div className="mt-4 xl:hidden">
           <StoryCircles groups={storyGroups} />
-        </div>
-      ) : null}
-      {values.length ? (
-        <div className="bare-shelf">
-          <ValueBoard items={values} />
         </div>
       ) : null}
 
@@ -289,7 +209,7 @@ export async function DayView({
       {showList ? (
       <section
         id="matches"
-        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : 'mt-5 sm:mt-6'} ${view === 'home' ? 'xl:mt-2' : ''}`}
+        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : 'mt-5 sm:mt-6'} ${view === 'home' ? 'xl:mt-0' : ''}`}
       >
         <div className={view === 'home' ? 'bare-panel' : undefined}>
         {listHead ? (
