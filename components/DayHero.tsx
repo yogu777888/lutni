@@ -25,18 +25,17 @@ export type HeroItem = {
 }
 
 /**
- * Круг клуба в «обложке» баннера: большой диск цветом клуба (рисуется кодом — чёткий при любом размере), в нём белая
+ * Круг клуба в «обложке» баннера: плоский диск цветом клуба (рисуется кодом — чёткий при любом размере), в нём белая
  * подложка и эмблема в её настоящем размере. У SStats эмблемы 150×150 — чёткие до ~75px (на ретине ×2); растянутые
  * до 170px они мылились, а обводка в вектор давала рваные края (владелец: «уродские лого»). Белая подложка заодно
  * прячет эмблемы с непрозрачным фоном.
  */
 function ClubDisc({ t, color, className = '' }: { t: Match['home']; color: string | null; className?: string }) {
-  const fill = color
-    ? `radial-gradient(70% 70% at 35% 25%, color-mix(in oklab, ${color} 80%, white), ${color} 55%, color-mix(in oklab, ${color} 70%, black))`
-    : 'radial-gradient(70% 70% at 35% 25%, #3a4552, #232b35 60%, #1a2028)'
+  // плоский круг без объёма и тени (владелец: «может круги плоскими без объёма сделать»)
+  const fill = color ?? '#232b35'
   return (
-    <span className={`absolute grid place-items-center rounded-full shadow-[0_24px_48px_rgb(0_0_0/0.35)] ${className}`} style={{ background: fill }}>
-      <span className="grid h-[88px] w-[88px] place-items-center overflow-hidden rounded-full bg-white shadow-[0_6px_18px_rgb(0_0_0/0.25)] sm:h-[100px] sm:w-[100px]">
+    <span className={`absolute grid place-items-center rounded-full ${className}`} style={{ background: fill }}>
+      <span className="grid h-[88px] w-[88px] place-items-center overflow-hidden rounded-full bg-white sm:h-[100px] sm:w-[100px]">
         <TeamLogo name={t.name} src={t.logo} size={64} />
       </span>
     </span>
