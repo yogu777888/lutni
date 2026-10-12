@@ -53,7 +53,7 @@ function Odds({ m, hotKey, hotOdd = null }: { m: Match; hotKey: string | null; h
           <span
             key={k}
             className={`num rounded-ctl py-1.5 text-center text-[15px] font-semibold ${tone}`}
-            title={hot ? 'Выгодно: кэф выше честной цены' : pre && q?.opening ? `Открытие ${q.opening.toFixed(2)}` : undefined}
+            title={`${k === 'draw' ? 'Ничья' : `Победа «${m[k].name}»`}${hot ? ' — выгодно: кэф выше честной цены' : q?.opening ? ` · открытие ${q.opening.toFixed(2)}` : ''}`}
           >
             {hot && hotOdd ? formatOdd(hotOdd) : q ? formatOdd(q.value) : '—'}
             {dropped && !hot ? <span className="ml-0.5 text-[9px] text-hot">▼</span> : null}
