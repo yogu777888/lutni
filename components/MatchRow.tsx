@@ -19,7 +19,8 @@ const isLive = (m: Match) => m.status === 'live' || m.status === 'suspended'
 /** Время — одной строкой одного размера: начало / минута красным / у сыгранных начало серым. */
 export function StatusCell({ m }: { m: Match }) {
   // Oswald, как счёт справа: цифры табло — время слева, счёт справа; кэфы — обычным шрифтом
-  const base = 'num display-num block whitespace-nowrap text-[18px] leading-none'
+  // у Oswald цифры сидят ниже середины строки — поднимаем на 2px, чтобы время стояло вровень с названиями
+  const base = 'num display-num relative -top-0.5 block whitespace-nowrap text-[18px] leading-none'
   if (isLive(m))
     return (
       <span className={`${base} flex items-center gap-1.5 text-live`} title="Идёт">
@@ -136,7 +137,7 @@ export function MatchRow({
   // не везде есть, счёт не везде есть»). Выгодный кэф — только лаймовой ячейкой, без подписи (объяснение — в подсказке).
   return (
     <div
-      className={`relative grid items-center gap-x-4 gap-y-2.5 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : ROW_COLS}`}
+      className={`relative grid items-center gap-x-4 gap-y-2.5 px-4 py-3 sm:py-2.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : ROW_COLS}`}
     >
       <div className="self-start pt-1 sm:self-center sm:pt-0">
         <StatusCell m={m} />
