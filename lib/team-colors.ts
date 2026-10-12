@@ -44,8 +44,10 @@ async function loadImage(src: string): Promise<Buffer | null> {
     return /;base64/i.test(m[1]) ? Buffer.from(m[2], 'base64') : Buffer.from(decodeURIComponent(m[2]), 'utf8')
   }
   if (!/^https?:\/\//.test(src)) return null
+  // не больше 6 загрузок разом: сетка главной просит цвета ~40 матчей (80 эмблем), все сразу упирались в таймаут
+  await slot()
   const ctl = new AbortController()
-  const timer = setTimeout(() => ctl.abort(), 2500)
+  const timer = setTimeout(() => ctl.abort(), 5000)
   try {
     const res = await fetch(src, { signal: ctl.signal })
     return res.ok ? Buffer.from(await res.arrayBuffer()) : null
@@ -53,7 +55,16 @@ async function loadImage(src: string): Promise<Buffer | null> {
     return null
   } finally {
     clearTimeout(timer)
+    release()
   }
+}
+
+let busy = 0
+const waiting: (() => void)[] = []
+const slot = () => (busy < 6 ? (busy++, Promise.resolve()) : new Promise<void>((r) => waiting.push(() => (busy++, r()))))
+const release = () => {
+  busy--
+  waiting.shift()?.()
 }
 
 /** Золото и жёлтый (30°–75°): у многих эмблем это окантовка, корона или мяч, а не цвет клуба. */
@@ -70,12 +81,14 @@ type Bin = { w: number; x: number; y: number; s: number; l: number }
  */
 export function logoPalette(src: string | null | undefined): Promise<Hsl[]> {
   if (!src) return Promise.resolve([])
-  const key = `logo-palette:v4:${createHash('sha1').update(src).digest('hex')}`
+  // v5: в v4 неудачная загрузка эмблемы запоминалась как «цвета нет» на месяц — карточки оставались серыми
+  const key = `logo-palette:v5:${createHash('sha1').update(src).digest('hex')}`
   return cache.get(
     key,
     async () => {
       const buf = await loadImage(src)
-      if (!buf) return []
+      // не скачалось (таймаут, сеть) — ошибка, а не пустая палитра: кэш её не запомнит, в следующий раз попробуем снова
+      if (!buf) throw new Error('logo not loaded')
       const { data } = await sharp(buf, { density: 72 }).resize(32, 32, { fit: 'inside' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
       // оттенки по 15°: вес — насыщенность, чтобы яркий клубный цвет перевешивал бледные тени
       const bins: Bin[] = Array.from({ length: 24 }, () => ({ w: 0, x: 0, y: 0, s: 0, l: 0 }))
@@ -180,7 +193,10 @@ function clubFirst(p: Hsl[]): Hsl[] {
  * соперников (разница меньше 25°) — гостей темнее, чтобы цвета не слились в одно пятно. У команды без цвета — графит.
  */
 export async function matchColors(m: Match): Promise<MatchColors | null> {
-  const [a, b] = (await Promise.all([logoPalette(m.home.logo).catch(() => []), logoPalette(m.away.logo).catch(() => [])])).map(clubFirst)
+  // эмблема не скачалась — цветов пока нет (null), а не графит: страница и /api/tint спросят ещё раз
+  const pal = await Promise.all([logoPalette(m.home.logo).catch(() => null), logoPalette(m.away.logo).catch(() => null)])
+  if (!pal[0] || !pal[1]) return null
+  const [a, b] = [clubFirst(pal[0]), clubFirst(pal[1])]
   if (!a.length && !b.length) return null
   const dh = a.length && b.length ? Math.abs(a[0].h - b[0].h) : 180
   const d = Math.min(dh, 360 - dh) < 25 ? 0.14 : 0

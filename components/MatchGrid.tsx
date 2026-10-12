@@ -64,7 +64,7 @@ function Card({
         style={
           tint
             ? {
-                backgroundImage: `radial-gradient(70% 55% at 0% 0%, color-mix(in oklab, ${tint.home} 30%, transparent), transparent 75%), radial-gradient(70% 55% at 100% 0%, color-mix(in oklab, ${tint.away} 30%, transparent), transparent 75%)`,
+                backgroundImage: `radial-gradient(80% 65% at 0% 0%, color-mix(in oklab, ${tint.home} 42%, transparent), transparent 75%), radial-gradient(80% 65% at 100% 0%, color-mix(in oklab, ${tint.away} 42%, transparent), transparent 75%)`,
               }
             : undefined
         }
@@ -163,10 +163,18 @@ export function MatchGrid({
   useEffect(() => {
     if (!missingKey) return
     let stop = false
-    fetch(`/api/tint?ids=${missingKey}&d=${ymd}`)
-      .then((r) => r.json())
-      .then((d: { tints?: Record<number, Tint> }) => !stop && d.tints && setTints((t) => ({ ...t, ...d.tints })))
-      .catch(() => {})
+    // эмблемы считаются на сервере не сразу (чужой сервер картинок, холодный кэш) — спрашиваем ещё, до 4 раз через 3 с
+    const ask = (left: number) =>
+      fetch(`/api/tint?ids=${missingKey}&d=${ymd}`)
+        .then((r) => r.json())
+        .then((d: { tints?: Record<number, Tint> }) => {
+          if (stop) return
+          const got = d.tints ?? {}
+          if (Object.keys(got).length) setTints((t) => ({ ...t, ...got }))
+          if (Object.keys(got).length < missingKey.split(',').length && left > 0) setTimeout(() => !stop && ask(left - 1), 3000)
+        })
+        .catch(() => left > 0 && setTimeout(() => !stop && ask(left - 1), 3000))
+    ask(4)
     return () => {
       stop = true
     }
