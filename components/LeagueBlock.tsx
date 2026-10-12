@@ -26,6 +26,21 @@ function ColumnHead() {
   )
 }
 
+/** Есть ли в блоке лаймовая ячейка (выгодный кэф 1X2 у не начавшегося матча) — тогда внизу строка-пояснение. */
+const anyValue = (items: FeedItem[]) =>
+  items.some((i) => i.match.status === 'scheduled' && i.summary?.pick?.kind === 'value' && ['home', 'draw', 'away'].includes(i.summary.pick.key))
+
+/** Пояснение к лаймовой ячейке — на телефоне подсказки при наведении нет (владелец согласился на «строку-пояснение»). */
+function ValueNote({ items }: { items: FeedItem[] }) {
+  if (!anyValue(items)) return null
+  return (
+    <p className="flex items-center gap-2 border-t border-edge px-4 py-2.5 text-[12.5px] text-mute sm:px-5">
+      <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-[3px] bg-acid" />
+      Лаймом — кэф выше честной цены по нашей оценке. Оценка, а не гарантия.
+    </p>
+  )
+}
+
 export function LeagueBlock({ league, items }: { league: League; items: FeedItem[]; featured?: boolean }) {
   const withOdds = anyOdds(items)
   return (
@@ -45,6 +60,7 @@ export function LeagueBlock({ league, items }: { league: League; items: FeedItem
           <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} />
         ))}
       </div>
+      <ValueNote items={items} />
     </section>
   )
 }
@@ -71,6 +87,7 @@ export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }
           <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} showLeague />
         ))}
       </div>
+      <ValueNote items={items} />
     </section>
   )
 }
@@ -102,6 +119,7 @@ export function TimeBlock({ items }: { items: FeedItem[] }) {
           </div>
         </div>
       ))}
+      <ValueNote items={items} />
     </section>
   )
 }
