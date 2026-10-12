@@ -344,7 +344,7 @@ export async function DayView({
             {!byTime && others.length ? (
               <details className="card group overflow-hidden" open={!featured.length}>
                 <summary className="flex cursor-pointer items-center justify-between px-5 py-4 transition-colors hover:bg-white/[0.02]">
-                  <span className="text-[17px] font-bold tracking-tight">{featured.length ? 'Другие турниры' : 'Все турниры'}</span>
+                  <span className="text-[20px] font-bold tracking-tight">{featured.length ? 'Другие турниры' : 'Все турниры'}</span>
                   <span className="flex items-center gap-2 text-[13px] text-mute">
                     {pluralN(totalOthers, ['матч', 'матча', 'матчей'])}
                     <span className="transition group-open:rotate-180">▾</span>

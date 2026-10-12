@@ -10,7 +10,7 @@ export function LeagueBlock({ league, items }: { league: League; items: FeedItem
     <section className="card overflow-hidden">
       <header className="flex items-baseline justify-between gap-3 border-b border-edge px-4 py-4 sm:px-5">
         <Link href={leagueHref(league)} prefetch={false} className="group flex min-w-0 items-baseline gap-2">
-          <span className="truncate text-[17px] font-bold tracking-tight">{league.name}</span>
+          <span className="truncate text-[20px] font-bold tracking-tight">{league.name}</span>
           <span className="text-mute transition-transform duration-300 group-hover:translate-x-1" aria-hidden>
             →
           </span>
@@ -30,7 +30,7 @@ export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }
   return (
     <section id="live" className="card scroll-mt-24 overflow-hidden">
       <header className="flex items-baseline justify-between gap-3 border-b border-edge px-4 py-4 sm:px-5">
-        <span className="flex items-center gap-2.5 text-[17px] font-bold tracking-tight">
+        <span className="flex items-center gap-2.5 text-[20px] font-bold tracking-tight">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-live/10 px-2 py-0.5 text-[11px] font-bold tracking-wide text-live">
             <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" aria-hidden />
             LIVE
