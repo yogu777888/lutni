@@ -5,18 +5,16 @@ import { leagueHref } from '@/lib/links'
 import type { League } from '@/lib/types'
 import { MatchRow, ROW_COLS } from './MatchRow'
 
-// колонка кэфов — только если есть кэфы у матча, который ещё не начался: у идущих и сыгранных их не показываем
-const anyOdds = (items: FeedItem[]) => items.some((i) => i.match.status === 'scheduled' && i.match.odds?.x12)
-const played = (i: FeedItem) => i.match.status !== 'scheduled' && Boolean(i.match.score)
+// колонка кэфов — если линия есть хоть у одного матча блока (у идущих и сыгранных — кэфы до матча, приглушённые)
+const anyOdds = (items: FeedItem[]) => items.some((i) => i.match.odds?.x12)
 
-/** Подписи колонок: счёт (только если в блоке есть начавшиеся) и кэфы на хозяев · ничью · гостей. */
-function ColumnHead({ items }: { items: FeedItem[] }) {
-  const mid = items.some(played) ? 'Счёт' : ''
+/** Подписи колонок — одни на все строки: время, матч, счёт и кэфы на хозяев · ничью · гостей. */
+function ColumnHead() {
   return (
     <div className={`hidden items-center gap-x-4 border-b border-edge px-5 py-2.5 text-[11px] uppercase tracking-[0.12em] text-mute sm:grid ${ROW_COLS}`}>
       <span>Время</span>
       <span>Матч</span>
-      <span className="text-center">{mid}</span>
+      <span className="text-center">Счёт</span>
       {/* кэфы: на победу хозяев, на ничью, на победу гостей — словами, без «П1/Х/П2» */}
       <span className="grid grid-cols-3 gap-1.5 text-center normal-case tracking-normal">
         <span>Хозяева</span>
@@ -40,7 +38,7 @@ export function LeagueBlock({ league, items }: { league: League; items: FeedItem
         </Link>
         <span className="shrink-0 text-[12px] text-mute">{pluralN(items.length, ['матч', 'матча', 'матчей'])}</span>
       </header>
-      {withOdds ? <ColumnHead items={items} /> : null}
+      {withOdds ? <ColumnHead /> : null}
       <div className="divide-y divide-edge">
         {items.map((it) => (
           <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} noOdds={!withOdds} />
@@ -66,7 +64,7 @@ export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }
           {total > items.length ? `${items.length} из ${total}` : pluralN(total, ['матч', 'матча', 'матчей'])}
         </span>
       </header>
-      {withOdds ? <ColumnHead items={items} /> : null}
+      {withOdds ? <ColumnHead /> : null}
       <div className="divide-y divide-edge">
         {items.map((it) => (
           <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} showLeague noOdds={!withOdds} />
@@ -89,7 +87,7 @@ export function TimeBlock({ items }: { items: FeedItem[] }) {
   }
   return (
     <section className="card overflow-hidden">
-      {withOdds ? <ColumnHead items={items} /> : null}
+      {withOdds ? <ColumnHead /> : null}
       {[...hours].map(([h, list]) => (
         <div key={h}>
           <h3 className="flex items-baseline justify-between gap-3 border-b border-edge bg-white/[0.02] px-4 py-2.5 sm:px-5">

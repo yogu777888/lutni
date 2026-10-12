@@ -8,55 +8,66 @@ import { StoryLink } from './story/StoryLink'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
 
-/** Колонки строки матча: время · матч · счёт · коэффициенты (на телефоне — время и матч, кэфы ниже). */
-export const ROW_COLS = 'grid-cols-[3.25rem_minmax(0,1fr)] sm:grid-cols-[3.75rem_minmax(0,1fr)_4.5rem_11.25rem]'
+/**
+ * Колонки строки матча — одни и те же у каждой строки, в любом состоянии (владелец: «время везде по-разному, кэфы не
+ * везде есть, счёт не везде есть»): время · матч · счёт · кэфы. На телефоне — время · команды в две строки · счёт, кэфы ниже.
+ */
+export const ROW_COLS = 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_4.5rem_11.25rem]'
+const ROW_COLS_NO_ODDS = 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_4.5rem]'
 
 const isLive = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
+/** Время — одной строкой одного размера: начало / минута красным / «итог». */
 export function StatusCell({ m }: { m: Match }) {
-  if (isLive(m)) {
+  const base = 'num block whitespace-nowrap text-[15px] font-semibold leading-none'
+  if (isLive(m))
     return (
-      <span className="flex flex-col leading-tight">
-        <span className="flex items-center gap-1 text-[10px] font-bold tracking-wide text-live">
-          <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" />
-          LIVE
-        </span>
-        <span className="num text-[17px] font-semibold text-live">{m.statusCode === 4 ? 'Пер.' : m.elapsed ? `${m.elapsed}′` : ''}</span>
+      <span className={`${base} flex items-center gap-1.5 text-live`} title="Идёт">
+        <span className="h-1.5 w-1.5 shrink-0 animate-pulse-live rounded-full bg-live" />
+        {m.statusCode === 4 ? 'пер.' : m.elapsed ? `${m.elapsed}′` : 'LIVE'}
       </span>
     )
-  }
-  if (m.status === 'finished') {
+  if (m.status === 'finished')
     return (
-      <span className="flex flex-col leading-tight">
-        <span className="num text-[16px] font-semibold text-mute">{formatTime(m.ts)}</span>
-        <span className="text-[10px] uppercase tracking-wide text-mute">итог</span>
+      <span className={`${base} text-mute`} title={`Начало ${formatTime(m.ts)}`}>
+        итог
       </span>
     )
-  }
-  if (m.status === 'postponed' || m.status === 'cancelled') {
-    return <span className="text-[11px] font-medium leading-tight text-loss">{m.statusLabel}</span>
-  }
-  return <span className="num text-[18px] font-semibold tracking-tight text-chalk">{formatTime(m.ts)}</span>
+  if (m.status === 'postponed' || m.status === 'cancelled') return <span className={`${base} text-[12px] text-loss`}>{m.statusLabel}</span>
+  return <span className={`${base} text-fg`}>{formatTime(m.ts)}</span>
 }
 
+/** Какой исход сыграл (по основному времени) — у сыгранного матча эта ячейка кэфа светлее. */
+const resultKey = (m: Match) =>
+  m.status === 'finished' && m.score ? (m.score.home > m.score.away ? 'home' : m.score.home < m.score.away ? 'away' : 'draw') : null
+
+/**
+ * Кэфы 1X2 — у каждой строки. До начала — обычные (выгодный — лаймом); у идущих и сыгранных — те же кэфы до матча,
+ * приглушённые, у сыгранного светлее ячейка исхода, который сыграл.
+ */
 function Odds({ m, hotKey, hotOdd = null }: { m: Match; hotKey: string | null; hotOdd?: number | null }) {
   const x = m.odds?.x12
-  const done = m.status === 'finished'
+  const pre = m.status === 'scheduled'
+  const won = resultKey(m)
   return (
-    <span className="grid grid-cols-3 gap-1.5">
+    <span className="grid grid-cols-3 gap-1.5" title={pre ? undefined : 'Коэффициенты до матча'}>
       {(['home', 'draw', 'away'] as const).map((k) => {
         const q = x?.[k]
-        const hot = hotKey === k && !done
-        const dropped = q?.opening && q.opening / q.value >= 1.07
+        const hot = pre && hotKey === k
+        const dropped = pre && q?.opening && q.opening / q.value >= 1.07
+        const tone = hot
+          ? 'bg-acid text-acid-ink'
+          : pre
+            ? 'bg-white/[0.05] text-fg/90'
+            : won === k
+              ? 'bg-white/[0.08] text-fg/80'
+              : 'bg-white/[0.03] text-mute/70'
         return (
           <span
             key={k}
-            className={`num rounded-ctl border py-1.5 text-center text-[15px] font-semibold ${
-              hot ? 'border-acid bg-acid text-acid-ink' : `border-transparent bg-white/[0.05] ${done ? 'text-mute' : 'text-fg/90'}`
-            }`}
-            title={q?.opening ? `Открытие ${q.opening.toFixed(2)}` : undefined}
+            className={`num rounded-ctl py-1.5 text-center text-[15px] font-semibold ${tone}`}
+            title={hot ? 'Выгодно: кэф выше честной цены' : pre && q?.opening ? `Открытие ${q.opening.toFixed(2)}` : undefined}
           >
-            {/* в лаймовой ячейке — тот выгодный кэф, о котором написано в строке */}
             {hot && hotOdd ? formatOdd(hotOdd) : q ? formatOdd(q.value) : '—'}
             {dropped && !hot ? <span className="ml-0.5 text-[9px] text-hot">▼</span> : null}
           </span>
@@ -66,10 +77,17 @@ function Odds({ m, hotKey, hotOdd = null }: { m: Match; hotKey: string | null; h
   )
 }
 
+/** Счёт — у каждой строки на одном месте: до начала — тихое «– : –». */
 function Score({ m, big = false }: { m: Match; big?: boolean }) {
-  if (!m.score) return null
+  const cls = `num whitespace-nowrap text-center font-bold ${big ? 'text-[20px]' : 'text-[16px]'}`
+  if (!m.score || m.status === 'scheduled')
+    return (
+      <span className={`${cls} text-mute/40`} aria-label="Ещё не начался">
+        –<span className="mx-1">:</span>–
+      </span>
+    )
   return (
-    <span className={`num text-center font-bold ${big ? 'text-[20px]' : 'text-[16px]'} ${isLive(m) ? 'text-live' : 'text-fg'}`}>
+    <span className={`${cls} ${isLive(m) ? 'text-live' : 'text-fg'}`}>
       <Tick v={m.score.home} />
       <span className="mx-1 text-mute">:</span>
       <Tick v={m.score.away} />
@@ -125,33 +143,15 @@ export function MatchRow({
     )
   }
 
-  // Одна строка — одно правило по состоянию матча (владелец: «в центральных блоках логическая каша»):
-  // до начала — кэфы и подпись только у выгодной ставки; идёт и сыгран — только счёт,
-  // без доматчевых кэфов и тегов (после стартового свистка они уже ничего не говорят). Теги — в «Подборках дня».
-  const v = m.status === 'scheduled' ? buildVerdict({ match: m, tags, pick: pick?.kind === 'value' ? pick : null }) : null
+  // Каждая строка устроена одинаково: время · матч · счёт · кэфы (владелец: «криво — время везде по-разному, кэфы
+  // не везде есть, счёт не везде есть»). Подпись «выгодно» — коротко в той же строке, высота строк одна.
+  const v = m.status === 'scheduled' && hotKey ? buildVerdict({ match: m, tags, pick: pick?.kind === 'value' ? pick : null }) : null
   const bet = v?.bet
-  // подпись — только у выгодной ставки (объясняет лаймовую ячейку); «кто сильнее» словами не пишем — это видно по кэфам
-  // (владелец: «а подпись под командами тоже убрать?»)
-  const note = bet ? (
-    <span className="text-good">
-      Выгодно: {bet.text}
-      {bet.odd && !hotKey ? <span className="num ml-1 font-semibold">{bet.odd.toFixed(2)}</span> : null}
-    </span>
-  ) : null
-  const meta = showLeague || note
-  const upcoming = m.status === 'scheduled'
   return (
     <div
-      className={`relative grid items-center gap-x-4 gap-y-2.5 px-4 py-3.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${
-        noOdds
-          ? 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_auto]'
-          : played
-            ? // на телефоне счёт — справа в той же строке, на компьютере — в колонке «Счёт»
-              'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_4.5rem_11.25rem]'
-            : ROW_COLS
-      }`}
+      className={`relative grid items-center gap-x-4 gap-y-2.5 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : ROW_COLS}`}
     >
-      <div className="self-start pt-0.5 sm:self-center sm:pt-0">
+      <div className="self-start pt-1 sm:self-center sm:pt-0">
         <StatusCell m={m} />
       </div>
 
@@ -159,37 +159,28 @@ export function MatchRow({
         <StoryLink
           id={m.id}
           href={matchHref(m)}
-          // у начавшихся на телефоне справа счёт — команды в две строки, иначе названия обрезаются («Барсел… — Лева…»)
-          className={`flex min-w-0 text-[15px] font-semibold after:absolute after:inset-0 after:content-[''] sm:flex-row sm:items-center sm:text-[16px] ${
-            played ? 'flex-col items-start gap-1' : 'items-center'
-          } sm:gap-0`}
+          // на телефоне команды в две строки — справа счёт, иначе названия обрезаются
+          className="flex min-w-0 flex-col items-start gap-1 text-[15px] font-semibold after:absolute after:inset-0 after:content-[''] sm:flex-row sm:items-center sm:gap-0 sm:text-[16px]"
         >
           {name(m.home, Boolean(awayWon))}
-          <span className={`mx-1.5 shrink-0 font-normal text-mute ${played ? 'hidden sm:inline' : ''}`}>—</span>
+          <span className="mx-1.5 hidden shrink-0 font-normal text-mute sm:inline">—</span>
           {name(m.away, Boolean(homeWon))}
+          {bet ? (
+            <span className="ml-3 hidden shrink-0 text-[12.5px] font-medium text-good sm:inline" title={`Выгодно: ${bet.text}`}>
+              выгодно
+            </span>
+          ) : null}
         </StoryLink>
-        {meta ? (
-          <div className="relative z-10 mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12.5px]">
-            {showLeague ? <span className="text-mute">{m.league.name}</span> : null}
-            {note}
-          </div>
-        ) : null}
+        {showLeague ? <div className="mt-1 truncate text-[12.5px] text-mute">{m.league.name}</div> : null}
       </div>
 
-      {noOdds ? (
-        played ? <Score m={m} big /> : <span />
-      ) : played ? (
-        <>
-          <div className="sm:text-center">
-            <Score m={m} big />
-          </div>
-          <span className="hidden sm:block" />
-        </>
-      ) : (
-        <>
-          <span className="hidden sm:block" />
-          <div className="col-start-2 sm:col-start-auto">{upcoming ? <Odds m={m} hotKey={hotKey} hotOdd={pick?.odd ?? null} /> : null}</div>
-        </>
+      <div className="sm:text-center">
+        <Score m={m} big />
+      </div>
+      {noOdds ? null : (
+        <div className="col-span-2 col-start-2 sm:col-span-1 sm:col-start-auto">
+          <Odds m={m} hotKey={hotKey} hotOdd={pick?.odd ?? null} />
+        </div>
       )}
     </div>
   )
