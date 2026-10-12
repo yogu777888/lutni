@@ -72,12 +72,13 @@ function Odds({ m, hotKey, hotOdd = null }: { m: Match; hotKey: string | null; h
 
 /** Счёт — у начавшихся на одном месте во всех строках; до начала место пустое (владелец: «а – : – у не начавшихся убрать?»). */
 function Score({ m, big = false }: { m: Match; big?: boolean }) {
-  const cls = `num whitespace-nowrap text-center font-bold ${big ? 'text-[20px]' : 'text-[16px]'}`
+  // в строке списка — Oswald, как крупный счёт в «Матче дня» (узкий — поэтому 24px, по высоте как прежние 20px Onest)
+  const cls = `num whitespace-nowrap text-center ${big ? 'display-num text-[24px] leading-none' : 'text-[16px] font-bold'}`
   if (!m.score || m.status === 'scheduled') return null
   return (
     <span className={`${cls} ${isLive(m) ? 'text-live' : 'text-fg'}`}>
       <Tick v={m.score.home} />
-      <span className="mx-1 text-mute">:</span>
+      <span className={`text-mute ${big ? 'mx-1.5' : 'mx-1'}`}>:</span>
       <Tick v={m.score.away} />
     </span>
   )
