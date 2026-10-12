@@ -26,9 +26,9 @@ export type HeroItem = {
 
 /**
  * Эмблема для баннера: у SStats картинки 150×150 — растянутые браузером до 190px (на ретине ×2), они мыльные;
- * берём увеличенную на сервере (`/api/crest`). Другие источники (демо — svg) — как есть.
+ * берём обведённую в вектор на сервере (`/api/crest`, сложные — увеличенной картинкой). Другие источники (демо — svg) — как есть.
  */
-const big = (src: string | null) => (src && /^https:\/\/(?:[a-z0-9-]+\.)?sstats\.net\/assets\/logos\/\d+\.png$/.test(src) ? `/api/crest?u=${encodeURIComponent(src)}&w=384` : src)
+const big = (src: string | null) => (src && /^https:\/\/(?:[a-z0-9-]+\.)?sstats\.net\/assets\/logos\/\d+\.png$/.test(src) ? `/api/crest?u=${encodeURIComponent(src)}` : src)
 
 const live = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
