@@ -108,9 +108,9 @@ export function MatchRow({
   const hotKey = pick?.kind === 'value' && ['home', 'draw', 'away'].includes(pick.key) ? pick.key : null
   // эмблема перед названием — матч узнаётся глазами раньше, чем прочитан
   const name = (t: Match['home'], lost: boolean) => (
-    <span className={`flex min-w-0 items-center gap-1.5 ${lost ? 'text-fg/55' : ''}`}>
+    <span className={`flex min-w-0 items-center gap-2 ${lost ? 'text-fg/55' : ''}`}>
       <span className={`shrink-0 ${lost ? 'opacity-60' : ''}`}>
-        <TeamLogo name={t.name} src={t.logo} size={18} />
+        <TeamLogo name={t.name} src={t.logo} size={22} />
       </span>
       <span className="truncate">{t.name}</span>
     </span>
