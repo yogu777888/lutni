@@ -7,6 +7,7 @@ import { CookieNotice } from '@/components/CookieNotice'
 import { Header } from '@/components/Header'
 import { Metrika } from '@/components/Metrika'
 import { LeftPanel } from '@/components/shell/LeftPanel'
+import { dayPicks } from '@/lib/day-picks'
 import { RightPanel } from '@/components/shell/RightPanel'
 import { ShellFrame } from '@/components/shell/ShellFrame'
 import { ResizeHandle } from '@/components/shell/ResizeHandle'
@@ -71,7 +72,7 @@ async function suggestTeams(): Promise<FavTeam[]> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const suggest = await suggestTeams()
+  const [suggest, picks] = await Promise.all([suggestTeams(), dayPicks()])
   return (
     // suppressHydrationWarning: ширину и свёрнутость боковых панелей скрипт ниже ставит до отрисовки
     <html lang="ru" suppressHydrationWarning>
@@ -94,10 +95,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6">{children}</main>
             <Footer />
           </div>
-          <aside aria-label="Вход на сайт" className="hidden xl:block">
+          <aside aria-label="Подборки дня" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
               <ResizeHandle side="r" />
-              <RightPanel teams={suggest} />
+              <RightPanel picks={picks} />
             </div>
           </aside>
         </div>

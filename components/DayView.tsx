@@ -5,13 +5,12 @@ import { dayHref, listHref, matchHref } from '@/lib/links'
 import { applyListFilter, filterQuery, isEmptyFilter, type ListFilter } from '@/lib/list-filter'
 import { appNow, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdInTz, ymdToNoonTs } from '@/lib/format'
 import { isLive, liveRank } from '@/lib/rank'
-import { mainMatches, soonMatches } from '@/lib/day-summary'
-import { namedFact } from '@/lib/facts'
+import { mainMatches } from '@/lib/day-summary'
 import { handNotes, type HandNotes } from '@/lib/hand-notes'
 import { x12Line, type X12Line } from '@/lib/lines'
 import { buildForm } from '@/lib/stats'
 import { distinctPair, matchColors } from '@/lib/team-colors'
-import { buildStoryGroups, mainCircles, type StoryGroup } from '@/lib/story-groups'
+import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { DayHero, type HeroItem } from './DayHero'
@@ -21,7 +20,7 @@ import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
 import { Sidebar } from './Sidebar'
 import { ValueBoard } from './ValueBoard'
 import { MatchFilter } from './MatchFilter'
-import { MatchGrid } from './MatchGrid'
+import { StoryCircles } from './story/StoryCircles'
 import { TAGS } from '@/lib/tags'
 
 const OTHER_LIMIT = 160
@@ -186,7 +185,7 @@ export async function DayView({
   const hero = view === 'home' ? await heroItems(items) : []
   const past = diffDays(ymd, today) < 0
   // заголовок «Все матчи дня» над списком — когда на главной над ним есть что-то ещё (выгодные ставки)
-  const listHead = view === 'home' && values.length > 0
+  const listHead = view === 'home' && (hero.length > 0 || values.length > 0)
   // красная точка у «Сегодня»: на главной знаем сами, на других днях — из того же кэша матчей
   let liveToday = ymd === today && items.some((i) => isLive(i.match))
   if (ymd !== today) {
@@ -207,51 +206,8 @@ export async function DayView({
   // полный список дня — страница «Матчи»
   const list = listHref(ymd, today)
 
-  const byId = new Map(items.map((it) => [it.match.id, it.match]))
-  // сетка матчей с фильтрами (MatchGrid): все истории дня и «Скоро» — ближайшие матчи по времени
-  const gridSoon = view === 'home' && !past ? soonMatches(items, new Set(), 24) : []
-  const soonGroup: StoryGroup | null = gridSoon.length
-    ? {
-        key: 'soon',
-        label: 'Скоро',
-        kind: 'top',
-        hint: `Скоро начнутся: ${gridSoon.length}`,
-        href: `${list}?sort=time`,
-        stat: '',
-        items: gridSoon.map((it) => ({ id: it.match.id, href: matchHref(it.match), focus: null })),
-      }
-    : null
-  const isLead = (g: StoryGroup) => g.key === 'live' || g.key === 'top'
-  // «Выгодно» — своей полкой с кнопками к букмекеру ниже (ValueBoard), категорией не дублируем
-  const gridGroups = [...storyGroups.filter(isLead), ...(soonGroup ? [soonGroup] : []), ...storyGroups.filter((g) => !isLead(g) && g.key !== 'value')]
-  const gridMatches = Object.fromEntries(gridGroups.flatMap((g) => g.items.map((x) => [x.id, byId.get(x.id)])).filter((e) => e[1])) as Record<number, Match>
-  // факт для фильтра «Все»: самый яркий факт с выборкой (lib/facts.ts), иначе повод самого сильного тега
-  const gridFacts: Record<number, string> = {}
-  for (const it of items) {
-    const f = it.summary?.facts?.[0]?.text ?? [...it.tags].sort((a, b) => b.score - a.score)[0]?.reason
-    // «Хозяева/Гости» — названием команды (владелец: «а может не писать хозяева, гости?»)
-    if (f && gridMatches[it.match.id]) gridFacts[it.match.id] = namedFact(f, it.match.home.name, it.match.away.name)
-  }
-  // «Показать все» у категории: у тегов — страница тега, у «В игре» — список дня, у «Скоро» — список по времени
-  const gridMore = Object.fromEntries(
-    gridGroups.map((g) => [g.key, g.key === 'live' ? list : g.key === 'soon' ? `${list}?sort=time` : g.key === 'top' ? undefined : `/tag/${g.key}`]),
-  )
-  // цвета клубов для карточек сетки: что успели за 1,2 с (цвета эмблем кэшируются на месяц), остальное догрузит клиент
-  const gridTints: Record<number, { home: string; away: string }> = {}
-  if (view === 'home')
-    await within(
-      Promise.all(
-        Object.values(gridMatches)
-          .slice(0, 40)
-          .map(async (m) => {
-            const c = await matchColors(m).catch(() => null)
-            if (c) gridTints[m.id] = distinctPair(c)
-          }),
-      ),
-      1200,
-    )
-  // список — на странице «Матчи»; на главной — только если полок нет (в этот день нет «взрослых» матчей)
-  const showList = view === 'list' || (!hero.length && !gridGroups.length && !values.length)
+  // главная — тоже все матчи дня по лигам (владелец: «в центре просто матчи по лигам, а подборки — в боковой виджет»)
+  const showList = true
   return (
     <>
       {/* пока на этой странице идут матчи — счёт и минуты обновляются сами, без перезагрузки */}
@@ -283,7 +239,12 @@ export async function DayView({
           потом остальные истории (у «Выгодно» своя полка с кэфами — история-дубль не нужна) */}
       {hero.length ? <DayHero items={hero} ymd={ymd} /> : null}
       {/* матчи дня — по категориям, у каждой один ряд карточек-сторис (владелец: «категории текстом, матчи в один ряд») */}
-      <MatchGrid groups={gridGroups} matches={gridMatches} facts={gridFacts} tints={gridTints} more={gridMore} ymd={ymd} />
+      {/* подборки дня — в правой панели каркаса (RightPanel); ниже xl панели нет — кружками историй */}
+      {storyGroups.length ? (
+        <div className="mt-8 xl:hidden">
+          <StoryCircles groups={storyGroups} />
+        </div>
+      ) : null}
       <ValueBoard items={values} />
 
         </>
