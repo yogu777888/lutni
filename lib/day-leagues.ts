@@ -6,8 +6,8 @@
 import { countryRank, featuredRank } from '@/config/leagues'
 import { getMatchesByDate } from './data'
 import { flagCode, leagueTitle } from './flags'
-import { todayYmd } from './format'
-import { leagueHref } from './links'
+import { addDays, todayYmd } from './format'
+import { leagueHref, listHref } from './links'
 import { isLive } from './rank'
 import type { League, Match } from './types'
 
@@ -25,45 +25,61 @@ export type DayLeague = {
   top: boolean
 }
 
-export type DayLeagues = { live: number; leagues: DayLeague[] }
+export type DayLeagues = {
+  live: number
+  leagues: DayLeague[]
+  /** турниры завтра (только число матчей) — ниже сегодняшних, чтобы в спокойный день панель не стояла пустой */
+  tomorrow: DayLeague[]
+}
+
+/** Завтра в панели — топ-лиги и первые из остальных, всего не больше стольких. */
+const TOMORROW_LIMIT = 12
 
 /** Сколько турниров в панели: топ-лиги все, остальные — первые по порядку. */
 const LIMIT = 60
 
-export async function dayLeagues(): Promise<DayLeagues> {
-  try {
-    const matches = await getMatchesByDate(todayYmd())
-    const groups = new Map<number, { league: League; items: Match[] }>()
-    for (const m of matches) {
-      const g = groups.get(m.league.id)
-      if (g) g.items.push(m)
-      else groups.set(m.league.id, { league: m.league, items: [m] })
-    }
-    const all = [...groups.values()]
-    const top = all.filter((g) => featuredRank(g.league) >= 0).sort((a, b) => featuredRank(a.league) - featuredRank(b.league))
-    const rest = all
-      .filter((g) => featuredRank(g.league) < 0)
-      .sort(
-        (a, b) =>
-          countryRank(a.league.country) - countryRank(b.league.country) ||
-          Number(b.items.some((m) => m.odds)) - Number(a.items.some((m) => m.odds)) ||
-          a.league.name.localeCompare(b.league.name, 'ru'),
-      )
-    const leagues = [...top, ...rest].slice(0, Math.max(LIMIT, top.length)).map(({ league: l, items }) => {
-      const flag = flagCode(l)
-      return {
-        id: l.id,
-        name: flag ? leagueTitle(l.name) : l.name,
-        full: l.name,
-        flag,
-        href: leagueHref(l),
-        total: items.length,
-        live: items.filter(isLive).length,
-        top: featuredRank(l) >= 0,
-      }
-    })
-    return { live: matches.filter(isLive).length, leagues }
-  } catch {
-    return { live: 0, leagues: [] }
+/** Турниры дня по порядку списка в центре. `href` — куда вести, если блока лиги на странице нет. */
+async function leaguesOf(ymd: string, href: (l: League) => string, limit: number): Promise<{ matches: Match[]; leagues: DayLeague[] }> {
+  const matches = await getMatchesByDate(ymd)
+  const groups = new Map<number, { league: League; items: Match[] }>()
+  for (const m of matches) {
+    const g = groups.get(m.league.id)
+    if (g) g.items.push(m)
+    else groups.set(m.league.id, { league: m.league, items: [m] })
   }
+  const all = [...groups.values()]
+  const top = all.filter((g) => featuredRank(g.league) >= 0).sort((a, b) => featuredRank(a.league) - featuredRank(b.league))
+  const rest = all
+    .filter((g) => featuredRank(g.league) < 0)
+    .sort(
+      (a, b) =>
+        countryRank(a.league.country) - countryRank(b.league.country) ||
+        Number(b.items.some((m) => m.odds)) - Number(a.items.some((m) => m.odds)) ||
+        a.league.name.localeCompare(b.league.name, 'ru'),
+    )
+  const leagues = [...top, ...rest].slice(0, Math.max(limit, top.length)).map(({ league: l, items }) => {
+    const flag = flagCode(l)
+    return {
+      id: l.id,
+      name: flag ? leagueTitle(l.name) : l.name,
+      full: l.name,
+      flag,
+      href: href(l),
+      total: items.length,
+      live: items.filter(isLive).length,
+      top: featuredRank(l) >= 0,
+    }
+  })
+  return { matches, leagues }
+}
+
+export async function dayLeagues(): Promise<DayLeagues> {
+  const today = todayYmd()
+  const tomorrow = addDays(today, 1)
+  const [now, next] = await Promise.all([
+    leaguesOf(today, leagueHref, LIMIT).catch(() => null),
+    // завтрашний список — страница «Матчи» на завтра, сразу к блоку лиги
+    leaguesOf(tomorrow, (l) => `${listHref(tomorrow, today)}#league-${l.id}`, TOMORROW_LIMIT).catch(() => null),
+  ])
+  return { live: now ? now.matches.filter(isLive).length : 0, leagues: now?.leagues ?? [], tomorrow: (next?.leagues ?? []).slice(0, TOMORROW_LIMIT) }
 }

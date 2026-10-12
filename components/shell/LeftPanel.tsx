@@ -7,6 +7,7 @@ import type { CompactMatch } from '@/lib/compact'
 import type { DayLeague, DayLeagues } from '@/lib/day-leagues'
 import { useFavorites } from '../favorites'
 import { TeamLogo } from '../TeamLogo'
+import { StorySymbol } from '../story/StorySymbol'
 import { PanelToggle } from './PanelToggle'
 
 /** Блок на странице: раскрыть свёрнутые «Другие турниры» вокруг него и плавно прокрутить к нему. */
@@ -18,14 +19,16 @@ function reveal(id: string): boolean {
   return true
 }
 
-/** Флаг турнира; нет флага (еврокубки) — тихий кружок с первой буквой. */
+/** Флаг турнира кругом в плашке 36px — как значки подборок в правой панели; нет флага (еврокубки) — первая буква. */
 function LeagueFlag({ l }: { l: Pick<DayLeague, 'flag' | 'name'> }) {
-  return l.flag ? (
-    // eslint-disable-next-line @next/next/no-img-element -- маленький SVG
-    <img src={`/flags/${l.flag}.svg`} alt="" width={22} height={16} loading="lazy" className="h-4 w-[22px] shrink-0 rounded-[3px] object-cover ring-1 ring-white/10" />
-  ) : (
-    <span aria-hidden className="grid h-4 w-[22px] shrink-0 place-items-center rounded-[3px] bg-white/[0.08] text-[10px] font-semibold text-dim">
-      {l.name.charAt(0)}
+  return (
+    <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
+      {l.flag ? (
+        // eslint-disable-next-line @next/next/no-img-element -- маленький SVG
+        <img src={`/flags/${l.flag}.svg`} alt="" width={20} height={20} loading="lazy" className="h-5 w-5 rounded-full object-cover ring-1 ring-white/15" />
+      ) : (
+        <span className="text-[12px] font-semibold text-dim">{l.name.charAt(0)}</span>
+      )}
     </span>
   )
 }
@@ -69,6 +72,8 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     if (!blocks.length) return setActive(null)
     const io = new IntersectionObserver(
       (entries) => {
+        // пока страницу не листали — ничего не подсвечено (иначе «Сейчас в игре» выглядит выбранным пунктом)
+        if (window.scrollY < 40) return setActive(null)
         const top = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
         if (top) setActive(top.target.id)
       },
@@ -94,24 +99,19 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
 
   const top = day.leagues.filter((l) => l.top)
   const rest = day.leagues.filter((l) => !l.top)
-  const row = 'flex items-center gap-3 rounded-tile px-2 py-2 text-[14px] transition-colors'
+  // строки — как в правой панели: значок в круге 36px, название 14,5px, справа число
+  const row = 'flex items-center gap-3 rounded-tile py-1.5 pl-2 pr-2.5 text-[14.5px] font-medium transition-colors'
+  // идут матчи — число красным (сколько идёт), иначе тихое число матчей
   const Count = ({ live, total }: { live: number; total: number }) =>
-    live ? (
-      <span className="num flex shrink-0 items-center gap-1.5 text-[12.5px] font-semibold text-live">
-        <span className="h-1.5 w-1.5 rounded-full bg-live" />
-        {live}
-      </span>
-    ) : (
-      <span className="num shrink-0 text-[12.5px] text-mute">{total}</span>
-    )
-  const League = ({ l }: { l: DayLeague }) => {
+    live ? <span className="num shrink-0 text-[13px] font-semibold text-live">{live}</span> : <span className="num shrink-0 text-[13px] text-mute">{total}</span>
+  const League = ({ l, jump = true }: { l: DayLeague; jump?: boolean }) => {
     const id = `league-${l.id}`
-    const on = active === id
+    const on = jump && active === id
     return (
       <li>
         <a
           href={l.href}
-          onClick={go(id, l.href)}
+          onClick={jump ? go(id, l.href) : undefined}
           title={l.full}
           aria-current={on ? 'location' : undefined}
           className={`-mx-2 ${row} ${on ? 'bg-white/[0.07] text-fg' : 'text-fg/85 hover:bg-white/[0.04] hover:text-fg'}`}
@@ -135,7 +135,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             href={l.href}
             onClick={go(`league-${l.id}`, l.href)}
             title={l.full}
-            className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
+            className="relative shrink-0 rounded-full transition-opacity hover:opacity-80"
           >
             <LeagueFlag l={l} />
             {l.live ? <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-live ring-2 ring-panel" /> : null}
@@ -158,10 +158,10 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                 aria-current={active === 'live' ? 'location' : undefined}
                 className={`-mx-2 ${row} ${active === 'live' ? 'bg-white/[0.07]' : 'hover:bg-white/[0.04]'}`}
               >
-                <span aria-hidden className="grid h-4 w-[22px] shrink-0 place-items-center">
-                  <span className="h-2 w-2 animate-pulse-live rounded-full bg-live" />
+                <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
+                  <StorySymbol k="live" tone="currentColor" className="h-[18px] w-[18px]" />
                 </span>
-                <span className="min-w-0 flex-1 truncate font-medium">Сейчас в игре</span>
+                <span className="min-w-0 flex-1 truncate">Сейчас в игре</span>
                 <Count live={day.live} total={day.live} />
               </a>
             </li>
@@ -211,6 +211,18 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             <ul className="mt-1.5 space-y-0.5">
               {rest.map((l) => (
                 <League key={l.id} l={l} />
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {/* завтра — турниры следующего дня: клик — список «Матчи» на завтра, сразу к блоку лиги */}
+        {day.tomorrow.length ? (
+          <section className="mt-5">
+            <h3 className="text-[12px] font-medium text-mute">Завтра</h3>
+            <ul className="mt-1.5 space-y-0.5">
+              {day.tomorrow.map((l) => (
+                <League key={l.id} l={l} jump={false} />
               ))}
             </ul>
           </section>
