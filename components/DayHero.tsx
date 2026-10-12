@@ -25,10 +25,23 @@ export type HeroItem = {
 }
 
 /**
- * Эмблема для баннера: у SStats картинки 150×150 — растянутые браузером до 190px (на ретине ×2), они мыльные;
- * берём обведённую в вектор на сервере (`/api/crest`, сложные — увеличенной картинкой). Другие источники (демо — svg) — как есть.
+ * Круг клуба в «обложке» баннера: большой диск цветом клуба (рисуется кодом — чёткий при любом размере), в нём белая
+ * подложка и эмблема в её настоящем размере. У SStats эмблемы 150×150 — чёткие до ~75px (на ретине ×2); растянутые
+ * до 170px они мылились, а обводка в вектор давала рваные края (владелец: «уродские лого»). Белая подложка заодно
+ * прячет эмблемы с непрозрачным фоном.
  */
-const big = (src: string | null) => (src && /^https:\/\/(?:[a-z0-9-]+\.)?sstats\.net\/assets\/logos\/\d+\.png$/.test(src) ? `/api/crest?u=${encodeURIComponent(src)}` : src)
+function ClubDisc({ t, color, className = '' }: { t: Match['home']; color: string | null; className?: string }) {
+  const fill = color
+    ? `radial-gradient(70% 70% at 35% 25%, color-mix(in oklab, ${color} 80%, white), ${color} 55%, color-mix(in oklab, ${color} 70%, black))`
+    : 'radial-gradient(70% 70% at 35% 25%, #3a4552, #232b35 60%, #1a2028)'
+  return (
+    <span className={`absolute grid place-items-center rounded-full shadow-[0_24px_48px_rgb(0_0_0/0.35)] ${className}`} style={{ background: fill }}>
+      <span className="grid h-[88px] w-[88px] place-items-center overflow-hidden rounded-full bg-white shadow-[0_6px_18px_rgb(0_0_0/0.25)] sm:h-[100px] sm:w-[100px]">
+        <TeamLogo name={t.name} src={t.logo} size={64} />
+      </span>
+    </span>
+  )
+}
 
 const live = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
@@ -74,8 +87,8 @@ const stateText = (m: Match) => (live(m) ? (m.statusCode === 4 ? 'перерыв
  * «Матч дня» — баннер, как шапка плейлиста у Spotify или Apple TV (владелец: «как бы ты сделал красиво матч дня?»):
  * карточка во всю ширину, залитая тёмным градиентом цветов клубов (слева хозяева, справа гости; цвет — внутри
  * карточки, а не на всю страницу). Слева текст: «Матч дня · турнир · тур», крупно название матча (Oswald), счёт и
- * минута / время начала, факты о командах, белая «Разбор за минуту» и кэфы одной строкой. Справа — две большие
- * эмблемы внахлёст, срезанные краем карточки, как обложка альбома. Всё выровнено по левому краю, как полки ниже.
+ * минута / время начала, факты о командах, белая «Разбор за минуту» и кэфы одной строкой. Справа — «обложка»: два
+ * круга цветами клубов внахлёст, в них эмблемы в настоящем размере (`ClubDisc`). Всё выровнено по левому краю, как полки ниже.
  * Под баннером — «Ещё главные матчи» плитками: клик подменяет матч в баннере.
  */
 export function DayHero({ items, ymd }: { items: HeroItem[]; ymd: string }) {
@@ -89,10 +102,9 @@ export function DayHero({ items, ymd }: { items: HeroItem[]; ymd: string }) {
   const facts = (['home', 'away'] as const).filter((k) => it.notes?.[k]).map((k) => ({ team: m[k].name, text: it.notes![k]! }))
   const mix = (c: string, p: number) => `color-mix(in oklab, ${c} ${p}%, #0b0f14)`
   // как у Spotify — один насыщенный цвет на весь баннер (хозяева), без смешивания двух клубов в бурое; цвет гостей —
-  // мягким светом за эмблемами справа (свой у двух красных клубов не берём — `distinctPair` даст другой или тот же)
+  // у его круга справа (у двух красных клубов — второй цвет гостей, `distinctPair`)
   const fill = t
     ? [
-        `radial-gradient(42% 70% at 82% 50%, ${mix(t.away, 55)}, transparent 70%)`,
         `linear-gradient(90deg, rgb(11 15 20 / 0.35), transparent 55%)`,
         `linear-gradient(160deg, ${mix(t.home, 82)} 0%, ${mix(t.home, 58)} 45%, ${mix(t.home, 30)} 100%)`,
       ].join(', ')
@@ -104,14 +116,10 @@ export function DayHero({ items, ymd }: { items: HeroItem[]; ymd: string }) {
         className="fade-up relative isolate overflow-hidden rounded-card bg-panel-3 transition-[background] duration-700"
         style={fill ? { background: fill } : undefined}
       >
-        {/* эмблемы — «обложка» справа: крупно, внахлёст, срезаны краем карточки */}
-        <div aria-hidden className="pointer-events-none relative flex h-[150px] items-center justify-center gap-0 sm:absolute sm:inset-y-0 sm:right-0 sm:h-auto sm:w-[46%] sm:justify-end">
-          <span className="relative z-[1] drop-shadow-[0_18px_30px_rgb(0_0_0/0.45)] sm:-mr-6 sm:-mt-16">
-            <TeamLogo name={m.home.name} src={big(m.home.logo)} size="clamp(96px, 11vw, 168px)" />
-          </span>
-          <span className="drop-shadow-[0_18px_30px_rgb(0_0_0/0.45)] sm:-mb-24 sm:-mr-10">
-            <TeamLogo name={m.away.name} src={big(m.away.logo)} size="clamp(84px, 9.5vw, 148px)" />
-          </span>
+        {/* «обложка» справа: два круга цветами клубов внахлёст, в каждом — эмблема в настоящем размере на белом */}
+        <div aria-hidden className="pointer-events-none relative h-[190px] sm:absolute sm:inset-y-0 sm:right-0 sm:h-auto sm:w-[44%]">
+          <ClubDisc t={m.home} color={t?.home ?? null} className="left-[calc(50%-150px)] top-6 z-[1] h-[150px] w-[150px] sm:left-auto sm:right-[34%] sm:top-[12%] sm:h-[clamp(170px,16vw,230px)] sm:w-[clamp(170px,16vw,230px)]" />
+          <ClubDisc t={m.away} color={t?.away ?? null} className="left-[calc(50%-10px)] top-14 h-[140px] w-[140px] sm:left-auto sm:-right-[6%] sm:top-auto sm:bottom-[8%] sm:h-[clamp(160px,15vw,215px)] sm:w-[clamp(160px,15vw,215px)]" />
         </div>
 
         <div className="relative px-5 pb-6 pt-1 sm:max-w-[60%] sm:px-8 sm:py-8 lg:px-10 lg:py-10">
