@@ -87,67 +87,72 @@ function Card({
   const x = m.odds?.x12
   const odds = x?.home && x.draw && x.away && m.status === 'scheduled' ? [x.home.value, x.draw.value, x.away.value] : null
   return (
-    <a
-      href={href}
-      onClick={onOpen}
-      className="card group flex flex-col p-4 transition-colors hover:bg-panel-3"
-      // мягкий свет цветами клубов сверху: слева хозяева, справа гости (владелец: «все карточки одинаково серые»)
-      style={
-        tint
-          ? {
-              backgroundImage: `radial-gradient(70% 55% at 0% 0%, color-mix(in oklab, ${tint.home} 30%, transparent), transparent 75%), radial-gradient(70% 55% at 100% 0%, color-mix(in oklab, ${tint.away} 30%, transparent), transparent 75%)`,
-            }
-          : undefined
-      }
-    >
-      <span className="flex items-center justify-between gap-3 text-[13px]">
-        <span className="flex min-w-0 items-center gap-1.5 text-dim">
-          <span aria-hidden className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white text-ink">
-            <svg viewBox="0 0 24 24" className="ml-px h-2.5 w-2.5" fill="currentColor">
-              <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" />
-            </svg>
-          </span>
-          <span className="truncate">{m.league.name}</span>
-        </span>
-        {live(m) ? (
-          <span className="flex shrink-0 items-center gap-1.5 font-semibold text-live">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-live" />
-            {m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}′` : 'LIVE'}
-          </span>
-        ) : m.status === 'finished' ? (
-          <span className="shrink-0 text-mute">итог</span>
-        ) : null}
-      </span>
-
-      <span className="mt-4 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
-        <Team t={m.home} dim={lead === 'away'} />
-        <span className="flex h-[68px] items-center">
-          {played ? (
-            <span className="num display-num whitespace-nowrap text-[30px] leading-none text-white">
-              <Tick v={m.score!.home} />
-              <span className="mx-0.5 text-mute">:</span>
-              <Tick v={m.score!.away} />
+    <a href={href} onClick={onOpen} className="group flex flex-col">
+      <span
+        className="card flex flex-1 flex-col p-4 transition-colors group-hover:bg-panel-3"
+        // мягкий свет цветами клубов сверху: слева хозяева, справа гости (владелец: «все карточки одинаково серые»)
+        style={
+          tint
+            ? {
+                backgroundImage: `radial-gradient(70% 55% at 0% 0%, color-mix(in oklab, ${tint.home} 30%, transparent), transparent 75%), radial-gradient(70% 55% at 100% 0%, color-mix(in oklab, ${tint.away} 30%, transparent), transparent 75%)`,
+              }
+            : undefined
+        }
+      >
+        <span className="flex items-center justify-between gap-3 text-[13px]">
+          <span className="flex min-w-0 items-center gap-1.5 text-dim">
+            <span aria-hidden className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white text-ink">
+              <svg viewBox="0 0 24 24" className="ml-px h-2.5 w-2.5" fill="currentColor">
+                <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" />
+              </svg>
             </span>
-          ) : (
-            <span className="num display-num text-[26px] leading-none">{formatTime(m.ts)}</span>
-          )}
-        </span>
-        <Team t={m.away} dim={lead === 'home'} />
-      </span>
-
-      {fact ? <span className="mt-4 line-clamp-2 text-[13.5px] leading-snug text-fg/80 first-letter:uppercase">{fact}</span> : null}
-      <span className="mt-auto block">
-        {odds ? (
-          <span className="mt-3 grid grid-cols-3 gap-1.5 pt-0 text-center">
-            {(['Хозяева', 'Ничья', 'Гости'] as const).map((l, i) => (
-              <span key={l} className="rounded-ctl bg-white/[0.05] px-1 py-1.5">
-                <span className="block text-[11.5px] leading-none text-mute">{l}</span>
-                <span className="num mt-1 block text-[14px] font-semibold leading-none">{odds[i].toFixed(2)}</span>
-              </span>
-            ))}
+            <span className="truncate">{m.league.name}</span>
           </span>
-        ) : null}
+          {live(m) ? (
+            <span className="flex shrink-0 items-center gap-1.5 font-semibold text-live">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-live" />
+              {m.statusCode === 4 ? 'перерыв' : m.elapsed ? `${m.elapsed}′` : 'LIVE'}
+            </span>
+          ) : m.status === 'finished' ? (
+            <span className="shrink-0 text-mute">итог</span>
+          ) : null}
+        </span>
+
+        <span className="mt-4 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+          <Team t={m.home} dim={lead === 'away'} />
+          <span className="flex h-[68px] items-center">
+            {played ? (
+              <span className="num display-num whitespace-nowrap text-[30px] leading-none text-white">
+                <Tick v={m.score!.home} />
+                <span className="mx-0.5 text-mute">:</span>
+                <Tick v={m.score!.away} />
+              </span>
+            ) : (
+              <span className="num display-num text-[26px] leading-none">{formatTime(m.ts)}</span>
+            )}
+          </span>
+          <Team t={m.away} dim={lead === 'home'} />
+        </span>
+
+        <span className="mt-auto block">
+          {odds ? (
+            <span className="mt-3 grid grid-cols-3 gap-1.5 pt-0 text-center">
+              {(['Хозяева', 'Ничья', 'Гости'] as const).map((l, i) => (
+                <span key={l} className="rounded-ctl bg-white/[0.05] px-1 py-1.5">
+                  <span className="block text-[11.5px] leading-none text-mute">{l}</span>
+                  <span className="num mt-1 block text-[14px] font-semibold leading-none">{odds[i].toFixed(2)}</span>
+                </span>
+              ))}
+            </span>
+          ) : null}
+        </span>
       </span>
+      {/* факт — под карточкой, подписью, как название под обложкой (владелец: «факт о матче выносить под матч») */}
+      {fact ? (
+        <span className="mt-2.5 line-clamp-2 px-1 text-[13.5px] leading-snug text-dim first-letter:uppercase transition-colors group-hover:text-fg">
+          {fact}
+        </span>
+      ) : null}
     </a>
   )
 }
@@ -197,7 +202,9 @@ export function MatchGrid({
         ids.add(it.id)
         all.push({ id: it.id, href: it.href, fact: facts[it.id] ?? null })
       }
-  const cards = (group ? group.items.filter((it) => matches[it.id]).map((it) => ({ id: it.id, href: it.href, fact: it.focus?.reason ?? facts[it.id] ?? null })) : all)
+  const cards = (
+    group ? group.items.filter((it) => matches[it.id]).map((it) => ({ id: it.id, href: it.href, fact: it.focus?.reason ?? facts[it.id] ?? null })) : all
+  )
     .slice(0, LIMIT)
     .sort((a, b) => stateOf(matches[a.id]) - stateOf(matches[b.id]) || matches[a.id].ts - matches[b.id].ts)
 
@@ -223,7 +230,6 @@ export function MatchGrid({
     openStory({ id, href: e.currentTarget.href, opener: e.currentTarget, queue })
   }
 
-
   return (
     <section aria-label="Матчи дня" className="mt-10">
       {/* фильтры — одним рядом, листаются вбок (в два ряда выходило рвано), правый край тает */}
@@ -244,7 +250,7 @@ export function MatchGrid({
               {sec.title}
               <span className="font-normal text-mute">{list.length}</span>
             </h3>
-            <div className="mt-3 grid gap-3 sm:grid-cols-[repeat(auto-fill,minmax(270px,1fr))]">
+            <div className="mt-3 grid gap-x-3 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(270px,1fr))]">
               {list.map((c) => (
                 <Card key={c.id} m={matches[c.id]} href={c.href} fact={c.fact} tint={tints[c.id] ?? null} onOpen={(e) => open(c.id, e)} />
               ))}
@@ -254,7 +260,11 @@ export function MatchGrid({
       })}
 
       <div className="mt-6 flex justify-center">
-        <Link href={listHref} prefetch={false} className="inline-flex h-11 items-center rounded-full bg-white/[0.08] px-5 text-[14px] font-semibold transition-colors hover:bg-white/[0.14]">
+        <Link
+          href={listHref}
+          prefetch={false}
+          className="inline-flex h-11 items-center rounded-full bg-white/[0.08] px-5 text-[14px] font-semibold transition-colors hover:bg-white/[0.14]"
+        >
           Все матчи дня →
         </Link>
       </div>
