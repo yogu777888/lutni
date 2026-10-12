@@ -38,7 +38,7 @@ export function StatusCell({ m }: { m: Match }) {
 }
 
 /**
- * Кэфы 1X2. До начала — обычные (выгодный — лаймом); у идущих — те же кэфы до матча, приглушённые. У сыгранных кэфов нет.
+ * Кэфы 1X2 — только у матчей, которые ещё не начались; выгодный — лаймом.
  */
 function Odds({ m, hotKey, hotOdd = null }: { m: Match; hotKey: string | null; hotOdd?: number | null }) {
   const x = m.odds?.x12
@@ -169,8 +169,9 @@ export function MatchRow({
       <div className="sm:text-center">
         <Score m={m} big />
       </div>
-      {/* у сыгранных кэфов нет (владелец: «а кэфы у сыгранных может вообще убрать?») — место колонки остаётся пустым */}
-      {noOdds ? null : m.status === 'finished' ? (
+      {/* кэфы — только до начала (владелец: «а кэфы у сыгранных может вообще убрать?», «у идущих может тоже убрать?») —
+          у начавшихся место колонки остаётся пустым */}
+      {noOdds ? null : m.status !== 'scheduled' ? (
         // пустое место высотой ячейки кэфа — строки одной высоты
         <span className="hidden h-[34px] sm:block" />
       ) : (

@@ -5,8 +5,9 @@ import { leagueHref } from '@/lib/links'
 import type { League } from '@/lib/types'
 import { MatchRow, ROW_COLS } from './MatchRow'
 
-// колонка кэфов — если линия есть хоть у одного матча блока (у идущих и сыгранных — кэфы до матча, приглушённые)
-const anyOdds = (items: FeedItem[]) => items.some((i) => i.match.odds?.x12)
+// шапка колонок — если линия есть хоть у одного матча, который ещё не начался; сами колонки у всех блоков одни и те же,
+// чтобы счёт стоял на одной вертикали во всех блоках
+const anyOdds = (items: FeedItem[]) => items.some((i) => i.match.status === 'scheduled' && i.match.odds?.x12)
 
 /** Подписи колонок — одни на все строки: время, матч, счёт и кэфы на хозяев · ничью · гостей. */
 function ColumnHead() {
@@ -41,7 +42,7 @@ export function LeagueBlock({ league, items }: { league: League; items: FeedItem
       {withOdds ? <ColumnHead /> : null}
       <div className="divide-y divide-edge">
         {items.map((it) => (
-          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} noOdds={!withOdds} />
+          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} />
         ))}
       </div>
     </section>
@@ -67,7 +68,7 @@ export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }
       {withOdds ? <ColumnHead /> : null}
       <div className="divide-y divide-edge">
         {items.map((it) => (
-          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} showLeague noOdds={!withOdds} />
+          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} showLeague />
         ))}
       </div>
     </section>
@@ -96,7 +97,7 @@ export function TimeBlock({ items }: { items: FeedItem[] }) {
           </h3>
           <div className="divide-y divide-edge border-b border-edge last:border-b-0">
             {list.map((it) => (
-              <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} showLeague noOdds={!withOdds} />
+              <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} showLeague />
             ))}
           </div>
         </div>
