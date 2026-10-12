@@ -3,13 +3,15 @@ import type { FeedItem } from '@/lib/data'
 import { formatTime, pluralN } from '@/lib/format'
 import { leagueHref } from '@/lib/links'
 import type { League } from '@/lib/types'
+import { Flag } from './Flag'
 import { MatchRow } from './MatchRow'
 
 export function LeagueBlock({ league, items }: { league: League; items: FeedItem[]; featured?: boolean }) {
   return (
     <section className="card overflow-hidden">
       <header className="flex items-baseline justify-between gap-3 border-b border-edge px-4 py-4 sm:px-5">
-        <Link href={leagueHref(league)} prefetch={false} className="group flex min-w-0 items-baseline gap-2">
+        <Link href={leagueHref(league)} prefetch={false} className="group flex min-w-0 items-center gap-2.5">
+          <Flag league={league} />
           <span className="truncate text-[20px] font-bold tracking-tight">{league.name}</span>
           <span className="text-mute transition-transform duration-300 group-hover:translate-x-1" aria-hidden>
             →
