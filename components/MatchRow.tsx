@@ -69,15 +69,10 @@ function Odds({ m, hotKey, hotOdd = null }: { m: Match; hotKey: string | null; h
   )
 }
 
-/** Счёт — у каждой строки на одном месте: до начала — тихое «– : –». */
+/** Счёт — у начавшихся на одном месте во всех строках; до начала место пустое (владелец: «а – : – у не начавшихся убрать?»). */
 function Score({ m, big = false }: { m: Match; big?: boolean }) {
   const cls = `num whitespace-nowrap text-center font-bold ${big ? 'text-[20px]' : 'text-[16px]'}`
-  if (!m.score || m.status === 'scheduled')
-    return (
-      <span className={`${cls} text-mute/40`} aria-label="Ещё не начался">
-        –<span className="mx-1">:</span>–
-      </span>
-    )
+  if (!m.score || m.status === 'scheduled') return null
   return (
     <span className={`${cls} ${isLive(m) ? 'text-live' : 'text-fg'}`}>
       <Tick v={m.score.home} />
