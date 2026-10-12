@@ -9,12 +9,9 @@ import { MatchRow, ROW_COLS } from './MatchRow'
 const anyOdds = (items: FeedItem[]) => items.some((i) => i.match.status === 'scheduled' && i.match.odds?.x12)
 const played = (i: FeedItem) => i.match.status !== 'scheduled' && Boolean(i.match.score)
 
-/**
- * Подписи колонок: шансы (полоса — у тех, что не начались; у начавшихся на этом месте счёт) и кэфы на хозяев · ничью ·
- * гостей. Если в блоке есть и сыгранные, колонка подписана «Счёт · шансы» — чтобы подпись не врала про строку.
- */
+/** Подписи колонок: счёт (только если в блоке есть начавшиеся) и кэфы на хозяев · ничью · гостей. */
 function ColumnHead({ items }: { items: FeedItem[] }) {
-  const mid = items.some(played) ? 'Счёт · шансы' : 'Шансы'
+  const mid = items.some(played) ? 'Счёт' : ''
   return (
     <div className={`hidden items-center gap-x-4 border-b border-edge px-5 py-2.5 text-[11px] uppercase tracking-[0.12em] text-mute sm:grid ${ROW_COLS}`}>
       <span>Время</span>

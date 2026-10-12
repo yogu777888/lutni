@@ -1,16 +1,15 @@
 import type { MatchSummary } from '@/lib/data'
 import { formatOdd, formatTime } from '@/lib/format'
 import { matchHref } from '@/lib/links'
-import { fair1x2 } from '@/lib/odds'
 import type { TagHit } from '@/lib/tags'
-import { buildVerdict, split100 } from '@/lib/verdict'
+import { buildVerdict } from '@/lib/verdict'
 import type { Match } from '@/lib/types'
 import { StoryLink } from './story/StoryLink'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
 
-/** Колонки строки матча: время · матч · шансы · коэффициенты (на телефоне — время и матч, кэфы ниже). */
-export const ROW_COLS = 'grid-cols-[3.25rem_minmax(0,1fr)] sm:grid-cols-[3.75rem_minmax(0,1fr)_7.5rem_11.25rem]'
+/** Колонки строки матча: время · матч · счёт · коэффициенты (на телефоне — время и матч, кэфы ниже). */
+export const ROW_COLS = 'grid-cols-[3.25rem_minmax(0,1fr)] sm:grid-cols-[3.75rem_minmax(0,1fr)_4.5rem_11.25rem]'
 
 const isLive = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
@@ -38,30 +37,6 @@ export function StatusCell({ m }: { m: Match }) {
     return <span className="text-[11px] font-medium leading-tight text-loss">{m.statusLabel}</span>
   }
   return <span className="num text-[18px] font-semibold tracking-tight text-chalk">{formatTime(m.ts)}</span>
-}
-
-/**
- * «Кто сильнее» без цифр: полоса хозяева · ничья · гости по шансам без маржи.
- * Слева — первая команда, справа — вторая, как в названии матча; цифры — в подсказке.
- */
-function Chances({ m }: { m: Match }) {
-  const f = fair1x2(m.odds?.x12)
-  if (!f) return <span className="block text-center text-[13px] text-mute">—</span>
-  // проценты в подсказке — в сумме ровно 100
-  const n = split100(f)
-  const seg = [
-    { k: 'home', p: f.home, n: n.home, cls: 'bg-home', name: `«${m.home.name}»` },
-    { k: 'draw', p: f.draw, n: n.draw, cls: 'bg-tie', name: 'ничья' },
-    { k: 'away', p: f.away, n: n.away, cls: 'bg-away', name: `«${m.away.name}»` },
-  ]
-  const text = seg.map((x) => `${x.name} — ${x.n}%`).join(', ')
-  return (
-    <span className="flex h-2 gap-0.5" title={text} role="img" aria-label={`Шансы: ${text}`}>
-      {seg.map((x) => (
-        <span key={x.k} className={`rounded-[3px] ${x.cls}`} style={{ width: `${x.p * 100}%` }} />
-      ))}
-    </span>
-  )
 }
 
 function Odds({ m, hotKey, hotOdd = null }: { m: Match; hotKey: string | null; hotOdd?: number | null }) {
@@ -117,7 +92,7 @@ export function MatchRow({
   showLeague?: boolean
   /** Узкая боковая колонка: время, команды, счёт. */
   compact?: boolean
-  /** В блоке ни у кого нет линии: без шансов и кэфов. */
+  /** В блоке ни у кого нет линии: без кэфов. */
   noOdds?: boolean
 }) {
   const live = isLive(m)
@@ -172,8 +147,8 @@ export function MatchRow({
         noOdds
           ? 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_auto]'
           : played
-            ? // на телефоне счёт — справа в той же строке, на компьютере — в колонке «Счёт · шансы»
-              'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_7.5rem_11.25rem]'
+            ? // на телефоне счёт — справа в той же строке, на компьютере — в колонке «Счёт»
+              'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_4.5rem_11.25rem]'
             : ROW_COLS
       }`}
     >
@@ -213,7 +188,7 @@ export function MatchRow({
         </>
       ) : (
         <>
-          <div className="hidden sm:block">{upcoming ? <Chances m={m} /> : null}</div>
+          <span className="hidden sm:block" />
           <div className="col-start-2 sm:col-start-auto">{upcoming ? <Odds m={m} hotKey={hotKey} hotOdd={pick?.odd ?? null} /> : null}</div>
         </>
       )}
