@@ -16,7 +16,7 @@ export function demoNote(): string | null {
 export function Footer() {
   return (
     // от xl подвала нет: правовая часть — внизу левой панели каркаса (LeftPanel → Legal), как у Spotify
-    <footer className="mt-20 border-t border-edge xl:hidden">
+    <footer className="mt-6 border-t border-edge xl:hidden">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <LogoMark size={28} />

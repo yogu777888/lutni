@@ -69,7 +69,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
           </aside>
           <div className="shell-center min-w-0">
-            <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6">{children}</main>
+            <main className="mx-auto max-w-6xl px-4 pb-10 pt-4 sm:pt-6">{children}</main>
             <Footer />
           </div>
           <aside aria-label="Подборки дня" className="hidden xl:block">
