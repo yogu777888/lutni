@@ -57,7 +57,8 @@ export function LeagueBlock({
           <AdNote items={items} lines={lines} />
           {/* идущие матчи лиги — наверху, в «Сейчас в игре»: здесь только пометка со ссылкой туда */}
           {live ? (
-            <a href="#live" className="flex items-center gap-1.5 text-live transition-opacity hover:opacity-80">
+            // серым, как «Таблица →», красная — только точка (как в боковых панелях; красные слова тянули взгляд сильнее названия лиги)
+            <a href="#live" className="flex items-center gap-1.5 text-dim transition-colors hover:text-fg">
               <span className="h-1.5 w-1.5 rounded-full bg-live" />
               {live} в игре
             </a>
