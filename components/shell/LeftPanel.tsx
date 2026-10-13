@@ -165,7 +165,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
   // справа всегда число матчей, тихо (один столбец — один смысл); сколько идёт — красным в подписи
   // подпись под названием — сколько матчей и что с турниром (`StateLine`, общая с правой панелью); страны нет — её
   // говорит флаг, полное название — в подсказке; цифры справа нет — голая «10» читалась как счётчик непрочитанных
-  const SubText = ({ l }: { l: DayLeague }) => <StateLine total={l.total} live={l.live} next={l.next} started={l.started} />
+  const SubText = ({ l }: { l: DayLeague }) => <StateLine total={l.total} live={l.live} next={l.next} started={l.started} pending={l.pending} />
   const Sub = ({ l }: { l: DayLeague }) => (
     <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">
       <SubText l={l} />

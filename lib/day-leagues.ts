@@ -27,6 +27,8 @@ export type DayLeague = {
   next: string | null
   /** уже начинались матчи (идут или сыграны) — «в 22:00» (следующий) вместо «с 22:00» */
   started: boolean
+  /** сколько ещё не начались — «ещё 2 с 21:00» */
+  pending: number
   /** матчи турнира по времени — очередь сторис лиги (клик по флагу) и сегменты кольца */
   items: { id: number; href: string }[]
 }
@@ -81,6 +83,7 @@ async function leaguesOf(ymd: string, href: (l: League) => string, limit: number
         return ts.length ? formatTime(Math.min(...ts)) : null
       })(),
       started: items.some((m) => isLive(m) || m.status === 'finished'),
+      pending: items.filter((m) => m.status === 'scheduled').length,
       items: [...items].sort((a, b) => a.ts - b.ts).map((m) => ({ id: m.id, href: matchHref(m) })),
     }
   })

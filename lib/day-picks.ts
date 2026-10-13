@@ -28,7 +28,7 @@ export type DayPicks = {
 }
 
 /** Состояние подборки: идёт матчей, время ближайшего не начавшегося, начинались ли уже. */
-export type PickState = { live: number; next: string | null; started: boolean }
+export type PickState = { live: number; next: string | null; started: boolean; pending: number }
 
 export type ValueRow = {
   id: number
@@ -110,6 +110,7 @@ export async function dayPicks(): Promise<DayPicks> {
         live: all.filter(isLive).length,
         next: pre.length ? formatTime(Math.min(...pre)) : null,
         started: all.some((m) => isLive(m) || m.status === 'finished'),
+        pending: pre.length,
       }
       for (const it of list) {
         out.matches[it.id] ??= compactMatch(byId.get(it.id)!)
