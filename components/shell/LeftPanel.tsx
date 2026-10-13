@@ -53,21 +53,23 @@ function LeagueFlag({ l }: { l: Pick<DayLeague, 'flag' | 'name'> }) {
  */
 function Legal({ demo }: { demo: string | null }) {
   const link = 'transition-colors hover:text-fg'
+  // одна система строк: один размер, один серый, одинаковые отступы и «·» между частями — без кружка 18+ и абзаца
+  // в три строки (владелец: «футер уродливый»); «Играйте ответственно» — ссылкой «Ответственная игра» ниже
   return (
-    <div className="border-t border-edge pt-3 text-[11.5px] leading-snug text-mute">
-      <p className="flex items-center gap-2 text-dim">
-        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[9.5px] font-semibold ring-1 ring-edge-2">18+</span>
-        Ставки — это риск. Играйте ответственно.
+    <div className="space-y-1.5 border-t border-edge pt-3 text-[11.5px] leading-snug text-mute">
+      <p>
+        <span className="font-semibold text-dim">18+</span> · Ставки — это риск
       </p>
-      <nav aria-label="Информация" className="mt-2 flex flex-wrap gap-x-2.5 gap-y-1 tracking-[-0.01em]">
+      {/* ссылки — через отступ, без «·»: в узкой панели перенос начинал строку с «· Cookie» */}
+      <nav aria-label="Информация" className="flex flex-wrap gap-x-3">
         <Link href="/about" className={link}>Как мы считаем</Link>
         <Link href="/responsible-gaming" className={link}>Ответственная игра</Link>
         <Link href="/privacy" className={link}>Cookie</Link>
       </nav>
-      <p className="mt-2">Не призыв делать ставки. Партнёрские ссылки на легальных букмекеров: сайт может получать вознаграждение.</p>
-      {demo ? <p className="mt-1">{demo}</p> : null}
+      <p>Не призыв делать ставки. Партнёрские ссылки на легальных букмекеров: сайт может получать вознаграждение.</p>
+      {demo ? <p>{demo}</p> : null}
       {/* подпись сайта последней строкой, как принято в конце страницы; год — текущий */}
-      <p className="mt-2">
+      <p>
         © {new Date().getFullYear()} {SITE.name} · Данные — SStats.net
       </p>
     </div>
