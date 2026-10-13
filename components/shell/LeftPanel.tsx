@@ -57,7 +57,6 @@ function Legal({ demo }: { demo: string | null }) {
         <Link href="/about" className={link}>Как мы считаем</Link>
         <Link href="/responsible-gaming" className={link}>Ответственная игра</Link>
         <Link href="/privacy" className={link}>Cookie</Link>
-        <Link href="/bookmakers" className={link}>Букмекеры</Link>
       </nav>
       <p className="mt-2">
         Не призыв делать ставки. Партнёрские ссылки на легальных букмекеров: сайт может получать вознаграждение. Данные — SStats.net
