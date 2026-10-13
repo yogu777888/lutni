@@ -10,7 +10,12 @@ import { openStory } from '../story/events'
 import { circleQueue } from '../story/queue'
 import { readSeen, SEEN_EVENT } from '../story/seen'
 import { StorySymbol } from '../story/StorySymbol'
+import { pluralN } from '@/lib/format'
 import { PanelToggle } from './PanelToggle'
+import { useRailTip } from './RailTip'
+
+const MATCHES = ['матч', 'матча', 'матчей'] as const
+const BETS = ['ставка', 'ставки', 'ставок'] as const
 
 const Play = ({ className = '' }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
@@ -111,6 +116,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
   }, [])
 
   const { groups, matches, stats, totals, subs } = picks
+  const { tipProps, tipNode } = useRailTip('r', 'shell-r-rail')
   const fold = groups.length >= FOLD_FROM
   const play = (gi: number, e: React.MouseEvent<HTMLButtonElement>) => {
     const { queue, startId } = circleQueue(groups, gi, seen)
@@ -124,18 +130,34 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
       {/* свёрнута — полоска: «развернуть» и значки подборок (тап — сторис подборки) */}
       <div className="shell-r-rail scrollbar-none h-full flex-col items-center gap-2 overflow-y-auto py-3">
         <PanelToggle side="r" open={false} />
+        {/* значки — круги 36px, как флаги в левой полоске; подсказка — название, число матчей и что внутри, клик — разбор */}
         {groups.map((g, gi) => (
           <button
             key={g.key}
             type="button"
             onClick={(e) => play(gi, e)}
-            title={`${g.label}: смотреть разбор`}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
+            {...tipProps(`${g.label} · ${pluralN(totals[g.key] ?? g.items.length, MATCHES)}`, subs[g.key] ? `${subs[g.key]} · нажмите — разбор` : 'Нажмите — разбор')}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
           >
-            <StorySymbol k={g.key} tone="currentColor" className="h-5 w-5" />
+            <StorySymbol k={g.key} tone="currentColor" className="h-[18px] w-[18px]" />
           </button>
         ))}
+        {/* «Выгодно сегодня» не пропадает целиком: лаймовый круг со знаком процента внизу (лайм — деньги и «выгодно») */}
+        {picks.values.length ? (
+          <>
+            <span aria-hidden className="my-1 h-px w-6 shrink-0 bg-edge" />
+            <Link
+              href="/tag/value"
+              prefetch={false}
+              {...tipProps(`Выгодно сегодня · ${pluralN(picks.values.length, BETS)}`, 'Кэф выше честной цены · Реклама 18+')}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-acid text-acid-ink transition-colors hover:bg-acid/85"
+            >
+              <StorySymbol k="value" tone="currentColor" className="h-[18px] w-[18px]" />
+            </Link>
+          </>
+        ) : null}
       </div>
+      {tipNode}
 
       <div className="shell-r-full flex h-full flex-col">
         <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto p-4">

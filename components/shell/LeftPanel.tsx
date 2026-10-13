@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { SITE } from '@/config/site'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayLeague, DayLeagues } from '@/lib/day-leagues'
@@ -11,6 +10,7 @@ import { useFavorites } from '../favorites'
 import { TeamLogo } from '../TeamLogo'
 import { StorySymbol } from '../story/StorySymbol'
 import { PanelToggle } from './PanelToggle'
+import { useRailTip } from './RailTip'
 
 /** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас в игре». */
 const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'турнире' : 'турнирах'}`
@@ -77,7 +77,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
   const favs = useFavorites()
   const [games, setGames] = useState<CompactMatch[]>([])
   const [active, setActive] = useState<string | null>(null)
-  const [tip, setTip] = useState<{ title: string; sub: React.ReactNode; x: number; y: number } | null>(null)
+  const { tipProps, tipNode } = useRailTip('l', 'shell-l-rail')
   const pathname = usePathname()
   const router = useRouter()
   const ids = favs.map((t) => t.id).join(',')
@@ -153,19 +153,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
       <SubText l={l} />
     </span>
   )
-  // свёрнутая панель: подсказка справа от значка — название и та же подпись, что в развёрнутой (системный title — поздно и мелко);
-  // position: fixed — полоска прокручивается и обрезает всё, что выходит за её край
-  const tipOn = (title: string, sub: React.ReactNode) => (e: React.SyntheticEvent<HTMLElement>) => {
-    const r = e.currentTarget.getBoundingClientRect()
-    setTip({ title, sub, x: r.right + 12, y: r.top + r.height / 2 })
-  }
-  const tipProps = (title: string, sub: React.ReactNode) => ({
-    'aria-label': title,
-    onMouseEnter: tipOn(title, sub),
-    onFocus: tipOn(title, sub),
-    onMouseLeave: () => setTip(null),
-    onBlur: () => setTip(null),
-  })
+  // свёрнутая панель: подсказка у значка — название и та же подпись, что в развёрнутой (`useRailTip`)
   // идут матчи — маленькая точка внизу справа, как «в сети» у аватарки (крупная сверху читалась как непрочитанное уведомление)
   const RailFlag = ({ l }: { l: DayLeague }) => (
     <a
@@ -238,18 +226,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
           18+
         </Link>
       </div>
-      {/* в body порталом: панель — свой слой ниже центра, и его красные точки проступали поверх подсказки */}
-      {tip ? createPortal(
-        <div
-          role="tooltip"
-          style={{ left: tip.x, top: tip.y }}
-          className="shell-l-rail pointer-events-none fixed z-50 flex-col -translate-y-1/2 whitespace-nowrap rounded-tile bg-panel-3 px-3 py-2 leading-tight shadow-lg shadow-black/40"
-        >
-          <span className="block text-[14px] font-medium">{tip.title}</span>
-          {tip.sub ? <span className="mt-0.5 block text-[12.5px] text-mute">{tip.sub}</span> : null}
-        </div>,
-        document.body,
-      ) : null}
+      {tipNode}
 
       <div className="shell-l-full flex h-full flex-col">
       <div className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
