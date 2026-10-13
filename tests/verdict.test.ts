@@ -103,7 +103,7 @@ describe('теги простыми словами', () => {
     expect(label.value).toBe('#выгодно')
     expect(label.progruz).toBe('#кэф упал')
     expect(label['tb-2-5']).toBe('#много голов')
-    expect(label.andedog).toBe('#может удивить')
+    expect(label.andedog).toBe('#аутсайдер в форме')
   })
 
   it('объяснения — простыми словами и в процентах; цифра лежит в p', () => {

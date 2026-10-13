@@ -157,7 +157,7 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
     .sort((a, b) => b.score - a.score || a.it.match.ts - b.it.match.ts)
     .slice(0, TOP_LIMIT)
   add(
-    { key: 'top', label: 'Топ дня', kind: 'top', hint: 'Самые интересные матчи дня', stat: '#' },
+    { key: 'top', label: 'Главные матчи', kind: 'top', hint: 'Самые интересные матчи дня', stat: '#' },
     top.map(({ it }) => ({ it, tag: bestTag(it.tags) })),
   )
 

@@ -9,8 +9,8 @@ import { getMatchesByDate, tagsFor, type FeedItem } from './data'
 import { soonMatches } from './day-summary'
 import { formatTime, todayYmd } from './format'
 import { matchHref } from './links'
+import { isLive } from './rank'
 import { buildStoryGroups, mainCircles, statFor, type StoryGroup } from './story-groups'
-import { TAG_BY_SLUG } from './tags'
 import { outcomeText } from './verdict'
 
 export type DayPicks = {
@@ -21,11 +21,14 @@ export type DayPicks = {
   stats: Record<string, string>
   /** сколько всего матчей в подборке (в панели — не больше PER_GROUP) */
   totals: Record<string, number>
-  /** что внутри подборки — тихой второй строкой под названием (владелец согласился: «Серия», «Может удивить» новичку непонятны) */
-  subs: Record<string, string>
+  /** что с матчами подборки сейчас — подпись под названием, как в левой панели: «8 матчей · 2 в игре» / «с 20:30» */
+  states: Record<string, PickState>
   /** «Выгодно сегодня» внизу панели — лучшие выгодные ставки дня (ещё не начались), с кэфом партнёра */
   values: ValueRow[]
 }
+
+/** Состояние подборки: идёт матчей, время ближайшего не начавшегося, начинались ли уже. */
+export type PickState = { live: number; next: string | null; started: boolean }
 
 export type ValueRow = {
   id: number
@@ -44,20 +47,6 @@ export type ValueRow = {
   time: string
 }
 
-/** Подписи до ~21 знака — влезают в панель шириной по умолчанию (288px); нет здесь — `hint` тега. */
-const SUBS: Record<string, string> = {
-  top: 'Главные матчи дня',
-  soon: 'Ближайшие матчи',
-  value: 'Кэф выше честной цены',
-  progruz: 'Кэф заметно снизился',
-  favorit: 'Одна команда сильнее',
-  andedog: 'Не фаворит, но в форме',
-  seriya: 'Серии побед и неудач',
-  krepost: 'Дома не проигрывают',
-  kadry: 'Многих нет в составе',
-  h2h: 'Тренд в личных встречах',
-}
-
 /** Сколько выгодных ставок в панели. */
 const VALUES = 3
 
@@ -74,7 +63,7 @@ export async function dayPicks(): Promise<DayPicks> {
       const at = groups.findIndex((g) => g.key !== 'live' && g.key !== 'top')
       groups.splice(at < 0 ? groups.length : at, 0, {
         key: 'soon',
-        label: 'Скоро',
+        label: 'Скоро начнутся',
         kind: 'top',
         hint: `Скоро начнутся: ${soon.length}`,
         href: '/matches?sort=time',
@@ -83,7 +72,7 @@ export async function dayPicks(): Promise<DayPicks> {
       })
     }
     const byId = new Map(matches.map((m) => [m.id, m]))
-    const out: DayPicks = { groups: [], matches: {}, stats: {}, totals: {}, values: [], subs: {} }
+    const out: DayPicks = { groups: [], matches: {}, stats: {}, totals: {}, values: [], states: {} }
     // выгодные — только с кэфом и букмекером-партнёром (ссылка к нему), лучшие по выгоде
     out.values = items
       .filter((i) => i.match.status === 'scheduled' && i.summary?.pick?.kind === 'value' && i.summary.pick.odd && i.summary.pick.partnerSlug)
@@ -115,8 +104,13 @@ export async function dayPicks(): Promise<DayPicks> {
       if (!list.length) continue
       out.groups.push({ ...g, crests: undefined, items: list })
       out.totals[g.key] = g.items.length
-      const sub = SUBS[g.key] ?? TAG_BY_SLUG.get(g.key)?.hint
-      if (sub) out.subs[g.key] = sub
+      const all = g.items.map((it) => byId.get(it.id)).filter((m) => m !== undefined)
+      const pre = all.filter((m) => m.status === 'scheduled').map((m) => m.ts)
+      out.states[g.key] = {
+        live: all.filter(isLive).length,
+        next: pre.length ? formatTime(Math.min(...pre)) : null,
+        started: all.some((m) => isLive(m) || m.status === 'finished'),
+      }
       for (const it of list) {
         out.matches[it.id] ??= compactMatch(byId.get(it.id)!)
         // у «Топ дня» и «Скоро» у каждого матча своя причина — цифры разного смысла без подписи не читаются; там — только состояние
@@ -126,6 +120,6 @@ export async function dayPicks(): Promise<DayPicks> {
     }
     return out
   } catch {
-    return { groups: [], matches: {}, stats: {}, totals: {}, values: [], subs: {} }
+    return { groups: [], matches: {}, stats: {}, totals: {}, values: [], states: {} }
   }
 }

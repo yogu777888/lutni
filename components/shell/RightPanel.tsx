@@ -13,8 +13,8 @@ import { StorySymbol } from '../story/StorySymbol'
 import { pluralN } from '@/lib/format'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
+import { StateLine } from './StateLine'
 
-const MATCHES = ['матч', 'матча', 'матчей'] as const
 const BETS = ['ставка', 'ставки', 'ставок'] as const
 
 const Play = ({ className = '' }: { className?: string }) => (
@@ -115,7 +115,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
     return () => window.removeEventListener(SEEN_EVENT, update)
   }, [])
 
-  const { groups, matches, stats, totals, subs } = picks
+  const { groups, matches, stats, totals, states } = picks
   const { tipProps, tipNode } = useRailTip('r', 'shell-r-rail')
   const fold = groups.length >= FOLD_FROM
   const play = (gi: number, e: React.MouseEvent<HTMLButtonElement>) => {
@@ -136,7 +136,16 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
             key={g.key}
             type="button"
             onClick={(e) => play(gi, e)}
-            {...tipProps(`${g.label} · ${pluralN(totals[g.key] ?? g.items.length, MATCHES)}`, subs[g.key] ? `${subs[g.key]} · нажмите — разбор` : 'Нажмите — разбор')}
+            {...tipProps(
+              g.label,
+              states[g.key] ? (
+                <>
+                  <StateLine total={totals[g.key] ?? g.items.length} {...states[g.key]} /> · нажмите — разбор
+                </>
+              ) : (
+                'Нажмите — разбор'
+              ),
+            )}
             className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
           >
             <StorySymbol k={g.key} tone="currentColor" className="h-[18px] w-[18px]" />
@@ -196,12 +205,16 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                         aria-expanded={on}
                         className="flex min-w-0 flex-1 items-center gap-3 self-stretch pl-2 text-left"
                       >
-                        {/* под названием — что внутри, тихо (как «Плейлист · Spotify»): «Серия», «Может удивить» без неё новичку непонятны */}
-                        <span className="min-w-0 flex-1 leading-tight" title={subs[g.key]}>
+                        {/* название само объясняет подборку («Аутсайдер в форме», а не «Может удивить»), под ним — что с её матчами
+                            сейчас, как у турниров слева (`StateLine`): статичное описание повторяло название (владелец согласился) */}
+                        <span className="min-w-0 flex-1 leading-tight">
                           <span className="block truncate text-[14.5px] font-medium">{g.label}</span>
-                          {subs[g.key] ? <span className="mt-0.5 block truncate text-[12.5px] text-mute">{subs[g.key]}</span> : null}
+                          {states[g.key] ? (
+                            <span className="mt-0.5 block truncate text-[12.5px] text-mute">
+                              <StateLine total={totals[g.key] ?? g.items.length} {...states[g.key]} />
+                            </span>
+                          ) : null}
                         </span>
-                        {/* числа матчей справа нет — голая «8» читалась как счётчик непрочитанных (как и в левой панели); сколько всего — при раскрытии и в подсказке свёрнутой полоски */}
                         {/* шеврон — только у раскрытой и при наведении: восемь одинаковых шевронов повторяли одно и то же */}
                         <svg
                           viewBox="0 0 24 24"
