@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { SITE } from '@/config/site'
+import { pluralN } from '@/lib/format'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayLeague, DayLeagues } from '@/lib/day-leagues'
 import { useFavorites } from '../favorites'
@@ -11,6 +12,9 @@ import { TeamLogo } from '../TeamLogo'
 import { StorySymbol } from '../story/StorySymbol'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
+
+/** «1 матч», «3 матча», «10 матчей». */
+const matchesN = (n: number) => pluralN(n, ['матч', 'матча', 'матчей'])
 
 /** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас в игре». */
 const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'турнире' : 'турнирах'}`
@@ -136,14 +140,15 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
   // строки — как в правой панели: значок в круге 36px, название 14,5px, справа число
   const row = 'flex items-center gap-3 rounded-tile py-1.5 pl-2 pr-2.5 text-[14.5px] font-medium transition-colors'
   // справа всегда число матчей, тихо (один столбец — один смысл); сколько идёт — красным в подписи
-  const Count = ({ n }: { n: number }) => <span className="num shrink-0 text-[13px] text-mute">{n}</span>
-  // подпись под названием, как в «Подборках дня»: страна и что с турниром — «3 в игре» красным / «с 22:00» / «в 22:00» (следующий, когда часть сыграна) / «все сыграны»
+  // подпись под названием — сколько матчей и что с турниром: «10 матчей · 3 в игре» (красным) / «с 22:00» / «в 22:00»
+  // (следующий, когда часть сыграна) / «все сыграны». Цифры справа нет — голая «10» читалась как счётчик непрочитанных;
+  // страны нет — её говорит флаг, полное название — в подсказке (владелец согласился)
   const SubText = ({ l }: { l: DayLeague }) => {
     const state = l.live ? null : l.next ? `${l.started ? 'в' : 'с'} ${l.next}` : l.started ? 'все сыграны' : ''
     return (
       <>
-        {l.country}
-        {l.country && (l.live || state) ? ' · ' : ''}
+        {matchesN(l.total)}
+        {l.live || state ? ' · ' : ''}
         {l.live ? <span className="text-live">{l.live} в игре</span> : state}
       </>
     )
@@ -186,7 +191,6 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
         >
           <LeagueFlag l={l} />
           <Name l={l} />
-          <Count n={l.total} />
         </a>
       </li>
     )
@@ -203,7 +207,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
           <a
             href="/#live"
             onClick={go('live', '/#live')}
-            {...tipProps('Сейчас в игре', `${day.live} ${day.live % 10 === 1 && day.live % 100 !== 11 ? 'матч' : 'матчей'} ${inLeagues(day.leagues.filter((l) => l.live).length)}`)}
+            {...tipProps('Сейчас в игре', `${matchesN(day.live)} ${inLeagues(day.leagues.filter((l) => l.live).length)}`)}
             className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
           >
             <StorySymbol k="live" tone="currentColor" className="h-[18px] w-[18px]" />
@@ -249,9 +253,8 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
                 </span>
                 <span className="min-w-0 flex-1 leading-tight">
                   <span className="block truncate">Сейчас в игре</span>
-                  <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">{inLeagues(day.leagues.filter((l) => l.live).length)}</span>
+                  <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">{`${matchesN(day.live)} ${inLeagues(day.leagues.filter((l) => l.live).length)}`}</span>
                 </span>
-                <Count n={day.live} />
               </a>
             </li>
           ) : null}

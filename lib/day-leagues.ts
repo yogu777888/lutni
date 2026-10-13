@@ -6,7 +6,6 @@
 import { countryRank, featuredRank } from '@/config/leagues'
 import { getMatchesByDate } from './data'
 import { flagCode, leagueTitle } from './flags'
-import { ruCountry } from './i18n/ru'
 import { addDays, formatTime, todayYmd } from './format'
 import { leagueHref, listHref } from './links'
 import { isLive } from './rank'
@@ -24,8 +23,6 @@ export type DayLeague = {
   total: number
   live: number
   top: boolean
-  /** страна по-русски — в подписи под названием (страну из названия убрали: «Премьер-лига» с флагом путали); еврокубки — '' */
-  country: string
   /** время первого ещё не начавшегося матча; null — таких нет */
   next: string | null
   /** уже начинались матчи (идут или сыграны) — «в 22:00» (следующий) вместо «с 22:00» */
@@ -75,7 +72,6 @@ async function leaguesOf(ymd: string, href: (l: League) => string, limit: number
       total: items.length,
       live: items.filter(isLive).length,
       top: featuredRank(l) >= 0,
-      country: flag ? ruCountry(l.country) : '',
       next: (() => {
         const ts = items.filter((m) => m.status === 'scheduled').map((m) => m.ts)
         return ts.length ? formatTime(Math.min(...ts)) : null
