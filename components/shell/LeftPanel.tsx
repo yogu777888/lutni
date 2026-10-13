@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { SITE } from '@/config/site'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayLeague, DayLeagues } from '@/lib/day-leagues'
 import { useFavorites } from '../favorites'
@@ -58,10 +59,12 @@ function Legal({ demo }: { demo: string | null }) {
         <Link href="/responsible-gaming" className={link}>Ответственная игра</Link>
         <Link href="/privacy" className={link}>Cookie</Link>
       </nav>
-      <p className="mt-2">
-        Не призыв делать ставки. Партнёрские ссылки на легальных букмекеров: сайт может получать вознаграждение. Данные — SStats.net
-      </p>
+      <p className="mt-2">Не призыв делать ставки. Партнёрские ссылки на легальных букмекеров: сайт может получать вознаграждение.</p>
       {demo ? <p className="mt-1">{demo}</p> : null}
+      {/* подпись сайта последней строкой, как принято в конце страницы; год — текущий */}
+      <p className="mt-2">
+        © {new Date().getFullYear()} {SITE.name} · Данные — SStats.net
+      </p>
     </div>
   )
 }
