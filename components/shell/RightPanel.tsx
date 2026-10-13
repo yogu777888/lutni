@@ -45,8 +45,9 @@ function Right({ m, stat, hot }: { m: CompactMatch; stat?: string; hot: boolean 
  * матчи строками (эмблемы, команды, главная цифра / время / счёт) и «Все N матчей →» (страница тега).
  * Свёрнута — полоска со значками подборок.
  */
-/** Сколько подборок видно сразу; остальные — под «Ещё N». */
+/** Сколько подборок видно сразу, если их больше `FOLD_FROM`; остальные — под «Ещё N» (прятать одну-две нет смысла). */
 const SHOWN = 7
+const FOLD_FROM = 10
 
 export function RightPanel({ picks }: { picks: DayPicks }) {
   const [open, setOpen] = useState<string | null>(null)
@@ -60,6 +61,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
   }, [])
 
   const { groups, matches, stats, totals } = picks
+  const fold = groups.length >= FOLD_FROM
   const play = (gi: number, e: React.MouseEvent<HTMLButtonElement>) => {
     const { queue, startId } = circleQueue(groups, gi, seen)
     const first = groups[gi].items.find((it) => it.id === startId) ?? groups[gi].items[0]
@@ -95,7 +97,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
             <ul className="mt-2 space-y-0.5">
               {groups.map((g, gi) => {
                 // первые SHOWN — сразу, остальные — под «Ещё N» (владелец: список без иерархии не помещался в экран)
-                if (gi >= SHOWN && !all) return null
+                if (fold && gi >= SHOWN && !all) return null
                 const on = open === g.key
                 const more = moreHref(g.key)
                 return (
@@ -179,7 +181,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                   </li>
                 )
               })}
-              {groups.length > SHOWN ? (
+              {fold ? (
                 <li>
                   <button
                     type="button"
