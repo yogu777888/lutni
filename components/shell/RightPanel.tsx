@@ -11,15 +11,6 @@ import { readSeen, SEEN_EVENT } from '../story/seen'
 import { StorySymbol } from '../story/StorySymbol'
 import { PanelToggle } from './PanelToggle'
 
-/** Значок Telegram (бумажный самолётик) — одним цветом. */
-function TgIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-      <path d="M21.4 4.3 2.9 11.5c-1.3.5-1.3 1.2-.2 1.6l4.7 1.5 1.8 5.6c.2.6.1.8.8.8.5 0 .7-.2 1-.5l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.7c.3-1.3-.5-1.9-1.4-1.5ZM8.9 14.2l9.4-5.9c.4-.3.9-.1.5.2l-8 7.3-.3 3.3-1.6-4.9Z" />
-    </svg>
-  )
-}
-
 const Play = ({ className = '' }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
     <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" />
@@ -51,15 +42,14 @@ function Right({ m, stat, hot }: { m: CompactMatch; stat?: string; hot: boolean 
  * Правая панель каркаса (от xl) — «Подборки дня» (владелец: «в центре просто матчи по лигам, а сортированные — в
  * боковой виджет; название, рядом кнопка просмотра историй, снизу раскрытие матчей»): строка подборки — знак, название,
  * число матчей и белая ▶ (сторис по всей подборке подряд, с первого непросмотренного); клик по названию раскрывает
- * матчи строками (эмблемы, команды, главная цифра / время / счёт) и «Все N матчей →» (страница тега). Внизу —
- * компактная карточка «Войти через Telegram» (входа пока нет — «Скоро»). Свёрнута — полоска со значками подборок.
+ * матчи строками (эмблемы, команды, главная цифра / время / счёт) и «Все N матчей →» (страница тега).
+ * Свёрнута — полоска со значками подборок.
  */
 /** Сколько подборок видно сразу; остальные — под «Ещё N». */
 const SHOWN = 7
 
 export function RightPanel({ picks }: { picks: DayPicks }) {
   const [open, setOpen] = useState<string | null>(null)
-  const [soon, setSoon] = useState(false)
   const [all, setAll] = useState(false)
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
   useEffect(() => {
@@ -209,23 +199,6 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
           ) : (
             <p className="mt-2 text-[13.5px] text-dim">Подборки появятся, когда будут матчи дня.</p>
           )}
-        </div>
-
-        {/* вход — компактной карточкой внизу (входа пока нет — бэкенд следующим шагом) */}
-        <div className="m-3 mt-0 rounded-tile bg-[linear-gradient(150deg,#7fb21a_0%,#1f9b7a_50%,#1f5f9e_100%)] p-4 text-white">
-          <p className="text-[15px] font-semibold leading-snug">Следи за своими командами</p>
-          <p className="mt-1 text-[12.5px] leading-snug text-white/80">Избранное на всех устройствах и напоминания о матчах</p>
-          <button
-            type="button"
-            onClick={() => setSoon(true)}
-            className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-white text-[14px] font-semibold text-[#0b0f14] transition-transform hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <TgIcon className="h-4 w-4 text-[#229ed9]" />
-            Войти через Telegram
-          </button>
-          <p className="mt-2 text-center text-[12px] text-white/75" aria-live="polite">
-            {soon ? 'Скоро — уже делаем вход' : 'Бесплатно, без пароля'}
-          </p>
         </div>
       </div>
     </div>
