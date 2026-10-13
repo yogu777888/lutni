@@ -7,6 +7,15 @@ import { flagCode, leagueTitle } from '@/lib/flags'
 import { Flag } from './Flag'
 import { MatchRow } from './MatchRow'
 
+/**
+ * Порядок строк в блоке лиги: идущие (если не попали в «Сейчас в игре»), потом предстоящие — ближайший первым, потом
+ * перенесённые, сыгранные — в конце (владелец согласился: днём сверху стояли итоги, а матчи с кэфами уходили вниз).
+ * Внутри — по времени начала.
+ */
+const STATE_ORDER: Record<string, number> = { live: 0, suspended: 0, scheduled: 1, postponed: 2, cancelled: 2, finished: 3 }
+const byState = (a: FeedItem, b: FeedItem) =>
+  (STATE_ORDER[a.match.status] ?? 2) - (STATE_ORDER[b.match.status] ?? 2) || a.match.ts - b.match.ts
+
 export function LeagueBlock({ league, items, live = 0 }: { league: League; items: FeedItem[]; featured?: boolean; live?: number }) {
   return (
     // id — для «Турниров дня» в левой панели (клик прокручивает сюда)
@@ -31,7 +40,7 @@ export function LeagueBlock({ league, items, live = 0 }: { league: League; items
         ) : null}
       </header>
       <div className="divide-y divide-edge">
-        {items.map((it) => (
+        {[...items].sort(byState).map((it) => (
           <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} />
         ))}
       </div>
