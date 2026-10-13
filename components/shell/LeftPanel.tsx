@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { SITE } from '@/config/site'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayLeague, DayLeagues } from '@/lib/day-leagues'
@@ -76,6 +77,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
   const favs = useFavorites()
   const [games, setGames] = useState<CompactMatch[]>([])
   const [active, setActive] = useState<string | null>(null)
+  const [tip, setTip] = useState<{ title: string; sub: React.ReactNode; x: number; y: number } | null>(null)
   const pathname = usePathname()
   const router = useRouter()
   const ids = favs.map((t) => t.id).join(',')
@@ -136,16 +138,46 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
   // справа всегда число матчей, тихо (один столбец — один смысл); сколько идёт — красным в подписи
   const Count = ({ n }: { n: number }) => <span className="num shrink-0 text-[13px] text-mute">{n}</span>
   // подпись под названием, как в «Подборках дня»: страна и что с турниром — «3 в игре» красным / «с 22:00» / «в 22:00» (следующий, когда часть сыграна) / «все сыграны»
-  const Sub = ({ l }: { l: DayLeague }) => {
+  const SubText = ({ l }: { l: DayLeague }) => {
     const state = l.live ? null : l.next ? `${l.started ? 'в' : 'с'} ${l.next}` : l.started ? 'все сыграны' : ''
     return (
-      <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">
+      <>
         {l.country}
         {l.country && (l.live || state) ? ' · ' : ''}
         {l.live ? <span className="text-live">{l.live} в игре</span> : state}
-      </span>
+      </>
     )
   }
+  const Sub = ({ l }: { l: DayLeague }) => (
+    <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">
+      <SubText l={l} />
+    </span>
+  )
+  // свёрнутая панель: подсказка справа от значка — название и та же подпись, что в развёрнутой (системный title — поздно и мелко);
+  // position: fixed — полоска прокручивается и обрезает всё, что выходит за её край
+  const tipOn = (title: string, sub: React.ReactNode) => (e: React.SyntheticEvent<HTMLElement>) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    setTip({ title, sub, x: r.right + 12, y: r.top + r.height / 2 })
+  }
+  const tipProps = (title: string, sub: React.ReactNode) => ({
+    'aria-label': title,
+    onMouseEnter: tipOn(title, sub),
+    onFocus: tipOn(title, sub),
+    onMouseLeave: () => setTip(null),
+    onBlur: () => setTip(null),
+  })
+  // идут матчи — маленькая точка внизу справа, как «в сети» у аватарки (крупная сверху читалась как непрочитанное уведомление)
+  const RailFlag = ({ l }: { l: DayLeague }) => (
+    <a
+      href={l.href}
+      onClick={go(`league-${l.id}`, l.href)}
+      {...tipProps(l.name, <SubText l={l} />)}
+      className="relative shrink-0 rounded-full transition-opacity hover:opacity-80"
+    >
+      <LeagueFlag l={l} />
+      {l.live ? <span className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full bg-live ring-2 ring-panel" /> : null}
+    </a>
+  )
   const Name = ({ l }: { l: DayLeague }) => (
     <span className="min-w-0 flex-1 leading-tight">
       <span className="block truncate">{l.name}</span>
@@ -178,17 +210,24 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
       {/* свёрнута — полоска: «развернуть» и флаги топ-лиг (красная точка — идут матчи) */}
       <div className="shell-l-rail scrollbar-none h-full flex-col items-center gap-2 overflow-y-auto py-3">
         <PanelToggle side="l" open={false} />
-        {top.map((l) => (
+        {/* «Сейчас в игре» — первым, как в развёрнутой */}
+        {day.live ? (
           <a
-            key={l.id}
-            href={l.href}
-            onClick={go(`league-${l.id}`, l.href)}
-            title={l.full}
-            className="relative shrink-0 rounded-full transition-opacity hover:opacity-80"
+            href="/#live"
+            onClick={go('live', '/#live')}
+            {...tipProps('Сейчас в игре', `${day.live} ${day.live % 10 === 1 && day.live % 100 !== 11 ? 'матч' : 'матчей'} ${inLeagues(day.leagues.filter((l) => l.live).length)}`)}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
           >
-            <LeagueFlag l={l} />
-            {l.live ? <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-live ring-2 ring-panel" /> : null}
+            <StorySymbol k="live" tone="currentColor" className="h-[18px] w-[18px]" />
           </a>
+        ) : null}
+        {top.map((l) => (
+          <RailFlag key={l.id} l={l} />
+        ))}
+        {/* другие турниры дня — после тонкой черты (до 12, полоска узкая) */}
+        {rest.length ? <span aria-hidden className="my-1 h-px w-6 shrink-0 bg-edge" /> : null}
+        {rest.slice(0, 12).map((l) => (
+          <RailFlag key={l.id} l={l} />
         ))}
         {/* свёрнута — 18+ внизу полоски, ведёт на «Ответственную игру» */}
         <Link
@@ -199,6 +238,18 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
           18+
         </Link>
       </div>
+      {/* в body порталом: панель — свой слой ниже центра, и его красные точки проступали поверх подсказки */}
+      {tip ? createPortal(
+        <div
+          role="tooltip"
+          style={{ left: tip.x, top: tip.y }}
+          className="shell-l-rail pointer-events-none fixed z-50 flex-col -translate-y-1/2 whitespace-nowrap rounded-tile bg-panel-3 px-3 py-2 leading-tight shadow-lg shadow-black/40"
+        >
+          <span className="block text-[14px] font-medium">{tip.title}</span>
+          {tip.sub ? <span className="mt-0.5 block text-[12.5px] text-mute">{tip.sub}</span> : null}
+        </div>,
+        document.body,
+      ) : null}
 
       <div className="shell-l-full flex h-full flex-col">
       <div className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
