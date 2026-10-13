@@ -15,7 +15,7 @@ import { readSeen, SEEN_EVENT } from '../story/seen'
 import { StorySymbol } from '../story/StorySymbol'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
-import { LiveDot, matchesN, StateLine } from './StateLine'
+import { matchesN, StateLine } from './StateLine'
 import { StoryRing } from './StoryRing'
 
 /** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас в игре». */
@@ -181,7 +181,6 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
       className="relative shrink-0 rounded-full transition-opacity hover:opacity-80"
     >
       <LeagueFlag l={l} />
-      {l.live ? <LiveDot /> : null}
     </a>
   )
   const Name = ({ l }: { l: DayLeague }) => (
@@ -222,7 +221,6 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
             <LeagueFlag l={l} />
             <PlayOverlay />
             <StoryRing group={id} ids={l.items.map((m) => m.id)} seen={seen} />
-            {l.live ? <LiveDot /> : null}
           </button>
           <a
             href={l.href}
