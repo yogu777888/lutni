@@ -5,13 +5,14 @@ import { usePathname } from 'next/navigation'
 
 export const NAV = [
   { href: '/matches', label: 'Матчи' },
-  { href: '/tags', label: 'Теги' },
+  // «Подборки», как панель справа («Подборки дня»): «Теги» и «Подборки» были одним и тем же под разными именами
+  { href: '/tags', label: 'Подборки' },
   { href: '/tag/value', label: 'Выгодно' },
   { href: '/leagues', label: 'Лиги' },
   { href: '/bookmakers', label: 'Букмекеры' },
 ] as const
 
-/** Какой пункт меню подсветить: список, дни и страница матча — «Матчи», страницы тегов — «Теги». Главная — логотип. */
+/** Какой пункт меню подсветить: список, дни и страница матча — «Матчи», страницы тегов — «Подборки». Главная — логотип. */
 export function activeNav(path: string): string | null {
   if (path.startsWith('/matches') || path.startsWith('/match/')) return '/matches'
   if (path === '/tag/value') return '/tag/value'

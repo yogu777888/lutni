@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import type { CompactMatch } from '@/lib/compact'
-import type { DayPicks } from '@/lib/day-picks'
+import type { DayPicks, ValueRow } from '@/lib/day-picks'
+import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import { TeamLogo } from '../TeamLogo'
 import { openStory } from '../story/events'
 import { circleQueue } from '../story/queue'
@@ -45,6 +46,50 @@ function Right({ m, stat, hot }: { m: CompactMatch; stat?: string; hot: boolean 
  * матчи строками (эмблемы, команды, главная цифра / время / счёт) и «Все N матчей →» (страница тега).
  * Свёрнута — полоска со значками подборок.
  */
+/**
+ * «Выгодно сегодня» внизу панели (владелец согласился: блок ушёл из центра, а нижняя половина панели пустовала):
+ * до трёх лучших выгодных ставок дня — матч, исход словами и лаймовый кэф партнёра; кэф — ссылка к букмекеру
+ * (`goHref(…, 'panel')`, rel=sponsored), пометка «Реклама» — в заголовке; внизу «Все выгодные →» (/tag/value).
+ */
+function ValueBlock({ rows }: { rows: ValueRow[] }) {
+  if (!rows.length) return null
+  return (
+    <section className="mt-6 border-t border-edge pt-4">
+      <h3 className="flex items-baseline justify-between text-[15px] font-semibold">
+        Выгодно сегодня
+        <span className="text-[11.5px] font-normal text-mute">Реклама · 18+</span>
+      </h3>
+      <ul className="mt-2 space-y-1">
+        {rows.map((r) => (
+          <li key={r.id} className="-mx-2 flex items-center gap-3 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.04]">
+            <Link href={r.href} prefetch={false} className="min-w-0 flex-1 leading-tight">
+              <span className="block truncate text-[13.5px] font-medium">
+                {r.home} — {r.away}
+              </span>
+              <span className="block truncate text-[12.5px] text-dim first-letter:uppercase">
+                {r.outcome} · {r.time}
+              </span>
+            </Link>
+            <a
+              href={goHref(r.slug, 'panel', r.id)}
+              target="_blank"
+              rel={SPONSORED_REL}
+              title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выгода +${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
+              className="num shrink-0 rounded-ctl bg-acid px-2.5 py-1.5 text-center text-[14px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
+            >
+              {r.odd.toFixed(2)}
+              <span className="block text-[10px] font-medium leading-none opacity-70">{r.bookmaker}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <Link href="/tag/value" prefetch={false} className="mt-2 inline-block text-[13px] font-medium text-dim transition-colors hover:text-fg">
+        Все выгодные →
+      </Link>
+    </section>
+  )
+}
+
 /** Сколько подборок видно сразу, если их больше `FOLD_FROM`; остальные — под «Ещё N» (прятать одну-две нет смысла). */
 const SHOWN = 7
 const FOLD_FROM = 10
@@ -201,6 +246,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
           ) : (
             <p className="mt-2 text-[13.5px] text-dim">Подборки появятся, когда будут матчи дня.</p>
           )}
+          <ValueBlock rows={picks.values} />
         </div>
       </div>
     </div>

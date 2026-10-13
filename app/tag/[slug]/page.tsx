@@ -49,7 +49,7 @@ export default async function TagPage({ params }: Props) {
 
   return (
     <>
-      <Breadcrumbs items={[{ href: '/tags', label: 'Теги' }, { href: `/tag/${t.slug}`, label: t.title }]} />
+      <Breadcrumbs items={[{ href: '/tags', label: 'Подборки' }, { href: `/tag/${t.slug}`, label: t.title }]} />
       <div className="pitch-bg card mb-8 p-6 sm:p-8">
         <TagPill slug={t.slug} size="md" link={false} />
         <h1 className="mt-4 display text-[36px] sm:text-[56px]">{t.title}: матчи на сегодня и ближайшие дни</h1>
