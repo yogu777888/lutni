@@ -53,7 +53,7 @@ function Legal({ demo }: { demo: string | null }) {
         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[9.5px] font-semibold ring-1 ring-edge-2">18+</span>
         Ставки — это риск. Играйте ответственно.
       </p>
-      <nav aria-label="Информация" className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+      <nav aria-label="Информация" className="mt-2 flex flex-wrap gap-x-2.5 gap-y-1 tracking-[-0.01em]">
         <Link href="/about" className={link}>Как мы считаем</Link>
         <Link href="/responsible-gaming" className={link}>Ответственная игра</Link>
         <Link href="/privacy" className={link}>Cookie</Link>
