@@ -11,6 +11,9 @@ import { TeamLogo } from '../TeamLogo'
 import { StorySymbol } from '../story/StorySymbol'
 import { PanelToggle } from './PanelToggle'
 
+/** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас в игре». */
+const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'турнире' : 'турнирах'}`
+
 /** Блок на странице: раскрыть свёрнутые «Другие турниры» вокруг него и плавно прокрутить к нему. */
 function reveal(id: string): boolean {
   const el = document.getElementById(id)
@@ -130,9 +133,25 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
   const rest = day.leagues.filter((l) => !l.top)
   // строки — как в правой панели: значок в круге 36px, название 14,5px, справа число
   const row = 'flex items-center gap-3 rounded-tile py-1.5 pl-2 pr-2.5 text-[14.5px] font-medium transition-colors'
-  // идут матчи — число красным (сколько идёт), иначе тихое число матчей
-  const Count = ({ live, total }: { live: number; total: number }) =>
-    live ? <span className="num shrink-0 text-[13px] font-semibold text-live">{live}</span> : <span className="num shrink-0 text-[13px] text-mute">{total}</span>
+  // справа всегда число матчей, тихо (один столбец — один смысл); сколько идёт — красным в подписи
+  const Count = ({ n }: { n: number }) => <span className="num shrink-0 text-[13px] text-mute">{n}</span>
+  // подпись под названием, как в «Подборках дня»: страна и что с турниром — «3 в игре» красным / «с 22:00» / «в 22:00» (следующий, когда часть сыграна) / «все сыграны»
+  const Sub = ({ l }: { l: DayLeague }) => {
+    const state = l.live ? null : l.next ? `${l.started ? 'в' : 'с'} ${l.next}` : l.started ? 'все сыграны' : ''
+    return (
+      <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">
+        {l.country}
+        {l.country && (l.live || state) ? ' · ' : ''}
+        {l.live ? <span className="text-live">{l.live} в игре</span> : state}
+      </span>
+    )
+  }
+  const Name = ({ l }: { l: DayLeague }) => (
+    <span className="min-w-0 flex-1 leading-tight">
+      <span className="block truncate">{l.name}</span>
+      <Sub l={l} />
+    </span>
+  )
   const League = ({ l, jump = true }: { l: DayLeague; jump?: boolean }) => {
     const id = `league-${l.id}`
     const on = jump && active === id
@@ -146,8 +165,8 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
           className={`-mx-2 ${row} ${on ? 'bg-white/[0.07] text-fg' : 'text-fg/85 hover:bg-white/[0.04] hover:text-fg'}`}
         >
           <LeagueFlag l={l} />
-          <span className="min-w-0 flex-1 truncate">{l.name}</span>
-          <Count live={l.live} total={l.total} />
+          <Name l={l} />
+          <Count n={l.total} />
         </a>
       </li>
     )
@@ -199,8 +218,11 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
                 <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
                   <StorySymbol k="live" tone="currentColor" className="h-[18px] w-[18px]" />
                 </span>
-                <span className="min-w-0 flex-1 truncate">Сейчас в игре</span>
-                <Count live={day.live} total={day.live} />
+                <span className="min-w-0 flex-1 leading-tight">
+                  <span className="block truncate">Сейчас в игре</span>
+                  <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">{inLeagues(day.leagues.filter((l) => l.live).length)}</span>
+                </span>
+                <Count n={day.live} />
               </a>
             </li>
           ) : null}
