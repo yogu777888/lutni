@@ -1,7 +1,7 @@
 import { flagCode } from '@/lib/flags'
 import type { League } from '@/lib/types'
 
-/** Флаг страны турнира перед названием лиги (flag-icons, MIT); нет флага — ничего. */
+/** Флаг страны турнира перед названием лиги (flag-icons, MIT) — кругом 22px, как в левой панели; нет флага — ничего. */
 export function Flag({ league, className = '' }: { league: Pick<League, 'country' | 'countryCode'>; className?: string }) {
   const code = flagCode(league)
   if (!code) return null
@@ -11,9 +11,9 @@ export function Flag({ league, className = '' }: { league: Pick<League, 'country
       src={`/flags/${code}.svg`}
       alt=""
       width={22}
-      height={16}
+      height={22}
       loading="lazy"
-      className={`h-4 w-[22px] shrink-0 rounded-[3px] object-cover ring-1 ring-white/10 ${className}`}
+      className={`h-[22px] w-[22px] shrink-0 rounded-full object-cover ring-1 ring-white/15 ${className}`}
     />
   )
 }

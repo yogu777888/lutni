@@ -27,17 +27,23 @@ export function LeagueBlock({ league, items, live = 0 }: { league: League; items
           <span className="truncate text-[20px] font-bold tracking-tight" title={league.name}>
             {flagCode(league) ? leagueTitle(league.name) : league.name}
           </span>
-          <span className="text-mute transition-transform duration-300 group-hover:translate-x-1" aria-hidden>
-            →
-          </span>
         </Link>
-        {/* идущие матчи лиги — наверху, в «Сейчас в игре»: здесь только пометка со ссылкой туда */}
-        {live ? (
-          <a href="#live" className="flex shrink-0 items-center gap-1.5 text-[13px] font-medium text-live transition-opacity hover:opacity-80">
-            <span className="h-1.5 w-1.5 rounded-full bg-live" />
-            {live} в игре
-          </a>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-4 text-[13px] font-medium">
+          {/* идущие матчи лиги — наверху, в «Сейчас в игре»: здесь только пометка со ссылкой туда */}
+          {live ? (
+            <a href="#live" className="flex items-center gap-1.5 text-live transition-opacity hover:opacity-80">
+              <span className="h-1.5 w-1.5 rounded-full bg-live" />
+              {live} в игре
+            </a>
+          ) : null}
+          {/* вместо безымянной стрелки — понятная ссылка: страница турнира с таблицей */}
+          <Link href={leagueHref(league)} prefetch={false} className="group/t flex items-center gap-1 text-dim transition-colors hover:text-fg">
+            Таблица
+            <span aria-hidden className="transition-transform duration-300 group-hover/t:translate-x-0.5">
+              →
+            </span>
+          </Link>
+        </div>
       </header>
       <div className="divide-y divide-edge">
         {[...items].sort(byState).map((it) => (
