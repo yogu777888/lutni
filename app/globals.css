@@ -838,3 +838,30 @@ html[data-shell-rc] .shell-r-rail {
     overscroll-behavior-y: none;
   }
 }
+
+/* Страница матча от xl — тоже без «блока в блоке» (владелец: «там блоки в блоке на странице матча»): центр прозрачный,
+   каждый раздел — графитовая панель bg-panel без рамки, зазор 8px (отступы — xl:mt-2/xl:space-y-2 в app/match/[slug]),
+   хлебные крошки с тихим заголовком — своей панелью сверху. Метка — .bare-match. */
+@media (min-width: 1280px) {
+  .shell-center:has(.bare-match) {
+    background: transparent;
+  }
+  .shell-center:has(.bare-match) > main {
+    max-width: 72rem;
+    padding: 0;
+  }
+  .shell-center:has(.bare-match) .card {
+    border-color: transparent;
+    background: var(--color-panel);
+  }
+  .shell-center:has(.bare-match) .bare-match-head {
+    margin-bottom: 8px;
+    border-radius: var(--radius-card);
+    background: var(--color-panel);
+    padding: 14px 28px;
+  }
+  .shell-center:has(.bare-match) .bare-match-head > nav {
+    margin-bottom: 4px;
+  }
+}
+

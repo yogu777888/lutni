@@ -155,16 +155,22 @@ export default async function MatchPage({ params }: Props) {
 
   return (
     <>
-      <Breadcrumbs
-        items={[
-          { href: leagueHref(m.league), label: m.league.name },
-          { href: canonical, label: pair },
-        ]}
-      />
+      {/* от xl — без общей подложки центра, как на главной: каждый раздел — своя панель, зазор 8px (владелец: «там блоки
+          в блоке на странице матча»; правила — .bare-match в app/globals.css) */}
+      <span hidden className="bare-match" />
+      {/* хлебные крошки и тихий заголовок — от xl тоже панелью (иначе висели бы на фоне страницы) */}
+      <div className="bare-match-head">
+        <Breadcrumbs
+          items={[
+            { href: leagueHref(m.league), label: m.league.name },
+            { href: canonical, label: pair },
+          ]}
+        />
+        {/* тихий заголовок, как на главной: для поисковиков он есть, но не кричит — команды крупно на табло под ним */}
+        <h1 className="h1-quiet mb-4 mt-2 text-[15px] text-dim xl:mb-0">{h1}</h1>
+      </div>
       {/* идёт матч — счёт, минута и live-кэфы обновляются сами */}
       {m.status === 'live' || m.status === 'suspended' ? <LiveRefresh /> : null}
-      {/* тихий заголовок, как на главной: для поисковиков он есть, но не кричит — команды крупно на табло под ним */}
-      <h1 className="h1-quiet mb-4 mt-2 text-[15px] text-dim">{h1}</h1>
 
       {/* сначала табло, как в «Главных матчах»: команды, время или счёт, шансы; ниже — ответ словами */}
       <MatchHero full={full} cells={cells} books={cons.books} line={partnerLine && scheduled ? { name: partnerLine.partner.name, href: goHref(partnerLine.partner, 'match-hero', m.id) } : null} tint={tint ? distinctPair(tint) : null} notes={notes}>
@@ -178,13 +184,13 @@ export default async function MatchPage({ params }: Props) {
 
       {/* «Наш вывод» — до начала: расклад, ставка и теги одним блоком (были три блока с повторами) */}
       {scheduled && (verdict || pick || tags.length) ? (
-        <div className="mt-5">
+        <div className="mt-5 xl:mt-2">
           <Conclusion v={verdict} pick={pick} match={m} tags={tags} />
         </div>
       ) : null}
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0 space-y-6">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:mt-2 xl:grid-cols-1 xl:gap-2 2xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-6 xl:space-y-2">
           {!scheduled && (full.events.length || full.stats.length) ? (
             // в игре — «Сейчас в матче»: эти цифры учитывают счёт и ход игры; доматчевые блоки ниже подписаны «До матча»
             <Section title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'} aside={m.status === 'live' ? 'по ходу игры' : 'итог'}>
@@ -312,13 +318,13 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          <p className="text-[11px] leading-relaxed text-mute">
+          <p className="text-[11px] leading-relaxed text-mute xl:px-2 xl:pt-2">
             Прогноз и вероятности рассчитаны автоматически по данным букмекерских линий и статистике и не гарантируют результат. 18+.
             Ставьте только ту сумму, потерю которой готовы принять.
           </p>
         </div>
 
-        <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+        <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start xl:static xl:space-y-2 2xl:sticky 2xl:top-[72px]">
           <section className="card p-6">
             {/* заголовки — один вид на всей странице (как у Section), без мелких заглавных */}
             <h2 className="h2 text-[20px] font-bold tracking-[-0.02em] sm:text-[22px]">Где поставить</h2>
