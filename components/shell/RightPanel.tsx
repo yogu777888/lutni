@@ -201,7 +201,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                         <span className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                           <Play className="ml-0.5 h-3.5 w-3.5" />
                         </span>
-                        {/* кольцо, как вокруг сторис: непросмотренные матчи подборки — лайм, просмотренные — серые */}
+                        {/* кольцо, как вокруг сторис: непросмотренные матчи подборки — белые, просмотренные — серые */}
                         <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} />
                         {/* точки «идёт» на значках подборок нет: при многих идущих их было шесть подряд; «3 в игре» — в подписи,
                             а сигнал «идёт» — в центре и у турниров слева (владелец согласился) */}
