@@ -11,8 +11,8 @@ import { TeamLogo } from './TeamLogo'
  * Колонки строки матча — одни и те же у каждой строки, в любом состоянии (владелец: «время везде по-разному, кэфы не
  * везде есть, счёт не везде есть»): время · матч · счёт · кэфы. На телефоне — время · команды в две строки · счёт, кэфы ниже.
  */
-export const ROW_COLS = 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_4.5rem_11.25rem]'
-const ROW_COLS_NO_ODDS = 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_4.5rem]'
+export const ROW_COLS = 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_11.25rem]'
+const ROW_COLS_NO_ODDS = 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_auto]'
 
 const isLive = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
@@ -158,17 +158,18 @@ export function MatchRow({
         {showLeague ? <div className="mt-1 truncate text-[12.5px] text-mute">{m.league.name}</div> : null}
       </div>
 
-      <div className="sm:text-center">
-        <Score m={m} big />
-      </div>
-      {/* кэфы — только до начала (владелец: «а кэфы у сыгранных может вообще убрать?», «у идущих может тоже убрать?») —
-          у начавшихся место колонки остаётся пустым */}
-      {noOdds ? null : m.status !== 'scheduled' ? (
-        // пустое место высотой ячейки кэфа — строки одной высоты
-        <span className="hidden h-[34px] sm:block" />
+      {/* справа — одно из двух: до начала кэфы, у начавшихся — счёт по центру той же области (владелец: «давай» — счёт
+          висел посередине строки, правый край был рваным); высота — как у ячеек кэфов, строки одной высоты */}
+      {m.status === 'scheduled' && !noOdds ? (
+        <>
+          <span className="sm:hidden" />
+          <div className="col-span-2 col-start-2 sm:col-span-1 sm:col-start-auto">
+            <Odds m={m} hotKey={hotKey} hotOdd={pick?.odd ?? null} />
+          </div>
+        </>
       ) : (
-        <div className="col-span-2 col-start-2 sm:col-span-1 sm:col-start-auto">
-          <Odds m={m} hotKey={hotKey} hotOdd={pick?.odd ?? null} />
+        <div className="flex items-center justify-end sm:h-[34px] sm:justify-center">
+          <Score m={m} big />
         </div>
       )}
     </div>
