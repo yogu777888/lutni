@@ -755,11 +755,22 @@ html[data-shell-rc] .shell-r-rail {
     max-width: none;
     padding: 0;
   }
+  /* строка инструментов над списком (дни и порядок) — невысокая и липкая: прилипает под шапкой, день и порядок
+     меняются из любого места списка (владелец согласился); 72px = шапка 64 + полоска рамки 8 */
   .shell-center:has(.bare-page) .bare-panel {
+    position: sticky;
+    top: 72px;
+    z-index: 20;
     margin-top: 0;
     border-radius: var(--radius-card);
     background: var(--color-panel);
-    padding: 20px 24px 24px;
+    padding: 8px 10px 8px 22px;
+    /* под строкой — полоска цвета фона 8px, как у рамки под шапкой: список уходит под неё с зазором, а не впритык */
+    box-shadow: 0 8px 0 #090c10;
+  }
+  /* переход к блоку лиги из левой панели — с учётом липкой строки: шапка + рамка + строка + зазор */
+  .shell-center:has(.bare-page) #matches section[id] {
+    scroll-margin-top: 140px;
   }
   /* полка «Выгодно сегодня» — без своей подложки: заголовок на фоне страницы, карточки — панелями */
   .shell-center:has(.bare-page) .bare-shelf > section {

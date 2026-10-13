@@ -7,14 +7,21 @@ import { DatePicker } from './DatePicker'
 /** «28 сент» — день вне полосы вкладок (выбран через календарь). */
 const dayMonthFmt = new Intl.DateTimeFormat('ru-RU', { timeZone: SITE.timeZone, day: 'numeric', month: 'short' })
 
-/** Короткая подпись дня: «Вчера», «Сегодня», «Завтра», дальше — день недели («Вт»): дни идут подряд, число лишнее. */
+/** Число месяца у дня недели. */
+const dayNumFmt = new Intl.DateTimeFormat('ru-RU', { timeZone: SITE.timeZone, day: 'numeric' })
+
+/**
+ * Короткая подпись дня: «Вчера», «Сегодня», «Завтра», дальше — день недели с числом («Вт 6»; без числа к концу недели
+ * было непонятно, какой это день — владелец согласился).
+ */
 function shortDay(ymd: string, today: string): string {
   const d = diffDays(ymd, today)
   if (d === 0) return 'Сегодня'
   if (d === 1) return 'Завтра'
   if (d === -1) return 'Вчера'
-  const wd = formatWeekday(ymdToNoonTs(ymd)).replace('.', '')
-  return `${wd.charAt(0).toUpperCase()}${wd.slice(1)}`
+  const ts = ymdToNoonTs(ymd)
+  const wd = formatWeekday(ts).replace('.', '')
+  return `${wd.charAt(0).toUpperCase()}${wd.slice(1)} ${dayNumFmt.format(ts)}`
 }
 
 /**

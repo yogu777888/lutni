@@ -103,8 +103,8 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
         const top = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
         if (top) setActive(top.target.id)
       },
-      // «текущая» — та, что пересекает полосу чуть ниже шапки
-      { rootMargin: '-90px 0px -75% 0px' },
+      // «текущая» — та, что пересекает полосу чуть ниже шапки и липкой строки дней
+      { rootMargin: '-150px 0px -70% 0px' },
     )
     blocks.forEach((b) => io.observe(b))
     return () => io.disconnect()
