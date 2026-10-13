@@ -76,8 +76,9 @@ function ValueBlock({ rows }: { rows: ValueRow[] }) {
             {/* главное — на что ставка (сверху, белым, в узкой панели — в две строки, не обрезаем); матч и время — ниже серым: обрезается второстепенное */}
             <Link href={r.href} prefetch={false} className="min-w-0 flex-1 leading-tight">
               <span className="line-clamp-2 text-[13.5px] font-medium first-letter:uppercase">{r.outcome}</span>
+              {/* букмекер — здесь, а не в плашке: плашка — такая же ячейка, как лаймовая в списке */}
               <span className="mt-0.5 block truncate text-[12.5px] text-dim">
-                {r.time} · {r.home} — {r.away}
+                {r.bookmaker} · {r.time} · {r.home} — {r.away}
               </span>
             </Link>
             <a
@@ -85,10 +86,10 @@ function ValueBlock({ rows }: { rows: ValueRow[] }) {
               target="_blank"
               rel={SPONSORED_REL}
               title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выгода +${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
-              className="num w-[68px] shrink-0 rounded-ctl bg-acid py-2 text-center text-[14px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
+              // как лаймовая ячейка кэфа в строке списка (34px, 15px): три высоких плашки с букмекером были ярче всего на странице
+              className="num grid h-[34px] w-14 shrink-0 place-items-center rounded-ctl bg-acid text-[15px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
             >
               {r.odd.toFixed(2)}
-              <span className="mt-1 block text-[11.5px] font-semibold leading-none opacity-75">{r.bookmaker}</span>
             </a>
           </li>
         ))}
