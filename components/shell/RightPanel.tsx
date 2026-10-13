@@ -54,9 +54,13 @@ function Right({ m, stat, hot }: { m: CompactMatch; stat?: string; hot: boolean 
  * матчи строками (эмблемы, команды, главная цифра / время / счёт) и «Все N матчей →» (страница тега). Внизу —
  * компактная карточка «Войти через Telegram» (входа пока нет — «Скоро»). Свёрнута — полоска со значками подборок.
  */
+/** Сколько подборок видно сразу; остальные — под «Ещё N». */
+const SHOWN = 7
+
 export function RightPanel({ picks }: { picks: DayPicks }) {
   const [open, setOpen] = useState<string | null>(null)
   const [soon, setSoon] = useState(false)
+  const [all, setAll] = useState(false)
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
   useEffect(() => {
     const update = () => setSeen(readSeen())
@@ -71,7 +75,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
     const first = groups[gi].items.find((it) => it.id === startId) ?? groups[gi].items[0]
     openStory({ id: startId, href: first.href, opener: e.currentTarget, queue })
   }
-  const moreHref = (key: string) => (key === 'live' ? '/matches' : key === 'soon' ? '/matches?sort=time' : key === 'top' ? null : `/tag/${key}`)
+  const moreHref = (key: string) => (key === 'soon' ? '/matches?sort=time' : key === 'top' ? null : `/tag/${key}`)
 
   return (
     <div className="relative h-full overflow-hidden rounded-card bg-panel">
@@ -100,34 +104,48 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
           {groups.length ? (
             <ul className="mt-2 space-y-0.5">
               {groups.map((g, gi) => {
+                // первые SHOWN — сразу, остальные — под «Ещё N» (владелец: список без иерархии не помещался в экран)
+                if (gi >= SHOWN && !all) return null
                 const on = open === g.key
                 const more = moreHref(g.key)
                 return (
                   <li key={g.key}>
-                    <div className={`-mx-2 flex items-center gap-1 rounded-tile pr-1.5 transition-colors ${on ? 'bg-white/[0.06]' : 'hover:bg-white/[0.04]'}`}>
-                      <button
-                        type="button"
-                        onClick={() => setOpen(on ? null : g.key)}
-                        aria-expanded={on}
-                        className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-2 text-left"
-                      >
-                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
-                          <StorySymbol k={g.key} tone="currentColor" className="h-[18px] w-[18px]" />
-                        </span>
-                        <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium">{g.label}</span>
-                        <span className="text-[13px] text-mute">{totals[g.key] ?? g.items.length}</span>
-                        <span aria-hidden className={`text-[11px] text-mute transition-transform ${on ? 'rotate-180' : ''}`}>
-                          ▾
-                        </span>
-                      </button>
+                    <div className={`group -mx-2 flex items-center gap-1 rounded-tile pr-2 transition-colors ${on ? 'bg-white/[0.06]' : 'hover:bg-white/[0.04]'}`}>
+                      {/* значок подборки; при наведении на строку на его месте белая ▶ — смотреть разбор, как у Spotify
+                          (14 белых кнопок разом были ярче всего на странице) */}
                       <button
                         type="button"
                         onClick={(e) => play(gi, e)}
                         aria-label={`${g.label}: смотреть разбор матчей`}
                         title="Смотреть разбор"
-                        className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-ink transition-transform hover:scale-105"
+                        className="relative my-1.5 ml-2 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]"
                       >
-                        <Play className="ml-0.5 h-3.5 w-3.5" />
+                        <StorySymbol k={g.key} tone="currentColor" className="h-[18px] w-[18px] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0" />
+                        <span className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                          <Play className="ml-0.5 h-3.5 w-3.5" />
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOpen(on ? null : g.key)}
+                        aria-expanded={on}
+                        className="flex min-w-0 flex-1 items-center gap-3 self-stretch pl-2 text-left"
+                      >
+                        <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium">{g.label}</span>
+                        <span className="num text-[13px] text-mute">{totals[g.key] ?? g.items.length}</span>
+                        {/* шеврон справа — видно, что строка раскрывается */}
+                        <svg
+                          viewBox="0 0 24 24"
+                          aria-hidden
+                          className={`h-4 w-4 shrink-0 text-mute transition-transform duration-200 ${on ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2.2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
                       </button>
                     </div>
                     {on ? (
@@ -171,6 +189,22 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                   </li>
                 )
               })}
+              {groups.length > SHOWN ? (
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setAll((v) => !v)}
+                    className="-mx-2 mt-1 flex w-[calc(100%+1rem)] items-center gap-3 rounded-tile px-2 py-2 text-left text-[13.5px] font-medium text-dim transition-colors hover:bg-white/[0.04] hover:text-fg"
+                  >
+                    <span className="grid h-9 w-9 shrink-0 place-items-center">
+                      <svg viewBox="0 0 24 24" aria-hidden className={`h-4 w-4 transition-transform ${all ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </span>
+                    {all ? 'Свернуть' : `Ещё ${groups.length - SHOWN}`}
+                  </button>
+                </li>
+              ) : null}
             </ul>
           ) : (
             <p className="mt-2 text-[13.5px] text-dim">Подборки появятся, когда будут матчи дня.</p>
