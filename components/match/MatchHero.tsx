@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { SITE } from '@/config/site'
+import { SPONSORED_REL } from '@/lib/affiliate'
 import { formatDateLong, formatTime, formatWeekdayLong, ymdInTz } from '@/lib/format'
 import { leagueHref } from '@/lib/links'
 import { split100 } from '@/lib/verdict'
@@ -39,11 +40,14 @@ export function MatchHero({
   books,
   tint,
   notes,
+  line = null,
   children,
 }: {
   full: MatchFull
   cells: BoardCell[] | null
   books: number
+  /** чьи кэфы в ячейках и ссылка к нему (реклама); null — кэфы без ссылки (после начала матча) */
+  line?: { name: string; href: string } | null
   /** цвета клубов — мягкое свечение за командами, как в «Главных матчах» */
   tint?: { home: string; away: string } | null
   /** метки-факты над эмблемами (lib/hand-notes.ts) */
@@ -150,28 +154,47 @@ export function MatchHero({
           </div>
           {cells.some((c) => c.odd) ? (
             <div className="mt-5 grid grid-cols-[auto_repeat(3,minmax(0,1fr))] items-center gap-2 sm:gap-3">
+              {/* чьи кэфы — по имени (одна линия одного партнёра), ячейки — ссылки к нему */}
               <span className="pr-1 text-[12px] leading-tight text-dim sm:pr-3 sm:text-[13px]">
-                Кэф
-                <br className="sm:hidden" />
-                <span className="hidden sm:inline"> букмекера</span>
+                Кэфы
+                <br />
+                <span className="font-semibold text-fg">{line?.name ?? 'букмекера'}</span>
               </span>
-              {cells.map((c) => (
-                <div
-                  key={c.key}
-                  className={`rounded-tile border px-1 py-2.5 text-center ${c.hot ? 'border-acid bg-acid text-acid-ink' : 'border-transparent bg-white/[0.05]'}`}
-                  title={c.hot ? 'Коэффициент выше честного' : undefined}
-                >
-                  <div className="num text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[30px]">{c.odd ? c.odd.toFixed(2) : '—'}</div>
-                  <div className={`mt-1.5 text-[11px] ${c.hot ? 'font-semibold text-acid-ink/70' : 'text-mute'}`}>
-                    стоит {c.fair.toFixed(2)}
-                    {c.hot && c.odd ? <span className="hidden sm:inline"> · {signed(c.odd / c.fair - 1)}</span> : null}
+              {cells.map((c) => {
+                const body = (
+                  <>
+                    <div className="num text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[30px]">{c.odd ? c.odd.toFixed(2) : '—'}</div>
+                    <div className={`mt-1.5 text-[11px] ${c.hot ? 'font-semibold text-acid-ink/70' : 'text-mute'}`}>
+                      стоит {c.fair.toFixed(2)}
+                      {c.hot && c.odd ? <span className="hidden sm:inline"> · {signed(c.odd / c.fair - 1)}</span> : null}
+                    </div>
+                  </>
+                )
+                const cls = `block rounded-tile border px-1 py-2.5 text-center transition-colors ${
+                  c.hot ? 'border-acid bg-acid text-acid-ink hover:bg-acid/85' : 'border-transparent bg-white/[0.05] hover:bg-white/[0.1]'
+                }`
+                return line && c.odd ? (
+                  <a
+                    key={c.key}
+                    href={line.href}
+                    target="_blank"
+                    rel={SPONSORED_REL}
+                    className={cls}
+                    title={`${c.label}: ${c.odd.toFixed(2)} в ${line.name}${c.hot ? ' — выше честной цены' : ''} · Реклама 18+`}
+                  >
+                    {body}
+                  </a>
+                ) : (
+                  <div key={c.key} className={cls.replace(/hover:\S+/g, '')}>
+                    {body}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : null}
           <p className="mt-4 text-[12px] text-mute">
             Шансы — из коэффициентов{books > 1 ? ` ${books} букмекеров` : ''} без их наценки. Лаймом горит кэф, который выше, чем стоит исход.
+            {line ? ' Реклама · 18+' : ''}
           </p>
         </>
       ) : null}

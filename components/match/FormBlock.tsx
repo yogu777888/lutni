@@ -44,11 +44,11 @@ function TeamFormCard({ team, form }: { team: Team; form: TeamForm }) {
           <dd className="num mt-0.5 text-[15px] font-semibold">{form.gaAvg.toFixed(1)}</dd>
         </div>
         <div>
-          <dt className="text-mute">ТБ 2.5</dt>
+          <dt className="text-mute">3+ гола</dt>
           <dd className="num mt-0.5 text-[15px] font-semibold">{Math.round(form.over25Rate * 100)}%</dd>
         </div>
         <div>
-          <dt className="text-mute">Обе заб.</dt>
+          <dt className="text-mute">Обе забьют</dt>
           <dd className="num mt-0.5 text-[15px] font-semibold">{Math.round(form.bttsRate * 100)}%</dd>
         </div>
       </dl>

@@ -21,6 +21,7 @@ export type Placement =
   | 'main-live-odds'
   | 'panel'
   | 'list-odds'
+  | 'match-hero'
 
 /** Внутренняя ссылка на редирект: /go/fonbet?p=pick&m=123 */
 export function goHref(partner: Pick<Partner, 'slug'> | string, placement: Placement, matchId?: number): string {

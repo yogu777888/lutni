@@ -19,7 +19,7 @@ import { StandingsTable } from '@/components/StandingsTable'
 import { StickyCta } from '@/components/StickyCta'
 import { StoryButton } from '@/components/story/StoryButton'
 import { TagPill } from '@/components/TagPill'
-import { PARTNERS, primaryPartner } from '@/config/bookmakers'
+import { PARTNERS, partnerForApiBookmaker, primaryPartner } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
 import { getMatchInsights, getMatchesByDate, getPariHistory, settle } from '@/lib/data'
@@ -28,7 +28,7 @@ import { LiveRefresh } from '@/components/Live'
 import { distinctPair, matchColors } from '@/lib/team-colors'
 import { handNotes } from '@/lib/hand-notes'
 import { appNow, formatDateShort, formatTime, idFromSlug, pct, pluralN, ymdInTz } from '@/lib/format'
-import { isValue } from '@/lib/model'
+import { valueThreshold } from '@/lib/model'
 import { leagueHref, matchHref } from '@/lib/links'
 import { buildStory } from '@/lib/story'
 import type { Match } from '@/lib/types'
@@ -107,18 +107,27 @@ export default async function MatchPage({ params }: Props) {
     .sort((a, b) => Number(b.league.id === m.league.id) - Number(a.league.id === m.league.id) || a.ts - b.ts)
     .slice(0, 6)
 
-  // табло матча: шанс, лучший кэф, честная цена; «горит», если букмекер платит больше честного
+  // табло матча: шанс, кэф и честная цена. Кэфы — одной линии одного легального партнёра, с его именем и ссылкой к нему
+  // (как в строках списка): раньше три ячейки собирались у разных букмекеров под подписью «Кэф букмекера». Партнёр —
+  // тот, у кого выгодна ставка, иначе первый по порядку PARTNERS, у кого есть все три исхода
+  const partnerLine = (() => {
+    const withX12 = books
+      .map((b) => ({ b, partner: partnerForApiBookmaker(b.bookmakerId, b.bookmakerName) }))
+      .filter((r): r is { b: (typeof books)[number]; partner: NonNullable<typeof r.partner> } => Boolean(r.partner && r.b.x12?.home && r.b.x12.draw && r.b.x12.away))
+    const want = pick?.candidate.bestPartner?.partner?.slug
+    return withX12.find((r) => r.partner.slug === want) ?? [...withX12].sort((a, c) => PARTNERS.indexOf(a.partner) - PARTNERS.indexOf(c.partner))[0] ?? null
+  })()
   const cells: BoardCell[] | null = x
     ? (['home', 'draw', 'away'] as const).map((k) => {
-        const c = candidates.find((cand) => cand.key === k)
-        const offer = c ? (c.bestPartner ?? c.best) : null
+        const odd = partnerLine?.b.x12?.[k]?.value ?? null
         return {
           key: k,
           label: k === 'home' ? `победа ${m.home.name}` : k === 'away' ? `победа ${m.away.name}` : 'ничья',
           p: x[k],
-          odd: offer?.value ?? null,
+          odd,
           fair: 1 / x[k],
-          hot: scheduled && Boolean(c && isValue(c)),
+          // горит, если именно этот букмекер платит больше честной цены (то же правило, что точка в таблице)
+          hot: scheduled && odd != null && x[k] * odd - 1 >= valueThreshold(odd),
         }
       })
     : null
@@ -158,7 +167,7 @@ export default async function MatchPage({ params }: Props) {
       <h1 className="h1-quiet mb-4 mt-2 text-[15px] text-dim">{h1}</h1>
 
       {/* сначала табло, как в «Главных матчах»: команды, время или счёт, шансы; ниже — ответ словами */}
-      <MatchHero full={full} cells={cells} books={cons.books} tint={tint ? distinctPair(tint) : null} notes={notes}>
+      <MatchHero full={full} cells={cells} books={cons.books} line={partnerLine && scheduled ? { name: partnerLine.partner.name, href: goHref(partnerLine.partner, 'match-hero', m.id) } : null} tint={tint ? distinctPair(tint) : null} notes={notes}>
         {/* теги — в «Нашем выводе» ниже, здесь только разбор за минуту */}
         {hasStory ? (
           <div className="mt-6 border-t border-edge pt-5">
@@ -203,7 +212,7 @@ export default async function MatchPage({ params }: Props) {
           {x ? (
             <Section
               title="Голы и счёт"
-              aside={`${scheduled ? '' : 'до матча · '}${model ? (model.source === 'xg' ? 'модель по xG' : `рынок ${cons.books > 1 ? `(${cons.books} БК)` : ''} + модель`) : 'рынок'}`}
+              aside={`${scheduled ? '' : 'до матча · '}${model ? (model.source === 'xg' ? 'по нашей модели' : `по кэфам${cons.books > 1 ? ` ${cons.books} букмекеров` : ''} и нашей модели`) : `по кэфам${cons.books > 1 ? ` ${cons.books} букмекеров` : ''}`}`}
             >
               <div className="space-y-5">
                 {over25 != null ? <SplitBar left={over25} leftLabel="3 гола и больше" rightLabel="До 2 голов" /> : null}
@@ -211,7 +220,7 @@ export default async function MatchPage({ params }: Props) {
                 {model ? (
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className="rounded-tile bg-white/[0.04] p-4">
-                      <div className="text-[11px] text-mute">Ожидаемые голы (xG)</div>
+                      <div className="text-[11px] text-mute">Сколько голов ждём</div>
                       <div className="num mt-1.5 text-[22px] font-semibold tracking-tight">
                         {model.lambdas.home.toFixed(2)} <span className="text-mute">:</span> {model.lambdas.away.toFixed(2)}
                       </div>
@@ -230,7 +239,7 @@ export default async function MatchPage({ params }: Props) {
                 ) : null}
                 {ins.glicko ? (
                   <p className="text-[12px] text-mute">
-                    Рейтинг Glicko-2: {m.home.name} — <span className="num font-medium text-dim">{Math.round(ins.glicko.homeRating)}</span>, {m.away.name} —{' '}
+                    Рейтинг силы команд: {m.home.name} — <span className="num font-medium text-dim">{Math.round(ins.glicko.homeRating)}</span>, {m.away.name} —{' '}
                     <span className="num font-medium text-dim">{Math.round(ins.glicko.awayRating)}</span>
                   </p>
                 ) : null}
@@ -257,11 +266,11 @@ export default async function MatchPage({ params }: Props) {
           ) : null}
 
           {books.length ? (
-            <Section title="Коэффициенты букмекеров" aside={`${scheduled ? '' : 'до матча · '}${books.length} БК · ▼▲ движение от открытия`}>
+            <Section title="Коэффициенты букмекеров" aside={`${scheduled ? '' : 'до матча · '}${pluralN(books.length, ['букмекер', 'букмекера', 'букмекеров'])} · ▼▲ — изменение с открытия`}>
               <OddsTable match={m} books={books} model={model} candidates={candidates} />
               <p className="mt-4 text-[11px] text-mute">
-                Лучший коэффициент в колонке подсвечен, точка — value (выше справедливого). Коэффициенты меняются — проверяйте
-                актуальную линию у букмекера.
+                Лучший коэффициент в колонке подсвечен, точка — кэф выше честной цены. Коэффициенты меняются — проверяйте
+                актуальную линию у букмекера. Реклама · 18+
               </p>
             </Section>
           ) : null}

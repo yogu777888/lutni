@@ -6,15 +6,16 @@ import type { BookOdds, Quote } from '@/lib/odds'
 import type { Match } from '@/lib/types'
 import { PartnerBadge } from '../PartnerBadge'
 
-type Col = { key: string; label: string; get: (b: BookOdds) => Quote | undefined }
+type Col = { key: string; label: string; title?: string; get: (b: BookOdds) => Quote | undefined }
 
-const COLS: Col[] = [
-  { key: 'home', label: 'П1', get: (b) => b.x12?.home },
-  { key: 'draw', label: 'Х', get: (b) => b.x12?.draw },
-  { key: 'away', label: 'П2', get: (b) => b.x12?.away },
-  { key: 'over2.5', label: 'ТБ 2.5', get: (b) => b.totals.find((t) => t.line === 2.5)?.over },
-  { key: 'under2.5', label: 'ТМ 2.5', get: (b) => b.totals.find((t) => t.line === 2.5)?.under },
-  { key: 'bttsYes', label: 'ОЗ да', get: (b) => b.btts?.yes },
+/** Колонки — простыми словами вместо «П1 / Х / П2 / ТБ 2.5 / ТМ 2.5 / ОЗ да» (владелец согласился). */
+const colsFor = (m: Match): Col[] => [
+  { key: 'home', label: m.home.name, title: `Победа «${m.home.name}»`, get: (b) => b.x12?.home },
+  { key: 'draw', label: 'Ничья', get: (b) => b.x12?.draw },
+  { key: 'away', label: m.away.name, title: `Победа «${m.away.name}»`, get: (b) => b.x12?.away },
+  { key: 'over2.5', label: '3+ гола', title: '3 гола и больше', get: (b) => b.totals.find((t) => t.line === 2.5)?.over },
+  { key: 'under2.5', label: 'До 2 голов', title: 'Не больше 2 голов', get: (b) => b.totals.find((t) => t.line === 2.5)?.under },
+  { key: 'bttsYes', label: 'Обе забьют', get: (b) => b.btts?.yes },
 ]
 
 function partnerOrder(b: BookOdds) {
@@ -23,7 +24,7 @@ function partnerOrder(b: BookOdds) {
 }
 
 /**
- * Сравнение коэффициентов: лучший в колонке подсвечен, value-коэффициенты
+ * Сравнение коэффициентов: лучший в колонке подсвечен, выгодные (выше честной цены)
  * отмечены точкой, у партнёров — кнопка «Ставка» (через /go с subid).
  */
 export function OddsTable({
@@ -37,7 +38,7 @@ export function OddsTable({
   model: ModelOutput | null
   candidates: Candidate[]
 }) {
-  const cols = COLS.filter((c) => books.some((b) => c.get(b)))
+  const cols = colsFor(match).filter((c) => books.some((b) => c.get(b)))
   const best = new Map(cols.map((c) => [c.key, Math.max(0, ...books.map((b) => c.get(b)?.value ?? 0))]))
   const prob = new Map(candidates.map((c) => [c.key, c.prob]))
   const valueKeys = new Set(candidates.filter(isValue).map((c) => c.key))
@@ -51,8 +52,8 @@ export function OddsTable({
           <tr className="text-[11px] font-medium text-mute">
             <th className="sticky left-0 z-10 bg-panel-2 py-2 pl-4 pr-2 text-left font-medium sm:pl-0">Букмекер</th>
             {cols.map((c) => (
-              <th key={c.key} className="px-1 py-2 text-center font-medium">
-                {c.label}
+              <th key={c.key} title={c.title ?? c.label} className="max-w-[88px] px-1 py-2 text-center align-bottom font-medium leading-tight">
+                <span className="line-clamp-2">{c.label}</span>
               </th>
             ))}
             <th className="py-2 pr-4 sm:pr-0" />
@@ -84,7 +85,7 @@ export function OddsTable({
                     >
                       {formatOdd(q?.value)}
                       {moved <= -0.05 ? <span className="ml-0.5 text-[9px] text-hot">▼</span> : moved >= 0.05 ? <span className="ml-0.5 text-[9px] text-mute">▲</span> : null}
-                      {val ? <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-acid" title="Выгодно" /> : null}
+                      {val ? <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-acid" title="Выгодно: кэф выше честной цены" /> : null}
                     </span>
                   )
                   return (
@@ -119,7 +120,7 @@ export function OddsTable({
           {model ? (
             <tr className="text-mute">
               <td className="sticky left-0 z-10 border-t border-edge-2 bg-panel-2 py-2.5 pl-4 pr-2 text-[12px] font-medium sm:pl-0">
-                Справедливый (tag.bet)
+                Честная цена (tag.bet)
               </td>
               {cols.map((c) => {
                 const p = prob.get(c.key)

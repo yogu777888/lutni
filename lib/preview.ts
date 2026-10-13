@@ -39,7 +39,7 @@ function seeded(id: number) {
   }
 }
 
-/** «победа «Арсенал»», «ТБ 2.5 — больше двух голов» и т.д. */
+/** «победа «Арсенал»», «3 гола и больше» и т.д. */
 export function describePick(c: Candidate, m: Match): string {
   const h = q(m.home.name)
   const a = q(m.away.name)
@@ -98,7 +98,7 @@ function formSentence(name: string, f: TeamForm, pick: <T>(v: T[]) => T): string
   } else if (f.streak?.kind === 'winless') {
     s += ` Без побед уже ${pluralN(f.streak.len, ['матч', 'матча', 'матчей'])}.`
   }
-  if (f.over25Rate >= 0.7) s += ` ТБ 2.5 заходил в ${pct(f.over25Rate)} её матчей.`
+  if (f.over25Rate >= 0.7) s += ` В ${pct(f.over25Rate)} её матчей было 3 гола и больше.`
   else if (f.over25Rate <= 0.3) s += ` В ${pct(1 - f.over25Rate)} её матчей было не больше двух голов.`
   return s
 }
@@ -150,7 +150,7 @@ export function buildPreview(p: PreviewInput): Paragraph[] {
     const h = p.h2h
     const n = h.games.length
     let text = `В ${pluralN(n, ['последней очной встрече', 'последних очных встречах', 'последних очных встречах'])}: ${pluralN(h.homeWins, ['победа', 'победы', 'побед'])} команды ${q(home)}, ${pluralN(h.draws, ['ничья', 'ничьи', 'ничьих'])} и ${pluralN(h.awayWins, ['победа', 'победы', 'побед'])} команды ${q(away)}.`
-    text += ` В среднем ${dec(h.avgGoals)} гола за матч, ТБ 2.5 — в ${pct(h.over25Rate)} встреч, обе забивали в ${pct(h.bttsRate)}.`
+    text += ` В среднем ${dec(h.avgGoals)} гола за матч, 3 гола и больше — в ${pct(h.over25Rate)} встреч, обе забивали в ${pct(h.bttsRate)}.`
     const last = h.games[0]
     text += ` Последняя встреча: ${last.home.name} — ${last.away.name} ${last.score.home}:${last.score.away} (${formatDateLong(last.ts)}).`
     out.push({ title: 'Личные встречи', text })
@@ -164,7 +164,7 @@ export function buildPreview(p: PreviewInput): Paragraph[] {
       const fav = x.home >= x.away ? { name: home, p: x.home } : { name: away, p: x.away }
       const diff = Math.abs(x.home - x.away)
       if (diff < 0.07) {
-        parts.push(`Букмекеры не видят явного фаворита: П1 — ${pct(x.home)}, ничья — ${pct(x.draw)}, П2 — ${pct(x.away)}.`)
+        parts.push(`Букмекеры не видят явного фаворита: победа ${q(home)} — ${pct(x.home)}, ничья — ${pct(x.draw)}, победа ${q(away)} — ${pct(x.away)}.`)
       } else {
         parts.push(
           rnd([
@@ -180,10 +180,11 @@ export function buildPreview(p: PreviewInput): Paragraph[] {
       parts.push(
         `Модель tag.bet ожидает ${dec(model.lambdas.home)} гола от хозяев и ${dec(model.lambdas.away)} от гостей; самый вероятный счёт — ${s[0].home}:${s[0].away} (${pct(s[0].p)})${s[1] ? `, затем ${s[1].home}:${s[1].away}` : ''}.`,
       )
-      parts.push(`Вероятность тотала больше 2.5 — ${pct(model.over['2.5'])}, «обе забьют» — ${pct(model.btts)}.`)
+      parts.push(`Шанс, что будет 3 гола и больше, — ${pct(model.over['2.5'])}, что забьют обе команды, — ${pct(model.btts)}.`)
     }
     if (p.glicko) {
-      parts.push(`Рейтинг Glicko-2: ${home} — ${Math.round(p.glicko.homeRating)}, ${away} — ${Math.round(p.glicko.awayRating)}.`)
+      // без названия «Glicko-2»: простыми словами (владелец согласился)
+      parts.push(`Рейтинг силы команд: ${q(home)} — ${Math.round(p.glicko.homeRating)}, ${q(away)} — ${Math.round(p.glicko.awayRating)}.`)
     }
     const move = p.tags.find((t) => t.slug === 'progruz')
     if (move) parts.push(`${move.reason}.`)
@@ -214,14 +215,15 @@ export function buildPreview(p: PreviewInput): Paragraph[] {
   // ── Прогноз
   if (pick && m.status === 'scheduled') {
     const c = pick.candidate
-    const o = c.bestPartner ?? c.best
-    let text = `Наш прогноз: ${c.label} — ${describePick(c, m)}. Вероятность по модели ${pct(c.prob)}, справедливый коэффициент ${c.fairOdd.toFixed(2)}.`
-    if (o) {
-      text += ` Лучший коэффициент — ${o.value.toFixed(2)} (${o.partner?.name ?? o.bookmakerName})`
-      text += pick.kind === 'value' ? `: это value-ставка с перевесом +${((c.ev ?? 0) * 100).toFixed(1)}%.` : '.'
+    // простыми словами, без «П2» и «value»; кэф — только легального партнёра (зарубежных по имени не называем)
+    const o = c.bestPartner
+    let text = `Наш прогноз — ${describePick(c, m)}. Шанс по нашей оценке — ${pct(c.prob)}, честная цена — ${c.fairOdd.toFixed(2)}.`
+    if (o?.partner) {
+      text += ` Лучший коэффициент у партнёров — ${o.value.toFixed(2)} (${o.partner.name})`
+      text += pick.kind === 'value' ? `: букмекер платит на ${((c.ev ?? 0) * 100).toFixed(1).replace('.', ',')}% больше, чем исход стоит.` : '.'
     }
     if (pick.kind !== 'value') {
-      text += ' Явного перевеса над линией нет — это самый вероятный исход с приемлемым коэффициентом.'
+      text += ' Букмекеры не переплачивают за этот исход — это просто самый вероятный исход с приемлемым коэффициентом.'
     }
     out.push({ title: 'Прогноз', text })
   }

@@ -28,7 +28,7 @@ export function H2HBlock({ h2h, home, away }: { h2h: H2H; home: Team; away: Team
           ))}
       </div>
       <p className="mt-4 text-[13px] text-dim">
-        {n} последних встреч: в среднем {h2h.avgGoals.toFixed(1)} гола, ТБ 2.5 — {pct(h2h.over25Rate)}, обе забивали — {pct(h2h.bttsRate)}.
+        {n} последних встреч: в среднем {h2h.avgGoals.toFixed(1)} гола, 3 гола и больше — {pct(h2h.over25Rate)}, обе забивали — {pct(h2h.bttsRate)}.
       </p>
       <ul className="mt-3 divide-y divide-edge text-[13px]">
         {h2h.games.map((g) => (
