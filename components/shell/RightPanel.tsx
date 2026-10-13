@@ -201,7 +201,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                           <span className="block truncate text-[14.5px] font-medium">{g.label}</span>
                           {subs[g.key] ? <span className="mt-0.5 block truncate text-[12.5px] text-mute">{subs[g.key]}</span> : null}
                         </span>
-                        <span className="num text-[13px] text-mute">{totals[g.key] ?? g.items.length}</span>
+                        {/* числа матчей справа нет — голая «8» читалась как счётчик непрочитанных (как и в левой панели); сколько всего — при раскрытии и в подсказке свёрнутой полоски */}
                         {/* шеврон — только у раскрытой и при наведении: восемь одинаковых шевронов повторяли одно и то же */}
                         <svg
                           viewBox="0 0 24 24"
