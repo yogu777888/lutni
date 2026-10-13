@@ -11,7 +11,7 @@ import { TeamLogo } from '../TeamLogo'
 import { StorySymbol } from '../story/StorySymbol'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
-import { matchesN, StateLine } from './StateLine'
+import { LiveDot, matchesN, StateLine } from './StateLine'
 
 /** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас в игре». */
 const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'турнире' : 'турнирах'}`
@@ -157,7 +157,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
       className="relative shrink-0 rounded-full transition-opacity hover:opacity-80"
     >
       <LeagueFlag l={l} />
-      {l.live ? <span className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full bg-live ring-2 ring-panel" /> : null}
+      {l.live ? <LiveDot /> : null}
     </a>
   )
   const Name = ({ l }: { l: DayLeague }) => (
@@ -178,7 +178,10 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
           aria-current={on ? 'location' : undefined}
           className={`-mx-2 ${row} ${on ? 'bg-white/[0.07] text-fg' : 'text-fg/85 hover:bg-white/[0.04] hover:text-fg'}`}
         >
-          <LeagueFlag l={l} />
+          <span className="relative shrink-0">
+            <LeagueFlag l={l} />
+            {l.live ? <LiveDot /> : null}
+          </span>
           <Name l={l} />
         </a>
       </li>

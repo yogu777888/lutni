@@ -13,7 +13,7 @@ import { StorySymbol } from '../story/StorySymbol'
 import { pluralN } from '@/lib/format'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
-import { StateLine } from './StateLine'
+import { LiveDot, StateLine } from './StateLine'
 
 const BETS = ['ставка', 'ставки', 'ставок'] as const
 
@@ -146,9 +146,10 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                 'Нажмите — разбор'
               ),
             )}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
+            className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
           >
             <StorySymbol k={g.key} tone="currentColor" className="h-[18px] w-[18px]" />
+            {states[g.key]?.live ? <LiveDot /> : null}
           </button>
         ))}
         {/* «Выгодно сегодня» не пропадает целиком: лаймовый круг со знаком процента внизу (лайм — деньги и «выгодно») */}
@@ -198,6 +199,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                         <span className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                           <Play className="ml-0.5 h-3.5 w-3.5" />
                         </span>
+                        {states[g.key]?.live ? <LiveDot /> : null}
                       </button>
                       <button
                         type="button"

@@ -14,18 +14,15 @@ export function StateLine({ total, live, next, started }: { total: number; live:
   return (
     <>
       {matchesN(total)}
-      {/* у «в игре» разделитель — сама красная точка: «·» перед ней давал две точки подряд (владелец заметил) */}
-      {state ? ' · ' : ''}
-      {/* «в игре» — серым, как вся подпись, с маленькой красной точкой: красные слова целиком при многих идущих
-          матчах пестрили (6 из 8 строк; владелец согласился), а точка сохраняет сигнал «идёт» */}
-      {live ? (
-        <>
-          <span aria-hidden className="mx-1.5 inline-block h-1.5 w-1.5 -translate-y-px rounded-full bg-live align-middle" />
-          {live} в игре
-        </>
-      ) : (
-        state
-      )}
+      {/* разделитель всегда «·», вся подпись серая; сигнал «идёт» — красная точка на значке слева (`LiveDot`), как в
+          свёрнутых полосках: красные слова пестрили, а красная точка внутри строки давала то «·», то «●» (владелец) */}
+      {live || state ? ' · ' : ''}
+      {live ? `${live} в игре` : state}
     </>
   )
+}
+
+/** Идут матчи — маленькая красная точка внизу справа на круглом значке, как «в сети» у аватарки (родитель — `relative`). */
+export function LiveDot() {
+  return <span aria-hidden className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full bg-live ring-2 ring-panel" />
 }
