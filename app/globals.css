@@ -57,6 +57,13 @@
 }
 
 @layer base {
+  /* рука над кнопками, как над ссылками: в Tailwind v4 у <button> по умолчанию стрелка, и круги сторис, раскрытие
+     подборок, вкладки и сворачивание панелей выглядели некликабельными (владелец: «почему не появляется рука?») */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary {
+    cursor: pointer;
+  }
   html {
     color-scheme: dark;
     --ring-new: #c8ff2e;
