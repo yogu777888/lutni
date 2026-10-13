@@ -25,8 +25,9 @@ export function StatusCell({ m }: { m: Match }) {
   const base = 'num display-num relative -top-0.5 block whitespace-nowrap text-[18px] leading-none'
   if (isLive(m))
     return (
-      <span className={`${base} flex items-center gap-1.5 text-live`} title="Идёт">
-        <span className="h-1.5 w-1.5 shrink-0 animate-pulse-live rounded-full bg-live" />
+      // только красная минута, без точки перед ней: точка повторяла минуту, и шесть идущих матчей давали двенадцать
+      // красных пятен (владелец согласился); точка «идёт» — одна, у заголовка «Сейчас в игре»
+      <span className={`${base} text-live`} title="Идёт">
         {m.statusCode === 4 ? 'пер.' : m.elapsed ? `${m.elapsed}′` : 'LIVE'}
       </span>
     )
