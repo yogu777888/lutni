@@ -119,7 +119,8 @@ export async function dayPicks(): Promise<DayPicks> {
       if (sub) out.subs[g.key] = sub
       for (const it of list) {
         out.matches[it.id] ??= compactMatch(byId.get(it.id)!)
-        const st = it.focus ? statFor(it.focus.slug, it.focus.reason) : ''
+        // у «Топ дня» и «Скоро» у каждого матча своя причина — цифры разного смысла без подписи не читаются; там — только состояние
+        const st = it.focus && g.key !== 'top' && g.key !== 'soon' ? statFor(it.focus.slug, it.focus.reason) : ''
         if (/\d/.test(st)) out.stats[`${g.key}:${it.id}`] = st
       }
     }

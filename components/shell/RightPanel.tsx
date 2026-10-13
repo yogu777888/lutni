@@ -18,25 +18,22 @@ const Play = ({ className = '' }: { className?: string }) => (
   </svg>
 )
 
-/** Справа в строке матча: главная цифра подборки («−17%», «62%»), иначе минута и счёт / время / итог. */
+/**
+ * Справа в строке матча — одно правило (владелец согласился: в «Топ дня» стояли «1·4», «8», «+7» без подписи): сверху —
+ * главная цифра подборки (только у подборок-тегов: «−17%»), без неё — счёт или время; ниже мелко — состояние:
+ * минута красным / «итог» / время начала. Одинокой красной точки рядом с цифрой нет — она читалась частью сигнала.
+ */
 function Right({ m, stat, hot }: { m: CompactMatch; stat?: string; hot: boolean }) {
-  // главная цифра подборки важнее счёта («Кэф упал» — «−17%»); идущий матч — красной точкой рядом
-  if (stat)
-    return (
-      <span className={`num flex shrink-0 items-center gap-1.5 text-[13px] font-semibold ${hot ? 'text-hot' : 'text-fg'}`}>
-        {m.live ? <span className="h-1.5 w-1.5 rounded-full bg-live" title="Идёт" /> : null}
-        {stat}
-      </span>
-    )
-  if (m.live)
-    return (
-      <span className="num shrink-0 text-right text-[13px] font-semibold leading-tight text-live">
-        {m.score ? `${m.score[0]}:${m.score[1]}` : ''}
-        <span className="block text-[11.5px] font-medium">{m.minute}</span>
-      </span>
-    )
-  if (m.finished && m.score) return <span className="num shrink-0 text-[13px] text-dim">{`${m.score[0]}:${m.score[1]}`}</span>
-  return <span className="num shrink-0 text-[13px] text-dim">{m.time}</span>
+  const score = m.score ? `${m.score[0]}:${m.score[1]}` : ''
+  const top = stat ?? (m.live || m.finished ? score : m.time)
+  const topTone = stat ? (hot ? 'text-hot' : 'text-fg') : m.live ? 'text-fg' : 'text-dim'
+  const state = m.live ? m.minute : m.finished ? 'итог' : stat ? m.time : null
+  return (
+    <span className="num shrink-0 text-right leading-tight">
+      <span className={`block text-[13px] font-semibold ${topTone}`}>{top}</span>
+      {state ? <span className={`block text-[11.5px] font-medium ${m.live ? 'text-live' : 'text-mute'}`}>{state}</span> : null}
+    </span>
+  )
 }
 
 /**
@@ -154,8 +151,9 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                 const on = open === g.key
                 const more = moreHref(g.key)
                 return (
-                  <li key={g.key}>
-                    <div className={`group -mx-2 flex items-center gap-1 rounded-tile pr-2 transition-colors ${on ? 'bg-white/[0.06]' : 'hover:bg-white/[0.04]'}`}>
+                  // раскрытая подборка — одной плашкой: заголовок, матчи и ссылка на общем фоне (иначе матчи сливались со строками подборок ниже)
+                  <li key={g.key} className={on ? '-mx-2 rounded-tile bg-white/[0.05] px-2 pb-1' : ''}>
+                    <div className={`group -mx-2 flex items-center gap-1 rounded-tile pr-2 transition-colors ${on ? '' : 'hover:bg-white/[0.04]'}`}>
                       {/* значок подборки; при наведении на строку на его месте белая ▶ — смотреть разбор, как у Spotify
                           (14 белых кнопок разом были ярче всего на странице) */}
                       <button
@@ -198,7 +196,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                       </button>
                     </div>
                     {on ? (
-                      <div className="pb-2 pt-1">
+                      <div className="pb-2">
                         {g.items.map((it) => {
                           const m = matches[it.id]
                           if (!m) return null
@@ -228,9 +226,10 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                             </a>
                           )
                         })}
-                        {more && (totals[g.key] ?? 0) > 0 ? (
-                          <Link href={more} prefetch={false} className="mt-1 inline-block px-0 text-[13px] font-medium text-dim transition-colors hover:text-fg">
-                            Все {totals[g.key]} →
+                        {/* «Все 12 →» — только если показаны не все; иначе — на страницу подборки («Все 4 →» при четырёх видимых обещал больше) */}
+                        {more ? (
+                          <Link href={more} prefetch={false} className="mt-1 inline-block text-[13px] font-medium text-dim transition-colors hover:text-fg">
+                            {(totals[g.key] ?? 0) > g.items.length ? `Все ${totals[g.key]} →` : 'Открыть подборку →'}
                           </Link>
                         ) : null}
                       </div>
