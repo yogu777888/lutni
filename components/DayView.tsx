@@ -91,8 +91,16 @@ export async function DayView({
   const listItems = filtered ? applyListFilter(items, filter) : items
   // фильтр — и в ссылках порядка «По турнирам / По времени»
   const fq = filtered ? filterQuery(filter) : ''
+  const liveAll = listItems.filter((i) => isLive(i.match))
+  // в «Сейчас в игре» — сначала топ-лиги, потом матчи с линией; женские и молодёжные — в конец
+  const liveTop = [...liveAll].sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts).slice(0, LIVE_LIMIT)
+  // идущие из «Сейчас в игре» в блоках лиг не повторяем (владелец: матчи дублировались); в шапке лиги — «● N в игре»
+  const liveShown = new Set(liveTop.map((i) => i.match.id))
+  const liveIn = new Map<number, number>()
+  for (const i of liveTop) liveIn.set(i.match.league.id, (liveIn.get(i.match.league.id) ?? 0) + 1)
   const groups = new Map<number, { league: League; items: FeedItem[]; rank: number }>()
   for (const it of listItems) {
+    if (liveShown.has(it.match.id)) continue
     const l = it.match.league
     let g = groups.get(l.id)
     if (!g) groups.set(l.id, (g = { league: l, items: [], rank: featuredRank(l) }))
@@ -122,9 +130,6 @@ export async function DayView({
   // все истории дня — полками на главной, главные теги первыми
   const storyGroups = mainCircles(buildStoryGroups(items), 99)
 
-  const liveAll = listItems.filter((i) => isLive(i.match))
-  // в «Сейчас в игре» — сначала топ-лиги, потом матчи с линией; женские и молодёжные — в конец
-  const liveTop = [...liveAll].sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts).slice(0, LIVE_LIMIT)
 
   const heading = dayHeading(ymd, today)
   const past = diffDays(ymd, today) < 0
@@ -259,7 +264,7 @@ export async function DayView({
             {liveTop.length ? <LiveBlock items={liveTop} total={liveAll.length} /> : null}
             {byTime && timeList.length ? <TimeBlock items={timeList} /> : null}
             {byTime ? null : featured.map((g) => (
-              <LeagueBlock key={g.league.id} league={g.league} items={g.items} featured />
+              <LeagueBlock key={g.league.id} league={g.league} items={g.items} live={liveIn.get(g.league.id) ?? 0} featured />
             ))}
             {!byTime && others.length ? (
               <details className="card group overflow-hidden" open={!featured.length}>
@@ -273,7 +278,7 @@ export async function DayView({
                 {/* карточки турниров внутри общей — на тон темнее, иначе без обводки они сольются с ней */}
                 <div className="space-y-4 border-t border-edge p-3 sm:p-4 [&_.card]:bg-panel">
                   {others.map((g) => (
-                    <LeagueBlock key={g.league.id} league={g.league} items={g.items} />
+                    <LeagueBlock key={g.league.id} league={g.league} items={g.items} live={liveIn.get(g.league.id) ?? 0} />
                   ))}
                   {shownOthers < totalOthers ? (
                     <p className="px-1 text-[13px] text-dim">

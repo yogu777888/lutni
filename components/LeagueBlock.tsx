@@ -7,7 +7,7 @@ import { flagCode, leagueTitle } from '@/lib/flags'
 import { Flag } from './Flag'
 import { MatchRow } from './MatchRow'
 
-export function LeagueBlock({ league, items }: { league: League; items: FeedItem[]; featured?: boolean }) {
+export function LeagueBlock({ league, items, live = 0 }: { league: League; items: FeedItem[]; featured?: boolean; live?: number }) {
   return (
     // id — для «Турниров дня» в левой панели (клик прокручивает сюда)
     <section id={`league-${league.id}`} className="card scroll-mt-24 overflow-hidden">
@@ -22,6 +22,13 @@ export function LeagueBlock({ league, items }: { league: League; items: FeedItem
             →
           </span>
         </Link>
+        {/* идущие матчи лиги — наверху, в «Сейчас в игре»: здесь только пометка со ссылкой туда */}
+        {live ? (
+          <a href="#live" className="flex shrink-0 items-center gap-1.5 text-[13px] font-medium text-live transition-opacity hover:opacity-80">
+            <span className="h-1.5 w-1.5 rounded-full bg-live" />
+            {live} в игре
+          </a>
+        ) : null}
       </header>
       <div className="divide-y divide-edge">
         {items.map((it) => (
@@ -36,11 +43,9 @@ export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }
   return (
     <section id="live" className="card scroll-mt-24 overflow-hidden">
       <header className="flex items-baseline justify-between gap-3 border-b border-edge px-4 py-4 sm:px-5">
+        {/* без плашки LIVE — «LIVE» и «Сейчас в игре» говорили одно и то же */}
         <span className="flex items-center gap-2.5 text-[20px] font-bold tracking-tight">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-live/10 px-2 py-0.5 text-[11px] font-bold tracking-wide text-live">
-            <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" aria-hidden />
-            LIVE
-          </span>
+          <span className="h-2 w-2 animate-pulse-live rounded-full bg-live" aria-hidden />
           Сейчас в игре
         </span>
         {/* число матчей не пишем (владелец: «число матчей справа убрать?») — только если показаны не все */}

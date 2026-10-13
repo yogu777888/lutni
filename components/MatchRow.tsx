@@ -78,7 +78,8 @@ function Score({ m, big = false }: { m: Match; big?: boolean }) {
   const cls = `num whitespace-nowrap text-center ${big ? 'display-num text-[24px] leading-none' : 'text-[16px] font-bold'}`
   if (!m.score || m.status === 'scheduled') return null
   return (
-    <span className={`${cls} ${isLive(m) ? 'text-live' : 'text-fg'}`}>
+    // счёт идущего — белый, как у Apple Sports: красные только минута и точка (шесть красных счетов подряд «гасили» сигнал)
+    <span className={`${cls} text-fg`}>
       <Tick v={m.score.home} />
       <span className={`text-mute ${big ? 'mx-1.5' : 'mx-1'}`}>:</span>
       <Tick v={m.score.away} />
