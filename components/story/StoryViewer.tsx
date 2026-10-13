@@ -451,7 +451,8 @@ export function StoryViewer() {
                   {story.home.name} — {story.away.name}
                 </span>
                 <span className="block truncate text-[11px] text-dim">
-                  {group ? (
+                  {/* у сторис лиги (из левой панели) группа и турнир — одно и то же: «Ла Лига · Испания. Ла Лига» */}
+                  {group && !group.key.startsWith('league-') ? (
                     <>
                       <GroupLabel label={group.label} kind={group.kind} />
                       {' · '}

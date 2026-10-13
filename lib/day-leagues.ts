@@ -7,7 +7,7 @@ import { countryRank, featuredRank } from '@/config/leagues'
 import { getMatchesByDate } from './data'
 import { flagCode, leagueTitle } from './flags'
 import { addDays, formatTime, todayYmd } from './format'
-import { leagueHref, listHref } from './links'
+import { leagueHref, listHref, matchHref } from './links'
 import { isLive } from './rank'
 import type { League, Match } from './types'
 
@@ -27,6 +27,8 @@ export type DayLeague = {
   next: string | null
   /** уже начинались матчи (идут или сыграны) — «в 22:00» (следующий) вместо «с 22:00» */
   started: boolean
+  /** матчи турнира по времени — очередь сторис лиги (клик по флагу) и сегменты кольца */
+  items: { id: number; href: string }[]
 }
 
 export type DayLeagues = {
@@ -77,6 +79,7 @@ async function leaguesOf(ymd: string, href: (l: League) => string, limit: number
         return ts.length ? formatTime(Math.min(...ts)) : null
       })(),
       started: items.some((m) => isLive(m) || m.status === 'finished'),
+      items: [...items].sort((a, b) => a.ts - b.ts).map((m) => ({ id: m.id, href: matchHref(m) })),
     }
   })
   return { matches, leagues }

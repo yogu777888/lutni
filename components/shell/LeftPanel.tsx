@@ -8,10 +8,15 @@ import type { CompactMatch } from '@/lib/compact'
 import type { DayLeague, DayLeagues } from '@/lib/day-leagues'
 import { useFavorites } from '../favorites'
 import { TeamLogo } from '../TeamLogo'
+import type { StoryGroup } from '@/lib/story-groups'
+import { openStory } from '../story/events'
+import { circleQueue } from '../story/queue'
+import { readSeen, SEEN_EVENT } from '../story/seen'
 import { StorySymbol } from '../story/StorySymbol'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
 import { LiveDot, matchesN, StateLine } from './StateLine'
+import { StoryRing } from './StoryRing'
 
 /** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас в игре». */
 const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'турнире' : 'турнирах'}`
@@ -80,6 +85,14 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
   const favs = useFavorites()
   const [games, setGames] = useState<CompactMatch[]>([])
   const [active, setActive] = useState<string | null>(null)
+  // просмотренные сторис — для колец вокруг флагов (те же отметки, что у подборок)
+  const [seen, setSeen] = useState<Set<string>>(() => new Set())
+  useEffect(() => {
+    const update = () => setSeen(readSeen())
+    update()
+    window.addEventListener(SEEN_EVENT, update)
+    return () => window.removeEventListener(SEEN_EVENT, update)
+  }, [])
   const { tipProps, tipNode } = useRailTip('l', 'shell-l-rail')
   const pathname = usePathname()
   const router = useRouter()
@@ -166,27 +179,51 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
       <Sub l={l} />
     </span>
   )
-  const League = ({ l, jump = true }: { l: DayLeague; jump?: boolean }) => {
+  // турниры как истории: клик по флагу — сторис матчей лиги подряд, дальше — следующих лиг (как у подборок справа)
+  const asGroups = (ls: DayLeague[]): StoryGroup[] =>
+    ls.map((l) => ({ key: `league-${l.id}`, label: l.name, kind: 'top', hint: '', href: l.href, stat: '', items: l.items.map((m) => ({ ...m, focus: null })) }))
+  const play = (ls: DayLeague[], i: number) => (e: React.MouseEvent<HTMLButtonElement>) => {
+    const groups = asGroups(ls)
+    const { queue, startId } = circleQueue(groups, i, seen)
+    const first = groups[i].items.find((m) => m.id === startId) ?? groups[i].items[0]
+    if (first) openStory({ id: startId, href: first.href, opener: e.currentTarget, queue })
+  }
+  // строка: флаг — кнопка сторис (кольцо — непросмотренные матчи, при наведении — белая ▶), название — переход к блоку лиги
+  const League = ({ l, list, jump = true }: { l: DayLeague; list: DayLeague[]; jump?: boolean }) => {
     const id = `league-${l.id}`
     const on = jump && active === id
     return (
       <li>
-        <a
-          href={l.href}
-          onClick={jump ? go(id, l.href) : undefined}
-          title={l.full}
-          aria-current={on ? 'location' : undefined}
-          className={`-mx-2 ${row} ${on ? 'bg-white/[0.07] text-fg' : 'text-fg/85 hover:bg-white/[0.04] hover:text-fg'}`}
-        >
-          <span className="relative shrink-0">
+        <div className={`group -mx-2 ${row} ${on ? 'bg-white/[0.07] text-fg' : 'text-fg/85 hover:bg-white/[0.04] hover:text-fg'}`}>
+          <button
+            type="button"
+            onClick={play(list, list.indexOf(l))}
+            aria-label={`${l.name}: смотреть разбор матчей`}
+            className="relative shrink-0 rounded-full"
+          >
             <LeagueFlag l={l} />
+            <span aria-hidden className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+              <svg viewBox="0 0 24 24" className="ml-0.5 h-3.5 w-3.5" fill="currentColor">
+                <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" />
+              </svg>
+            </span>
+            <StoryRing group={id} ids={l.items.map((m) => m.id)} seen={seen} />
             {l.live ? <LiveDot /> : null}
-          </span>
-          <Name l={l} />
-        </a>
+          </button>
+          <a
+            href={l.href}
+            onClick={jump ? go(id, l.href) : undefined}
+            title={l.full}
+            aria-current={on ? 'location' : undefined}
+            className="flex min-w-0 flex-1 items-center self-stretch"
+          >
+            <Name l={l} />
+          </a>
+        </div>
       </li>
     )
   }
+
 
   return (
     // overflow-hidden — иначе квадратный фон закреплённого заголовка перекрывает скруглённые углы панели
@@ -251,7 +288,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
             </li>
           ) : null}
           {top.map((l) => (
-            <League key={l.id} l={l} />
+            <League key={l.id} l={l} list={day.leagues} />
           ))}
         </ul>
 
@@ -294,7 +331,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
             <h3 className="text-[12px] font-medium text-mute">Другие турниры</h3>
             <ul className="mt-1.5 space-y-0.5">
               {rest.map((l) => (
-                <League key={l.id} l={l} />
+                <League key={l.id} l={l} list={day.leagues} />
               ))}
             </ul>
           </section>
@@ -306,7 +343,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
             <h3 className="text-[12px] font-medium text-mute">Завтра</h3>
             <ul className="mt-1.5 space-y-0.5">
               {day.tomorrow.map((l) => (
-                <League key={l.id} l={l} jump={false} />
+                <League key={l.id} l={l} list={day.tomorrow} jump={false} />
               ))}
             </ul>
           </section>

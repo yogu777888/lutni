@@ -14,6 +14,7 @@ import { pluralN } from '@/lib/format'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
 import { StateLine } from './StateLine'
+import { StoryRing } from './StoryRing'
 
 const BETS = ['ставка', 'ставки', 'ставок'] as const
 
@@ -129,7 +130,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
   return (
     <div className="relative h-full overflow-hidden rounded-card bg-panel">
       {/* свёрнута — полоска: «развернуть» и значки подборок (тап — сторис подборки) */}
-      <div className="shell-r-rail scrollbar-none h-full flex-col items-center gap-2 overflow-y-auto py-3">
+      <div className="shell-r-rail scrollbar-none h-full flex-col items-center gap-3 overflow-y-auto py-3">
         <PanelToggle side="r" open={false} />
         {/* значки — круги 36px, как флаги в левой полоске; подсказка — название, число матчей и что внутри, клик — разбор */}
         {groups.map((g, gi) => (
@@ -150,6 +151,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
             className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
           >
             <StorySymbol k={g.key} tone="currentColor" className="h-[18px] w-[18px]" />
+            <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} />
           </button>
         ))}
         {/* «Выгодно сегодня» не пропадает целиком: лаймовый круг со знаком процента внизу (лайм — деньги и «выгодно») */}
@@ -199,6 +201,8 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                         <span className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                           <Play className="ml-0.5 h-3.5 w-3.5" />
                         </span>
+                        {/* кольцо, как вокруг сторис: непросмотренные матчи подборки — лайм, просмотренные — серые */}
+                        <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} />
                         {/* точки «идёт» на значках подборок нет: при многих идущих их было шесть подряд; «3 в игре» — в подписи,
                             а сигнал «идёт» — в центре и у турниров слева (владелец согласился) */}
                       </button>
