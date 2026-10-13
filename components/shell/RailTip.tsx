@@ -9,7 +9,8 @@ type Tip = { title: string; sub: React.ReactNode; x: number; y: number; left: bo
  * Подсказка у значков свёрнутой боковой панели (как у Spotify): название и тихая подпись, сразу и в стиле сайта
  * (системный title — поздно и мелко). Слева — справа от значка, справа — слева от него. В body порталом и
  * `position: fixed`: полоска прокручивается и обрезает выходящее за край, а панель — свой слой ниже центра.
- * `className` — класс показа свёрнутой полоски (`shell-l-rail`/`shell-r-rail`): развернули панель — подсказки нет.
+ * `className` — класс показа свёрнутой полоски (`shell-l-rail`/`shell-r-rail`): развернули панель — подсказки нет;
+ * пусто — видна всегда (кнопка «свернуть / развернуть панель»).
  */
 export function useRailTip(side: 'l' | 'r', className: string) {
   const [tip, setTip] = useState<Tip | null>(null)
@@ -39,5 +40,5 @@ export function useRailTip(side: 'l' | 'r', className: string) {
         document.body,
       )
     : null
-  return { tipProps, tipNode }
+  return { tipProps, tipNode, hideTip: () => setTip(null) }
 }
