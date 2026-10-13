@@ -755,14 +755,6 @@ html[data-shell-rc] .shell-r-rail {
     max-width: none;
     padding: 0;
   }
-  /* подвал — тоже панель с зазором 8px: без неё после последней лиги шла пустота и подвал «висел» на фоне страницы
-     (владелец: «нормально, что центральная часть так обрывается?») */
-  .shell-center:has(.bare-page) > footer {
-    margin-top: 8px;
-    border: 0;
-    border-radius: var(--radius-card);
-    background: var(--color-panel);
-  }
   .shell-center:has(.bare-page) .bare-panel {
     margin-top: 0;
     border-radius: var(--radius-card);

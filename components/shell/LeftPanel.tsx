@@ -40,7 +40,34 @@ function LeagueFlag({ l }: { l: Pick<DayLeague, 'flag' | 'name'> }) {
  * странице нет — страница турнира. Пока листаешь центр, текущая лига подсвечена. Избранные команды (звёздочка на странице
  * матча) — сверху, если есть. Свёрнута — полоска с флагами топ-лиг.
  */
-export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
+/**
+ * Правовая часть внизу панели — как у Spotify (юридические ссылки мелко внизу левой панели), вместо подвала в центре
+ * (владелец: «может не в центральном блоке его делать?»). Обязательное: 18+ и «ставки — это риск», раскрытие
+ * партнёрских ссылок, политика cookie (152-ФЗ), источник данных. Ниже xl панелей нет — там прежний подвал (Footer).
+ */
+function Legal({ demo }: { demo: string | null }) {
+  const link = 'transition-colors hover:text-fg'
+  return (
+    <div className="shrink-0 border-t border-edge px-4 pb-4 pt-3 text-[11.5px] leading-snug text-mute">
+      <p className="flex items-center gap-2 text-dim">
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[9.5px] font-semibold ring-1 ring-edge-2">18+</span>
+        Ставки — это риск. Играйте ответственно.
+      </p>
+      <nav aria-label="Информация" className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+        <Link href="/about" className={link}>Как мы считаем</Link>
+        <Link href="/responsible-gaming" className={link}>Ответственная игра</Link>
+        <Link href="/privacy" className={link}>Cookie</Link>
+        <Link href="/bookmakers" className={link}>Букмекеры</Link>
+      </nav>
+      <p className="mt-2">
+        Не призыв делать ставки. Партнёрские ссылки на легальных букмекеров: сайт может получать вознаграждение. Данные — SStats.net
+      </p>
+      {demo ? <p className="mt-1">{demo}</p> : null}
+    </div>
+  )
+}
+
+export function LeftPanel({ today, day, demo = null }: { today: string; day: DayLeagues; demo?: string | null }) {
   const favs = useFavorites()
   const [games, setGames] = useState<CompactMatch[]>([])
   const [active, setActive] = useState<string | null>(null)
@@ -141,9 +168,18 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             {l.live ? <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-live ring-2 ring-panel" /> : null}
           </a>
         ))}
+        {/* свёрнута — 18+ внизу полоски, ведёт на «Ответственную игру» */}
+        <Link
+          href="/responsible-gaming"
+          title="18+ · Ставки — это риск. Играйте ответственно."
+          className="mt-auto grid h-8 w-8 shrink-0 place-items-center rounded-full text-[10px] font-semibold text-mute ring-1 ring-edge-2 transition-colors hover:text-fg"
+        >
+          18+
+        </Link>
       </div>
 
-      <div className="shell-l-full scrollbar-none h-full overflow-y-auto p-4">
+      <div className="shell-l-full flex h-full flex-col">
+      <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto p-4">
         <h2 className="flex items-center justify-between text-[15px] font-semibold">
           Турниры дня
           <PanelToggle side="l" open />
@@ -229,6 +265,8 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
         ) : null}
 
         {!day.leagues.length ? <p className="mt-2 text-[13px] text-dim">Сегодня матчей нет.</p> : null}
+      </div>
+      <Legal demo={demo} />
       </div>
     </div>
   )

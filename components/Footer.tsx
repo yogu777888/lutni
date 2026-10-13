@@ -4,9 +4,19 @@ import { IS_DESIGN, IS_MOCK } from '@/lib/sstats/client'
 import { teamLogos } from '@/lib/sstats/team-logos'
 import { LogoMark } from './Logo'
 
+/** Строка о демо-режиме (и подсказка про эмблемы) — в подвале и внизу левой панели. */
+export function demoNote(): string | null {
+  if (!IS_MOCK) return null
+  return (
+    `Сейчас включён демо-режим: матчи и коэффициенты сгенерированы для проверки сайта${IS_DESIGN ? ' (часы стоят: 4 октября, 19:30).' : '.'}` +
+    (Object.keys(teamLogos()).length ? '' : ' Эмблем команд нет — выполните npm run team-logos и обновите страницу.')
+  )
+}
+
 export function Footer() {
   return (
-    <footer className="mt-20 border-t border-edge">
+    // от xl подвала нет: правовая часть — внизу левой панели каркаса (LeftPanel → Legal), как у Spotify
+    <footer className="mt-20 border-t border-edge xl:hidden">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <LogoMark size={28} />
