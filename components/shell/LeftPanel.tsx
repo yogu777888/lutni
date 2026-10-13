@@ -173,7 +173,8 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
   }
 
   return (
-    <div className="h-full rounded-card bg-panel">
+    // overflow-hidden — иначе квадратный фон закреплённого заголовка перекрывает скруглённые углы панели
+    <div className="h-full overflow-hidden rounded-card bg-panel">
       {/* свёрнута — полоска: «развернуть» и флаги топ-лиг (красная точка — идут матчи) */}
       <div className="shell-l-rail scrollbar-none h-full flex-col items-center gap-2 overflow-y-auto py-3">
         <PanelToggle side="l" open={false} />
