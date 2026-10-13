@@ -2,7 +2,7 @@ import '@fontsource-variable/onest'
 import '@fontsource-variable/oswald'
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
-import { demoNote, Footer } from '@/components/Footer'
+import { Footer } from '@/components/Footer'
 import { CookieNotice } from '@/components/CookieNotice'
 import { Header } from '@/components/Header'
 import { Metrika } from '@/components/Metrika'
@@ -65,7 +65,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <aside aria-label="Турниры дня" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
               <ResizeHandle side="l" />
-              <LeftPanel today={todayYmd()} day={day} demo={demoNote() ? 'Демо: матчи и кэфы сгенерированы.' : null} />
+              <LeftPanel today={todayYmd()} day={day} />
             </div>
           </aside>
           <div className="shell-center min-w-0">

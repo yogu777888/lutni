@@ -67,7 +67,7 @@ function LeagueFlag({ l }: { l: Pick<DayLeague, 'flag' | 'name'> }) {
  * (владелец: «может не в центральном блоке его делать?»). Обязательное: 18+ и «ставки — это риск», раскрытие
  * партнёрских ссылок, политика cookie (152-ФЗ), источник данных. Ниже xl панелей нет — там прежний подвал (Footer).
  */
-function Legal({ demo }: { demo: string | null }) {
+function Legal() {
   const link = 'transition-colors hover:text-fg'
   // одна система строк: один размер, один серый, одинаковые отступы и «·» между частями — без кружка 18+ и абзаца
   // в три строки (владелец: «футер уродливый»); «Играйте ответственно» — ссылкой «Ответственная игра» ниже
@@ -83,16 +83,15 @@ function Legal({ demo }: { demo: string | null }) {
         <Link href="/privacy" className={link}>Cookie</Link>
       </nav>
       <p>Не призыв делать ставки. Партнёрские ссылки на легальных букмекеров: сайт может получать вознаграждение.</p>
-      {demo ? <p>{demo}</p> : null}
       {/* подпись сайта последней строкой, как принято в конце страницы; год — текущий */}
       <p>
-        © {new Date().getFullYear()} {SITE.name} · Данные — SStats.net
+        © {new Date().getFullYear()} {SITE.name}
       </p>
     </div>
   )
 }
 
-export function LeftPanel({ today, day, demo = null }: { today: string; day: DayLeagues; demo?: string | null }) {
+export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
   const favs = useFavorites()
   const [games, setGames] = useState<CompactMatch[]>([])
   const [active, setActive] = useState<string | null>(null)
@@ -373,7 +372,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
         {/* правовой блок — в конце списка: короткий список — прижат к низу панели, длинный — ровно через 24px после
             последней строки (раньше блок был приклеен к низу и отрезал список со случайным зазором) */}
         <div className="mt-auto shrink-0 pt-6">
-          <Legal demo={demo} />
+          <Legal />
         </div>
       </div>
       </div>
