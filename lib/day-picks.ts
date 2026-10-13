@@ -10,6 +10,7 @@ import { soonMatches } from './day-summary'
 import { formatTime, todayYmd } from './format'
 import { matchHref } from './links'
 import { buildStoryGroups, mainCircles, statFor, type StoryGroup } from './story-groups'
+import { TAG_BY_SLUG } from './tags'
 import { outcomeText } from './verdict'
 
 export type DayPicks = {
@@ -20,6 +21,8 @@ export type DayPicks = {
   stats: Record<string, string>
   /** сколько всего матчей в подборке (в панели — не больше PER_GROUP) */
   totals: Record<string, number>
+  /** что внутри подборки — тихой второй строкой под названием (владелец согласился: «Серия», «Может удивить» новичку непонятны) */
+  subs: Record<string, string>
   /** «Выгодно сегодня» внизу панели — лучшие выгодные ставки дня (ещё не начались), с кэфом партнёра */
   values: ValueRow[]
 }
@@ -39,6 +42,20 @@ export type ValueRow = {
   /** выгода, % */
   ev: number | null
   time: string
+}
+
+/** Подписи до ~21 знака — влезают в панель шириной по умолчанию (288px); нет здесь — `hint` тега. */
+const SUBS: Record<string, string> = {
+  top: 'Главные матчи дня',
+  soon: 'Ближайшие матчи',
+  value: 'Кэф выше честной цены',
+  progruz: 'Кэф заметно снизился',
+  favorit: 'Одна команда сильнее',
+  andedog: 'Не фаворит, но в форме',
+  seriya: 'Серии побед и неудач',
+  krepost: 'Дома не проигрывают',
+  kadry: 'Многих нет в составе',
+  h2h: 'Тренд в личных встречах',
 }
 
 /** Сколько выгодных ставок в панели. */
@@ -66,7 +83,7 @@ export async function dayPicks(): Promise<DayPicks> {
       })
     }
     const byId = new Map(matches.map((m) => [m.id, m]))
-    const out: DayPicks = { groups: [], matches: {}, stats: {}, totals: {}, values: [] }
+    const out: DayPicks = { groups: [], matches: {}, stats: {}, totals: {}, values: [], subs: {} }
     // выгодные — только с кэфом и букмекером-партнёром (ссылка к нему), лучшие по выгоде
     out.values = items
       .filter((i) => i.match.status === 'scheduled' && i.summary?.pick?.kind === 'value' && i.summary.pick.odd && i.summary.pick.partnerSlug)
@@ -98,6 +115,8 @@ export async function dayPicks(): Promise<DayPicks> {
       if (!list.length) continue
       out.groups.push({ ...g, crests: undefined, items: list })
       out.totals[g.key] = g.items.length
+      const sub = SUBS[g.key] ?? TAG_BY_SLUG.get(g.key)?.hint
+      if (sub) out.subs[g.key] = sub
       for (const it of list) {
         out.matches[it.id] ??= compactMatch(byId.get(it.id)!)
         const st = it.focus ? statFor(it.focus.slug, it.focus.reason) : ''
@@ -106,6 +125,6 @@ export async function dayPicks(): Promise<DayPicks> {
     }
     return out
   } catch {
-    return { groups: [], matches: {}, stats: {}, totals: {}, values: [] }
+    return { groups: [], matches: {}, stats: {}, totals: {}, values: [], subs: {} }
   }
 }

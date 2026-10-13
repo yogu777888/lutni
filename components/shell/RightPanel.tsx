@@ -113,7 +113,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
     return () => window.removeEventListener(SEEN_EVENT, update)
   }, [])
 
-  const { groups, matches, stats, totals } = picks
+  const { groups, matches, stats, totals, subs } = picks
   const fold = groups.length >= FOLD_FROM
   const play = (gi: number, e: React.MouseEvent<HTMLButtonElement>) => {
     const { queue, startId } = circleQueue(groups, gi, seen)
@@ -176,13 +176,17 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                         aria-expanded={on}
                         className="flex min-w-0 flex-1 items-center gap-3 self-stretch pl-2 text-left"
                       >
-                        <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium">{g.label}</span>
+                        {/* под названием — что внутри, тихо (как «Плейлист · Spotify»): «Серия», «Может удивить» без неё новичку непонятны */}
+                        <span className="min-w-0 flex-1 leading-tight" title={subs[g.key]}>
+                          <span className="block truncate text-[14.5px] font-medium">{g.label}</span>
+                          {subs[g.key] ? <span className="mt-0.5 block truncate text-[12.5px] text-mute">{subs[g.key]}</span> : null}
+                        </span>
                         <span className="num text-[13px] text-mute">{totals[g.key] ?? g.items.length}</span>
-                        {/* шеврон справа — видно, что строка раскрывается */}
+                        {/* шеврон — только у раскрытой и при наведении: восемь одинаковых шевронов повторяли одно и то же */}
                         <svg
                           viewBox="0 0 24 24"
                           aria-hidden
-                          className={`h-4 w-4 shrink-0 text-mute transition-transform duration-200 ${on ? 'rotate-180' : ''}`}
+                          className={`h-4 w-4 shrink-0 text-mute transition-[transform,opacity] duration-200 ${on ? 'rotate-180' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}`}
                           fill="none"
                           stroke="currentColor"
                           strokeWidth={2.2}

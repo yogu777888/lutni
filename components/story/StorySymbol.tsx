@@ -58,8 +58,9 @@ const SYMBOLS: Record<string, Sym> = {
     color: '#5e5ce6',
     draw: (
       <>
-        <rect x="5.5" y="4.5" width="5.5" height="15" rx="1.6" {...SOLID} />
-        <rect x="13.6" y="12.2" width="4.9" height="7.3" rx="1.4" {...LINE} strokeWidth={2} />
+        {/* оба столбика сплошные, как пьедестал: с контурным низким знак читался как «I0» */}
+        <rect x="5" y="4.5" width="6.5" height="15" rx="1.6" {...SOLID} />
+        <rect x="13" y="11.5" width="6" height="8" rx="1.6" {...SOLID} />
       </>
     ),
   },
@@ -103,8 +104,18 @@ const SYMBOLS: Record<string, Sym> = {
   },
   // Сильны дома: крыша и основание
   krepost: { color: '#5e5ce6', draw: <path d="M4.5 11.2L12 5l7.5 6.2M7 10v8.5h10V10" {...LINE} /> },
-  // Травмы: крест
-  kadry: { color: '#ff3b30', draw: <path d="M12 6v12M6 12h12" {...LINE} strokeWidth={2.8} /> },
+  // Травмы: пластырь наискосок (крест «+» читался как кнопка «добавить»)
+  kadry: {
+    color: '#ff3b30',
+    draw: (
+      <g transform="rotate(-45 12 12)">
+        <rect x="3" y="8" width="18" height="8" rx="4" {...LINE} />
+        <path d="M9 8v8M15 8v8" {...LINE} strokeWidth={1.6} />
+        <circle cx="12" cy="10.6" r="0.9" {...SOLID} />
+        <circle cx="12" cy="13.4" r="0.9" {...SOLID} />
+      </g>
+    ),
+  },
   // Подборки: все матчи — расписание строками
   'pick-all': {
     color: '#007aff',
