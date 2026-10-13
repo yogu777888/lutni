@@ -5,6 +5,11 @@ import { useEffect, useRef, useState } from 'react'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
 
+type Suggest = {
+  leagues: { href: string; name: string; flag: string | null; live: number }[]
+  teams: { name: string; logo: string | null }[]
+}
+
 type Res = {
   matches: { id: number; href: string; home: { name: string; logo: string | null }; away: { name: string; logo: string | null }; league: string; when: string; live: boolean; score: string | null }[]
   leagues: { href: string; name: string }[]
@@ -12,7 +17,9 @@ type Res = {
 
 /**
  * Поиск в шапке: лупа (и ⌘K / Ctrl+K, «/») открывает окно — матчи команды на сегодня и два дня вперёд и турниры
- * (/api/search, lib/search.ts). Клик по матчу — сторис, как в списках; Esc или клик мимо — закрыть.
+ * (/api/search, lib/search.ts). Клик по матчу — сторис, как в списках; Esc или клик мимо — закрыть. На компьютере в
+ * шапке — поле-кнопка «Команда или турнир ⌘K» (одна лупа была незаметной); пустое окно — подсказки: турниры дня
+ * с флагами (клик — к блоку лиги) и команды главных матчей (клик — подставить в поиск).
  */
 export function Search() {
   const [open, setOpen] = useState(false)
@@ -20,6 +27,18 @@ export function Search() {
   const [res, setRes] = useState<Res | null>(null)
   const [busy, setBusy] = useState(false)
   const input = useRef<HTMLInputElement>(null)
+  const [hints, setHints] = useState<Suggest | null>(null)
+  const [mac, setMac] = useState(true)
+  useEffect(() => setMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)), [])
+
+  // подсказки — один раз, при первом открытии
+  useEffect(() => {
+    if (!open || hints) return
+    fetch('/api/search?suggest=1')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: Suggest | null) => d && setHints(d))
+      .catch(() => {})
+  }, [open, hints])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -65,12 +84,26 @@ export function Search() {
 
   return (
     <>
+      {/* на компьютере — поле-кнопка с подсказкой сочетания, ниже — только лупа */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Поиск команды или турнира"
-        title="Поиск (⌘K)"
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[0.08] hover:text-fg"
+        className="hidden h-9 w-[240px] shrink-0 items-center gap-2.5 rounded-full bg-white/[0.06] pl-3 pr-2 text-[13.5px] text-mute transition-colors hover:bg-white/[0.1] hover:text-dim lg:flex"
+      >
+        <svg viewBox="0 0 24 24" className="h-[16px] w-[16px] shrink-0" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
+          <circle cx="11" cy="11" r="6.5" />
+          <path d="M16 16l4.5 4.5" />
+        </svg>
+        <span className="flex-1 text-left">Команда или турнир</span>
+        <kbd className="rounded-[6px] bg-white/[0.08] px-1.5 py-0.5 font-sans text-[11px] text-dim">{mac ? '⌘K' : 'Ctrl K'}</kbd>
+      </button>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Поиск команды или турнира"
+        title="Поиск"
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[0.08] hover:text-fg lg:hidden"
       >
         <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
           <circle cx="11" cy="11" r="6.5" />
@@ -98,8 +131,60 @@ export function Search() {
               </button>
             </div>
             <div className="max-h-[60vh] overflow-y-auto">
-              {!res ? (
-                <p className="px-4 py-5 text-[13.5px] text-mute">{busy && q.trim().length >= 2 ? 'Ищем…' : 'Матчи команды на сегодня и два дня вперёд, турниры и их таблицы.'}</p>
+              {!res && busy && q.trim().length >= 2 ? (
+                <p className="px-4 py-5 text-[13.5px] text-mute">Ищем…</p>
+              ) : !res ? (
+                // пустое окно — подсказки: турниры дня и команды главных матчей
+                <div className="px-4 pb-4 pt-3">
+                  {hints?.leagues.length ? (
+                    <>
+                      <p className="pb-2 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-mute">Турниры сегодня</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {hints.leagues.map((l) => (
+                          <Link
+                            key={l.href}
+                            href={l.href}
+                            onClick={() => setOpen(false)}
+                            className="flex items-center gap-2 rounded-full bg-white/[0.06] py-1.5 pl-1.5 pr-3 text-[13.5px] transition-colors hover:bg-white/[0.12]"
+                          >
+                            {l.flag ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- маленький SVG
+                              <img src={`/flags/${l.flag}.svg`} alt="" width={18} height={18} className="h-[18px] w-[18px] rounded-full object-cover" />
+                            ) : (
+                              <span className="w-1" />
+                            )}
+                            {l.name}
+                            {l.live ? <span className="h-1.5 w-1.5 rounded-full bg-live" title="Идут матчи" /> : null}
+                          </Link>
+                        ))}
+                      </div>
+                    </>
+                  ) : null}
+                  {hints?.teams.length ? (
+                    <>
+                      <p className="pb-2 pt-4 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-mute">Команды</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {hints.teams.map((t) => (
+                          <button
+                            key={t.name}
+                            type="button"
+                            onClick={() => {
+                              setQ(t.name)
+                              input.current?.focus()
+                            }}
+                            className="flex items-center gap-2 rounded-full bg-white/[0.06] py-1.5 pl-1.5 pr-3 text-[13.5px] transition-colors hover:bg-white/[0.12]"
+                          >
+                            <TeamLogo name={t.name} src={t.logo} size={18} />
+                            {t.name}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : null}
+                  {!hints?.leagues.length && !hints?.teams.length ? (
+                    <p className="py-1 text-[13.5px] text-mute">Матчи команды на сегодня и два дня вперёд, турниры и их таблицы.</p>
+                  ) : null}
+                </div>
               ) : empty ? (
                 <p className="px-4 py-5 text-[13.5px] text-mute">Ничего не нашли. Попробуйте начало названия: «Ман», «Зенит».</p>
               ) : (
