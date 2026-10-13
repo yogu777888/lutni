@@ -62,12 +62,20 @@ function ValueBlock({ rows }: { rows: ValueRow[] }) {
       <ul className="mt-2 space-y-1">
         {rows.map((r) => (
           <li key={r.id} className="-mx-2 flex items-center gap-3 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.04]">
-            <Link href={r.href} prefetch={false} className="min-w-0 flex-1 leading-tight">
-              <span className="block truncate text-[13.5px] font-medium">
-                {r.home} — {r.away}
+            {/* эмблемы внахлёст в круге 36px — как значки подборок выше: у всех строк панели слева круг */}
+            <span aria-hidden className="relative h-9 w-9 shrink-0 rounded-full bg-white/[0.06]">
+              <span className="absolute left-1 top-1">
+                <TeamLogo name={r.home} src={r.homeLogo} size={16} />
               </span>
-              <span className="block truncate text-[12.5px] text-dim first-letter:uppercase">
-                {r.outcome} · {r.time}
+              <span className="absolute bottom-1 right-1">
+                <TeamLogo name={r.away} src={r.awayLogo} size={16} />
+              </span>
+            </span>
+            {/* главное — на что ставка (сверху, белым, в узкой панели — в две строки, не обрезаем); матч и время — ниже серым: обрезается второстепенное */}
+            <Link href={r.href} prefetch={false} className="min-w-0 flex-1 leading-tight">
+              <span className="line-clamp-2 text-[13.5px] font-medium first-letter:uppercase">{r.outcome}</span>
+              <span className="mt-0.5 block truncate text-[12.5px] text-dim">
+                {r.time} · {r.home} — {r.away}
               </span>
             </Link>
             <a
@@ -75,10 +83,10 @@ function ValueBlock({ rows }: { rows: ValueRow[] }) {
               target="_blank"
               rel={SPONSORED_REL}
               title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выгода +${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
-              className="num w-[68px] shrink-0 rounded-ctl bg-acid py-1.5 text-center text-[14px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
+              className="num w-[68px] shrink-0 rounded-ctl bg-acid py-2 text-center text-[14px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
             >
               {r.odd.toFixed(2)}
-              <span className="block text-[10px] font-medium leading-none opacity-70">{r.bookmaker}</span>
+              <span className="mt-1 block text-[11.5px] font-semibold leading-none opacity-75">{r.bookmaker}</span>
             </a>
           </li>
         ))}

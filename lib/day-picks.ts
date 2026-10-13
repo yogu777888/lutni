@@ -29,6 +29,8 @@ export type ValueRow = {
   href: string
   home: string
   away: string
+  homeLogo: string | null
+  awayLogo: string | null
   /** исход словами: «победа «Реал Сосьедад»» */
   outcome: string
   odd: number
@@ -77,6 +79,8 @@ export async function dayPicks(): Promise<DayPicks> {
           href: matchHref(m),
           home: m.home.name,
           away: m.away.name,
+          homeLogo: m.home.logo ?? null,
+          awayLogo: m.away.logo ?? null,
           outcome: outcomeText(p.key, m),
           odd: p.odd!,
           bookmaker: p.bookmaker ?? '',
