@@ -10,9 +10,8 @@ import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { OddsTable } from '@/components/match/OddsTable'
-import { PickCard } from '@/components/match/PickCard'
 import { SplitBar } from '@/components/match/ProbBars'
-import { VerdictCard } from '@/components/match/VerdictCard'
+import { Conclusion } from '@/components/match/VerdictCard'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerCard } from '@/components/PartnerCard'
 import { Section } from '@/components/Section'
@@ -155,23 +154,23 @@ export default async function MatchPage({ params }: Props) {
       />
       {/* идёт матч — счёт, минута и live-кэфы обновляются сами */}
       {m.status === 'live' || m.status === 'suspended' ? <LiveRefresh /> : null}
-      <h1 className="display mb-5 mt-2 text-[24px] sm:text-[32px]">{h1}</h1>
+      {/* тихий заголовок, как на главной: для поисковиков он есть, но не кричит — команды крупно на табло под ним */}
+      <h1 className="h1-quiet mb-4 mt-2 text-[15px] text-dim">{h1}</h1>
 
       {/* сначала табло, как в «Главных матчах»: команды, время или счёт, шансы; ниже — ответ словами */}
       <MatchHero full={full} cells={cells} books={cons.books} tint={tint ? distinctPair(tint) : null} notes={notes}>
-        {hasStory || tags.length ? (
-          <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-edge pt-5">
-            {hasStory ? <StoryButton id={m.id} href={canonical} className="mr-2" /> : null}
-            {tags.map((t) => (
-              <TagPill key={t.slug} slug={t.slug} reason={t.reason} size="md" />
-            ))}
+        {/* теги — в «Нашем выводе» ниже, здесь только разбор за минуту */}
+        {hasStory ? (
+          <div className="mt-6 border-t border-edge pt-5">
+            <StoryButton id={m.id} href={canonical} />
           </div>
         ) : null}
       </MatchHero>
 
-      {verdict ? (
+      {/* «Наш вывод» — до начала: расклад, ставка и теги одним блоком (были три блока с повторами) */}
+      {scheduled && (verdict || pick || tags.length) ? (
         <div className="mt-5">
-          <VerdictCard v={verdict} pickAnchor={pick ? '#pick' : undefined} />
+          <Conclusion v={verdict} pick={pick} match={m} tags={tags} />
         </div>
       ) : null}
 
@@ -187,10 +186,9 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {pick ? <PickCard pick={pick} match={m} /> : null}
-
-          {tags.length ? (
-            <Section title="Теги матча" aside={scheduled ? 'почему они здесь' : 'до матча'}>
+          {/* после начала «Нашего вывода» нет — теги с поводами здесь */}
+          {!scheduled && tags.length ? (
+            <Section title="Теги матча" aside="до матча">
               <ul className="space-y-3">
                 {tags.map((t) => (
                   <li key={t.slug} className="flex items-start gap-3">
@@ -313,7 +311,8 @@ export default async function MatchPage({ params }: Props) {
 
         <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
           <section className="card p-6">
-            <p className="eyebrow">Где поставить</p>
+            {/* заголовки — один вид на всей странице (как у Section), без мелких заглавных */}
+            <h2 className="h2 text-[20px] font-bold tracking-[-0.02em] sm:text-[22px]">Где поставить</h2>
             <div className="mt-4 divide-y divide-edge">
               {PARTNERS.slice(0, 3).map((p, i) => (
                 <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} />
@@ -322,7 +321,7 @@ export default async function MatchPage({ params }: Props) {
           </section>
           {related.length ? (
             <section className="card overflow-hidden">
-              <p className="eyebrow border-b border-edge px-5 py-4">Другие матчи</p>
+              <h2 className="h2 border-b border-edge px-5 py-4 text-[20px] font-bold tracking-[-0.02em] sm:text-[22px]">Другие матчи</h2>
               <div className="divide-y divide-edge">
                 {related.map((o) => (
                   <MatchRow key={o.id} m={o} tags={[]} compact showLeague={o.league.id !== m.league.id} />
