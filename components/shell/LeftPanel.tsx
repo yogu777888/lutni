@@ -48,7 +48,7 @@ function LeagueFlag({ l }: { l: Pick<DayLeague, 'flag' | 'name'> }) {
 function Legal({ demo }: { demo: string | null }) {
   const link = 'transition-colors hover:text-fg'
   return (
-    <div className="shrink-0 border-t border-edge px-4 pb-4 pt-3 text-[11.5px] leading-snug text-mute">
+    <div className="border-t border-edge pt-3 text-[11.5px] leading-snug text-mute">
       <p className="flex items-center gap-2 text-dim">
         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[9.5px] font-semibold ring-1 ring-edge-2">18+</span>
         Ставки — это риск. Играйте ответственно.
@@ -178,7 +178,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
       </div>
 
       <div className="shell-l-full flex h-full flex-col">
-      <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto p-4">
+      <div className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
         <h2 className="flex items-center justify-between text-[15px] font-semibold">
           Турниры дня
           <PanelToggle side="l" open />
@@ -264,8 +264,12 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
         ) : null}
 
         {!day.leagues.length ? <p className="mt-2 text-[13px] text-dim">Сегодня матчей нет.</p> : null}
+        {/* правовой блок — в конце списка: короткий список — прижат к низу панели, длинный — ровно через 24px после
+            последней строки (раньше блок был приклеен к низу и отрезал список со случайным зазором) */}
+        <div className="mt-auto shrink-0 pt-6">
+          <Legal demo={demo} />
+        </div>
       </div>
-      <Legal demo={demo} />
       </div>
     </div>
   )
