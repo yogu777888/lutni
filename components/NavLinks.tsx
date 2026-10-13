@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 export const NAV = [
-  { href: '/matches', label: 'Матчи' },
+  // главная и есть список матчей — «Матчи» ведёт на неё и подсвечен на ней (владелец согласился; `/matches` — тот же список)
+  { href: '/', label: 'Матчи' },
   // «Подборки», как панель справа («Подборки дня»): «Теги» и «Подборки» были одним и тем же под разными именами
   { href: '/tags', label: 'Подборки' },
   { href: '/tag/value', label: 'Выгодно' },
@@ -12,9 +13,9 @@ export const NAV = [
   { href: '/bookmakers', label: 'Букмекеры' },
 ] as const
 
-/** Какой пункт меню подсветить: список, дни и страница матча — «Матчи», страницы тегов — «Подборки». Главная — логотип. */
+/** Какой пункт меню подсветить: главная, список, дни и страница матча — «Матчи», страницы тегов — «Подборки». */
 export function activeNav(path: string): string | null {
-  if (path.startsWith('/matches') || path.startsWith('/match/')) return '/matches'
+  if (path === '/' || path.startsWith('/matches') || path.startsWith('/match/')) return '/'
   if (path === '/tag/value') return '/tag/value'
   if (path === '/tags' || path.startsWith('/tag/')) return '/tags'
   if (path === '/leagues' || path.startsWith('/league/')) return '/leagues'

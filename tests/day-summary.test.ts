@@ -116,10 +116,11 @@ describe('сводка дня', () => {
 
 describe('меню', () => {
   it('подсвечивает раздел по адресу', () => {
-    expect(activeNav('/')).toBeNull()
-    expect(activeNav('/matches')).toBe('/matches')
-    expect(activeNav('/matches/2026-10-03')).toBe('/matches')
-    expect(activeNav('/match/milan-cagliari-123')).toBe('/matches')
+    // главная — список матчей: «Матчи» ведёт на неё и подсвечен на ней, на днях и странице матча
+    expect(activeNav('/')).toBe('/')
+    expect(activeNav('/matches')).toBe('/')
+    expect(activeNav('/matches/2026-10-03')).toBe('/')
+    expect(activeNav('/match/milan-cagliari-123')).toBe('/')
     expect(activeNav('/tag/value')).toBe('/tag/value')
     expect(activeNav('/tag/progruz')).toBe('/tags')
     expect(activeNav('/tags')).toBe('/tags')
