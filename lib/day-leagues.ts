@@ -8,7 +8,7 @@ import { getMatchesByDate } from './data'
 import { flagCode, leagueTitle } from './flags'
 import { addDays, formatTime, todayYmd } from './format'
 import { leagueHref, listHref, matchHref } from './links'
-import { isLive } from './rank'
+import { isLive, liveRank } from './rank'
 import type { League, Match } from './types'
 
 export type DayLeague = {
@@ -33,6 +33,8 @@ export type DayLeague = {
 
 export type DayLeagues = {
   live: number
+  /** идущие матчи (главные первыми, как в «Сейчас в игре») — сторис по клику на значок «Сейчас в игре» и его кольцо */
+  liveItems: { id: number; href: string }[]
   leagues: DayLeague[]
   /** турниры завтра (только число матчей) — ниже сегодняшних, чтобы в спокойный день панель не стояла пустой */
   tomorrow: DayLeague[]
@@ -93,5 +95,11 @@ export async function dayLeagues(): Promise<DayLeagues> {
     // завтрашний список — страница «Матчи» на завтра, сразу к блоку лиги
     leaguesOf(tomorrow, (l) => `${listHref(tomorrow, today)}#league-${l.id}`, TOMORROW_LIMIT).catch(() => null),
   ])
-  return { live: now ? now.matches.filter(isLive).length : 0, leagues: now?.leagues ?? [], tomorrow: (next?.leagues ?? []).slice(0, TOMORROW_LIMIT) }
+  const live = (now?.matches ?? []).filter(isLive).sort((a, b) => liveRank(a) - liveRank(b) || a.ts - b.ts)
+  return {
+    live: live.length,
+    liveItems: live.map((m) => ({ id: m.id, href: matchHref(m) })),
+    leagues: now?.leagues ?? [],
+    tomorrow: (next?.leagues ?? []).slice(0, TOMORROW_LIMIT),
+  }
 }

@@ -21,6 +21,17 @@ import { StoryRing } from './StoryRing'
 /** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас в игре». */
 const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'турнире' : 'турнирах'}`
 
+/** При наведении на строку — белая ▶ на месте значка, как у подборок справа. */
+function PlayOverlay() {
+  return (
+    <span aria-hidden className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+      <svg viewBox="0 0 24 24" className="ml-0.5 h-3.5 w-3.5" fill="currentColor">
+        <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" />
+      </svg>
+    </span>
+  )
+}
+
 /** Блок на странице: раскрыть свёрнутые «Другие турниры» вокруг него и плавно прокрутить к нему. */
 function reveal(id: string): boolean {
   const el = document.getElementById(id)
@@ -188,6 +199,13 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
     const first = groups[i].items.find((m) => m.id === startId) ?? groups[i].items[0]
     if (first) openStory({ id: startId, href: first.href, opener: e.currentTarget, queue })
   }
+  const playLive = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const live: StoryGroup = { key: 'live', label: 'В игре', kind: 'live', hint: '', href: '/#live', stat: '', items: day.liveItems.map((m) => ({ ...m, focus: null })) }
+    const groups = [live, ...asGroups(day.leagues)]
+    const { queue, startId } = circleQueue(groups, 0, seen)
+    const first = live.items.find((m) => m.id === startId) ?? live.items[0]
+    if (first) openStory({ id: startId, href: first.href, opener: e.currentTarget, queue })
+  }
   // строка: флаг — кнопка сторис (кольцо — непросмотренные матчи, при наведении — белая ▶), название — переход к блоку лиги
   const League = ({ l, list, jump = true }: { l: DayLeague; list: DayLeague[]; jump?: boolean }) => {
     const id = `league-${l.id}`
@@ -202,11 +220,7 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
             className="relative shrink-0 rounded-full"
           >
             <LeagueFlag l={l} />
-            <span aria-hidden className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-              <svg viewBox="0 0 24 24" className="ml-0.5 h-3.5 w-3.5" fill="currentColor">
-                <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" />
-              </svg>
-            </span>
+            <PlayOverlay />
             <StoryRing group={id} ids={l.items.map((m) => m.id)} seen={seen} />
             {l.live ? <LiveDot /> : null}
           </button>
@@ -270,21 +284,29 @@ export function LeftPanel({ today, day, demo = null }: { today: string; day: Day
 
         <ul className="mt-2 space-y-0.5">
           {day.live ? (
+            // «Сейчас в игре» — тоже история (владелец: «а почему у сейчас в игре нет сторис?»): значок — сторис идущих
+            // матчей подряд (группа 'live', как у прежних кружков), кольцо — непросмотренные; название — к блоку
             <li>
-              <a
-                href="/#live"
-                onClick={go('live', '/#live')}
-                aria-current={active === 'live' ? 'location' : undefined}
-                className={`-mx-2 ${row} ${active === 'live' ? 'bg-white/[0.07]' : 'hover:bg-white/[0.04]'}`}
-              >
-                <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
-                  <StorySymbol k="live" tone="currentColor" className="h-[18px] w-[18px]" />
-                </span>
-                <span className="min-w-0 flex-1 leading-tight">
-                  <span className="block truncate">Сейчас в игре</span>
-                  <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">{`${matchesN(day.live)} ${inLeagues(day.leagues.filter((l) => l.live).length)}`}</span>
-                </span>
-              </a>
+              <div className={`group -mx-2 ${row} ${active === 'live' ? 'bg-white/[0.07]' : 'hover:bg-white/[0.04]'}`}>
+                <button type="button" onClick={playLive} aria-label="Сейчас в игре: смотреть разбор матчей" className="relative shrink-0 rounded-full">
+                  <span aria-hidden className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.06]">
+                    <StorySymbol k="live" tone="currentColor" className="h-[18px] w-[18px]" />
+                  </span>
+                  <PlayOverlay />
+                  <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} />
+                </button>
+                <a
+                  href="/#live"
+                  onClick={go('live', '/#live')}
+                  aria-current={active === 'live' ? 'location' : undefined}
+                  className="flex min-w-0 flex-1 items-center self-stretch"
+                >
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="block truncate">Сейчас в игре</span>
+                    <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">{`${matchesN(day.live)} ${inLeagues(day.leagues.filter((l) => l.live).length)}`}</span>
+                  </span>
+                </a>
+              </div>
             </li>
           ) : null}
           {top.map((l) => (
