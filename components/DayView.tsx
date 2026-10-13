@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { countryRank, FEATURED_LEAGUES, featuredRank } from '@/config/leagues'
-import { getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
+import { daySnaps, getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
+import { x12For, type X12Line } from '@/lib/lines'
 import { dayHref, listHref } from '@/lib/links'
 import { applyListFilter, filterQuery, isEmptyFilter, type ListFilter } from '@/lib/list-filter'
 import { diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
@@ -131,6 +132,21 @@ export async function DayView({
   const storyGroups = mainCircles(buildStoryGroups(items), 99)
 
 
+  // кэфы в строках — линия конкретного легального партнёра (ячейки — ссылки к нему, реклама): снимки линии из кэша,
+  // топ-турниры без снимка догружаем, но ждём не дольше 1,2 с — остальное дойдёт к следующему открытию
+  const lines: Record<number, X12Line> = {}
+  {
+    const pre = listItems.filter((i) => i.match.status === 'scheduled')
+    const { snaps } = await daySnaps(
+      pre.map((i) => i.match),
+      1200,
+    )
+    for (const it of pre) {
+      const pick = it.summary?.pick
+      const line = x12For(snaps.get(it.match.id), pick?.kind === 'value' ? pick.partnerSlug : null)
+      if (line) lines[it.match.id] = line
+    }
+  }
   const heading = dayHeading(ymd, today)
   const past = diffDays(ymd, today) < 0
   // заголовок «Все матчи дня» над списком не нужен: на главной в центре — только матчи (владелец: «по центру только лайв
@@ -262,9 +278,9 @@ export async function DayView({
             {/* матчи избранных команд (звёздочка на странице матча) — первыми; нет избранных — блока нет */}
             <FavMatches ymd={ymd} />
             {liveTop.length ? <LiveBlock items={liveTop} total={liveAll.length} /> : null}
-            {byTime && timeList.length ? <TimeBlock items={timeList} /> : null}
+            {byTime && timeList.length ? <TimeBlock items={timeList} lines={lines} /> : null}
             {byTime ? null : featured.map((g) => (
-              <LeagueBlock key={g.league.id} league={g.league} items={g.items} live={liveIn.get(g.league.id) ?? 0} featured />
+              <LeagueBlock key={g.league.id} league={g.league} items={g.items} lines={lines} live={liveIn.get(g.league.id) ?? 0} featured />
             ))}
             {!byTime && others.length ? (
               <details className="card group overflow-hidden" open={!featured.length}>
@@ -278,7 +294,7 @@ export async function DayView({
                 {/* карточки турниров внутри общей — на тон темнее, иначе без обводки они сольются с ней */}
                 <div className="space-y-4 border-t border-edge p-3 sm:p-4 [&_.card]:bg-panel">
                   {others.map((g) => (
-                    <LeagueBlock key={g.league.id} league={g.league} items={g.items} live={liveIn.get(g.league.id) ?? 0} />
+                    <LeagueBlock key={g.league.id} league={g.league} items={g.items} lines={lines} live={liveIn.get(g.league.id) ?? 0} />
                   ))}
                   {shownOthers < totalOthers ? (
                     <p className="px-1 text-[13px] text-dim">

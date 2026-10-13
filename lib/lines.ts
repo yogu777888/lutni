@@ -42,6 +42,21 @@ export function x12Line(snap: OddsSnap | null | undefined): X12Line | null {
   return null
 }
 
+/**
+ * Линия 1X2 конкретного партнёра (`slug`), если она есть в снимке, иначе — первого партнёра по порядку. Для строк
+ * списка: у выгодной ставки — кэфы того букмекера, у которого она выгодна, чтобы лаймовая цифра и ссылка совпадали.
+ */
+export function x12For(snap: OddsSnap | null | undefined, slug?: string | null): X12Line | null {
+  if (!snap) return null
+  if (slug) {
+    const rb = partnerBooks(snap.books).find((r) => r.partner.slug === slug)
+    const x = rb?.book.x12
+    if (rb && x?.home && x.draw && x.away)
+      return { bookmaker: rb.partner.name, slug: rb.partner.slug, at: snap.at, home: x.home.value, draw: x.draw.value, away: x.away.value }
+  }
+  return x12Line(snap)
+}
+
 /** Шанс 3+ голов по паре «больше 2,5 / меньше 2,5» одного букмекера. */
 export type GoalsLine = Source & { p: number; over: number; under: number }
 

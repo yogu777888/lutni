@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { FeedItem } from '@/lib/data'
 import { formatTime } from '@/lib/format'
 import { leagueHref } from '@/lib/links'
+import type { X12Line } from '@/lib/lines'
 import type { League } from '@/lib/types'
 import { flagCode, leagueTitle } from '@/lib/flags'
 import { Flag } from './Flag'
@@ -16,7 +17,31 @@ const STATE_ORDER: Record<string, number> = { live: 0, suspended: 0, scheduled: 
 const byState = (a: FeedItem, b: FeedItem) =>
   (STATE_ORDER[a.match.status] ?? 2) - (STATE_ORDER[b.match.status] ?? 2) || a.match.ts - b.match.ts
 
-export function LeagueBlock({ league, items, live = 0 }: { league: League; items: FeedItem[]; featured?: boolean; live?: number }) {
+/** Пометка рекламы у кэфов-ссылок: «Кэфы Winline · Реклама» — какие букмекеры стоят в строках блока (закон о рекламе). */
+function AdNote({ items, lines }: { items: FeedItem[]; lines: Record<number, X12Line> }) {
+  const books = [...new Set(items.map((i) => lines[i.match.id]?.bookmaker).filter(Boolean))]
+  if (!books.length) return null
+  return (
+    // на телефоне — коротко «Реклама» (места мало), но пометка видна везде
+    <span className="text-mute" title={`Кэфы ${books.join(', ')} — ссылки к букмекеру-партнёру`}>
+      <span className="hidden sm:inline">Кэфы {books.join(', ')} · </span>Реклама
+    </span>
+  )
+}
+
+export function LeagueBlock({
+  league,
+  items,
+  lines = {},
+  live = 0,
+}: {
+  league: League
+  items: FeedItem[]
+  featured?: boolean
+  /** линия партнёра по матчам: кэфы в строках — ссылки к нему */
+  lines?: Record<number, X12Line>
+  live?: number
+}) {
   return (
     // id — для «Турниров дня» в левой панели (клик прокручивает сюда)
     <section id={`league-${league.id}`} className="card scroll-mt-24 overflow-hidden">
@@ -29,6 +54,7 @@ export function LeagueBlock({ league, items, live = 0 }: { league: League; items
           </span>
         </Link>
         <div className="flex shrink-0 items-center gap-4 text-[13px] font-medium">
+          <AdNote items={items} lines={lines} />
           {/* идущие матчи лиги — наверху, в «Сейчас в игре»: здесь только пометка со ссылкой туда */}
           {live ? (
             <a href="#live" className="flex items-center gap-1.5 text-live transition-opacity hover:opacity-80">
@@ -47,7 +73,7 @@ export function LeagueBlock({ league, items, live = 0 }: { league: League; items
       </header>
       <div className="divide-y divide-edge">
         {[...items].sort(byState).map((it) => (
-          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} />
+          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} line={lines[it.match.id] ?? null} />
         ))}
       </div>
     </section>
@@ -79,7 +105,7 @@ export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }
  * Все матчи дня по времени начала — одной карточкой, по часам: «14:00 · 5 матчей».
  * У каждой строки — турнир, раз они вперемешку.
  */
-export function TimeBlock({ items }: { items: FeedItem[] }) {
+export function TimeBlock({ items, lines = {} }: { items: FeedItem[]; lines?: Record<number, X12Line> }) {
   const hours = new Map<string, FeedItem[]>()
   for (const it of items) {
     const h = `${formatTime(it.match.ts).slice(0, 2)}:00`
@@ -91,10 +117,13 @@ export function TimeBlock({ items }: { items: FeedItem[] }) {
         <div key={h}>
           <h3 className="flex items-baseline justify-between gap-3 border-b border-edge bg-white/[0.02] px-4 py-2.5 sm:px-5">
             <span className="num text-[15px] font-bold">{h}</span>
+            <span className="text-[12px]">
+              <AdNote items={list} lines={lines} />
+            </span>
           </h3>
           <div className="divide-y divide-edge border-b border-edge last:border-b-0">
             {list.map((it) => (
-              <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} showLeague />
+              <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} line={lines[it.match.id] ?? null} showLeague />
             ))}
           </div>
         </div>

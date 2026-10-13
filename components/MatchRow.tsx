@@ -1,5 +1,7 @@
 import type { MatchSummary } from '@/lib/data'
+import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import { formatOdd, formatTime } from '@/lib/format'
+import type { X12Line } from '@/lib/lines'
 import { matchHref } from '@/lib/links'
 import type { TagHit } from '@/lib/tags'
 import type { Match } from '@/lib/types'
@@ -41,30 +43,44 @@ export function StatusCell({ m }: { m: Match }) {
 }
 
 /**
- * Кэфы 1X2 — только у матчей, которые ещё не начались; выгодный — лаймом.
+ * Кэфы 1X2 — только у матчей, которые ещё не начались. Есть линия легального партнёра (`line`) — ячейки-ссылки к нему
+ * (`goHref(…, 'list-odds')`, rel=sponsored; пометка «Реклама» — в шапке блока): выглядят кнопками и ведут к ставке
+ * (раньше клик по «кнопке» открывал сторис — владелец согласился сделать переход). Линии партнёра нет — простые числа
+ * без плашек, не притворяются кнопками. Выгодный — лаймом.
  */
-function Odds({ m, hotKey, hotOdd = null }: { m: Match; hotKey: string | null; hotOdd?: number | null }) {
+function Odds({ m, hotKey, line }: { m: Match; hotKey: string | null; line: X12Line | null }) {
   const x = m.odds?.x12
-  const pre = m.status === 'scheduled'
   return (
-    <span className="grid grid-cols-3 gap-1.5" title={pre ? undefined : 'Коэффициенты до матча'}>
+    <span className="relative z-10 grid grid-cols-3 gap-1.5">
       {(['home', 'draw', 'away'] as const).map((k) => {
         const q = x?.[k]
-        const hot = pre && hotKey === k
-        const dropped = pre && q?.opening && q.opening / q.value >= 1.07
-        const tone = hot
-          ? 'bg-acid text-acid-ink'
-          : pre
-            ? 'bg-white/[0.05] text-fg/90'
-            : 'bg-white/[0.03] text-mute/70'
+        const hot = hotKey === k
+        const what = k === 'draw' ? 'Ничья' : `Победа «${m[k].name}»`
+        if (line) {
+          return (
+            <a
+              key={k}
+              href={goHref(line.slug, 'list-odds', m.id)}
+              target="_blank"
+              rel={SPONSORED_REL}
+              title={`${what}: ${formatOdd(line[k])} в ${line.bookmaker}${hot ? ' — выгодно: кэф выше честной цены' : ''} · Реклама 18+`}
+              className={`num rounded-ctl py-1.5 text-center text-[15px] font-semibold transition-colors ${
+                hot ? 'bg-acid text-acid-ink hover:bg-acid/85' : 'bg-white/[0.06] text-fg hover:bg-white/[0.14]'
+              }`}
+            >
+              {formatOdd(line[k])}
+            </a>
+          )
+        }
+        const dropped = q?.opening && q.opening / q.value >= 1.07
         return (
           <span
             key={k}
-            className={`num rounded-ctl py-1.5 text-center text-[15px] font-semibold ${tone}`}
-            title={`${k === 'draw' ? 'Ничья' : `Победа «${m[k].name}»`}${hot ? ' — выгодно: кэф выше честной цены' : q?.opening ? ` · открытие ${q.opening.toFixed(2)}` : ''}`}
+            className={`num py-1.5 text-center text-[15px] font-semibold ${hot ? 'text-good' : 'text-fg/70'}`}
+            title={`${what}${q?.opening ? ` · открытие ${q.opening.toFixed(2)}` : ''}`}
           >
-            {hot && hotOdd ? formatOdd(hotOdd) : q ? formatOdd(q.value) : '—'}
-            {dropped && !hot ? <span className="ml-0.5 text-[9px] text-hot">▼</span> : null}
+            {q ? formatOdd(q.value) : '—'}
+            {dropped ? <span className="ml-0.5 text-[9px] text-hot">▼</span> : null}
           </span>
         )
       })}
@@ -93,6 +109,7 @@ export function MatchRow({
   showLeague = false,
   compact = false,
   noOdds = false,
+  line = null,
 }: {
   m: Match
   tags: TagHit[]
@@ -103,6 +120,8 @@ export function MatchRow({
   compact?: boolean
   /** В блоке ни у кого нет линии: без кэфов. */
   noOdds?: boolean
+  /** линия легального партнёра: кэфы — ссылки к нему */
+  line?: X12Line | null
 }) {
   const live = isLive(m)
   const played = Boolean(m.score) && (live || m.status === 'finished')
@@ -164,7 +183,7 @@ export function MatchRow({
         <>
           <span className="sm:hidden" />
           <div className="col-span-2 col-start-2 sm:col-span-1 sm:col-start-auto">
-            <Odds m={m} hotKey={hotKey} hotOdd={pick?.odd ?? null} />
+            <Odds m={m} hotKey={line && pick?.partnerSlug && pick.partnerSlug !== line.slug ? null : hotKey} line={line} />
           </div>
         </>
       ) : (
