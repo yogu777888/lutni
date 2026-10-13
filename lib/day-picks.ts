@@ -87,7 +87,8 @@ export async function dayPicks(): Promise<DayPicks> {
       })
     for (const g of groups) {
       // «В игре» — в левой панели («Сейчас в игре»); подборка из одного матча — уже не подборка (владелец согласился)
-      if (g.key === 'live' || g.items.length < 2) continue
+      // «Выгодно» — блоком «Выгодно сегодня» внизу панели (с кэфами и ссылками), подборкой не повторяем
+      if (g.key === 'live' || g.items.length < 2 || (g.key === 'value' && out.values.length)) continue
       // в панель — первые матчи подборки; для очереди сторис весь список не нужен
       const list = g.items.filter((it) => byId.has(it.id)).slice(0, PER_GROUP)
       if (!list.length) continue

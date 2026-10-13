@@ -75,7 +75,7 @@ function ValueBlock({ rows }: { rows: ValueRow[] }) {
               target="_blank"
               rel={SPONSORED_REL}
               title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выгода +${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
-              className="num shrink-0 rounded-ctl bg-acid px-2.5 py-1.5 text-center text-[14px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
+              className="num w-[68px] shrink-0 rounded-ctl bg-acid py-1.5 text-center text-[14px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
             >
               {r.odd.toFixed(2)}
               <span className="block text-[10px] font-medium leading-none opacity-70">{r.bookmaker}</span>
@@ -134,7 +134,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
 
       <div className="shell-r-full flex h-full flex-col">
         <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto p-4">
-          <h2 className="flex items-center justify-between text-[15px] font-semibold">
+          <h2 className="sticky -top-4 z-10 -mx-4 -mt-4 flex items-center justify-between bg-panel px-4 pb-2 pt-4 text-[15px] font-semibold">
             Подборки дня
             <PanelToggle side="r" open />
           </h2>
