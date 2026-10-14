@@ -9,7 +9,26 @@ export const matchesN = (n: number) => pluralN(n, ['матч', 'матча', 'м
  * Одна схема у турниров слева и подборок справа (владелец согласился: голые цифры справа читались как счётчик
  * непрочитанных, а статичные описания подборок повторяли названия).
  */
-export function StateLine({ total, live, next, started, pending }: { total: number; live: number; next: string | null; started: boolean; pending: number }) {
+export function StateLine({
+  total,
+  live,
+  next,
+  started,
+  pending,
+  soon = false,
+}: {
+  total: number
+  live: number
+  next: string | null
+  started: boolean
+  pending: number
+  /** «Скоро начнутся»: только «ближайший в 20:00» — число матчей там ничего не говорит, а «8 матчей · начало в 20:00»
+   * повторяло строку «Главных матчей» над ней (владелец согласился) */
+  soon?: boolean
+}) {
+  if (soon && next && !live) return <>ближайший в {next}</>
+  // идут все — без повтора числа: «4 матча, все идут» вместо «4 матча · 4 идут»
+  if (live && live === total) return <>{total === 1 ? '1 матч, идёт' : `${matchesN(total)}, все идут`}</>
   // словами, без сокращений (владелец: «"4 в игре" непонятно — может "4 идут"? и "с 20:00" — может "начало 20:00"?»)
   // часть уже сыграна — сколько впереди и с какого времени: «ещё 2 с 21:00» («дальше в 21:00» владельцу было непонятно,
   // «следующий в 21:00» не влезает в панель 248px)

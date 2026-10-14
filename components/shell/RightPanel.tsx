@@ -142,7 +142,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
               g.label,
               states[g.key] ? (
                 <>
-                  <StateLine total={totals[g.key] ?? g.items.length} {...states[g.key]} /> · нажмите — разбор
+                  <StateLine total={totals[g.key] ?? g.items.length} {...states[g.key]} soon={g.key === 'soon'} /> · нажмите — разбор
                 </>
               ) : (
                 'Нажмите — разбор'
@@ -218,7 +218,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                           <span className="block truncate text-[14.5px] font-medium">{g.label}</span>
                           {states[g.key] ? (
                             <span className="mt-0.5 block truncate text-[12.5px] text-mute">
-                              <StateLine total={totals[g.key] ?? g.items.length} {...states[g.key]} />
+                              <StateLine total={totals[g.key] ?? g.items.length} {...states[g.key]} soon={g.key === 'soon'} />
                             </span>
                           ) : null}
                         </span>
