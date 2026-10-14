@@ -1,8 +1,11 @@
 /**
  * PARI (pari.ru — легальный российский букмекер) через SStats: /Pari/matches, /Pari/odds/history/{eventId}.
- * Отсюда — LIVE-кэфы (в основном API они только у зарубежного Bet365) и настоящая история линии со временем.
+ * Отсюда — доматчевая линия PARI (в /Odds её нет), LIVE-кэфы (в основном API они только у зарубежного Bet365) и
+ * настоящая история линии со временем.
  * Id матчей и команд у PARI свои: связь с матчами SStats — по времени начала и названиям (lib/pari-link.ts).
  */
+
+import type { BookOdds } from '../odds'
 
 export type RawPariMatch = {
   matchInfo: {
@@ -93,4 +96,25 @@ export function pariHistory(snaps: RawPariSnapshot[]): PariHistory {
     }
   }
   return out
+}
+
+/** Id «букмекера» PARI в нашем списке линий (в /Odds у SStats его нет — свой отрицательный id, чтобы не совпасть). */
+export const PARI_BOOK_ID = -8250
+
+/**
+ * Доматчевая линия PARI одной «строкой букмекера» — как из /Odds: победа, ничья, тотал 2,5. Открытия у текущих кэфов
+ * нет (история линии — отдельно, график на странице матча). Нет трёх исходов — нет и строки.
+ */
+export function pariBook(p: PariMatch): BookOdds | null {
+  const o = p.odds
+  if (!o.home || !o.draw || !o.away) return null
+  const q = (v: number | undefined) => (v ? { value: v, opening: null } : undefined)
+  return {
+    bookmakerId: PARI_BOOK_ID,
+    bookmakerName: 'PARI',
+    x12: { home: q(o.home), draw: q(o.draw), away: q(o.away) },
+    totals: o.over25 || o.under25 ? [{ line: 2.5, over: q(o.over25), under: q(o.under25) }] : [],
+    btts: null,
+    dc: null,
+  }
 }

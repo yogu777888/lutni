@@ -339,17 +339,18 @@ function scoreAt(g: MockGame, minute: number) {
 
 // ─── Коэффициенты ────────────────────────────────────────────────────────────
 
+/** Как в настоящем /Odds (проверено на API в октябре 2026): зарубежные букмекеры и Marathonbet; Фонбета, Winline,
+ * BetBoom и Лиги Ставок там нет, PARI — отдельным разделом /Pari (см. pariMatches). Демо не должно обещать больше. */
 const BOOKMAKERS = [
-  { id: 1, name: 'Fonbet', margin: 0.06 },
-  { id: 2, name: 'Winline', margin: 0.055 },
-  { id: 3, name: 'Pari', margin: 0.06 },
-  { id: 4, name: 'BetBoom', margin: 0.065 },
-  { id: 5, name: 'Liga Stavok', margin: 0.07 },
-  { id: 6, name: 'Marathonbet', margin: 0.045 },
-  { id: 7, name: 'Pinnacle', margin: 0.025 },
-  { id: 8, name: 'Bet365', margin: 0.05 },
-  { id: 9, name: '1xBet', margin: 0.05 },
-  { id: 10, name: 'William Hill', margin: 0.06 },
+  { id: 1, name: 'William Hill', margin: 0.06 },
+  { id: 2, name: 'Bet365', margin: 0.05 },
+  { id: 3, name: 'Marathonbet', margin: 0.045 },
+  { id: 4, name: 'Betfair', margin: 0.03 },
+  { id: 5, name: 'BetVictor', margin: 0.055 },
+  { id: 6, name: 'Pinnacle', margin: 0.025 },
+  { id: 7, name: 'SBO', margin: 0.035 },
+  { id: 8, name: '1xBet', margin: 0.05 },
+  { id: 9, name: 'Betano', margin: 0.055 },
 ]
 
 function pois(k: number, l: number) {

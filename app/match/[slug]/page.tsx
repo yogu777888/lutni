@@ -274,8 +274,15 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {legalBooks.length ? (
-            <Section title="Коэффициенты букмекеров" aside={`${scheduled ? '' : 'до матча · '}${pluralN(legalBooks.length, ['букмекер', 'букмекера', 'букмекеров'])} · ▼▲ — изменение с открытия`}>
+          {legalBooks.length || scheduled ? (
+            <Section
+              title="Коэффициенты букмекеров"
+              aside={
+                legalBooks.length
+                  ? `${scheduled ? '' : 'до матча · '}${pluralN(legalBooks.length, ['букмекер', 'букмекера', 'букмекеров'])} с линией · ▼▲ — изменение с открытия`
+                  : 'линии в нашей базе пока нет'
+              }
+            >
               <OddsTable match={m} books={legalBooks} model={model} candidates={candidates} />
               <p className="mt-4 text-[11px] text-mute">
                 Лучший коэффициент в колонке подсвечен, точка — кэф выше честной цены. Коэффициенты меняются — проверяйте

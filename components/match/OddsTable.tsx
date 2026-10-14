@@ -25,7 +25,7 @@ function partnerOrder(b: BookOdds) {
 
 /**
  * Сравнение коэффициентов: лучший в колонке подсвечен, выгодные (выше честной цены)
- * отмечены точкой, у партнёров — кнопка «Ставка» (через /go с subid).
+ * отмечены точкой, у партнёров — кнопка «Ставка» (через /go с subid); партнёры без линии в API — строкой «На сайт».
  */
 export function OddsTable({
   match,
@@ -44,6 +44,11 @@ export function OddsTable({
   const valueKeys = new Set(candidates.filter(isValue).map((c) => c.key))
   const rows = [...books].sort((a, b) => partnerOrder(a) - partnerOrder(b) || a.bookmakerName.localeCompare(b.bookmakerName))
   const open = match.status === 'scheduled'
+  // легальные партнёры, чьих кэфов нет в API (Фонбет, Winline, BetBoom, Лига Ставок — их нет в /Odds SStats): строка
+  // со ссылкой на сайт, а не прочерки — шесть «—» подряд читаются как «сломалось» (владелец: «у кого нет кэфов просто
+  // ссылку на их сайт»); чужие кэфы под их имя не подставляем
+  const shown = new Set(rows.map((b) => partnerForApiBookmaker(b.bookmakerId, b.bookmakerName)?.slug))
+  const linkOnly = open ? PARTNERS.filter((p) => !shown.has(p.slug)) : []
 
   return (
     <div className="scrollbar-none -mx-4 overflow-x-auto sm:mx-0">
@@ -133,6 +138,29 @@ export function OddsTable({
               <td className="border-t border-edge-2" />
             </tr>
           ) : null}
+          {linkOnly.map((p, i) => (
+            <tr key={p.slug}>
+              <td className={`sticky left-0 z-10 border-t bg-panel-2 py-2.5 pl-4 pr-2 sm:pl-0 ${i === 0 && rows.length ? 'border-edge-2' : 'border-edge'}`}>
+                <span className="flex items-center gap-2.5">
+                  <PartnerBadge partner={p} size={22} />
+                  <span className="whitespace-nowrap font-medium">{p.name}</span>
+                </span>
+              </td>
+              <td colSpan={Math.max(1, cols.length)} className={`border-t px-1 py-2.5 text-center text-[13px] text-mute ${i === 0 && rows.length ? 'border-edge-2' : 'border-edge'}`}>
+                Линия — на сайте букмекера
+              </td>
+              <td className={`border-t py-2.5 pl-1 pr-4 text-right sm:pr-0 ${i === 0 && rows.length ? 'border-edge-2' : 'border-edge'}`}>
+                <a
+                  href={goHref(p, 'odds-table', match.id)}
+                  target="_blank"
+                  rel={SPONSORED_REL}
+                  className="inline-flex whitespace-nowrap rounded-full bg-white/[0.08] px-3 py-1.5 text-[12px] font-medium text-fg transition-colors hover:bg-btn hover:text-btn-ink"
+                >
+                  На сайт
+                </a>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

@@ -14,7 +14,7 @@ import { buildPreview, type Paragraph } from './preview'
 import type { Priority } from './rate-limit'
 import { ApiError, apiGet } from './sstats/client'
 import * as N from './sstats/normalize'
-import { normalizePariMatch, pariHistory, type PariHistory, type PariMatch, type RawPariMatch, type RawPariSnapshot } from './sstats/pari'
+import { normalizePariMatch, pariBook, pariHistory, type PariHistory, type PariMatch, type RawPariMatch, type RawPariSnapshot } from './sstats/pari'
 import { linkPari } from './pari-link'
 import type {
   RawBookmakerOdds,
@@ -166,13 +166,17 @@ export async function getMatchFull(id: number, opts: Opts = {}): Promise<MatchFu
 export async function getOddsSnap(m: Match, opts: Opts = {}): Promise<OddsSnap> {
   return cache.get(
     `odds-snap:${m.id}`,
-    async () => ({
-      books: N.normalizeBookOdds(await apiGet<RawBookmakerOdds[]>(`/Odds/${m.id}`, {}, opts), {
+    async () => {
+      const books = N.normalizeBookOdds(await apiGet<RawBookmakerOdds[]>(`/Odds/${m.id}`, {}, opts), {
         home: m.home.original,
         away: m.away.original,
-      }),
-      at: appNow(),
-    }),
+      })
+      // PARI — легальный партнёр, в /Odds его нет: доматчевую линию берём из /Pari (только пока матч не начался —
+      // после начала там live-кэфы, а снимок линии — доматчевый)
+      const pari = m.status === 'scheduled' ? await settle(pariFor(m, opts), null) : null
+      const pb = pari?.status === 'scheduled' ? pariBook(pari) : null
+      return { books: pb ? [...books.filter((b) => !/\bpari\b/i.test(b.bookmakerName)), pb] : books, at: appNow() }
+    },
     matchTtl(m),
   )
 }
@@ -196,12 +200,12 @@ export async function waitOddsSnap(m: Match, ms = 1200): Promise<OddsSnap | null
 
 const pariList = (raw: RawPariMatch[] | null) => (raw ?? []).map(normalizePariMatch).filter((x): x is PariMatch => x !== null)
 
-/** Все матчи PARI за день (без кэфов, ~1 запрос): для связи с нашими матчами. */
+/** Все матчи PARI за день с текущими кэфами (~1 запрос, ~1 МБ): связь с нашими матчами и доматчевая линия PARI. */
 export async function getPariDay(ymd: string, opts: Opts = {}): Promise<PariMatch[]> {
   const past = diffDays(ymd, todayYmd()) < 0
   return cache.get(
     `pari:day:${ymd}`,
-    async () => pariList(await apiGet<RawPariMatch[]>('/Pari/matches', { date: ymd, timezone: tzOffsetHours(), limit: 1000 }, opts)),
+    async () => pariList(await apiGet<RawPariMatch[]>('/Pari/matches', { date: ymd, timezone: tzOffsetHours(), limit: 1000, includeOdds: true }, opts)),
     past ? { ttl: 24 * H } : { ttl: 900, stale: 6 * H },
   )
 }
