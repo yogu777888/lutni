@@ -34,6 +34,31 @@ function withScore(events: MatchEvent[], final: { home: number; away: number } |
   return events.map((e) => ({ ...e, score: null }))
 }
 
+/**
+ * Авторы голов по командам для табло (как у Apple Sports — под названием команды): «Petrov 17′, 62′», автогол —
+ * «Smith 40′ (авт.)» у команды, которой засчитан; сторона — так же, как в счёте после гола (`withScore`).
+ */
+export function scorers(events: MatchEvent[], final: { home: number; away: number } | null): { home: string[]; away: string[] } {
+  const flow = withScore(events.filter((e) => GOALS.has(e.kind)), final)
+  const out = { home: new Map<string, string[]>(), away: new Map<string, string[]>() }
+  let h = 0
+  for (const e of flow) {
+    // сторона гола — по изменению счёта (так учтён и автогол); счёта нет — по стороне события
+    let side: 'home' | 'away' = e.side
+    if (e.score) {
+      const nh = Number(e.score.split(':')[0])
+      side = nh > h ? 'home' : 'away'
+      h = nh
+    }
+    const name = `${e.player || '—'}${e.kind === 'own-goal' ? ' (авт.)' : e.kind === 'penalty' ? ' (пен.)' : ''}`
+    const list = out[side].get(name) ?? []
+    list.push(minuteText(e))
+    out[side].set(name, list)
+  }
+  const fmt = (m: Map<string, string[]>) => [...m].map(([n, mins]) => `${n} ${mins.join(', ')}`)
+  return { home: fmt(out.home), away: fmt(out.away) }
+}
+
 const minuteText = (e: MatchEvent) => `${e.minute}${e.extra ? `+${e.extra}` : ''}′`
 
 function Mark({ e }: { e: Flow }) {

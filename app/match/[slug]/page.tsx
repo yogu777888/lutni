@@ -174,7 +174,7 @@ export default async function MatchPage({ params }: Props) {
         const odd = isLive ? (liveX12 && pariPartner ? liveX12[k]! : null) : (partnerLine?.b.x12?.[k]?.value ?? null)
         return {
           key: k,
-          label: k === 'home' ? `победа ${m.home.name}` : k === 'away' ? `победа ${m.away.name}` : 'ничья',
+          label: k === 'home' ? `победа «${m.home.name}»` : k === 'away' ? `победа «${m.away.name}»` : 'ничья',
           p: x[k],
           odd,
           fair: 1 / x[k],
