@@ -37,26 +37,31 @@ export function MatchBar({
   const [top, setTop] = useState(64)
 
   useEffect(() => {
-    // полоска — как только под шапку ушёл верх табло (эмблемы, названия, счёт или время), а не весь блок матча:
-    // иначе полэкрана счёта не было видно нигде (владелец согласился); кэфы в полоске — когда ушли и кэфы табло,
-    // чтобы одни и те же три числа не стояли дважды
+    // полоска появляется, как только верх табло (эмблемы, названия, счёт или время) дошёл до места, где она стоит, —
+    // а не когда табло ушло целиком: иначе счёт уже наполовину скрывался под шапкой, а полоски ещё не было (владелец:
+    // «немного не нравится, как появляется верхний блок»); выезжает из-под шапки и сразу заменяет уезжающее табло.
+    // Кэфы в полоске — когда до неё дошли кэфы табло, чтобы одни и те же числа не стояли дважды
     const board = document.getElementById('match-board') ?? document.getElementById('match-hero')
     const heroOdds = document.getElementById('match-odds')
     const head = document.querySelector('header')
     if (!board) return
-    const place = () => setTop(innerWidth >= 1280 ? 72 : Math.round(head?.getBoundingClientRect().bottom ?? 64) + 6)
-    place()
-    const margin = `-${(head?.getBoundingClientRect().bottom ?? 64) + 20}px 0px 0px 0px`
-    const gone = (set: (v: boolean) => void) => new IntersectionObserver(([e]) => set(!e.isIntersecting && e.boundingClientRect.top < 0), { rootMargin: margin })
-    const io = gone(setShow)
-    io.observe(board)
-    const io2 = heroOdds ? gone(setOddsGone) : null
-    if (heroOdds) io2!.observe(heroOdds)
-    addEventListener('resize', place)
+    let raf = 0
+    const check = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const t = innerWidth >= 1280 ? 72 : Math.round(head?.getBoundingClientRect().bottom ?? 64) + 6
+        setTop(t)
+        setShow(board.getBoundingClientRect().top < t + 8)
+        setOddsGone(heroOdds ? heroOdds.getBoundingClientRect().top < t + 58 : true)
+      })
+    }
+    check()
+    addEventListener('scroll', check, { passive: true })
+    addEventListener('resize', check)
     return () => {
-      io.disconnect()
-      io2?.disconnect()
-      removeEventListener('resize', place)
+      cancelAnimationFrame(raf)
+      removeEventListener('scroll', check)
+      removeEventListener('resize', check)
     }
   }, [])
 
@@ -75,8 +80,8 @@ export function MatchBar({
       <div
         aria-hidden={!show}
         inert={!show}
-        className={`match-bar absolute inset-x-0 top-0 transition-[opacity,transform] duration-200 ${
-          show ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0'
+        className={`match-bar absolute inset-x-0 top-0 transition-[opacity,transform] duration-200 ease-out ${
+          show ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-full opacity-0'
         }`}
       >
       <div className="match-bar-in flex min-h-12 items-center gap-3 rounded-card bg-panel-3 px-3 py-2 shadow-[0_10px_30px_rgb(0_0_0/0.45)] sm:px-4">
