@@ -849,6 +849,31 @@ html[data-shell-rc] .shell-r-rail {
     background: var(--color-panel);
     padding: 10px 20px;
   }
+  /* мини-табло страницы матча — как строка дней на главной (.bare-panel): квадратная подложка цвета фона, плашка
+     панели той же высоты (58px) без тени, под ней полоска фона 8px и уголки — уезжающие разделы уходят под неё со
+     скруглённым верхом */
+  .shell-center:has(.bare-match) .match-bar {
+    background: #090c10;
+  }
+  .shell-center:has(.bare-match) .match-bar-in {
+    min-height: 57.5px;
+    background: var(--color-panel);
+    box-shadow: none;
+    padding: 8px 10px 8px 22px;
+  }
+  .shell-center:has(.bare-match) .match-bar::after {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    height: 28px;
+    background:
+      linear-gradient(#090c10, #090c10) top / 100% 8px no-repeat,
+      radial-gradient(circle at 100% 100%, transparent 19.5px, #090c10 20px) left 0 top 8px / 20px 20px no-repeat,
+      radial-gradient(circle at 0 100%, transparent 19.5px, #090c10 20px) right 0 top 8px / 20px 20px no-repeat;
+  }
   /* закреплённая первая колонка таблицы кэфов — цвета панели (иначе светлее остальной таблицы) */
   .shell-center:has(.bare-match) .odds-sticky {
     background: var(--color-panel);

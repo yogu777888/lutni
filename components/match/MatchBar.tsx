@@ -69,13 +69,17 @@ export function MatchBar({
 
   return (
     <div className="sticky z-30 h-0" style={{ top }}>
+      {/* от xl — как строка дней на главной (владелец: «блок на странице матча как будто уже по высоте»): та же высота
+          ~58px, фон панели, без тени, под ней полоска фона и уголки (.match-bar в app/globals.css); ниже xl — плашкой
+          с тенью */}
       <div
         aria-hidden={!show}
         inert={!show}
-        className={`absolute inset-x-0 top-0 flex items-center gap-3 rounded-card bg-panel-3 px-3 py-2 shadow-[0_10px_30px_rgb(0_0_0/0.45)] transition-[opacity,transform] duration-200 sm:px-4 ${
+        className={`match-bar absolute inset-x-0 top-0 transition-[opacity,transform] duration-200 ${
           show ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0'
         }`}
       >
+      <div className="match-bar-in flex min-h-12 items-center gap-3 rounded-card bg-panel-3 px-3 py-2 shadow-[0_10px_30px_rgb(0_0_0/0.45)] sm:px-4">
         <BackButton fallback="/matches" />
         <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
           {team(home)}
@@ -113,6 +117,7 @@ export function MatchBar({
             ))}
           </div>
         ) : null}
+      </div>
       </div>
     </div>
   )
