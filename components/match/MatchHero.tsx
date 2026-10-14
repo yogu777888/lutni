@@ -63,6 +63,9 @@ export function MatchHero({
   const n = cells ? split100({ home: cells[0].p, draw: cells[1].p, away: cells[2].p }) : null
   const live = m.status === 'live' || m.status === 'suspended'
   const played = Boolean(m.score) && (live || m.status === 'finished')
+  // сыгран (или отменён) — кэфы до матча только для истории: без «честная …» и без пояснения под табло (владелец: «не
+  // слишком много мелкого текста?»)
+  const over = !live && m.status !== 'scheduled'
   const lead = played && m.score!.home !== m.score!.away ? (m.score!.home > m.score!.away ? 'home' : 'away') : null
   // команда, как в «Главных матчах»: эмблема на матовом круге, название под ней, над кругом — метка-факт
   const team = (t: typeof m.home, k: 'home' | 'away') => (
@@ -180,7 +183,7 @@ export function MatchHero({
                   <>
                     <div className="num text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[30px]">{c.odd ? c.odd.toFixed(2) : '—'}</div>
                     {/* по ходу матча честную цену не пишем: наша оценка — до матча, с кэфом при счёте 1:0 она не сравнима */}
-                    {line?.live ? (
+                    {over ? null : line?.live ? (
                       <div className="mt-1.5 truncate text-[11px] text-mute">
                         <span className="sm:hidden">{c.key === 'home' ? 'хозяева' : c.key === 'away' ? 'гости' : 'ничья'}</span>
                         <span className="hidden sm:inline">{c.key === 'draw' ? 'ничья' : `победа ${c.key === 'home' ? m.home.name : m.away.name}`}</span>
@@ -215,7 +218,7 @@ export function MatchHero({
               })}
             </div>
           ) : null}
-          <p className="mt-4 text-[12px] text-mute">
+          <p className={`mt-4 text-[12px] text-mute ${over ? 'hidden' : ''}`}>
             Оценка — по кэфам{books > 1 ? ` ${books} букмекеров` : ''} без их наценки и нашей модели.
             {line?.live ? ` Кэфы ${line.name} — по ходу матча, меняются каждую минуту.` : ' Лаймом — кэф выше честной цены.'}
             {line ? ' Реклама · 18+' : ''}

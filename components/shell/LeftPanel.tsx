@@ -182,10 +182,12 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
       <LeagueFlag l={l} />
     </a>
   )
-  const Name = ({ l }: { l: DayLeague }) => (
+  // у турниров «Завтра» подписи нет (владелец: «не слишком много мелкого текста из-за подписей?» — пять одинаковых
+  // «10 матчей · начало в 16:00» подряд; про завтра в панели это мало кому нужно) — она в подсказке
+  const Name = ({ l, sub = true }: { l: DayLeague; sub?: boolean }) => (
     <span className="min-w-0 flex-1 leading-tight">
       <span className="block truncate">{l.name}</span>
-      <Sub l={l} />
+      {sub ? <Sub l={l} /> : null}
     </span>
   )
   // турниры как истории: клик по флагу — сторис матчей лиги подряд, дальше — следующих лиг (как у подборок справа)
@@ -224,11 +226,11 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
           <a
             href={l.href}
             onClick={jump ? go(id, l.href) : undefined}
-            title={l.full}
+            title={jump ? l.full : `${l.full} · ${matchesN(l.total)}${l.next ? ` · начало в ${l.next}` : ''}`}
             aria-current={on ? 'location' : undefined}
             className="flex min-w-0 flex-1 items-center self-stretch"
           >
-            <Name l={l} />
+            <Name l={l} sub={jump} />
           </a>
         </div>
       </li>
