@@ -91,7 +91,7 @@ export function Search() {
         onClick={() => setOpen(true)}
         aria-label="Поиск команды или турнира"
         title={`Поиск · ${mac ? '⌘K' : 'Ctrl K'}`}
-        className="hidden h-9 w-[240px] shrink-0 items-center gap-2.5 rounded-full bg-white/[0.06] px-3 text-[13.5px] text-mute transition-colors hover:bg-white/[0.1] hover:text-dim lg:flex"
+        className="hidden h-9 w-[240px] shrink-0 items-center gap-2.5 rounded-full bg-white/[0.06] px-3 text-[14px] text-mute transition-colors hover:bg-white/[0.1] hover:text-dim lg:flex"
       >
         <svg viewBox="0 0 24 24" className="h-[16px] w-[16px] shrink-0" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
           <circle cx="11" cy="11" r="6.5" />
