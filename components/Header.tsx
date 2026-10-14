@@ -18,7 +18,8 @@ export function Header() {
     <HeaderShell>
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-5 lg:gap-5 xl:max-w-none xl:px-6">
         <Link href="/" aria-label="tag.bet — на главную" className="shrink-0 text-fg transition-opacity hover:opacity-80">
-          <Wordmark size={26} />
+          {/* на 1,5px ниже середины: в рамку входит хвост «g», без сдвига тело букв стоит выше меню и кнопок */}
+          <Wordmark size={26} className="translate-y-[1.5px]" />
         </Link>
         <NavLinks className="hidden shrink-0 lg:flex" />
         <span className="flex-1" />
