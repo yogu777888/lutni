@@ -3,12 +3,12 @@ import { primaryPartner } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
 import { CtaLink } from './CtaLink'
 import { HeaderShell } from './HeaderShell'
-import { LogoMark } from './Logo'
+import { Wordmark } from './Logo'
 import { NavLinks } from './NavLinks'
 import { Search } from './Search'
 
 /**
- * Шапка одной спокойной строкой: знак с названием tag.bet и меню текстом слева, справа поиск, 18+ и «Бонус».
+ * Шапка одной спокойной строкой: надпись tag.bet и меню текстом слева, справа поиск, 18+ и «Бонус».
  * Бегущую строку матчей убрали — шапка была перегружена, а идущие матчи и так видны в «В игре» и «Главных матчах».
  * Ниже lg меню — тем же текстом во втором ряду.
  */
@@ -18,10 +18,7 @@ export function Header() {
     <HeaderShell>
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-5 lg:gap-5 xl:max-w-none xl:px-6">
         <Link href="/" aria-label="tag.bet — на главную" className="shrink-0 text-fg transition-opacity hover:opacity-80">
-          <span className="flex items-center gap-2">
-            <LogoMark size={26} />
-            <span className="wordmark">tag.bet</span>
-          </span>
+          <Wordmark size={26} />
         </Link>
         <NavLinks className="hidden shrink-0 lg:flex" />
         <span className="flex-1" />
