@@ -264,8 +264,15 @@ export default async function MatchPage({ params }: Props) {
           {!scheduled && (full.events.length || full.stats.length) ? (
             // в игре — «Сейчас в матче»: эти цифры учитывают счёт и ход игры; доматчевые блоки ниже подписаны «До матча»
             <Section title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'} aside={m.status === 'live' ? 'по ходу игры' : 'итог'}>
-              <div className="grid gap-6 md:grid-cols-2">
-                <EventsBlock events={full.events} />
+              {/* сверху — полоса матча 0′–90′ во всю ширину, ниже — статистика в две колонки */}
+              <div className="space-y-8">
+                <EventsBlock
+                  events={full.events}
+                  score={m.score ?? null}
+                  now={isLive ? (m.elapsed ?? null) : null}
+                  home={m.home.name}
+                  away={m.away.name}
+                />
                 <StatsBars stats={full.stats} />
               </div>
             </Section>
