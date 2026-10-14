@@ -23,7 +23,7 @@ import { PARTNERS, partnerForApiBookmaker, primaryPartner } from '@/config/bookm
 import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
 import { getMatchInsights, getMatchesByDate, getPariHistory, settle } from '@/lib/data'
-import { LineChart } from '@/components/match/LineChart'
+import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { distinctPair, matchColors } from '@/lib/team-colors'
 import { handNotes } from '@/lib/hand-notes'
@@ -32,7 +32,7 @@ import { valueThreshold } from '@/lib/model'
 import { leagueHref, matchHref } from '@/lib/links'
 import { buildStory } from '@/lib/story'
 import type { Match } from '@/lib/types'
-import { buildVerdict, outcomeText } from '@/lib/verdict'
+import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
 
 export const dynamic = 'force-dynamic'
 
@@ -87,20 +87,62 @@ export default async function MatchPage({ params }: Props) {
   const notes = handNotes({ homeId: m.home.id, awayId: m.away.id, standings: ins.standings, homeForm: ins.homeForm, awayForm: ins.awayForm })
   // история доматчевой линии PARI (легальный букмекер): ждём не дольше 2 с, иначе — без графика
   const pari = await Promise.race([getPariHistory(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 2000))])
-  const lineSeries = pari
-    ? (
-        [
-          ['home', 'Хозяева', '#1f6fd1'],
-          ['draw', 'Ничья', '#0f9d8a'],
-          ['away', 'Гости', '#e0670f'],
-        ] as const
-      )
-        .map(([key, label, color]) => ({ key, label, color, pts: pari.history[key] ?? [] }))
-        .filter((s) => s.pts.length)
-    : []
-  const lineChanges = lineSeries.reduce((n, s) => n + s.pts.length - 1, 0)
   const scheduled = m.status === 'scheduled'
   const x = model?.x12 ?? cons.x12
+
+  // «Как менялись шансы»: линия PARI в процентах (кэфы без маржи, в сумме 100) на каждый момент изменения и оценка
+  // tag.bet по исходу (владелец: «как менялась линия типа оценка tag.bet?»)
+  const OUT = [
+    ['home', m.home.name, '#1f6fd1'],
+    ['draw', 'Ничья', '#0f9d8a'],
+    ['away', m.away.name, '#e0670f'],
+  ] as const
+  const est = x ? split100(x) : null
+  const chanceSeries: ChanceSeries[] = (() => {
+    const h = pari?.history
+    if (!h?.home?.length || !h.draw?.length || !h.away?.length) return []
+    const times = [...new Set([...h.home, ...h.draw, ...h.away].map((p) => p.t))].sort((a, b) => a - b)
+    const stepAt = (pts: { t: number; v: number | null }[], t: number) => {
+      let v: number | null = null
+      for (const p of pts) {
+        if (p.t > t) break
+        v = p.v
+      }
+      return v
+    }
+    const out: ChanceSeries[] = OUT.map(([key, label, color]) => ({ key, label, color, est: est ? est[key] : null, pts: [] }))
+    for (const t of times) {
+      const o = { home: stepAt(h.home, t), draw: stepAt(h.draw, t), away: stepAt(h.away, t) }
+      if (!o.home || !o.draw || !o.away) continue
+      const pc = split100({ home: 1 / o.home, draw: 1 / o.draw, away: 1 / o.away })
+      out.forEach((sr) => {
+        const k = sr.key as 'home' | 'draw' | 'away'
+        const last = sr.pts[sr.pts.length - 1]
+        if (last && last.v === pc[k] && last.odd === o[k]) return
+        sr.pts.push({ t, v: pc[k], odd: o[k]! })
+      })
+    }
+    return out.every((sr) => sr.pts.length) ? out : []
+  })()
+  const chanceChanges = chanceSeries.length ? Math.max(...chanceSeries.map((sr) => sr.pts.length)) - 1 : 0
+  // вывод одной фразой: самое заметное изменение и выгоден ли сейчас кэф PARI по нашей оценке
+  const chanceText = (() => {
+    if (!chanceSeries.length) return null
+    const moves = chanceSeries.map((sr) => ({ sr, a: sr.pts[0], b: sr.pts[sr.pts.length - 1] }))
+    const top = [...moves].sort((p, q) => Math.abs(q.b.v - q.a.v) - Math.abs(p.b.v - p.a.v))[0]
+    const name = (k: string) => { const t = outcomeText(k, m); return t[0].toUpperCase() + t.slice(1) }
+    const first =
+      Math.abs(top.b.v - top.a.v) >= 2
+        ? `${name(top.sr.key)}: по линии ${top.a.v}% → ${top.b.v}%${top.sr.est != null ? `, наша оценка — ${top.sr.est}%` : ''}.`
+        : 'Шансы по линии почти не менялись.'
+    const val = scheduled && x ? moves.find((mv) => x[mv.sr.key as 'home' | 'draw' | 'away'] * mv.b.odd - 1 >= valueThreshold(mv.b.odd)) : null
+    const second = val
+      ? ` ${name(val.sr.key)}: кэф PARI ${val.b.odd.toFixed(2)} выше честной цены ${(1 / x![val.sr.key as 'home' | 'draw' | 'away']).toFixed(2)} — линия недооценивает исход.`
+      : est
+        ? ' Линия и наша оценка близки — заметной выгоды у PARI нет.'
+        : ''
+    return first + second
+  })()
   const over25 = model?.over['2.5'] ?? cons.over['2.5']
   const btts = model?.btts ?? cons.btts
 
@@ -256,20 +298,11 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {lineSeries.length === 3 && lineChanges > 0 ? (
-            <Section title="Как менялась линия" aside={`PARI · до матча · ${pluralN(lineChanges, ['изменение', 'изменения', 'изменений'])}`}>
-              <LineChart series={lineSeries} end={Math.min(m.ts, appNow())} />
-              <p className="mt-3 text-[13px] leading-relaxed text-dim">
-                {lineSeries
-                  .map((s) => {
-                    const vs = s.pts.map((p) => p.v).filter((v): v is number => v != null)
-                    const a0 = vs[0]
-                    const a1 = vs[vs.length - 1]
-                    const d = Math.round((a1 / a0 - 1) * 100)
-                    return `${s.label}: ${a0.toFixed(2)} → ${a1.toFixed(2)}${d ? ` (${d > 0 ? '+' : '−'}${Math.abs(d)}%)` : ''}`
-                  })
-                  .join(' · ')}
-                . Кэф снижается — букмекер считает исход вероятнее.
+          {chanceSeries.length && chanceChanges > 0 ? (
+            <Section title="Как менялись шансы" aside={`по линии PARI · до матча · ${pluralN(chanceChanges, ['изменение', 'изменения', 'изменений'])}`}>
+              <ChanceChart series={chanceSeries} end={Math.min(m.ts, appNow())} />
+              <p className="mt-3 text-[13.5px] leading-relaxed text-dim">
+                {chanceText} <span className="text-mute">Линия — шансы из кэфов PARI без маржи букмекера, пунктир — оценка tag.bet.</span>
               </p>
             </Section>
           ) : null}
