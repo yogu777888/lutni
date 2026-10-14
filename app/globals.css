@@ -854,3 +854,31 @@ html[data-shell-rc] .shell-r-rail {
   }
 }
 
+
+/* «Бонус» в шапке: при наведении по кнопке один раз пробегает блик (владелец спрашивал про эмодзи и анимацию —
+   постоянное мигание с подарком читается как «лёгкие деньги» (ст. 27 закона «О рекламе») и как казино-сайт;
+   отклик только на действие человека). Блик — под текстом (z-index −1 внутри своего слоя). */
+.cta-shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.cta-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.6) 50%, transparent 70%);
+  transform: translateX(-130%);
+  pointer-events: none;
+}
+.cta-shine:hover::after,
+.cta-shine:focus-visible::after {
+  transform: translateX(130%);
+  transition: transform 0.75s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cta-shine::after {
+    display: none;
+  }
+}

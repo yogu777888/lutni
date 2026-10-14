@@ -84,20 +84,20 @@ export function Search() {
 
   return (
     <>
-      {/* на компьютере — поле-кнопка с подсказкой сочетания, ниже — только лупа */}
+      {/* на компьютере — поле-кнопка, ниже — только лупа. Значка «⌘K» в поле нет (владелец: «а кнопка внутри поиска
+          нужна?» — горячие клавиши для разработчиков, а не для зрителей футбола); сочетание работает, видно в подсказке */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Поиск команды или турнира"
-        className="hidden h-9 w-[240px] shrink-0 items-center gap-2.5 rounded-full bg-white/[0.06] pl-3 pr-[7.5px] text-[13.5px] text-mute transition-colors hover:bg-white/[0.1] hover:text-dim lg:flex"
+        title={`Поиск · ${mac ? '⌘K' : 'Ctrl K'}`}
+        className="hidden h-9 w-[240px] shrink-0 items-center gap-2.5 rounded-full bg-white/[0.06] px-3 text-[13.5px] text-mute transition-colors hover:bg-white/[0.1] hover:text-dim lg:flex"
       >
         <svg viewBox="0 0 24 24" className="h-[16px] w-[16px] shrink-0" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
           <circle cx="11" cy="11" r="6.5" />
           <path d="M16 16l4.5 4.5" />
         </svg>
         <span className="flex-1 text-left">Команда или турнир</span>
-        {/* капсула в капсуле: отступ справа = сверху (7,5px) — скругления соосны, как вложенные у iOS */}
-        <kbd className="grid h-[21px] place-items-center rounded-full bg-white/[0.08] px-2 font-sans text-[11px] leading-none text-dim">{mac ? '⌘K' : 'Ctrl K'}</kbd>
       </button>
       <button
         type="button"
