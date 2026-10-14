@@ -31,7 +31,7 @@ export function Header() {
             18+
           </span>
           {partner ? (
-            <CtaLink href={goHref(partner, 'header')} size="sm" className="h-9 rounded-ctl px-4 text-[14px]">
+            <CtaLink href={goHref(partner, 'header')} size="sm" className="!h-9 rounded-ctl px-4 text-[14px]">
               {/* с именем букмекера: «Бонус» без имени — реклама «неизвестно чего», а рекламодатель рядом с рекламой
                   нужен и по закону (владелец согласился); ниже xl (меню и поиск) места нет — только «Бонус» */}
               <span>
