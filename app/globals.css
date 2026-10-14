@@ -852,6 +852,13 @@ html[data-shell-rc] .shell-r-rail {
   .shell-center:has(.bare-match) .bare-match-head > nav {
     margin-bottom: 4px;
   }
+  /* закреплённая первая колонка таблицы кэфов — цвета панели (иначе светлее остальной таблицы) */
+  .shell-center:has(.bare-match) .odds-sticky {
+    background: var(--color-panel);
+  }
+}
+.odds-sticky {
+  background: var(--color-panel-2);
 }
 
 

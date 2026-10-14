@@ -9,7 +9,7 @@ import { FormBlock } from '@/components/match/FormBlock'
 import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
-import { OddsTable } from '@/components/match/OddsTable'
+import { hasMoves, OddsTable } from '@/components/match/OddsTable'
 import { SplitBar } from '@/components/match/ProbBars'
 import { Conclusion } from '@/components/match/VerdictCard'
 import { MatchRow } from '@/components/MatchRow'
@@ -312,14 +312,14 @@ export default async function MatchPage({ params }: Props) {
               title="Коэффициенты букмекеров"
               aside={
                 legalBooks.length
-                  ? `${scheduled ? '' : 'до матча · '}${pluralN(legalBooks.length, ['букмекер', 'букмекера', 'букмекеров'])} с линией · ▼▲ — изменение с открытия`
+                  ? `${scheduled ? '' : 'до матча · '}${pluralN(legalBooks.length, ['букмекер', 'букмекера', 'букмекеров'])} с линией${hasMoves(legalBooks, m) ? ' · ▼▲ — изменение с открытия' : ''}`
                   : 'линии в нашей базе пока нет'
               }
             >
               <OddsTable match={m} books={legalBooks} model={model} candidates={candidates} />
               <p className="mt-4 text-[11px] text-mute">
-                Лучший коэффициент в колонке подсвечен, точка — кэф выше честной цены. Коэффициенты меняются — проверяйте
-                актуальную линию у букмекера. <span className="whitespace-nowrap">Реклама · 18+</span>
+                Лаймом — кэф выше честной цены (по оценке tag.bet), белым жирным — лучший в колонке. Кэфы меняются — проверяйте
+                у букмекера. <span className="whitespace-nowrap">Реклама · 18+</span>
               </p>
             </Section>
           ) : null}
