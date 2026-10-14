@@ -79,6 +79,9 @@ export default async function MatchPage({ params }: Props) {
   if (`/match/${slug}` !== canonical) permanentRedirect(canonical)
 
   const { full, books, cons, model, candidates, pick, tags } = ins
+  // в таблице кэфов — только легальные партнёры (владелец: «оставь легал»): зарубежных букмекеров в РФ рекламировать
+  // нельзя, а строка без ссылки — реклама конкурента; в честной цене (консенсус) они по-прежнему участвуют
+  const legalBooks = books.filter((b) => partnerForApiBookmaker(b.bookmakerId, b.bookmakerName))
   // цвета клубов для свечения за командами (не дольше 1,5 с) и метки-факты над эмблемами — как в «Главных матчах»
   const tint = await Promise.race([matchColors(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))])
   const notes = handNotes({ homeId: m.home.id, awayId: m.away.id, standings: ins.standings, homeForm: ins.homeForm, awayForm: ins.awayForm })
@@ -271,12 +274,12 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {books.length ? (
-            <Section title="Коэффициенты букмекеров" aside={`${scheduled ? '' : 'до матча · '}${pluralN(books.length, ['букмекер', 'букмекера', 'букмекеров'])} · ▼▲ — изменение с открытия`}>
-              <OddsTable match={m} books={books} model={model} candidates={candidates} />
+          {legalBooks.length ? (
+            <Section title="Коэффициенты букмекеров" aside={`${scheduled ? '' : 'до матча · '}${pluralN(legalBooks.length, ['букмекер', 'букмекера', 'букмекеров'])} · ▼▲ — изменение с открытия`}>
+              <OddsTable match={m} books={legalBooks} model={model} candidates={candidates} />
               <p className="mt-4 text-[11px] text-mute">
                 Лучший коэффициент в колонке подсвечен, точка — кэф выше честной цены. Коэффициенты меняются — проверяйте
-                актуальную линию у букмекера. Реклама · 18+
+                актуальную линию у букмекера. <span className="whitespace-nowrap">Реклама · 18+</span>
               </p>
             </Section>
           ) : null}

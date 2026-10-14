@@ -254,6 +254,9 @@ function offers(books: BookOdds[], get: Getter) {
     const q = get(b)
     if (!q) continue
     const partner = partnerForApiBookmaker(b.bookmakerId, b.bookmakerName)
+    // предлагаем только кэфы легальных партнёров (владелец: «оставь легал»): зарубежные букмекеры участвуют в честной
+    // цене (консенсус), но их кэф не бывает «выгодной ставкой» и их имя нигде не показываем
+    if (!partner) continue
     const o: OfferQuote = { value: q.value, opening: q.opening, bookmakerId: b.bookmakerId, bookmakerName: b.bookmakerName, partner }
     if (!best || q.value > best.value) best = o
     if (partner && (!bestPartner || q.value > bestPartner.value)) bestPartner = o
