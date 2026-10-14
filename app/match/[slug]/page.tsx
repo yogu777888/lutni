@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
 import { BackButton } from '@/components/BackButton'
+import { MatchBar } from '@/components/match/MatchBar'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
 import { EventsBlock, StatsBars } from '@/components/match/EventsBlock'
@@ -184,6 +185,14 @@ export default async function MatchPage({ params }: Props) {
       })
     : null
 
+  // чьи кэфы на табло и мини-табло: по ходу матча — live PARI, до начала — линия партнёра, после — без ссылки
+  const heroLine =
+    isLive && liveX12 && pariPartner
+      ? { name: pariPartner.name, href: goHref(pariPartner, 'match-live-odds', m.id), live: true }
+      : partnerLine && scheduled
+        ? { name: partnerLine.partner.name, href: goHref(partnerLine.partner, 'match-hero', m.id) }
+        : null
+
   // «Коротко о матче» словами — только до начала: кто скорее выиграет, голы, деньги, ставка
   const verdict = scheduled
     ? buildVerdict({
@@ -211,6 +220,19 @@ export default async function MatchPage({ params }: Props) {
           в блоке на странице матча»; правила — .bare-match в app/globals.css) */}
       <span hidden className="bare-match" />
       {/* хлебные крошки и тихий заголовок — от xl тоже панелью (иначе висели бы на фоне страницы) */}
+      {/* мини-табло: появляется под шапкой, когда большое табло уехало вверх */}
+      <MatchBar
+        home={{ name: m.home.name, logo: m.home.logo ?? null }}
+        away={{ name: m.away.name, logo: m.away.logo ?? null }}
+        center={m.score && m.status !== 'scheduled' ? `${m.score.home} : ${m.score.away}` : formatTime(m.ts)}
+        minute={isLive ? { text: m.elapsed ? `${m.elapsed}′` : 'идёт', live: true } : m.status === 'finished' ? { text: 'итог', live: false } : null}
+        odds={
+          heroLine && cells?.every((c) => c.odd)
+            ? cells.map((c) => ({ key: c.key, odd: c.odd!, hot: c.hot, title: c.key === 'draw' ? 'Ничья' : `Победа «${c.key === 'home' ? m.home.name : m.away.name}»` }))
+            : null
+        }
+        partner={heroLine}
+      />
       <div className="bare-match-head mb-4 flex items-center gap-3 xl:mb-0">
         <BackButton fallback="/matches" />
         <Breadcrumbs
@@ -228,13 +250,7 @@ export default async function MatchPage({ params }: Props) {
       {m.status === 'live' || m.status === 'suspended' ? <LiveRefresh /> : null}
 
       {/* сначала табло, как в «Главных матчах»: команды, время или счёт, шансы; ниже — ответ словами */}
-      <MatchHero full={full} cells={cells} books={cons.books} line={
-          isLive && liveX12 && pariPartner
-            ? { name: pariPartner.name, href: goHref(pariPartner, 'match-live-odds', m.id), live: true }
-            : partnerLine && scheduled
-              ? { name: partnerLine.partner.name, href: goHref(partnerLine.partner, 'match-hero', m.id) }
-              : null
-        } tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} />
+      <MatchHero full={full} cells={cells} books={cons.books} line={heroLine} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} />
 
       {/* «Наш вывод» — до начала: расклад, ставка и теги одним блоком (были три блока с повторами) */}
       {scheduled && (verdict || pick || tags.length) ? (
