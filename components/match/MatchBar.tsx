@@ -10,7 +10,7 @@ export type BarOdd = { key: 'home' | 'draw' | 'away'; odd: number; hot: boolean;
 
 /**
  * Мини-табло страницы матча (владелец: «верхний блок в матче не закреплён — это правильно?», согласился на мини-табло,
- * как у Apple Sports и Flashscore): пока большое табло (`#match-hero`) на экране — его нет; уехало вверх — под шапкой
+ * как у Apple Sports и Flashscore): пока верх табло (`#match-board`) на экране — его нет; уехал вверх — под шапкой
  * полоска «← · эмблема Хозяева 1 : 0 Гости эмблема · ● 59′», справа три кэфа партнёра ячейками-ссылками (выгодный —
  * лаймом). Крошки не закрепляем — при чтении статистики они не нужны. На телефоне — без кэфов (внизу своя плашка).
  * Обёртка — sticky высотой 0 под шапкой: полоска лежит поверх содержимого и не сдвигает страницу.
@@ -33,23 +33,29 @@ export function MatchBar({
   partner: { name: string; href: string; live?: boolean } | null
 }) {
   const [show, setShow] = useState(false)
+  const [oddsGone, setOddsGone] = useState(true)
   const [top, setTop] = useState(64)
 
   useEffect(() => {
-    const hero = document.getElementById('match-hero')
+    // полоска — как только под шапку ушёл верх табло (эмблемы, названия, счёт или время), а не весь блок матча:
+    // иначе полэкрана счёта не было видно нигде (владелец согласился); кэфы в полоске — когда ушли и кэфы табло,
+    // чтобы одни и те же три числа не стояли дважды
+    const board = document.getElementById('match-board') ?? document.getElementById('match-hero')
+    const heroOdds = document.getElementById('match-odds')
     const head = document.querySelector('header')
-    if (!hero) return
-    // от xl — 72px, как строка дней на главной (шапка 64 + полоска рамки 8), ниже — от низа шапки (на телефоне она в два ряда)
+    if (!board) return
     const place = () => setTop(innerWidth >= 1280 ? 72 : Math.round(head?.getBoundingClientRect().bottom ?? 64) + 6)
     place()
-    // табло считается уехавшим, когда его низ ушёл под шапку
-    const io = new IntersectionObserver(([e]) => setShow(!e.isIntersecting && e.boundingClientRect.top < 0), {
-      rootMargin: `-${(head?.getBoundingClientRect().bottom ?? 64) + 40}px 0px 0px 0px`,
-    })
-    io.observe(hero)
+    const margin = `-${(head?.getBoundingClientRect().bottom ?? 64) + 20}px 0px 0px 0px`
+    const gone = (set: (v: boolean) => void) => new IntersectionObserver(([e]) => set(!e.isIntersecting && e.boundingClientRect.top < 0), { rootMargin: margin })
+    const io = gone(setShow)
+    io.observe(board)
+    const io2 = heroOdds ? gone(setOddsGone) : null
+    if (heroOdds) io2!.observe(heroOdds)
     addEventListener('resize', place)
     return () => {
       io.disconnect()
+      io2?.disconnect()
       removeEventListener('resize', place)
     }
   }, [])
@@ -84,7 +90,7 @@ export function MatchBar({
           </span>
           {team(away, true)}
         </div>
-        {odds && partner ? (
+        {odds && partner && oddsGone ? (
           <div className="hidden shrink-0 items-center gap-1.5 md:flex">
             <span className="mr-1 text-right text-[11px] leading-tight text-mute">
               {partner.name}

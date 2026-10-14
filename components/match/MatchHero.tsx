@@ -109,7 +109,7 @@ export function MatchHero({
       </div>
 
       {/* табло по центру, как в «Главных матчах»: хозяева слева, гости справа, в середине время или счёт */}
-      <div className="mt-12 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 sm:mt-14 sm:gap-x-8">
+      <div id="match-board" className="mt-12 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 sm:mt-14 sm:gap-x-8">
         {team(m.home, 'home')}
         <div className="text-center">
           {played ? (
@@ -159,7 +159,7 @@ export function MatchHero({
             ))}
           </div>
           {cells.some((c) => c.odd) ? (
-            <div className="mt-5 grid grid-cols-[auto_repeat(3,minmax(0,1fr))] items-center gap-2 sm:gap-3">
+            <div id="match-odds" className="mt-5 grid grid-cols-[auto_repeat(3,minmax(0,1fr))] items-center gap-2 sm:gap-3">
               {/* чьи кэфы — по имени (одна линия одного партнёра), ячейки — ссылки к нему */}
               <span className="pr-1 text-[12px] leading-tight text-dim sm:pr-3 sm:text-[13px]">
                 Кэфы
