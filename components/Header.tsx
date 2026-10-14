@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { primaryPartner } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
+import { adLine } from './AdMark'
 import { CtaLink } from './CtaLink'
 import { HeaderShell } from './HeaderShell'
 import { Wordmark } from './Logo'
@@ -31,13 +32,25 @@ export function Header() {
             18+
           </span>
           {partner ? (
-            <CtaLink href={goHref(partner, 'header')} size="sm" className="cta-shine !h-9 rounded-ctl px-4 text-[14px]">
-              {/* с именем букмекера: «Бонус» без имени — реклама «неизвестно чего», а рекламодатель рядом с рекламой
-                  нужен и по закону (владелец согласился); ниже xl (меню и поиск) места нет — только «Бонус» */}
-              <span>
-                Бонус<span className="hidden xl:inline"> в {partner.name}</span>
+            // маркировка рекламы (закон о маркировке интернет-рекламы): «Реклама · рекламодатель · erid · 18+» — подсказкой
+            // под кнопкой при наведении и фокусе, сразу (системный title — через секунду); в шапке места под строку нет
+            // (владелец: «а то что бейдж 18+ стоит между это норм?» — «18+» оставили, пометку добавили так)
+            <span className="group/ad relative flex">
+              <CtaLink href={goHref(partner, 'header')} size="sm" className="cta-shine !h-9 rounded-ctl px-4 text-[14px]" describedBy="hdr-ad">
+                {/* с именем букмекера: «Бонус» без имени — реклама «неизвестно чего», а рекламодатель рядом с рекламой
+                    нужен и по закону (владелец согласился); ниже xl (меню и поиск) места нет — только «Бонус» */}
+                <span>
+                  Бонус<span className="hidden xl:inline"> в {partner.name}</span>
+                </span>
+              </CtaLink>
+              <span
+                id="hdr-ad"
+                role="tooltip"
+                className="pointer-events-none absolute right-0 top-full z-50 mt-2 whitespace-nowrap rounded-tile bg-panel-3 px-3 py-2 text-[12.5px] leading-tight text-dim opacity-0 shadow-lg shadow-black/40 transition-opacity duration-150 group-focus-within/ad:opacity-100 group-hover/ad:opacity-100"
+              >
+                {adLine(partner)}
               </span>
-            </CtaLink>
+            </span>
           ) : null}
         </div>
       </div>

@@ -22,12 +22,15 @@ export function CtaLink({
   variant = 'primary',
   size = 'md',
   className = '',
+  describedBy,
 }: {
   href: string
   children: React.ReactNode
   variant?: Variant
   size?: 'sm' | 'nav' | 'md' | 'lg'
   className?: string
+  /** id подсказки с маркировкой рекламы, если она не рядом текстом */
+  describedBy?: string
 }) {
   const sizes = { sm: 'h-[34px] text-[13px]', nav: 'h-[42px] text-[14px]', md: 'h-11 text-[15px]', lg: 'h-12 text-[16px]' }
   const box = variant === 'link' ? '' : sizes[size]
@@ -36,6 +39,7 @@ export function CtaLink({
       href={href}
       target="_blank"
       rel={SPONSORED_REL}
+      aria-describedby={describedBy}
       className={`inline-flex items-center justify-center gap-1.5 font-semibold transition duration-300 ${box} ${STYLES[variant]} ${className}`}
     >
       {children}
