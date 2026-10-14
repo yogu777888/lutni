@@ -218,14 +218,7 @@ export default async function MatchPage({ params }: Props) {
       {m.status === 'live' || m.status === 'suspended' ? <LiveRefresh /> : null}
 
       {/* сначала табло, как в «Главных матчах»: команды, время или счёт, шансы; ниже — ответ словами */}
-      <MatchHero full={full} cells={cells} books={cons.books} line={partnerLine && scheduled ? { name: partnerLine.partner.name, href: goHref(partnerLine.partner, 'match-hero', m.id) } : null} tint={tint ? distinctPair(tint) : null} notes={notes}>
-        {/* теги — в «Нашем выводе» ниже, здесь только разбор за минуту */}
-        {hasStory ? (
-          <div className="mt-6 border-t border-edge pt-5">
-            <StoryButton id={m.id} href={canonical} />
-          </div>
-        ) : null}
-      </MatchHero>
+      <MatchHero full={full} cells={cells} books={cons.books} line={partnerLine && scheduled ? { name: partnerLine.partner.name, href: goHref(partnerLine.partner, 'match-hero', m.id) } : null} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} />
 
       {/* «Наш вывод» — до начала: расклад, ставка и теги одним блоком (были три блока с повторами) */}
       {scheduled && (verdict || pick || tags.length) ? (

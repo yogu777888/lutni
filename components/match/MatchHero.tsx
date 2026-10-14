@@ -31,8 +31,9 @@ const phoneSize = (name: string) => {
 const signed = (ev: number) => `${ev >= 0 ? '+' : '−'}${Math.abs(ev * 100).toFixed(1).replace('.', ',')}%`
 
 /**
- * Табло матча (как на стадионе): команды, шансы на исход крупно, полоса
- * и коэффициенты с честной ценой — тот, что выше честного, горит лаймом.
+ * Табло матча (как на стадионе): команды, время или счёт, «Разбор за минуту»; ниже — оценка tag.bet тремя процентами
+ * и кэфы партнёра с честной ценой — тот, что выше честной, горит лаймом. Полосы шансов нет (повторяла проценты, а её
+ * цвета спорили с графиком «Как менялись шансы»; владелец согласился).
  */
 export function MatchHero({
   full,
@@ -41,6 +42,7 @@ export function MatchHero({
   tint,
   notes,
   line = null,
+  story = null,
   children,
 }: {
   full: MatchFull
@@ -52,6 +54,8 @@ export function MatchHero({
   tint?: { home: string; away: string } | null
   /** метки-факты над эмблемами (lib/hand-notes.ts) */
   notes?: HandNotes | null
+  /** «Разбор за минуту» — под табло по центру */
+  story?: React.ReactNode
   children?: React.ReactNode
 }) {
   const m = full.match
@@ -67,8 +71,12 @@ export function MatchHero({
         {notes?.[k] ? <HandNote text={notes[k]!} short={notes[k]!.length <= 12} /> : null}
         <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
       </span>
-      <span className={`line-clamp-2 max-w-full hyphens-auto break-words font-semibold leading-tight tracking-[-0.02em] sm:text-[26px] ${phoneSize(t.name)}`}>{t.name}</span>
-      <FavStar id={t.id} name={t.name} logo={t.logo} className="-mt-1" />
+      {/* звёздочка «в избранное» — рядом с названием, без подписи (подсказка — при наведении) */}
+      {/* звёздочка висит справа от названия, само название — по центру под эмблемой */}
+      <span className="relative max-w-full">
+        <span className={`line-clamp-2 hyphens-auto break-words font-semibold leading-tight tracking-[-0.02em] sm:text-[26px] ${phoneSize(t.name)}`}>{t.name}</span>
+        <FavStar id={t.id} name={t.name} logo={t.logo} compact className="absolute left-full top-1/2 ml-0.5 -translate-y-1/2 sm:ml-1" />
+      </span>
     </div>
   )
   return (
@@ -90,7 +98,8 @@ export function MatchHero({
           href={leagueHref(m.league)}
           className="inline-flex items-center gap-2 rounded-ctl border border-transparent bg-white/[0.07] px-2.5 py-1 font-semibold text-fg transition-colors hover:bg-white/[0.11]"
         >
-          <span className={`h-1.5 w-1.5 rounded-full ${live ? 'animate-pulse-live bg-live' : 'bg-acid'}`} />
+          {/* точка — только «идёт»: лайм у нас значит «выгодно» */}
+          {live ? <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" /> : null}
           {m.league.name}
         </Link>
         <span>
@@ -128,14 +137,16 @@ export function MatchHero({
         </div>
         {team(m.away, 'away')}
       </div>
+      {story ? <div className="mt-6 flex justify-center">{story}</div> : null}
 
       {cells ? (
         <>
-          <p className="eyebrow mt-9">{played ? 'До матча · шансы на исход' : 'Шансы на исход'}</p>
+          {/* те же проценты на графике «Как менялись шансы» названы «оценка tag.bet» — одно имя */}
+          <p className="mt-8 text-[13px] font-medium text-dim">{played ? 'Оценка tag.bet до матча' : 'Оценка tag.bet'}</p>
           <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
             {cells.map((c) => (
               <div key={c.key} className="min-w-0 rounded-tile bg-white/[0.04] px-2 pb-3 pt-3 text-center">
-                <div className={`num font-semibold leading-none tracking-[-0.03em] text-[26px] sm:text-[34px] ${c.key === 'draw' ? 'text-chalk' : 'text-fg'}`}>
+                <div className={`font-semibold leading-none tracking-[-0.03em] text-[26px] sm:text-[34px] ${c.key === 'draw' ? 'text-chalk' : 'text-fg'}`}>
                   {/* проценты трёх исходов в сумме — ровно 100 */}
                   {n?.[c.key]}
                   <span className="ml-0.5 text-[0.42em] tracking-normal">%</span>
@@ -147,25 +158,20 @@ export function MatchHero({
               </div>
             ))}
           </div>
-          <div className="mt-4 flex h-1.5 gap-0.5 overflow-hidden rounded-full" aria-hidden>
-            {cells.map((c) => (
-              <span key={c.key} className={c.key === 'home' ? 'bg-home' : c.key === 'away' ? 'bg-away' : 'bg-tie'} style={{ width: `${c.p * 100}%` }} />
-            ))}
-          </div>
           {cells.some((c) => c.odd) ? (
             <div className="mt-5 grid grid-cols-[auto_repeat(3,minmax(0,1fr))] items-center gap-2 sm:gap-3">
               {/* чьи кэфы — по имени (одна линия одного партнёра), ячейки — ссылки к нему */}
               <span className="pr-1 text-[12px] leading-tight text-dim sm:pr-3 sm:text-[13px]">
                 Кэфы
                 <br />
-                <span className="font-semibold text-fg">{line?.name ?? 'букмекера'}</span>
+                <span className="font-semibold text-fg">{line?.name ?? (m.status === 'scheduled' ? 'букмекера' : 'до матча')}</span>
               </span>
               {cells.map((c) => {
                 const body = (
                   <>
                     <div className="num text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[30px]">{c.odd ? c.odd.toFixed(2) : '—'}</div>
                     <div className={`mt-1.5 text-[11px] ${c.hot ? 'font-semibold text-acid-ink/70' : 'text-mute'}`}>
-                      стоит {c.fair.toFixed(2)}
+                      честная {c.fair.toFixed(2)}
                       {c.hot && c.odd ? <span className="hidden sm:inline"> · {signed(c.odd / c.fair - 1)}</span> : null}
                     </div>
                   </>
@@ -193,7 +199,7 @@ export function MatchHero({
             </div>
           ) : null}
           <p className="mt-4 text-[12px] text-mute">
-            Шансы — из коэффициентов{books > 1 ? ` ${books} букмекеров` : ''} без их наценки. Лаймом горит кэф, который выше, чем стоит исход.
+            Оценка — по кэфам{books > 1 ? ` ${books} букмекеров` : ''} без их наценки и нашей модели. Лаймом — кэф выше честной цены.
             {line ? ' Реклама · 18+' : ''}
           </p>
         </>
