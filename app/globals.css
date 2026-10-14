@@ -903,3 +903,29 @@ html[data-shell-rc] .shell-r-rail {
     display: none;
   }
 }
+
+/* Заход на страницу матча (владелец: «при переходе с главной на страницу матча верхний блок и текст в нём прыгает, нет
+   плавной анимации»): верхняя панель и первый блок мягко поднимаются и проявляются — один раз, 0,35 с, блок — чуть
+   позже панели; при «уменьшить движение» — сразу */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-enter {
+  animation: page-enter 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.page-enter-2 {
+  animation: page-enter 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) 0.06s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .page-enter-2 {
+    animation: none;
+  }
+}

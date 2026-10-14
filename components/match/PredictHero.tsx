@@ -51,7 +51,7 @@ export function PredictHero({
     </span>
   )
   return (
-    <section id="match-hero" className="card relative scroll-mt-24 overflow-hidden p-5 sm:p-7">
+    <section id="match-hero" className="card page-enter-2 relative scroll-mt-24 overflow-hidden p-5 sm:p-7">
       <ShellTint id={m.id} ymd={ymd} home={tint?.home} away={tint?.away} />
       {/* свечение цветами клубов; пока цвета не известны — мягкий свет сверху, как у центральной панели */}
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_70%_at_50%_0%,rgb(200_255_46/0.07),transparent_70%)]" />

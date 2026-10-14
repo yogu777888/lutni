@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { SPONSORED_REL } from '@/lib/affiliate'
 import { BackButton } from '../BackButton'
 import { TeamLogo } from '../TeamLogo'
@@ -37,30 +37,31 @@ export function MatchBar({
   partner: { name: string; href: string; live?: boolean } | null
 }) {
   const [show, setShow] = useState(false)
-  const [top, setTop] = useState(64)
+  const ref = useRef<HTMLDivElement>(null)
+  // переходы включаем после первого кадра: при заходе на страницу состояние ставится сразу, без вспышки крошки → табло
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     // ориентир — сам счёт (или время) на табло: мини-табло сменяет крошки, когда крупный счёт наполовину ушёл под панель
     // (владелец: «как-то рановато появляется» — по верху табло полоска дублировала ещё видный крупный счёт)
     const board = document.getElementById('match-score') ?? document.getElementById('match-board') ?? document.getElementById('match-hero')
-    const head = document.querySelector('header')
     let raf = 0
     const check = () => {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
-        // от xl — 72px, как строка дней на главной (шапка 64 + полоска рамки 8); ниже — от низа шапки (на телефоне в два ряда)
-        const t = innerWidth >= 1280 ? 72 : Math.round(head?.getBoundingClientRect().bottom ?? 64) + 6
-        setTop(t)
+        const t = Math.round((ref.current?.getBoundingClientRect().top ?? 72))
         // сами цифры (первый ряд в #match-score): сменяем, когда половина крупного счёта ушла под панель
         const r = (board?.firstElementChild ?? board)?.getBoundingClientRect()
         setShow(r ? (r.top + r.bottom) / 2 < t + 58 : false)
       })
     }
     check()
+    const on = setTimeout(() => setReady(true), 300)
     addEventListener('scroll', check, { passive: true })
     addEventListener('resize', check)
     return () => {
       cancelAnimationFrame(raf)
+      clearTimeout(on)
       removeEventListener('scroll', check)
       removeEventListener('resize', check)
     }
@@ -73,9 +74,12 @@ export function MatchBar({
     </span>
   )
 
-  const swap = 'transition-[opacity,transform] duration-200 ease-out'
+  const swap = ready ? 'transition-[opacity,transform] duration-200 ease-out' : ''
   return (
-    <div className="match-top sticky z-30 mb-4 xl:mb-2" style={{ top }}>
+    // место под шапкой — классами, а не после замера: иначе при заходе на страницу панель вставала на 64px и через кадр
+    // прыгала вниз (владелец: «при переходе с главной верхний блок и текст в нём прыгает»). Шапка: от lg — 64px и черта,
+    // ниже — два ряда (99px); от xl — 72px, как строка дней на главной (шапка 64 + полоска рамки 8)
+    <div ref={ref} className="match-top page-enter sticky top-[105px] z-30 mb-4 lg:top-[71px] xl:top-[72px] xl:mb-2">
       <div className="match-top-in flex min-h-[57.5px] items-center gap-3 rounded-card bg-panel-3 px-3 py-2 shadow-[0_10px_30px_rgb(0_0_0/0.45)] sm:px-4">
         <BackButton fallback="/matches" />
         <div className="relative flex min-w-0 flex-1 items-center self-stretch">
