@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { MatchSummary } from '@/lib/data'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import { formatOdd, formatTime } from '@/lib/format'
@@ -5,7 +6,6 @@ import type { X12Line } from '@/lib/lines'
 import { matchHref } from '@/lib/links'
 import type { TagHit } from '@/lib/tags'
 import type { Match } from '@/lib/types'
-import { StoryLink } from './story/StoryLink'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
 
@@ -144,11 +144,11 @@ export function MatchRow({
     return (
       <div className="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-3 px-4 py-3 transition-colors hover:bg-white/[0.02]">
         <StatusCell m={m} />
-        <StoryLink id={m.id} href={matchHref(m)} className="min-w-0 after:absolute after:inset-0 after:content-['']">
+        <Link href={matchHref(m)} prefetch={false} className="min-w-0 after:absolute after:inset-0 after:content-['']">
           <span className="block truncate text-[14px] font-semibold">{m.home.name}</span>
           <span className="block truncate text-[14px] font-semibold">{m.away.name}</span>
           {showLeague ? <span className="block truncate text-[11px] text-mute">{m.league.name}</span> : null}
-        </StoryLink>
+        </Link>
         {played ? <Score m={m} /> : null}
       </div>
     )
@@ -165,16 +165,18 @@ export function MatchRow({
       </div>
 
       <div className="min-w-0">
-        <StoryLink
-          id={m.id}
+        {/* клик по строке — страница матча, не сторис (владелец: «при нажатии на матчи из центральной колонки
+            переходило на матч а не на историю»); сторис — с колец в боковых панелях */}
+        <Link
           href={matchHref(m)}
+          prefetch={false}
           // на телефоне команды в две строки — справа счёт, иначе названия обрезаются
           className="flex min-w-0 flex-col items-start gap-1 text-[15px] font-semibold after:absolute after:inset-0 after:content-[''] sm:flex-row sm:items-center sm:gap-0 sm:text-[16px]"
         >
           {name(m.home, Boolean(awayWon))}
           <span className="mx-1.5 hidden shrink-0 font-normal text-mute sm:inline">—</span>
           {name(m.away, Boolean(homeWon))}
-        </StoryLink>
+        </Link>
         {showLeague ? <div className="mt-1 truncate text-[12.5px] text-mute">{m.league.name}</div> : null}
       </div>
 
