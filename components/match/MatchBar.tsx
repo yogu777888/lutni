@@ -39,7 +39,8 @@ export function MatchBar({
     const hero = document.getElementById('match-hero')
     const head = document.querySelector('header')
     if (!hero) return
-    const place = () => setTop(Math.round(head?.getBoundingClientRect().bottom ?? 64) + (innerWidth >= 1280 ? 8 : 6))
+    // от xl — 72px, как строка дней на главной (шапка 64 + полоска рамки 8), ниже — от низа шапки (на телефоне она в два ряда)
+    const place = () => setTop(innerWidth >= 1280 ? 72 : Math.round(head?.getBoundingClientRect().bottom ?? 64) + 6)
     place()
     // табло считается уехавшим, когда его низ ушёл под шапку
     const io = new IntersectionObserver(([e]) => setShow(!e.isIntersecting && e.boundingClientRect.top < 0), {
