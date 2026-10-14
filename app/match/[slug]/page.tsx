@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
-import { BackButton } from '@/components/BackButton'
 import { MatchBar } from '@/components/match/MatchBar'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
@@ -219,8 +218,7 @@ export default async function MatchPage({ params }: Props) {
       {/* от xl — без общей подложки центра, как на главной: каждый раздел — своя панель, зазор 8px (владелец: «там блоки
           в блоке на странице матча»; правила — .bare-match в app/globals.css) */}
       <span hidden className="bare-match" />
-      {/* хлебные крошки и тихий заголовок — от xl тоже панелью (иначе висели бы на фоне страницы) */}
-      {/* мини-табло: появляется под шапкой, когда большое табло уехало вверх */}
+      {/* верх страницы — одна закреплённая панель: «←», крошки, а когда табло уехало — мини-табло на том же месте */}
       <MatchBar
         home={{ name: m.home.name, logo: m.home.logo ?? null }}
         away={{ name: m.away.name, logo: m.away.logo ?? null }}
@@ -232,9 +230,7 @@ export default async function MatchPage({ params }: Props) {
             : null
         }
         partner={heroLine}
-      />
-      <div className="bare-match-head mb-4 flex items-center gap-3 xl:mb-0">
-        <BackButton fallback="/matches" />
+      >
         <Breadcrumbs
           className="min-w-0 text-[13px]"
           items={[
@@ -242,10 +238,9 @@ export default async function MatchPage({ params }: Props) {
             { href: canonical, label: pair },
           ]}
         />
-        {/* заголовок — только для поисковиков: команды крупно на табло, видимый он третий раз повторял названия
-            (владелец согласился) */}
-        <h1 className="sr-only">{h1}</h1>
-      </div>
+      </MatchBar>
+      {/* заголовок — только для поисковиков: команды крупно на табло, видимый он третий раз повторял названия */}
+      <h1 className="sr-only">{h1}</h1>
       {/* идёт матч — счёт, минута и live-кэфы обновляются сами */}
       {m.status === 'live' || m.status === 'suspended' ? <LiveRefresh /> : null}
 

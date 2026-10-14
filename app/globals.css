@@ -843,25 +843,17 @@ html[data-shell-rc] .shell-r-rail {
     border-color: transparent;
     background: var(--color-panel);
   }
-  .shell-center:has(.bare-match) .bare-match-head {
-    margin-bottom: 8px;
-    border-radius: var(--radius-card);
-    background: var(--color-panel);
-    padding: 10px 20px;
-  }
-  /* мини-табло страницы матча — как строка дней на главной (.bare-panel): квадратная подложка цвета фона, плашка
-     панели той же высоты (58px) без тени, под ней полоска фона 8px и уголки — уезжающие разделы уходят под неё со
-     скруглённым верхом */
-  .shell-center:has(.bare-match) .match-bar {
+  /* верх страницы матча (MatchBar: крошки → мини-табло на одном месте) — как строка дней на главной: подложка цвета
+     фона, плашка панели 58px без тени, под ней полоска фона 8px и уголки — разделы уходят под неё со скруглённым верхом */
+  .shell-center:has(.bare-match) .match-top {
     background: #090c10;
   }
-  .shell-center:has(.bare-match) .match-bar-in {
-    min-height: 57.5px;
+  .shell-center:has(.bare-match) .match-top-in {
     background: var(--color-panel);
     box-shadow: none;
-    padding: 8px 10px 8px 22px;
+    padding: 8px 10px 8px 20px;
   }
-  .shell-center:has(.bare-match) .match-bar::after {
+  .shell-center:has(.bare-match) .match-top::after {
     content: '';
     pointer-events: none;
     position: absolute;
