@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
+import { BackButton } from '@/components/BackButton'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
 import { EventsBlock, StatsBars } from '@/components/match/EventsBlock'
@@ -22,7 +23,7 @@ import { TagPill } from '@/components/TagPill'
 import { PARTNERS, partnerForApiBookmaker, primaryPartner } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
-import { getMatchInsights, getMatchesByDate, getPariHistory, settle } from '@/lib/data'
+import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle } from '@/lib/data'
 import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { distinctPair, matchColors } from '@/lib/team-colors'
@@ -87,6 +88,11 @@ export default async function MatchPage({ params }: Props) {
   const notes = handNotes({ homeId: m.home.id, awayId: m.away.id, standings: ins.standings, homeForm: ins.homeForm, awayForm: ins.awayForm })
   // история доматчевой линии PARI (легальный букмекер): ждём не дольше 2 с, иначе — без графика
   const pari = await Promise.race([getPariHistory(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 2000))])
+  // идёт матч — на табло кэфы PARI по ходу матча (доматчевые там уже история, поставить по ним нельзя)
+  const isLive = m.status === 'live' || m.status === 'suspended'
+  const liveOdds = isLive ? await Promise.race([getLiveOdds(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))]) : null
+  const liveX12 = liveOdds?.home && liveOdds.draw && liveOdds.away ? liveOdds : null
+  const pariPartner = PARTNERS.find((p) => p.slug === 'pari') ?? null
   const scheduled = m.status === 'scheduled'
   const x = model?.x12 ?? cons.x12
 
@@ -164,7 +170,8 @@ export default async function MatchPage({ params }: Props) {
   })()
   const cells: BoardCell[] | null = x
     ? (['home', 'draw', 'away'] as const).map((k) => {
-        const odd = partnerLine?.b.x12?.[k]?.value ?? null
+        // по ходу матча — только live-кэфы PARI; нет их — кэфов на табло нет (не доматчевые: по ним уже не поставить)
+        const odd = isLive ? (liveX12 && pariPartner ? liveX12[k]! : null) : (partnerLine?.b.x12?.[k]?.value ?? null)
         return {
           key: k,
           label: k === 'home' ? `победа ${m.home.name}` : k === 'away' ? `победа ${m.away.name}` : 'ничья',
@@ -204,21 +211,30 @@ export default async function MatchPage({ params }: Props) {
           в блоке на странице матча»; правила — .bare-match в app/globals.css) */}
       <span hidden className="bare-match" />
       {/* хлебные крошки и тихий заголовок — от xl тоже панелью (иначе висели бы на фоне страницы) */}
-      <div className="bare-match-head">
+      <div className="bare-match-head mb-4 flex items-center gap-3 xl:mb-0">
+        <BackButton fallback="/matches" />
         <Breadcrumbs
+          className="min-w-0 text-[13px]"
           items={[
             { href: leagueHref(m.league), label: m.league.name },
             { href: canonical, label: pair },
           ]}
         />
-        {/* тихий заголовок, как на главной: для поисковиков он есть, но не кричит — команды крупно на табло под ним */}
-        <h1 className="h1-quiet mb-4 mt-2 text-[15px] text-dim xl:mb-0">{h1}</h1>
+        {/* заголовок — только для поисковиков: команды крупно на табло, видимый он третий раз повторял названия
+            (владелец согласился) */}
+        <h1 className="sr-only">{h1}</h1>
       </div>
       {/* идёт матч — счёт, минута и live-кэфы обновляются сами */}
       {m.status === 'live' || m.status === 'suspended' ? <LiveRefresh /> : null}
 
       {/* сначала табло, как в «Главных матчах»: команды, время или счёт, шансы; ниже — ответ словами */}
-      <MatchHero full={full} cells={cells} books={cons.books} line={partnerLine && scheduled ? { name: partnerLine.partner.name, href: goHref(partnerLine.partner, 'match-hero', m.id) } : null} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} />
+      <MatchHero full={full} cells={cells} books={cons.books} line={
+          isLive && liveX12 && pariPartner
+            ? { name: pariPartner.name, href: goHref(pariPartner, 'match-live-odds', m.id), live: true }
+            : partnerLine && scheduled
+              ? { name: partnerLine.partner.name, href: goHref(partnerLine.partner, 'match-hero', m.id) }
+              : null
+        } tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} />
 
       {/* «Наш вывод» — до начала: расклад, ставка и теги одним блоком (были три блока с повторами) */}
       {scheduled && (verdict || pick || tags.length) ? (

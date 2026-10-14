@@ -49,7 +49,7 @@ export function MatchHero({
   cells: BoardCell[] | null
   books: number
   /** чьи кэфы в ячейках и ссылка к нему (реклама); null — кэфы без ссылки (после начала матча) */
-  line?: { name: string; href: string } | null
+  line?: { name: string; href: string; live?: boolean } | null
   /** цвета клубов — мягкое свечение за командами, как в «Главных матчах» */
   tint?: { home: string; away: string } | null
   /** метки-факты над эмблемами (lib/hand-notes.ts) */
@@ -165,15 +165,32 @@ export function MatchHero({
                 Кэфы
                 <br />
                 <span className="font-semibold text-fg">{line?.name ?? (m.status === 'scheduled' ? 'букмекера' : 'до матча')}</span>
+                {line?.live ? (
+                  <>
+                    <br />
+                    <span className="inline-flex items-center gap-1 text-live">
+                      <span className="h-1.5 w-1.5 rounded-full bg-live" />
+                      сейчас
+                    </span>
+                  </>
+                ) : null}
               </span>
               {cells.map((c) => {
                 const body = (
                   <>
                     <div className="num text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[30px]">{c.odd ? c.odd.toFixed(2) : '—'}</div>
-                    <div className={`mt-1.5 text-[11px] ${c.hot ? 'font-semibold text-acid-ink/70' : 'text-mute'}`}>
-                      честная {c.fair.toFixed(2)}
-                      {c.hot && c.odd ? <span className="hidden sm:inline"> · {signed(c.odd / c.fair - 1)}</span> : null}
-                    </div>
+                    {/* по ходу матча честную цену не пишем: наша оценка — до матча, с кэфом при счёте 1:0 она не сравнима */}
+                    {line?.live ? (
+                      <div className="mt-1.5 truncate text-[11px] text-mute">
+                        <span className="sm:hidden">{c.key === 'home' ? 'хозяева' : c.key === 'away' ? 'гости' : 'ничья'}</span>
+                        <span className="hidden sm:inline">{c.key === 'draw' ? 'ничья' : `победа ${c.key === 'home' ? m.home.name : m.away.name}`}</span>
+                      </div>
+                    ) : (
+                      <div className={`mt-1.5 text-[11px] ${c.hot ? 'font-semibold text-acid-ink/70' : 'text-mute'}`}>
+                        честная {c.fair.toFixed(2)}
+                        {c.hot && c.odd ? <span className="hidden sm:inline"> · {signed(c.odd / c.fair - 1)}</span> : null}
+                      </div>
+                    )}
                   </>
                 )
                 const cls = `block rounded-tile border px-1 py-2.5 text-center transition-colors ${
@@ -186,7 +203,7 @@ export function MatchHero({
                     target="_blank"
                     rel={SPONSORED_REL}
                     className={cls}
-                    title={`${c.label}: ${c.odd.toFixed(2)} в ${line.name}${c.hot ? ' — выше честной цены' : ''} · Реклама 18+`}
+                    title={`${c.label}: ${c.odd.toFixed(2)} в ${line.name}${line.live ? ' сейчас' : ''}${c.hot ? ' — выше честной цены' : ''} · Реклама 18+`}
                   >
                     {body}
                   </a>
@@ -199,7 +216,8 @@ export function MatchHero({
             </div>
           ) : null}
           <p className="mt-4 text-[12px] text-mute">
-            Оценка — по кэфам{books > 1 ? ` ${books} букмекеров` : ''} без их наценки и нашей модели. Лаймом — кэф выше честной цены.
+            Оценка — по кэфам{books > 1 ? ` ${books} букмекеров` : ''} без их наценки и нашей модели.
+            {line?.live ? ` Кэфы ${line.name} — по ходу матча, меняются каждую минуту.` : ' Лаймом — кэф выше честной цены.'}
             {line ? ' Реклама · 18+' : ''}
           </p>
         </>

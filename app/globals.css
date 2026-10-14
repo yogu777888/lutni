@@ -847,10 +847,7 @@ html[data-shell-rc] .shell-r-rail {
     margin-bottom: 8px;
     border-radius: var(--radius-card);
     background: var(--color-panel);
-    padding: 14px 28px;
-  }
-  .shell-center:has(.bare-match) .bare-match-head > nav {
-    margin-bottom: 4px;
+    padding: 10px 20px;
   }
   /* закреплённая первая колонка таблицы кэфов — цвета панели (иначе светлее остальной таблицы) */
   .shell-center:has(.bare-match) .odds-sticky {

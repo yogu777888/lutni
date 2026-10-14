@@ -1,3 +1,4 @@
+import { NavWatch } from '@/components/BackButton'
 import '@fontsource-variable/onest'
 import '@fontsource-variable/oswald'
 import './globals.css'
@@ -57,6 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: SHELL_SCRIPT }} />
       </head>
       <body className="min-h-dvh antialiased">
+        <NavWatch />
         <Header />
         <ShellFrame />
         {/* каркас, как у Spotify (от xl): слева «Мои команды» и турниры, в центре — серая панель страницы с градиентом
