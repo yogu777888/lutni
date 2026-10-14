@@ -7,7 +7,7 @@ import { dragShell, MAX, MIN, resetShell, type Side } from './shell-state'
  * «Ручка» у внутреннего края боковой панели: потянуть — шире/уже, сильно сузить — свернуть, двойной клик — обычная
  * ширина; с клавиатуры (Tab) — стрелками. Линия — как у Spotify и VS Code (владелец: «как тебе полоска, когда
  * наводишь, чтобы потянуть?» — 1px на 25% почти не было видно, мелькала при проходе курсора, при перетаскивании не
- * менялась): 2px во всю высоту панели, проявляется с задержкой 0,15 с (случайный проход курсора ничего не зажигает),
+ * менялась): 2px вдоль прямой части края (отступ 20px сверху и снизу = скругление панели, иначе концы заходили в изгиб), проявляется с задержкой 0,15 с (случайный проход курсора ничего не зажигает),
  * пока тянешь — ярче. Системной подсказки нет: курсор «↔» и так говорит, что это тянется.
  */
 export function ResizeHandle({ side }: { side: Side }) {
@@ -52,7 +52,7 @@ export function ResizeHandle({ side }: { side: Side }) {
       className={`group absolute top-0 z-10 h-full w-3 cursor-col-resize outline-none ${side === 'l' ? '-right-[7px]' : '-left-[7px]'}`}
     >
       <span
-        className={`absolute inset-y-3 left-1/2 w-0.5 -translate-x-1/2 rounded-full transition-colors duration-150 ${
+        className={`absolute inset-y-5 left-1/2 w-0.5 -translate-x-1/2 rounded-full transition-colors duration-150 ${
           drag ? 'bg-white/70' : 'bg-transparent group-hover:bg-white/40 group-hover:delay-150 group-focus-visible:bg-white/60'
         }`}
       />
