@@ -761,30 +761,13 @@ html[data-shell-rc] .shell-r-rail {
     top: 72px;
     z-index: 20;
     margin-top: 0;
-    /* сама строка — квадратная цвета фона, скругление — у плашки внутри: иначе в нижних углах строки просвечивал список */
-    background: #090c10;
   }
+  /* плашка строки — светлее панелей (bg-panel-3) и с тенью: список проезжает прямо под ней, как под мини-табло матча */
   .shell-center:has(.bare-page) .bare-panel > div {
     border-radius: var(--radius-card);
-    background: var(--color-panel);
+    background: var(--color-panel-3);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
     padding: 8px 10px 8px 22px;
-  }
-  /* под строкой — как рамка под шапкой (ShellFrame): ровная полоска цвета фона 8px и под ней два «уголка» радиусом
-     карточки — уезжающий список уходит под строку со скруглённым верхом, без щелей по краям (раньше тень повторяла
-     скругление самой строки — владелец: «у блока сортировки снизу норм вырез?»). Наверху страницы уголки совпадают
-     со скруглением первого блока и не видны. */
-  .shell-center:has(.bare-page) .bare-panel::after {
-    content: '';
-    pointer-events: none;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 100%;
-    height: 28px;
-    background:
-      linear-gradient(#090c10, #090c10) top / 100% 8px no-repeat,
-      radial-gradient(circle at 100% 100%, transparent 19.5px, #090c10 20px) left 0 top 8px / 20px 20px no-repeat,
-      radial-gradient(circle at 0 100%, transparent 19.5px, #090c10 20px) right 0 top 8px / 20px 20px no-repeat;
   }
   /* переход к блоку лиги из левой панели — с учётом липкой строки: шапка + рамка + строка + зазор */
   .shell-center:has(.bare-page) #matches section[id] {
@@ -849,30 +832,12 @@ html[data-shell-rc] .shell-r-rail {
     background: var(--color-panel);
     padding: 10px 20px;
   }
-  /* мини-табло страницы матча — как строка дней на главной (.bare-panel): квадратная подложка цвета фона, плашка
-     панели той же высоты (58px) без тени, под ней полоска фона 8px и уголки — уезжающие разделы уходят под неё со
-     скруглённым верхом */
-  .shell-center:has(.bare-match) .match-bar {
-    background: #090c10;
-  }
+  /* мини-табло страницы матча — той же высоты и с теми же отступами, что строка дней на главной (58px); вид у обеих —
+     светлая плашка bg-panel-3 с тенью, содержимое проезжает прямо под ней (владелец: «можешь и на странице матча и на
+     главной сделать так?» — полоска фона с уголками под строкой ему понравилась меньше) */
   .shell-center:has(.bare-match) .match-bar-in {
     min-height: 57.5px;
-    background: var(--color-panel);
-    box-shadow: none;
     padding: 8px 10px 8px 22px;
-  }
-  .shell-center:has(.bare-match) .match-bar::after {
-    content: '';
-    pointer-events: none;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 100%;
-    height: 28px;
-    background:
-      linear-gradient(#090c10, #090c10) top / 100% 8px no-repeat,
-      radial-gradient(circle at 100% 100%, transparent 19.5px, #090c10 20px) left 0 top 8px / 20px 20px no-repeat,
-      radial-gradient(circle at 0 100%, transparent 19.5px, #090c10 20px) right 0 top 8px / 20px 20px no-repeat;
   }
   /* закреплённая первая колонка таблицы кэфов — цвета панели (иначе светлее остальной таблицы) */
   .shell-center:has(.bare-match) .odds-sticky {
