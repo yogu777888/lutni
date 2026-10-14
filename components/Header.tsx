@@ -18,8 +18,10 @@ export function Header() {
     <HeaderShell>
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-5 lg:gap-5 xl:max-w-none xl:px-6">
         <Link href="/" aria-label="tag.bet — на главную" className="shrink-0 text-fg transition-opacity hover:opacity-80">
-          {/* на 1,5px ниже середины: в рамку входит хвост «g», без сдвига тело букв стоит выше меню и кнопок */}
-          <Wordmark size={26} className="translate-y-[1.5px]" />
+          {/* на 3px ниже середины рамки: в рамку входит хвост «g» — без сдвига надпись стояла выше меню и кнопок. Глаз
+              ровняет по высоким буквам «t», «b» и строке, а не по «a», «e»: середина «верх t — строка» = середина
+              заглавных в меню (сдвиг 1,5px по середине «a», «e» владелец ещё видел выше) */}
+          <Wordmark size={26} className="translate-y-[3px]" />
         </Link>
         <NavLinks className="hidden shrink-0 lg:flex" />
         <span className="flex-1" />
