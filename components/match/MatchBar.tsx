@@ -40,7 +40,9 @@ export function MatchBar({
   const [top, setTop] = useState(64)
 
   useEffect(() => {
-    const board = document.getElementById('match-board') ?? document.getElementById('match-hero')
+    // ориентир — сам счёт (или время) на табло: мини-табло сменяет крошки, когда крупный счёт наполовину ушёл под панель
+    // (владелец: «как-то рановато появляется» — по верху табло полоска дублировала ещё видный крупный счёт)
+    const board = document.getElementById('match-score') ?? document.getElementById('match-board') ?? document.getElementById('match-hero')
     const head = document.querySelector('header')
     let raf = 0
     const check = () => {
@@ -49,8 +51,9 @@ export function MatchBar({
         // от xl — 72px, как строка дней на главной (шапка 64 + полоска рамки 8); ниже — от низа шапки (на телефоне в два ряда)
         const t = innerWidth >= 1280 ? 72 : Math.round(head?.getBoundingClientRect().bottom ?? 64) + 6
         setTop(t)
-        // мини-табло — как только верх табло дошёл до низа панели
-        setShow(board ? board.getBoundingClientRect().top < t + 58 : false)
+        // сами цифры (первый ряд в #match-score): сменяем, когда половина крупного счёта ушла под панель
+        const r = (board?.firstElementChild ?? board)?.getBoundingClientRect()
+        setShow(r ? (r.top + r.bottom) / 2 < t + 58 : false)
       })
     }
     check()

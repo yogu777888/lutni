@@ -111,7 +111,7 @@ export function MatchHero({
       {/* табло по центру, как в «Главных матчах»: хозяева слева, гости справа, в середине время или счёт */}
       <div id="match-board" className="mt-12 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 sm:mt-14 sm:gap-x-8">
         {team(m.home, 'home')}
-        <div className="text-center">
+        <div id="match-score" className="text-center">
           {played ? (
             <>
               <div className="num display-num whitespace-nowrap text-[44px] font-semibold leading-none tracking-[-0.03em] sm:text-[76px]">

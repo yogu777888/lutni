@@ -70,7 +70,7 @@ export function PredictHero({
         {/* строка матча: по ней же мини-табло понимает, что пора появиться (#match-board) */}
         <div id="match-board" className="mt-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-5">
           {team(m.home)}
-          <span className="text-center leading-none">
+          <span id="match-score" className="text-center leading-none">
             <span className="num display-num block text-[30px] font-semibold sm:text-[36px]">{formatTime(m.ts)}</span>
             <span className="mt-1 block text-[11px] text-mute">{SITE.tzLabel.toLowerCase()}</span>
           </span>
