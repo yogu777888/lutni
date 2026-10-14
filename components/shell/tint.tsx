@@ -64,3 +64,21 @@ export function ShellTint({ id, ymd, home, away }: { id?: number; ymd?: string; 
   return null
 }
 
+
+/**
+ * Свечение блока цветами клубов (первый блок «Прогноз tag.bet» на странице матча): слева — хозяева, справа — гости,
+ * сверху вниз гаснет. Цвета — с сервера или догружаются, как у градиента панели; нет цветов — без свечения.
+ */
+export function ClubGlow({ id, ymd, home, away }: { id: number; ymd: string; home?: string | null; away?: string | null }) {
+  const t = useMatchTint(id, ymd, home && away ? { home, away } : null)
+  if (!t) return null
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0"
+      style={{
+        background: `radial-gradient(70% 90% at 0% 0%, color-mix(in oklab, ${t.home} 38%, transparent), transparent 70%), radial-gradient(70% 90% at 100% 0%, color-mix(in oklab, ${t.away} 34%, transparent), transparent 70%)`,
+      }}
+    />
+  )
+}

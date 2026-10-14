@@ -13,7 +13,7 @@ import { InjuriesBlock } from '@/components/match/InjuriesBlock'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { hasMoves, OddsTable } from '@/components/match/OddsTable'
 import { SplitBar } from '@/components/match/ProbBars'
-import { Conclusion } from '@/components/match/VerdictCard'
+import { PredictHero } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerCard } from '@/components/PartnerCard'
 import { Section } from '@/components/Section'
@@ -249,15 +249,20 @@ export default async function MatchPage({ params }: Props) {
       {/* идёт матч — счёт, минута и live-кэфы обновляются сами */}
       {m.status === 'live' || m.status === 'suspended' ? <LiveRefresh /> : null}
 
-      {/* сначала табло, как в «Главных матчах»: команды, время или счёт, шансы; ниже — ответ словами */}
-      <MatchHero full={full} cells={cells} books={cons.books} line={heroLine} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} />
-
-      {/* «Наш вывод» — до начала: расклад, ставка и теги одним блоком (были три блока с повторами) */}
-      {scheduled && (verdict || pick || tags.length) ? (
-        <div className="mt-5 xl:mt-2">
-          <Conclusion v={verdict} pick={pick} match={m} tags={tags} />
-        </div>
-      ) : null}
+      {/* до начала — «Прогноз tag.bet» первым блоком (строка матча, вывод, оценка, ставка); после — табло со счётом */}
+      {scheduled && (verdict || pick) ? (
+        <PredictHero
+          m={m}
+          v={verdict}
+          pick={pick}
+          probs={x}
+          tags={tags}
+          tint={tint ? distinctPair(tint) : null}
+          story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null}
+        />
+      ) : (
+        <MatchHero full={full} cells={cells} books={cons.books} line={heroLine} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} />
+      )}
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:mt-2 xl:grid-cols-1 xl:gap-2 2xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-6 xl:space-y-2">
