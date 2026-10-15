@@ -170,13 +170,16 @@ export function MatchHero({
       {cells && started ? (
         // начался — под тонкой чертой одна полоса во всю ширину: слева оценка до матча, справа кэфы (разнесены по краям,
         // а не стопкой по центру); не влезает в строку — кэфы переносятся под оценку
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-white/10 pt-5">
+        // сетка по ширине самой карточки (container query): широкая — «До матча» и строка ячеек в одном ряду и по одной
+        // линии, «Реклама · 18+» — под ячейками; узкая (1280 с панелями, телефон) — всё друг под другом. Выравнивание по
+        // ячейкам, а не по середине правой части вместе с пометкой: иначе «До матча» стояло ниже кэфов (владелец: «сейчас как?»)
+        <div className="@container mt-6 border-t border-white/10 pt-5">
+          <div className="grid gap-x-6 gap-y-3 @3xl:grid-cols-[minmax(0,1fr)_auto] @3xl:items-center">
           <p className="text-[13px] text-dim">
             До матча: «{m.home.name}» {n?.home}% · ничья {n?.draw}% · «{m.away.name}» {n?.away}%
           </p>
           {cells.every((c) => c.odd) ? (
-            <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:items-end">
-            <div id="match-odds" className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <div id="match-odds" className="flex flex-wrap items-center gap-2 @3xl:justify-end">
               <span className="w-full text-[12px] leading-tight text-dim sm:mr-1 sm:w-auto">
                 Кэфы <span className="font-semibold text-fg">{line?.name ?? 'до матча'}</span>
                 {line?.live ? (
@@ -212,10 +215,12 @@ export function MatchHero({
                 )
               })}
             </div>
-            {/* «Кэфы PARI ● сейчас» уже сказано слева от ячеек — под ними только пометка рекламы */}
-            {line?.live ? <p className="text-[11.5px] text-mute">Реклама · 18+</p> : null}
-            </div>
           ) : null}
+          {/* «Кэфы PARI ● сейчас» уже сказано слева от ячеек — под ними только пометка рекламы */}
+          {line?.live && cells.every((c) => c.odd) ? (
+            <p className="-mt-1.5 text-[11.5px] text-mute @3xl:col-start-2 @3xl:text-right">Реклама · 18+</p>
+          ) : null}
+          </div>
         </div>
       ) : cells ? (
         <>
