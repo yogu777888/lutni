@@ -57,23 +57,32 @@ function Right({ m, stat, hot }: { m: CompactMatch; stat?: string; hot: boolean 
 function ValueBlock({ rows }: { rows: ValueRow[] }) {
   if (!rows.length) return null
   return (
-    <section className="mt-6 border-t border-edge pt-4">
+    <section className="relative mt-6 border-t border-edge pt-4">
       <h3 className="flex items-baseline justify-between text-[15px] font-semibold">
-        Выгодно сегодня
+        {/* ⓘ — почему «выгодно» (владелец согласился: объяснение было только в подсказке плашки, её почти никто не находит);
+            простыми словами и с примером, без «заработать»: оценка, а не гарантия */}
+        <span className="group/vh flex items-baseline gap-1.5">
+          Выгодно сегодня
+          <button type="button" aria-describedby="value-hint" aria-label="Почему «выгодно»" className="text-[13px] font-normal text-mute transition-colors hover:text-fg focus-visible:text-fg">
+            ⓘ
+          </button>
+          <span
+            id="value-hint"
+            role="tooltip"
+            className="pointer-events-none absolute inset-x-0 top-11 z-20 rounded-tile border border-edge bg-panel-2 p-3 text-[13px] font-normal leading-snug text-dim opacity-0 shadow-[0_10px_30px_rgb(0_0_0/0.45)] transition-opacity group-focus-within/vh:opacity-100 group-hover/vh:opacity-100"
+          >
+            <b className="mb-1 block font-semibold text-fg">Почему «выгодно»</b>
+            Кэф выше, чем стоит исход по оценке tag.bet. Например, мы даём победе 40% — честный кэф для неё 2.50, а букмекер платит 2.68.
+            <span className="mt-1.5 block text-mute">Оценка, а не гарантия · 18+</span>
+          </span>
+        </span>
         <span className="text-[11.5px] font-normal text-mute">Реклама · 18+</span>
       </h3>
       <ul className="mt-2 space-y-1">
         {rows.map((r) => (
+          // без круга с эмблемами слева (владелец согласился: эмблемы по 16px внахлёст не различить, а круг съедал место —
+          // вторая строка не влезала даже как «с «Мидлсбро»», и «с» после времени читалось как «с 21:00» строкой выше)
           <li key={r.id} className="-mx-2 flex items-center gap-3 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.04]">
-            {/* эмблемы внахлёст в круге 36px — как значки подборок выше: у всех строк панели слева круг */}
-            <span aria-hidden className="relative h-9 w-9 shrink-0 rounded-full bg-white/[0.06]">
-              <span className="absolute left-1 top-1">
-                <TeamLogo name={r.home} src={r.homeLogo} size={16} />
-              </span>
-              <span className="absolute bottom-1 right-1">
-                <TeamLogo name={r.away} src={r.awayLogo} size={16} />
-              </span>
-            </span>
             {/* главное — на что ставка (сверху, белым, в узкой панели — в две строки, не обрезаем); матч и время — ниже серым: обрезается второстепенное */}
             <Link href={r.href} prefetch={false} className="min-w-0 flex-1 leading-tight">
               <span className="line-clamp-2 text-[13.5px] font-medium first-letter:uppercase">{r.outcome}</span>
@@ -82,7 +91,7 @@ function ValueBlock({ rows }: { rows: ValueRow[] }) {
               <span className="mt-0.5 line-clamp-2 text-[12.5px] text-dim">
                 {/* ставка на победу команды — она уже названа строкой выше, здесь только соперник («с «Мидлсбро»»): в 288px
                     «Саутгемптон — Мидлсбро» и даже «против «Мидлсбро»» обрезались; длинное — переносом, не многоточием */}
-                {r.time} · {r.side === 'home' ? `с «${r.away}»` : r.side === 'away' ? `с «${r.home}»` : `${r.home} — ${r.away}`}
+                {r.time} · {r.side === 'home' ? `против «${r.away}»` : r.side === 'away' ? `против «${r.home}»` : `${r.home} — ${r.away}`}
               </span>
             </Link>
             {/* букмекер — подписью под кэфом: где этот кэф, и рекламодатель рядом с рекламой */}
