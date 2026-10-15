@@ -4,6 +4,7 @@
  * в каркасе на всех страницах, поэтому считаем из кэша слоя данных (матчи дня и сводки матчей), без новых запросов.
  * Только для сервера.
  */
+import { getPartner } from '@/config/bookmakers'
 import { compactMatch, type CompactMatch } from './compact'
 import { getMatchesByDate, tagsFor, type FeedItem } from './data'
 import { soonMatches } from './day-summary'
@@ -23,7 +24,7 @@ export type DayPicks = {
   totals: Record<string, number>
   /** что с матчами подборки сейчас — подпись под названием, как в левой панели: «8 матчей · 2 в игре» / «с 20:30» */
   states: Record<string, PickState>
-  /** «Выгодно сегодня» внизу панели — лучшие выгодные ставки дня (ещё не начались), с кэфом партнёра */
+  /** «Выгодно сегодня» внизу панели — лучшие выгодные ставки дня по линии PARI (ещё не начались) */
   values: ValueRow[]
 }
 
@@ -76,29 +77,34 @@ export async function dayPicks(): Promise<DayPicks> {
     }
     const byId = new Map(matches.map((m) => [m.id, m]))
     const out: DayPicks = { groups: [], matches: {}, stats: {}, totals: {}, values: [], states: {} }
-    // выгодные — только с кэфом и букмекером-партнёром (ссылка к нему), лучшие по выгоде
-    out.values = items
-      .filter((i) => i.match.status === 'scheduled' && i.summary?.pick?.kind === 'value' && i.summary.pick.odd && i.summary.pick.partnerSlug)
-      .sort((a, b) => (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
-      .slice(0, VALUES)
-      .map(({ match: m, summary }) => {
-        const p = summary!.pick!
-        return {
-          id: m.id,
-          href: matchHref(m),
-          home: m.home.name,
-          away: m.away.name,
-          homeLogo: m.home.logo ?? null,
-          awayLogo: m.away.logo ?? null,
-          outcome: outcomeText(p.key, m),
-          side: p.key === 'home' ? 'home' : p.key === 'away' ? 'away' : null,
-          odd: p.odd!,
-          bookmaker: p.bookmaker ?? '',
-          slug: p.partnerSlug!,
-          ev: p.ev,
-          time: formatTime(m.ts),
-        }
-      })
+    // «Выгодно сегодня» — только по линии PARI (владелец: «а можно блок выгодно сегодня сделать только про пари?»): кэф PARI
+    // выше честной цены (`summary.pari` в lib/data.ts); лучший кэф другого партнёра здесь не в счёт. Все выгодные по всем
+    // легальным партнёрам — на /tag/value
+    const pari = getPartner('pari')
+    out.values = pari
+      ? items
+          .filter((i) => i.match.status === 'scheduled' && i.summary?.pari)
+          .sort((a, b) => b.summary!.pari!.ev - a.summary!.pari!.ev)
+          .slice(0, VALUES)
+          .map(({ match: m, summary }) => {
+            const p = summary!.pari!
+            return {
+              id: m.id,
+              href: matchHref(m),
+              home: m.home.name,
+              away: m.away.name,
+              homeLogo: m.home.logo ?? null,
+              awayLogo: m.away.logo ?? null,
+              outcome: outcomeText(p.key, m),
+              side: p.key === 'home' ? 'home' : p.key === 'away' ? 'away' : null,
+              odd: p.odd,
+              bookmaker: pari.name,
+              slug: pari.slug,
+              ev: p.ev,
+              time: formatTime(m.ts),
+            }
+          })
+      : []
     for (const g of groups) {
       // «В игре» — в левой панели («Сейчас в игре»); подборка из одного матча — уже не подборка (владелец согласился)
       // «Выгодно» — блоком «Выгодно сегодня» внизу панели (с кэфами и ссылками), подборкой не повторяем

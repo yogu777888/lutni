@@ -51,11 +51,12 @@ function Right({ m, stat, hot }: { m: CompactMatch; stat?: string; hot: boolean 
  */
 /**
  * «Выгодно сегодня» внизу панели (владелец согласился: блок ушёл из центра, а нижняя половина панели пустовала):
- * до трёх лучших выгодных ставок дня — матч, исход словами и лаймовый кэф партнёра; кэф — ссылка к букмекеру
- * (`goHref(…, 'panel')`, rel=sponsored), пометка «Реклама» — в заголовке; внизу «Все выгодные →» (/tag/value).
+ * до трёх лучших выгодных ставок дня — только по линии PARI (владелец: «а можно блок выгодно сегодня сделать только про
+ * пари?»): исход словами и лаймовый кэф PARI — ссылка к нему (`goHref(…, 'panel')`, rel=sponsored); «PARI · Реклама · 18+» —
+ * в заголовке (рекламодатель один на блок, подпись под каждой плашкой повторяла его); выгодных у PARI нет — так и пишем,
+ * а не прячем блок (пропадающий блок выглядит поломкой); внизу «Все выгодные →» — по всем легальным партнёрам (/tag/value).
  */
 function ValueBlock({ rows }: { rows: ValueRow[] }) {
-  if (!rows.length) return null
   return (
     <section className="relative mt-6 border-t border-edge pt-4">
       <h3 className="flex items-baseline justify-between text-[15px] font-semibold">
@@ -63,7 +64,12 @@ function ValueBlock({ rows }: { rows: ValueRow[] }) {
             простыми словами и с примером, без «заработать»: оценка, а не гарантия */}
         <span className="group/vh flex items-baseline gap-1.5">
           Выгодно сегодня
-          <button type="button" aria-describedby="value-hint" aria-label="Почему «выгодно»" className="text-[13px] font-normal text-mute transition-colors hover:text-fg focus-visible:text-fg">
+          <button
+            type="button"
+            aria-describedby="value-hint"
+            aria-label="Почему «выгодно»"
+            className="text-[13px] font-normal text-mute transition-colors hover:text-fg focus-visible:text-fg"
+          >
             ⓘ
           </button>
           <span
@@ -76,8 +82,9 @@ function ValueBlock({ rows }: { rows: ValueRow[] }) {
             <span className="mt-1.5 block text-mute">Оценка, а не гарантия · 18+</span>
           </span>
         </span>
-        <span className="text-[11.5px] font-normal text-mute">Реклама · 18+</span>
+        <span className="text-[11.5px] font-normal text-mute">PARI · Реклама · 18+</span>
       </h3>
+      {rows.length ? null : <p className="mt-2 text-[13px] text-dim">Сегодня у PARI выгодных ставок нет.</p>}
       <ul className="mt-2 space-y-1">
         {rows.map((r) => (
           // без круга с эмблемами слева (владелец согласился: эмблемы по 16px внахлёст не различить, а круг съедал место —
@@ -94,20 +101,16 @@ function ValueBlock({ rows }: { rows: ValueRow[] }) {
                 {r.time} · {r.side === 'home' ? `против «${r.away}»` : r.side === 'away' ? `против «${r.home}»` : `${r.home} — ${r.away}`}
               </span>
             </Link>
-            {/* букмекер — подписью под кэфом: где этот кэф, и рекламодатель рядом с рекламой */}
-            <span className="flex shrink-0 flex-col items-center gap-0.5">
-              <a
-                href={goHref(r.slug, 'panel', r.id)}
-                target="_blank"
-                rel={SPONSORED_REL}
-                title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выгода +${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
-                // как лаймовая ячейка кэфа в строке списка (34px, 15px): три высоких плашки с букмекером были ярче всего на странице
-                className="num grid h-[34px] w-14 shrink-0 place-items-center rounded-ctl bg-acid text-[15px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
-              >
-                {r.odd.toFixed(2)}
-              </a>
-              <span className="max-w-16 truncate text-[10.5px] leading-none text-mute">{r.bookmaker}</span>
-            </span>
+            <a
+              href={goHref(r.slug, 'panel', r.id)}
+              target="_blank"
+              rel={SPONSORED_REL}
+              title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выгода +${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
+              // как лаймовая ячейка кэфа в строке списка (34px, 15px): три высоких плашки с букмекером были ярче всего на странице
+              className="num grid h-[34px] w-14 shrink-0 place-items-center rounded-ctl bg-acid text-[15px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
+            >
+              {r.odd.toFixed(2)}
+            </a>
           </li>
         ))}
       </ul>

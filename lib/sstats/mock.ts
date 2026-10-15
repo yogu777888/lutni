@@ -857,8 +857,11 @@ function liveProbs(g: MockGame, now: number) {
   return { home, draw, away, over }
 }
 
-function pariOdds(pr: { home: number; draw: number; away: number; over: number }) {
-  const o = (id: number, q: number) => (q > 0.002 && q < 0.995 ? [{ id, value: price(q, PARI_MARGIN) }] : [])
+/** `seed` — разброс ±12% по исходам, как у настоящей линии (без него кэф PARI в демо — ровно модель с маржой и никогда не
+ * бывает выгодным: «Выгодно сегодня» только по PARI в демо всегда пустовал) */
+function pariOdds(pr: { home: number; draw: number; away: number; over: number }, seed?: number) {
+  const r = seed == null ? null : rng('pari-spread', seed)
+  const o = (id: number, q: number) => (q > 0.002 && q < 0.995 ? [{ id, value: price(q * (r ? 1 + (r() - 0.5) * 0.24 : 1), PARI_MARGIN) }] : [])
   return [...o(8250, pr.home), ...o(8256, pr.draw), ...o(8253, pr.away), ...o(217, pr.over), ...o(292, 1 - pr.over)]
 }
 
@@ -886,7 +889,7 @@ function pariMatches(p: URLSearchParams, now: number) {
           url: null,
           isDeleted: false,
         },
-        currentOdds: withOdds && ph.status !== 8 ? pariOdds(liveProbs(g, now)) : [],
+        currentOdds: withOdds && ph.status !== 8 ? pariOdds(liveProbs(g, now), g.id) : [],
       }
     }),
     { offset: 0, TotalCount: games.length },

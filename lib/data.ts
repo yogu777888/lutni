@@ -4,10 +4,11 @@
  * live обновляем раз в минуту, завершённые храним сутками.
  */
 import { featuredRank, isFeatured } from '@/config/leagues'
+import { partnerForApiBookmaker } from '@/config/bookmakers'
 import { cache, type CacheOptions } from './cache'
 import { CHANCE_DAYS, chanceCheck, mergeTallies, tallyChances, type ChanceCheck, type ChanceTally } from './chance-check'
 import { addDays, appNow, diffDays, todayYmd, tzOffsetHours, ymdInTz, ymdToNoonTs } from './format'
-import { buildCandidates, buildConsensus, buildModel, choosePick, type Candidate, type Consensus, type ModelOutput, type Pick } from './model'
+import { buildCandidates, buildConsensus, buildModel, choosePick, valueThreshold, type Candidate, type Consensus, type ModelOutput, type Pick } from './model'
 import type { BookOdds } from './odds'
 import type { OddsSnap } from './lines'
 import { buildPreview, type Paragraph } from './preview'
@@ -357,6 +358,8 @@ export type MatchSummary = {
     ev: number | null
     kind: Pick['kind']
   } | null
+  /** лучшая выгодная ставка именно по линии PARI (для «Выгодно сегодня» в правой панели — только PARI), иначе null */
+  pari?: { key: string; label: string; prob: number; odd: number; ev: number } | null
   at: number
 }
 
@@ -406,6 +409,32 @@ function summaryPick(pick: Pick | null): MatchSummary['pick'] {
   }
 }
 
+/**
+ * Выгодная ставка по линии PARI: исходы 1X2 и тотал 2,5, кэф PARI выше честной цены с тем же порогом, что и везде
+ * (`valueThreshold`), и в тех же рамках, что `isValue` (кэф 1.3–4, шанс от 25%). Правая панель показывает только PARI
+ * (владелец: «а можно блок выгодно сегодня сделать только про пари?»), поэтому лучший кэф другого партнёра здесь не в счёт.
+ */
+function pariValue(books: BookOdds[], candidates: Candidate[]): MatchSummary['pari'] {
+  const book = books.find((b) => partnerForApiBookmaker(b.bookmakerId, b.bookmakerName)?.slug === 'pari')
+  if (!book) return null
+  const quote: Record<string, number | undefined> = {
+    home: book.x12?.home?.value,
+    draw: book.x12?.draw?.value,
+    away: book.x12?.away?.value,
+    'over2.5': book.totals.find((t) => t.line === 2.5)?.over?.value,
+    'under2.5': book.totals.find((t) => t.line === 2.5)?.under?.value,
+  }
+  let best: NonNullable<MatchSummary['pari']> | null = null
+  for (const c of candidates) {
+    const odd = quote[c.key]
+    if (!odd || odd < 1.3 || odd > 4 || c.prob < 0.25) continue
+    const ev = c.prob * odd - 1
+    if (ev < valueThreshold(odd)) continue
+    if (!best || ev > best.ev) best = { key: c.key, label: c.label, prob: c.prob, odd, ev }
+  }
+  return best
+}
+
 /** Готовые инсайты держим в памяти 30 с: страница матча не пересчитывает модель на каждый запрос. */
 export function getMatchInsights(id: number, opts: Opts = {}): Promise<MatchInsights | null> {
   return cache.get(`insights:${id}`, () => computeMatchInsights(id, opts), { ttl: 30, stale: 60 }, false)
@@ -446,7 +475,7 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
 
   const form = homeForm && awayForm ? { home: homeForm.last5, away: awayForm.last5 } : null
   const facts = teamFacts({ homeForm, awayForm, h2h })
-  const summary: MatchSummary = { id, tags, form, facts, pick: summaryPick(pick), at: Date.now() }
+  const summary: MatchSummary = { id, tags, form, facts, pick: summaryPick(pick), pari: m.status === 'scheduled' ? pariValue(books, candidates) : null, at: Date.now() }
   cache.set(`summary:${id}`, summary, { ttl: 3 * H, stale: 9 * H, persist: false })
 
   return { full, match: m, books, cons, glicko, model, candidates, pick, homeForm, awayForm, h2h, injuries, standings, tags, preview }
