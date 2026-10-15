@@ -170,17 +170,27 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
       <SubText l={l} />
     </span>
   )
-  // свёрнутая панель: подсказка у значка — название и та же подпись, что в развёрнутой (`useRailTip`)
-  // идут матчи — маленькая точка внизу справа, как «в сети» у аватарки (крупная сверху читалась как непрочитанное уведомление)
-  const RailFlag = ({ l }: { l: DayLeague }) => (
-    <a
-      href={l.href}
-      onClick={go(`league-${l.id}`, l.href)}
-      {...tipProps(l.name, <SubText l={l} />)}
+  // свёрнутая панель — как правая полоска (владелец: «в левом блоке, когда он свёрнут, нет индикатора историй, а в правом
+  // есть — это норм?»): флаг — то же, что в развёрнутой, — кнопка сторис матчей лиги с кольцом непросмотренных; подсказка —
+  // название, подпись и «нажмите — разбор». Перейти к блоку лиги — названием в развёрнутой панели. Функция, а не компонент:
+  // компонент, объявленный в рендере, пересоздаётся при показе подсказки (фокус по нажатию) — кнопка менялась под мышью, клик терялся
+  const railFlag = (l: DayLeague, list: DayLeague[]) => (
+    <button
+      key={l.id}
+      type="button"
+      onClick={play(list, list.indexOf(l))}
+      {...tipProps(
+        l.name,
+        <>
+          <SubText l={l} /> · нажмите — разбор
+        </>,
+      )}
+      aria-label={`${l.name}: смотреть разбор матчей`}
       className="relative shrink-0 rounded-full transition-opacity hover:opacity-80"
     >
       <LeagueFlag l={l} />
-    </a>
+      <StoryRing group={`league-${l.id}`} ids={l.items.map((m) => m.id)} seen={seen} />
+    </button>
   )
   // у турниров «Завтра» подписи нет (владелец: «не слишком много мелкого текста из-за подписей?» — пять одинаковых
   // «10 матчей · начало в 16:00» подряд; про завтра в панели это мало кому нужно) — она в подсказке
@@ -241,28 +251,26 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
   return (
     // overflow-hidden — иначе квадратный фон закреплённого заголовка перекрывает скруглённые углы панели
     <div className="h-full overflow-hidden rounded-card bg-panel">
-      {/* свёрнута — полоска: «развернуть» и флаги топ-лиг (красная точка — идут матчи) */}
-      <div className="shell-l-rail scrollbar-none h-full flex-col items-center gap-2 overflow-y-auto py-3">
+      {/* свёрнута — полоска: «развернуть», «Сейчас в игре» и флаги — истории с кольцами, как в правой полоске */}
+      <div className="shell-l-rail scrollbar-none h-full flex-col items-center gap-3 overflow-y-auto py-3">
         <PanelToggle side="l" open={false} />
         {/* «Сейчас в игре» — первым, как в развёрнутой */}
         {day.live ? (
-          <a
-            href="/#live"
-            onClick={go('live', '/#live')}
-            {...tipProps('Сейчас в игре', `${matchesN(day.live)} ${inLeagues(day.leagues.filter((l) => l.live).length)}`)}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
+          <button
+            type="button"
+            onClick={playLive}
+            {...tipProps('Сейчас в игре', `${matchesN(day.live)} ${inLeagues(day.leagues.filter((l) => l.live).length)} · нажмите — разбор`)}
+            aria-label="Сейчас в игре: смотреть разбор матчей"
+            className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
           >
             <StorySymbol k="live" tone="currentColor" className="h-[18px] w-[18px]" />
-          </a>
+            <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} />
+          </button>
         ) : null}
-        {top.map((l) => (
-          <RailFlag key={l.id} l={l} />
-        ))}
+        {top.map((l) => railFlag(l, day.leagues))}
         {/* другие турниры дня — после тонкой черты (до 12, полоска узкая) */}
         {rest.length ? <span aria-hidden className="my-1 h-px w-6 shrink-0 bg-edge" /> : null}
-        {rest.slice(0, 12).map((l) => (
-          <RailFlag key={l.id} l={l} />
-        ))}
+        {rest.slice(0, 12).map((l) => railFlag(l, day.leagues))}
         {/* свёрнута — 18+ внизу полоски, ведёт на «Ответственную игру» */}
         <Link
           href="/responsible-gaming"
