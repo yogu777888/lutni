@@ -62,8 +62,9 @@ function Row({ icon, tone = 'text-dim', children }: { icon: keyof typeof ICON; t
 
 function Stat({ label, value, good = false }: { label: string; value: string; good?: boolean }) {
   return (
-    <div className="rounded-tile bg-white/[0.04] px-3 py-3">
-      <dt className="text-[12px] text-dim">{label}</dt>
+    // число — по низу плитки: на телефоне «Честная цена» переносится на две строки, и без этого 2.47 стояло ниже 41% и +8,7%
+    <div className="flex flex-col justify-between rounded-tile bg-white/[0.04] px-3 py-3">
+      <dt className="text-[12px] leading-snug text-dim">{label}</dt>
       <dd className={`num mt-1 whitespace-nowrap text-[22px] font-bold tracking-[-0.03em] sm:text-[26px] ${good ? 'text-good' : ''}`}>{value}</dd>
     </div>
   )

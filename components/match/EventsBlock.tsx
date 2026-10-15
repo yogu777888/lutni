@@ -50,7 +50,10 @@ export function scorers(events: MatchEvent[], final: { home: number; away: numbe
       side = nh > h ? 'home' : 'away'
       h = nh
     }
-    const name = `${e.player || '—'}${e.kind === 'own-goal' ? ' (авт.)' : e.kind === 'penalty' ? ' (пен.)' : ''}`
+    // автора нет в данных (бывает в низших лигах и MLS) — «Гол 20′», а не «— 20′»
+    const name = e.player
+      ? `${e.player}${e.kind === 'own-goal' ? ' (авт.)' : e.kind === 'penalty' ? ' (пен.)' : ''}`
+      : e.kind === 'own-goal' ? 'Автогол' : e.kind === 'penalty' ? 'Пенальти' : 'Гол'
     const list = out[side].get(name) ?? []
     list.push(minuteText(e))
     out[side].set(name, list)
@@ -101,7 +104,7 @@ export function EventsBlock({
   const x = (e: { minute: number; extra?: number | null }) => `${Math.min(100, ((e.minute + (e.extra ?? 0)) / end) * 100)}%`
   const goals = flow.filter((e) => GOALS.has(e.kind))
   const tip = (e: Flow) =>
-    `${minuteText(e)} · ${e.side === 'home' ? home : away}: ${e.player || '—'}${e.score ? ` — ${e.score}` : ''}${
+    `${minuteText(e)} · ${e.side === 'home' ? home : away}: ${e.player || 'игрок не указан'}${e.score ? ` — ${e.score}` : ''}${
       e.kind === 'penalty' ? ' (пенальти)' : e.kind === 'own-goal' ? ' (автогол)' : e.kind === 'missed-penalty' ? ' (незабитый пенальти)' : ''
     }${e.kind === 'yellow' ? ' (жёлтая)' : e.kind === 'red' ? ' (красная)' : ''}`
   return (
@@ -140,9 +143,16 @@ export function EventsBlock({
               <span className="num text-[12px] text-mute">{minuteText(e)}</span>
               {e.score ? <b className="num font-semibold text-fg">{e.score}</b> : null}
               <span className="text-fg/85">
-                {e.player || '—'}
-                {e.kind === 'penalty' ? <span className="text-mute"> · пенальти</span> : null}
-                {e.kind === 'own-goal' ? <span className="text-mute"> · автогол</span> : null}
+                {e.player ? (
+                  <>
+                    {e.player}
+                    {e.kind === 'penalty' ? <span className="text-mute"> · пенальти</span> : null}
+                    {e.kind === 'own-goal' ? <span className="text-mute"> · автогол</span> : null}
+                  </>
+                ) : (
+                  // автора нет в данных — словом, а не прочерком
+                  <span className="text-mute">{e.kind === 'own-goal' ? 'автогол' : e.kind === 'penalty' ? 'пенальти' : 'гол'}</span>
+                )}
               </span>
             </li>
           ))}

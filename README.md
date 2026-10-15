@@ -192,7 +192,7 @@ npm run build && npm start
 AFF_FONBET_URL=https://партнёрка.example/click?offer=123&sub1={subid}
 AFF_FONBET_ERID=2VtzqvXXXXX
 AFF_FONBET_ADVERTISER=ООО «…»
-PARTNERS_ORDER=fonbet,winline,pari      # первый — главный (шапка, sticky-кнопка)
+PARTNERS_ORDER=pari,fonbet,winline      # первый — главный (шапка, строки списка, «Выгодно сегодня»); по умолчанию — PARI
 ADMIN_TOKEN=длинная-случайная-строка     # /admin?token=…
 ```
 
