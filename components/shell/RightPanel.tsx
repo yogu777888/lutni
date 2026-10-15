@@ -77,21 +77,28 @@ function ValueBlock({ rows }: { rows: ValueRow[] }) {
             {/* главное — на что ставка (сверху, белым, в узкой панели — в две строки, не обрезаем); матч и время — ниже серым: обрезается второстепенное */}
             <Link href={r.href} prefetch={false} className="min-w-0 flex-1 leading-tight">
               <span className="line-clamp-2 text-[13.5px] font-medium first-letter:uppercase">{r.outcome}</span>
-              {/* букмекер — здесь, а не в плашке: плашка — такая же ячейка, как лаймовая в списке */}
-              <span className="mt-0.5 block truncate text-[12.5px] text-dim">
-                {r.bookmaker} · {r.time} · {r.home} — {r.away}
+              {/* вторая строка — время и матч (владелец: «как тебе выгодно сегодня, только честно?» — «Марафон · 22:00 ·
+                  Саутгемпт…» обрезало матч, а букмекер посетителю важен меньше всего) */}
+              <span className="mt-0.5 line-clamp-2 text-[12.5px] text-dim">
+                {/* ставка на победу команды — она уже названа строкой выше, здесь только соперник («с «Мидлсбро»»): в 288px
+                    «Саутгемптон — Мидлсбро» и даже «против «Мидлсбро»» обрезались; длинное — переносом, не многоточием */}
+                {r.time} · {r.side === 'home' ? `с «${r.away}»` : r.side === 'away' ? `с «${r.home}»` : `${r.home} — ${r.away}`}
               </span>
             </Link>
-            <a
-              href={goHref(r.slug, 'panel', r.id)}
-              target="_blank"
-              rel={SPONSORED_REL}
-              title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выгода +${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
-              // как лаймовая ячейка кэфа в строке списка (34px, 15px): три высоких плашки с букмекером были ярче всего на странице
-              className="num grid h-[34px] w-14 shrink-0 place-items-center rounded-ctl bg-acid text-[15px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
-            >
-              {r.odd.toFixed(2)}
-            </a>
+            {/* букмекер — подписью под кэфом: где этот кэф, и рекламодатель рядом с рекламой */}
+            <span className="flex shrink-0 flex-col items-center gap-0.5">
+              <a
+                href={goHref(r.slug, 'panel', r.id)}
+                target="_blank"
+                rel={SPONSORED_REL}
+                title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выгода +${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
+                // как лаймовая ячейка кэфа в строке списка (34px, 15px): три высоких плашки с букмекером были ярче всего на странице
+                className="num grid h-[34px] w-14 shrink-0 place-items-center rounded-ctl bg-acid text-[15px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
+              >
+                {r.odd.toFixed(2)}
+              </a>
+              <span className="max-w-16 truncate text-[10.5px] leading-none text-mute">{r.bookmaker}</span>
+            </span>
           </li>
         ))}
       </ul>
@@ -197,7 +204,11 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                         title="Смотреть разбор"
                         className="relative my-1.5 ml-2 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]"
                       >
-                        <StorySymbol k={g.key} tone="currentColor" className="h-[18px] w-[18px] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0" />
+                        <StorySymbol
+                          k={g.key}
+                          tone="currentColor"
+                          className="h-[18px] w-[18px] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"
+                        />
                         <span className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                           <Play className="ml-0.5 h-3.5 w-3.5" />
                         </span>
@@ -287,7 +298,16 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                     className="-mx-2 mt-1 flex w-[calc(100%+1rem)] items-center gap-3 rounded-tile px-2 py-2 text-left text-[13.5px] font-medium text-dim transition-colors hover:bg-white/[0.04] hover:text-fg"
                   >
                     <span className="grid h-9 w-9 shrink-0 place-items-center">
-                      <svg viewBox="0 0 24 24" aria-hidden className={`h-4 w-4 transition-transform ${all ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden
+                        className={`h-4 w-4 transition-transform ${all ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2.2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <path d="m6 9 6 6 6-6" />
                       </svg>
                     </span>

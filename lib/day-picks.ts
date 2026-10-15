@@ -40,6 +40,8 @@ export type ValueRow = {
   awayLogo: string | null
   /** исход словами: «победа «Реал Сосьедад»» */
   outcome: string
+  /** на победу какой команды ставка (вторая строка — «против «X»»), иначе null */
+  side: 'home' | 'away' | null
   odd: number
   bookmaker: string
   slug: string
@@ -89,6 +91,7 @@ export async function dayPicks(): Promise<DayPicks> {
           homeLogo: m.home.logo ?? null,
           awayLogo: m.away.logo ?? null,
           outcome: outcomeText(p.key, m),
+          side: p.key === 'home' ? 'home' : p.key === 'away' ? 'away' : null,
           odd: p.odd!,
           bookmaker: p.bookmaker ?? '',
           slug: p.partnerSlug!,
