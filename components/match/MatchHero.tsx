@@ -149,6 +149,9 @@ export function MatchHero({
                   1-й тайм {m.scoreHT.home}:{m.scoreHT.away}
                 </div>
               ) : null}
+              {/* «Разбор за минуту» — под счётом и минутой (владелец: «а визуально блок матча как?» — внизу четыре строки
+                  по центру разной ширины складывались в «ёлочку»); на телефоне колонка узкая — там кнопка под табло */}
+              {story ? <div className="mt-4 hidden justify-center sm:flex">{story}</div> : null}
             </>
           ) : m.status !== 'scheduled' ? (
             <p className="text-[15px] font-semibold text-loss">{m.statusLabel}</p>
@@ -162,16 +165,18 @@ export function MatchHero({
         </div>
         {team(m.away, 'away')}
       </div>
-      {story ? <div className="mt-6 flex justify-center">{story}</div> : null}
+      {story ? <div className={`mt-6 flex justify-center ${played ? 'sm:hidden' : ''}`}>{story}</div> : null}
 
       {cells && started ? (
-        // начался — оценка до матча одной строкой, кэфы — компактной строкой (было два ряда одинаковых больших плиток)
-        <div className="mt-6 flex flex-col items-center gap-3 text-center">
+        // начался — под тонкой чертой одна полоса во всю ширину: слева оценка до матча, справа кэфы (разнесены по краям,
+        // а не стопкой по центру); не влезает в строку — кэфы переносятся под оценку
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-white/10 pt-5">
           <p className="text-[13px] text-dim">
             До матча: «{m.home.name}» {n?.home}% · ничья {n?.draw}% · «{m.away.name}» {n?.away}%
           </p>
           {cells.every((c) => c.odd) ? (
-            <div id="match-odds" className="flex flex-wrap items-center justify-center gap-2">
+            <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:items-end">
+            <div id="match-odds" className="flex flex-wrap items-center gap-2 sm:justify-end">
               <span className="w-full text-[12px] leading-tight text-dim sm:mr-1 sm:w-auto">
                 Кэфы <span className="font-semibold text-fg">{line?.name ?? 'до матча'}</span>
                 {line?.live ? (
@@ -207,9 +212,10 @@ export function MatchHero({
                 )
               })}
             </div>
+            {/* «Кэфы PARI ● сейчас» уже сказано слева от ячеек — под ними только пометка рекламы */}
+            {line?.live ? <p className="text-[11.5px] text-mute">Реклама · 18+</p> : null}
+            </div>
           ) : null}
-          {/* «Кэфы PARI ● сейчас» уже сказано слева от ячеек — внизу только пометка рекламы */}
-          {line?.live ? <p className="text-[12px] text-mute">Реклама · 18+</p> : null}
         </div>
       ) : cells ? (
         <>
