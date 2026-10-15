@@ -74,16 +74,28 @@ function Legal() {
   // в три строки (владелец: «футер уродливый»); «Играйте ответственно» — ссылкой «Ответственная игра» ниже
   return (
     <div className="space-y-1.5 border-t border-edge pt-4 text-[11.5px] leading-snug text-mute">
+      {/* по строке на смысл (владелец: «как тебе футер, если честно?»): предупреждения вместе (были разорваны ссылками),
+          раскрытие партнёрства простыми словами, ссылки, копирайт */}
       <p>
-        <span className="font-semibold text-dim">18+</span> · Ставки — это риск
+        <span className="font-semibold text-dim">18+</span> · Ставки — это риск. Не призыв делать ставки.
       </p>
-      {/* ссылки — через отступ, без «·»: в узкой панели перенос начинал строку с «· Cookie» */}
-      <nav aria-label="Информация" className="flex flex-wrap gap-x-3">
-        <Link href="/about" className={link}>Как мы считаем</Link>
-        <Link href="/responsible-gaming" className={link}>Ответственная игра</Link>
-        <Link href="/privacy" className={link}>Cookie</Link>
+      <p>Ссылки на букмекеров — партнёрские: мы можем получать вознаграждение.</p>
+      {/* «·» приклеена к концу ссылки (nowrap): при переносе строка кончается точкой, а не начинается с «· Cookie»;
+          без точек три ссылки одного цвета с текстом читались одной фразой «Как мы считаем Ответственная игра» */}
+      <nav aria-label="Информация" className="flex flex-wrap gap-x-1">
+        {[
+          ['/about', 'Как мы считаем'],
+          ['/responsible-gaming', 'Ответственная игра'],
+          ['/privacy', 'Cookie'],
+        ].map(([href, label], i, all) => (
+          <span key={href} className="whitespace-nowrap">
+            <Link href={href} className={link}>
+              {label}
+            </Link>
+            {i < all.length - 1 ? <span aria-hidden> ·</span> : null}
+          </span>
+        ))}
       </nav>
-      <p>Не призыв делать ставки. Партнёрские ссылки на легальных букмекеров: сайт может получать вознаграждение.</p>
       {/* подпись сайта последней строкой, как принято в конце страницы; год — текущий */}
       <p>
         © {new Date().getFullYear()} {SITE.name}
