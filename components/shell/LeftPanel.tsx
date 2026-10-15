@@ -165,7 +165,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
   // справа всегда число матчей, тихо (один столбец — один смысл); сколько идёт — красным в подписи
   // подпись под названием — сколько матчей и что с турниром (`StateLine`, общая с правой панелью); страны нет — её
   // говорит флаг, полное название — в подсказке; цифры справа нет — голая «10» читалась как счётчик непрочитанных
-  const SubText = ({ l }: { l: DayLeague }) => <StateLine total={l.total} live={l.live} next={l.next} started={l.started} pending={l.pending} />
+  const SubText = ({ l }: { l: DayLeague }) => <StateLine total={l.total} live={l.live} next={l.next} started={l.started} pending={l.pending} same={l.same} />
   const Sub = ({ l }: { l: DayLeague }) => (
     <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">
       <SubText l={l} />
@@ -237,7 +237,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
           <a
             href={l.href}
             onClick={jump ? go(id, l.href) : undefined}
-            title={jump ? l.full : `${l.full} · ${matchesN(l.total)}${l.next ? ` · начало в ${l.next}` : ''}`}
+            title={`${l.full} · ${matchesN(l.total)}${!jump && l.next ? ` · начало в ${l.next}` : ''}`}
             aria-current={on ? 'location' : undefined}
             className="flex min-w-0 flex-1 items-center self-stretch"
           >

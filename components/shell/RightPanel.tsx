@@ -13,7 +13,7 @@ import { StorySymbol } from '../story/StorySymbol'
 import { pluralN } from '@/lib/format'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
-import { StateLine } from './StateLine'
+import { matchesN, StateLine } from './StateLine'
 import { StoryRing } from './StoryRing'
 
 const BETS = ['ставка', 'ставки', 'ставок'] as const
@@ -233,6 +233,8 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                         type="button"
                         onClick={() => setOpen(on ? null : g.key)}
                         aria-expanded={on}
+                        // общее число матчей — в подсказке: в подписи только что сейчас и что впереди
+                        title={`${g.label} · ${matchesN(totals[g.key] ?? g.items.length)}`}
                         className="flex min-w-0 flex-1 items-center gap-3 self-stretch pl-2 text-left"
                       >
                         {/* название само объясняет подборку («Аутсайдер в форме», а не «Может удивить»), под ним — что с её матчами

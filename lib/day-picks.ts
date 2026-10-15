@@ -30,7 +30,7 @@ export type DayPicks = {
 
 /** Состояние подборки: идёт матчей, время ближайшего не начавшегося, начинались ли уже. */
 /** `inMin` — сколько минут до первого не начавшегося матча (для «через 30 мин» у «Скоро начнутся»), часы — `appNow()` */
-export type PickState = { live: number; next: string | null; started: boolean; pending: number; inMin: number | null }
+export type PickState = { live: number; next: string | null; started: boolean; pending: number; same: boolean; inMin: number | null }
 
 export type ValueRow = {
   id: number
@@ -121,6 +121,7 @@ export async function dayPicks(): Promise<DayPicks> {
         next: pre.length ? formatTime(Math.min(...pre)) : null,
         started: all.some((m) => isLive(m) || m.status === 'finished'),
         pending: pre.length,
+        same: new Set(pre.map((ts) => formatTime(ts))).size === 1,
         inMin: pre.length ? Math.round((Math.min(...pre) - appNow()) / 60_000) : null,
       }
       for (const it of list) {

@@ -7,6 +7,7 @@ import type { League } from '@/lib/types'
 import { flagCode, leagueTitle } from '@/lib/flags'
 import { Flag } from './Flag'
 import { MatchRow } from './MatchRow'
+import { liveText } from './shell/StateLine'
 
 /**
  * Порядок строк в блоке лиги: идущие (если не попали в «Сейчас в игре»), потом предстоящие — ближайший первым, потом
@@ -60,7 +61,7 @@ export function LeagueBlock({
             // серым, как «Таблица →», красная — только точка (как в боковых панелях; красные слова тянули взгляд сильнее названия лиги)
             <a href="#live" className="flex items-center gap-1.5 text-dim transition-colors hover:text-fg">
               <span className="h-1.5 w-1.5 rounded-full bg-live" />
-              {live} в игре
+              {liveText(live)}
             </a>
           ) : null}
           {/* вместо безымянной стрелки — понятная ссылка: страница турнира с таблицей */}
