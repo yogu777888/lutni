@@ -124,6 +124,9 @@ export async function dayPicks(): Promise<DayPicks> {
         if (/\d/.test(st)) out.stats[`${g.key}:${it.id}`] = st
       }
     }
+    // подборки, где впереди ничего нет (все матчи начались или сыграны), — вниз: «Кэф упал · 4 матча, все идут» стояла третьей,
+    // хотя падение кэфа — сигнал до матча (владелец согласился); внутри — прежний порядок (sort устойчивый)
+    out.groups.sort((a, b) => Number(!out.states[a.key]?.pending) - Number(!out.states[b.key]?.pending))
     return out
   } catch {
     return { groups: [], matches: {}, stats: {}, totals: {}, values: [], states: {} }
