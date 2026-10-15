@@ -243,8 +243,11 @@ export async function DayView({
             <DateTabs active={ymd} today={today} liveToday={liveToday} {...(view === 'list' ? { section: 'all' } : { hash: '#matches' })} />
           </div>
           {past || !matches.length ? null : (
-            // порядок списка — обычными ссылками (?sort=time): работает без JS, у страницы один canonical
-            <nav aria-label="Порядок матчей" className="flex items-center gap-1 rounded-full bg-white/[0.04] p-1 text-[14px] font-medium">
+            // порядок списка — обычными ссылками (?sort=time): работает без JS, у страницы один canonical. Скругления
+            // вложены по правилу «внешний = внутренний + отступ»: строка 20px, отступ 10 → переключатель 10px (rounded-ctl),
+            // отступ 4 → выбранный 6px; капсулой у края строки скругления не сходились (владелец: «а скругление чипа где по
+            // турнирам / по времени?»)
+            <nav aria-label="Порядок матчей" className="flex items-center gap-1 rounded-ctl bg-white/[0.04] p-1 text-[14px] font-medium">
               {(
                 [
                   ['league', 'По турнирам', view === 'list' ? `${list}${fq ? `?${fq}` : ''}` : `${base}#matches`],
@@ -257,7 +260,7 @@ export async function DayView({
                   prefetch={false}
                   scroll={false}
                   aria-current={(k === 'time') === byTime ? 'true' : undefined}
-                  className={`rounded-full px-3.5 py-1.5 transition-colors ${(k === 'time') === byTime ? 'bg-white/[0.08] text-fg' : 'text-dim hover:text-fg'}`}
+                  className={`rounded-md px-3.5 py-1.5 transition-colors ${(k === 'time') === byTime ? 'bg-white/[0.08] text-fg' : 'text-dim hover:text-fg'}`}
                 >
                   {label}
                 </Link>
