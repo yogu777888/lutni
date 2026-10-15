@@ -9,6 +9,11 @@ export function adLine(partner: Partner) {
   return ['Реклама', partner.ad.advertiser, partner.ad.erid ? `erid: ${partner.ad.erid}` : '', '18+'].filter(Boolean).join(' · ')
 }
 
+/** Сведения о рекламе для подсказки у пометки «Реклама»: рекламодатель (нет юрлица в env — имя партнёра) и erid. */
+export function adInfo(partner: Partner) {
+  return ['Реклама', `рекламодатель: ${partner.ad.advertiser || partner.name}`, partner.ad.erid ? `erid: ${partner.ad.erid}` : '', '18+'].filter(Boolean).join(' · ')
+}
+
 export function AdMark({ partner, className = '' }: { partner: Partner; className?: string }) {
   const rest = [partner.ad.advertiser, partner.ad.erid ? `erid: ${partner.ad.erid}` : '', '18+'].filter(Boolean)
   return (

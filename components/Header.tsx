@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { primaryPartner } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
-import { adLine } from './AdMark'
+import { adInfo } from './AdMark'
 import { CtaLink } from './CtaLink'
 import { HeaderShell } from './HeaderShell'
 import { Wordmark } from './Logo'
@@ -9,7 +9,7 @@ import { NavLinks } from './NavLinks'
 import { Search } from './Search'
 
 /**
- * Шапка одной спокойной строкой: надпись tag.bet и меню текстом слева, справа поиск, 18+ и «Бонус».
+ * Шапка одной спокойной строкой: надпись tag.bet и меню текстом слева, справа поиск, «Реклама · 18+» и «Бонус».
  * Бегущую строку матчей убрали — шапка была перегружена, а идущие матчи и так видны в «В игре» и «Главных матчах».
  * Ниже lg меню — тем же текстом во втором ряду.
  */
@@ -28,17 +28,25 @@ export function Header() {
         <span className="flex-1" />
         <div className="flex shrink-0 items-center gap-3">
           <Search />
-          <span className="rounded-[4px] border-[1.5px] border-dim/70 px-1 text-[11px] font-bold leading-[16px] text-dim" title="Только для совершеннолетних">
-            18+
-          </span>
           {partner ? (
-            // маркировка рекламы (закон о маркировке интернет-рекламы): «Реклама · рекламодатель · erid · 18+» — подсказкой
-            // под кнопкой при наведении и фокусе, сразу (системный title — через секунду); в шапке места под строку нет
-            // (владелец: «а то что бейдж 18+ стоит между это норм?» — «18+» оставили, пометку добавили так)
-            <span className="group/ad relative flex">
+            // маркировка рекламы — видимой пометкой «Реклама» рядом с кнопкой (закон о рекламе, ст. 18.1: в самой рекламе —
+            // пометка «Реклама» и рекламодатель или ссылка на сведения о нём; владелец согласился: раньше пометка была только
+            // в подсказке при наведении — до наведения и на телефоне её не было видно). Сведения о рекламодателе и erid —
+            // при наведении или нажатии на пометку (кнопка: на телефоне по тапу). Формат сверить с ОРД партнёрки.
+            <span className="group/ad relative flex items-center gap-3">
+              <button
+                type="button"
+                aria-describedby="hdr-ad"
+                className="flex items-center gap-1.5 text-[11.5px] font-medium text-dim transition-colors hover:text-fg"
+              >
+                Реклама
+                <span className="rounded-[4px] border-[1.5px] border-current/70 px-1 text-[11px] font-bold leading-[16px]" title="Только для совершеннолетних">
+                  18+
+                </span>
+              </button>
               <CtaLink href={goHref(partner, 'header')} size="sm" className="cta-shine !h-9 rounded-ctl px-4 text-[14px]" describedBy="hdr-ad">
-                {/* с именем букмекера: «Бонус» без имени — реклама «неизвестно чего», а рекламодатель рядом с рекламой
-                    нужен и по закону (владелец согласился); ниже xl (меню и поиск) места нет — только «Бонус» */}
+                {/* с именем букмекера: «Бонус» без имени — реклама «неизвестно чего» (владелец согласился); ниже xl (меню
+                    и поиск) места нет — только «Бонус» */}
                 <span>
                   Бонус<span className="hidden xl:inline"> в {partner.name}</span>
                 </span>
@@ -48,7 +56,7 @@ export function Header() {
                 role="tooltip"
                 className="pointer-events-none absolute right-0 top-full z-50 mt-2 whitespace-nowrap rounded-tile bg-panel-3 px-3 py-2 text-[12.5px] leading-tight text-dim opacity-0 shadow-lg shadow-black/40 transition-opacity duration-150 group-focus-within/ad:opacity-100 group-hover/ad:opacity-100"
               >
-                {adLine(partner)}
+                {adInfo(partner)}
               </span>
             </span>
           ) : null}
