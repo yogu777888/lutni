@@ -235,16 +235,24 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     const on = jump && active === id
     return (
       <li>
-        <div className={`group -mx-2 ${row} ${on ? 'bg-white/[0.07] text-fg' : 'text-fg/85 hover:bg-white/[0.04] hover:text-fg'}`}>
+        {/* «Завтра» (jump=false) — тише сегодняшних (владелец согласился: 17 одинаково белых колец, четыре — про завтра):
+            название серым, кольцо серое, флаг прозрачнее; при наведении — обычной яркости */}
+        <div
+          className={`group -mx-2 ${row} ${
+            on ? 'bg-white/[0.07] text-fg' : jump ? 'text-fg/85 hover:bg-white/[0.04] hover:text-fg' : 'text-dim hover:bg-white/[0.04] hover:text-fg'
+          }`}
+        >
           <button
             type="button"
             onClick={play(list, list.indexOf(l))}
             aria-label={`${l.name}: смотреть разбор матчей`}
             className="relative shrink-0 rounded-full"
           >
-            <LeagueFlag l={l} />
+            <span className={jump ? undefined : 'block opacity-60 transition-opacity group-hover:opacity-100'}>
+              <LeagueFlag l={l} />
+            </span>
             <PlayOverlay />
-            <StoryRing group={id} ids={l.items.map((m) => m.id)} seen={seen} />
+            <StoryRing group={id} ids={l.items.map((m) => m.id)} seen={seen} muted={!jump} />
           </button>
           <a
             href={l.href}

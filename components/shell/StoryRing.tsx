@@ -13,12 +13,13 @@ const SEEN = 'rgb(255 255 255 / 0.22)'
  * на круге 36px — вблизи читались пунктиром и значком загрузки; владелец заметил при увеличении). Отметки —
  * те же, что у сторис (`seenKey(группа, матч)` в localStorage). Родитель — `relative`, круг 36px; кольцо — на 3px снаружи.
  */
-export function StoryRing({ group, ids, seen }: { group: string; ids: number[]; seen: Set<string> }) {
+export function StoryRing({ group, ids, seen, muted = false }: { group: string; ids: number[]; seen: Set<string>; muted?: boolean }) {
   const n = ids.length
   if (!n) return null
   const flags = ids.map((id) => seen.has(seenKey(group, id)))
   const c = { cx: 21, cy: 21, r: 20, fill: 'none', strokeWidth: 2, pathLength: 100 } as const
-  const done = Math.round((flags.filter(Boolean).length / n) * 100)
+  // muted — серое кольцо целиком (турниры «Завтра»: не спорят с сегодняшними)
+  const done = muted ? 100 : Math.round((flags.filter(Boolean).length / n) * 100)
   const body = (
     <>
       <circle {...c} stroke={done > 0 ? SEEN : UNSEEN} />
