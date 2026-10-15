@@ -59,8 +59,10 @@ export function DateTabs({
               href={href(d)}
               prefetch={false}
               aria-current={on ? 'page' : undefined}
+              // черта выбранного дня — белая, как у пункта меню в шапке (владелец спросил «а хедер как?», согласился): лаймовая
+              // была единственным лаймом на экране не про ставку и спорила с выгодными кэфами; «вы здесь» — везде одного цвета
               className={`inline-flex h-9 shrink-0 items-center border-b-2 text-[15px] font-medium transition-colors ${
-                on ? 'border-acid text-fg' : 'border-transparent text-dim hover:text-fg'
+                on ? 'border-fg text-fg' : 'border-transparent text-dim hover:text-fg'
               }`}
             >
               {label(d)}
