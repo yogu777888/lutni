@@ -72,7 +72,10 @@ export function MatchHero({
   // по ходу — фон)
   const started = m.status !== 'scheduled'
   const goals = started ? scorers(full.events, m.status === 'finished' ? (m.score ?? null) : null) : null
-  const lead = played && m.score!.home !== m.score!.away ? (m.score!.home > m.score!.away ? 'home' : 'away') : null
+  // тусклее проигравший — только у сыгранного матча (как у Apple Sports): по ходу игры при 1:0 на 59-й «Хетафе» выглядел
+  // уже проигравшим (владелец: «а блок матча как, если честно?», согласился)
+  const lead =
+    m.status === 'finished' && played && m.score!.home !== m.score!.away ? (m.score!.home > m.score!.away ? 'home' : 'away') : null
   // команда, как в «Главных матчах»: эмблема на матовом круге, название под ней, над кругом — метка-факт
   const team = (t: typeof m.home, k: 'home' | 'away') => (
     <div className={`flex min-w-0 flex-col items-center gap-3 text-center ${lead && lead !== k ? 'opacity-70' : ''}`}>
@@ -140,7 +143,12 @@ export function MatchHero({
                 {live ? <span className="h-1.5 w-1.5 rounded-full bg-live" /> : null}
                 {live && m.elapsed && m.statusCode !== 4 ? `${m.elapsed}-я минута` : m.statusLabel}
               </div>
-              {m.scoreHT ? <div className="mt-1 text-[12px] text-mute">1-й тайм {m.scoreHT.home}:{m.scoreHT.away}</div> : null}
+              {/* счёт первого тайма — только если после перерыва он уже другой: «1-й тайм 1:0» под «1:0» повторял счёт */}
+              {m.scoreHT && m.score && (m.scoreHT.home !== m.score.home || m.scoreHT.away !== m.score.away) ? (
+                <div className="mt-1 text-[12px] text-mute">
+                  1-й тайм {m.scoreHT.home}:{m.scoreHT.away}
+                </div>
+              ) : null}
             </>
           ) : m.status !== 'scheduled' ? (
             <p className="text-[15px] font-semibold text-loss">{m.statusLabel}</p>
@@ -200,7 +208,8 @@ export function MatchHero({
               })}
             </div>
           ) : null}
-          {line?.live ? <p className="text-[12px] text-mute">Кэфы {line.name} — по ходу матча · Реклама · 18+</p> : null}
+          {/* «Кэфы PARI ● сейчас» уже сказано слева от ячеек — внизу только пометка рекламы */}
+          {line?.live ? <p className="text-[12px] text-mute">Реклама · 18+</p> : null}
         </div>
       ) : cells ? (
         <>
