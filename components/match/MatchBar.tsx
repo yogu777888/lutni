@@ -93,7 +93,10 @@ export function MatchBar({
             inert={!show}
             className={`absolute inset-0 flex items-center gap-3 ${swap} ${show ? 'opacity-100' : 'pointer-events-none translate-y-1 opacity-0'}`}
           >
-            <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
+            {/* счёт одной группой вплотную — «эмблема Бетис 1:0 Хетафе эмблема» сразу после «←», на месте крошек (владелец:
+                «как тебе хлебные крошки и то, что потом появляется?» — по сетке во всю ширину названия прилипали к краям, между
+                ними и счётом было по ~300px пустоты); кэфы — справа (ml-auto) */}
+            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
               {team(home)}
               <span className="flex flex-col items-center leading-none">
                 <span className="num display-num whitespace-nowrap text-[20px] font-semibold">{center}</span>
@@ -107,7 +110,7 @@ export function MatchBar({
               {team(away, true)}
             </div>
             {odds && partner ? (
-              <div className="hidden shrink-0 items-center gap-1.5 md:flex">
+              <div className="ml-auto hidden shrink-0 items-center gap-1.5 md:flex">
                 <span className="mr-1 text-right text-[11px] leading-tight text-mute">
                   {partner.name}
                   <br />
