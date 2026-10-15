@@ -69,10 +69,11 @@ function LeagueFlag({ l }: { l: Pick<DayLeague, 'flag' | 'name'> }) {
  */
 function Legal() {
   const link = 'transition-colors hover:text-fg'
-  // одна система строк: один размер, один серый, одинаковые отступы и «·» между частями — без кружка 18+ и абзаца
+  // под чертой — 16px, как под чертой «Выгодно сегодня» справа (владелец: «в левом и правом блоке отличаются отступы от
+  // нижней линии» — было 12px); одна система строк: один размер, один серый, одинаковые отступы и «·» между частями — без кружка 18+ и абзаца
   // в три строки (владелец: «футер уродливый»); «Играйте ответственно» — ссылкой «Ответственная игра» ниже
   return (
-    <div className="space-y-1.5 border-t border-edge pt-3 text-[11.5px] leading-snug text-mute">
+    <div className="space-y-1.5 border-t border-edge pt-4 text-[11.5px] leading-snug text-mute">
       <p>
         <span className="font-semibold text-dim">18+</span> · Ставки — это риск
       </p>
