@@ -129,7 +129,14 @@ export function MatchRow({
   const homeWon = m.status === 'finished' && m.score && m.score.home > m.score.away
   const awayWon = m.status === 'finished' && m.score && m.score.away > m.score.home
   const pick = m.status === 'scheduled' ? summary?.pick : null
-  const hotKey = pick?.kind === 'value' && ['home', 'draw', 'away'].includes(pick.key) ? pick.key : null
+  // лайм — только если выгоден кэф именно той линии, что в строке: у PARI — его выгодная ставка (`summary.pari`, та же, что
+  // в «Выгодно сегодня» справа), у другого партнёра — выгодная ставка, если она у него
+  const x12 = (k?: string | null) => (k && ['home', 'draw', 'away'].includes(k) ? k : null)
+  const hotKey = !line
+    ? pick?.kind === 'value' ? x12(pick.key) : null
+    : line.slug === 'pari'
+      ? m.status === 'scheduled' ? x12(summary?.pari?.key) : null
+      : pick?.kind === 'value' && pick.partnerSlug === line.slug ? x12(pick.key) : null
   // эмблема перед названием — матч узнаётся глазами раньше, чем прочитан
   const name = (t: Match['home'], lost: boolean) => (
     <span className={`flex min-w-0 items-center gap-2 ${lost ? 'text-fg/55' : ''}`}>
@@ -186,7 +193,7 @@ export function MatchRow({
         <>
           <span className="sm:hidden" />
           <div className="col-span-2 col-start-2 sm:col-span-1 sm:col-start-auto">
-            <Odds m={m} hotKey={line && pick?.partnerSlug && pick.partnerSlug !== line.slug ? null : hotKey} line={line} />
+            <Odds m={m} hotKey={hotKey} line={line} />
           </div>
         </>
       ) : (

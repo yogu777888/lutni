@@ -142,8 +142,10 @@ export async function DayView({
       1200,
     )
     for (const it of pre) {
-      const pick = it.summary?.pick
-      const line = x12For(snaps.get(it.match.id), pick?.kind === 'value' ? pick.partnerSlug : null)
+      // линия главного партнёра (PARI — первым в PARTNERS), а не того, у кого выгодна ставка (владелец: «выгодно сегодня тебе
+      // как?» — лайм в центре был у Марафона, а «Выгодно сегодня» справа — по PARI: два «выгодно» по одному матчу); нет у
+      // PARI линии — следующий партнёр
+      const line = x12For(snaps.get(it.match.id), null)
       if (line) lines[it.match.id] = line
     }
   }
