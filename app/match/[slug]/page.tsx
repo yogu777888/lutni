@@ -11,7 +11,7 @@ import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { hasMoves, OddsTable } from '@/components/match/OddsTable'
-import { SplitBar } from '@/components/match/ProbBars'
+import { ChanceRow } from '@/components/match/ProbBars'
 import { PredictHero } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerCard } from '@/components/PartnerCard'
@@ -296,38 +296,40 @@ export default async function MatchPage({ params }: Props) {
           ) : null}
 
           {x ? (
-            <Section
-              title="Голы и счёт"
-              aside={`${scheduled ? '' : 'до матча · '}${model ? (model.source === 'xg' ? 'по нашей модели' : `по кэфам${cons.books > 1 ? ` ${cons.books} букмекеров` : ''} и нашей модели`) : `по кэфам${cons.books > 1 ? ` ${cons.books} букмекеров` : ''}`}`}
-            >
+            // владелец: «а голы и счёт как?» — шансы строками, как статистика (без «46% — до 2 голов», повторявших 54%),
+            // чьи голы — названиями («1.95 : 0.85» читалось счётом с дробями), без плашек внутри карточки и без
+            // «рейтинга силы» (1684 / 1478 новичку ничего не говорят); «Вероятный счёт» — только до начала: на 59′
+            // при 1:0 «1:1 — 10%» читалось как прогноз сейчас
+            <Section title="Голы и счёт" aside={scheduled ? 'оценка tag.bet' : 'до матча · оценка tag.bet'}>
               <div className="space-y-5">
-                {over25 != null ? <SplitBar left={over25} leftLabel="3 гола и больше" rightLabel="До 2 голов" /> : null}
-                {btts != null ? <SplitBar left={btts} leftLabel="Обе забьют" rightLabel="Кто-то не забьёт" /> : null}
-                {model ? (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="rounded-tile bg-white/[0.04] p-4">
-                      <div className="text-[11px] text-mute">Сколько голов ждём</div>
-                      <div className="num mt-1.5 text-[22px] font-semibold tracking-tight">
-                        {model.lambdas.home.toFixed(2)} <span className="text-mute">:</span> {model.lambdas.away.toFixed(2)}
-                      </div>
-                    </div>
-                    <div className="rounded-tile bg-white/[0.04] p-4">
-                      <div className="text-[11px] text-mute">Вероятный счёт</div>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {model.topScores.slice(0, 4).map((s) => (
-                          <span key={`${s.home}-${s.away}`} className="num rounded-full bg-white/[0.06] px-2.5 py-1 text-[13px] font-semibold">
-                            {s.home}:{s.away} <span className="text-[11px] font-normal text-dim">{pct(s.p)}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                {over25 != null || btts != null ? (
+                  <ul className="grid gap-x-10 gap-y-4 md:grid-cols-2">
+                    {over25 != null ? <ChanceRow label="3 гола и больше" p={over25} /> : null}
+                    {btts != null ? <ChanceRow label="Обе забьют" p={btts} /> : null}
+                  </ul>
                 ) : null}
-                {ins.glicko ? (
-                  <p className="text-[12px] text-mute">
-                    Рейтинг силы команд: {m.home.name} — <span className="num font-medium text-dim">{Math.round(ins.glicko.homeRating)}</span>, {m.away.name} —{' '}
-                    <span className="num font-medium text-dim">{Math.round(ins.glicko.awayRating)}</span>
-                  </p>
+                {model ? (
+                  <div className="grid gap-x-10 gap-y-4 border-t border-white/[0.06] pt-4 md:grid-cols-2">
+                    <div>
+                      <div className="text-[13px] text-dim">Сколько голов ждём</div>
+                      <div className="mt-1.5 text-[15px] text-fg/90">
+                        «{m.home.name}» — <b className="num font-semibold text-fg">{model.lambdas.home.toFixed(2)}</b>, «{m.away.name}» —{' '}
+                        <b className="num font-semibold text-fg">{model.lambdas.away.toFixed(2)}</b>
+                      </div>
+                    </div>
+                    {scheduled ? (
+                      <div>
+                        <div className="text-[13px] text-dim">Вероятный счёт</div>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {model.topScores.slice(0, 4).map((s) => (
+                            <span key={`${s.home}-${s.away}`} className="num rounded-full bg-white/[0.06] px-2.5 py-1 text-[13px] font-semibold">
+                              {s.home}:{s.away} <span className="text-[11px] font-normal text-dim">{pct(s.p)}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             </Section>

@@ -42,21 +42,21 @@ export function X12Bar({
   )
 }
 
-/** Одна доля против остального: «больше / меньше», «да / нет». */
-export function SplitBar({ left, leftLabel, rightLabel }: { left: number; leftLabel: string; rightLabel: string }) {
+/**
+ * Шанс одного исхода строкой, как строки статистики матча: подпись и процент, под ними полоса от края до края
+ * (владелец: «а голы и счёт как?» — была «доля против остального»: «54% — 3 гола и больше» и «46% — до 2 голов»
+ * повторяли одно число, а «Кто-то не забьёт» читалось коряво).
+ */
+export function ChanceRow({ label, p }: { label: string; p: number }) {
   return (
-    <div>
-      <div className="mb-1.5 flex justify-between text-[13px]">
-        <span>
-          {leftLabel} <span className="num ml-1 font-semibold">{pct(left)}</span>
-        </span>
-        <span className="text-dim">
-          <span className="num mr-1">{pct(1 - left)}</span> {rightLabel}
-        </span>
+    <li>
+      <div className="mb-1 flex justify-between gap-3 text-[13px]">
+        <span className="text-dim">{label}</span>
+        <span className="num font-semibold text-fg">{pct(p)}</span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
-        <div className="h-full rounded-full bg-fg/85" style={{ width: `${left * 100}%` }} />
+      <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.09]">
+        <div className="h-full rounded-full bg-white/70" style={{ width: `${p * 100}%` }} />
       </div>
-    </div>
+    </li>
   )
 }
