@@ -1,15 +1,26 @@
+import { Fragment } from 'react'
 import type { Standings } from '@/lib/types'
 import { TeamLogo } from './TeamLogo'
 
+/**
+ * Зоны — оттенками белого, вылет — красным (владелец: «а турнирная таблица как?»): оранжевая «Лига Европы» спорила
+ * с янтарём «кэф упал», зелёные «Лига конференций» и «Повышение» — светофор, которого на сайте нет. Вылет красным —
+ * так принято во всём футболе, а тонкую черту у номера с «идёт» не спутать.
+ */
 const ZONE: Record<string, string> = {
-  'Лига чемпионов': 'bg-[#0a84ff]',
-  'Лига Европы': 'bg-hot',
-  'Лига конференций': 'bg-win',
-  'Плей-офф': 'bg-[#bf5af2]',
-  Повышение: 'bg-win',
+  'Лига чемпионов': 'bg-white/85',
+  'Лига Европы': 'bg-white/50',
+  'Лига конференций': 'bg-white/25',
+  'Плей-офф': 'bg-white/50',
+  Повышение: 'bg-white/85',
   'Зона вылета': 'bg-loss',
 }
 
+/**
+ * Таблица турнира. compact (страница матча) — только строки вокруг команд матча (±2), пропуски — строкой «···»: без неё
+ * номера прыгали с 4 на 17, а таблица выглядела сплошной. На телефоне — «#», команда, «И», «М», «О» без прокрутки вбок
+ * (очки уезжали за край), «В / Н / П» — от sm; номер — колонкой под две цифры, по правому краю («15» налезало на эмблему).
+ */
 export function StandingsTable({
   standings,
   highlight = [],
@@ -23,57 +34,71 @@ export function StandingsTable({
   return (
     <div className="space-y-4">
       {standings.groups.map((g, gi) => {
-        let rows = g.rows
-        if (compact && rows.length > 10 && highlight.length) {
-          const idx = rows.map((r, i) => (highlight.includes(r.teamId) ? i : -1)).filter((i) => i >= 0)
+        let shown = g.rows.map((r, i) => ({ r, i }))
+        if (compact && g.rows.length > 10 && highlight.length) {
+          const idx = g.rows.map((r, i) => (highlight.includes(r.teamId) ? i : -1)).filter((i) => i >= 0)
           const keep = new Set<number>()
-          for (const i of idx) for (let k = i - 2; k <= i + 2; k++) if (k >= 0 && k < rows.length) keep.add(k)
-          rows = rows.filter((_, i) => keep.has(i))
+          for (const i of idx) for (let k = i - 2; k <= i + 2; k++) if (k >= 0 && k < g.rows.length) keep.add(k)
+          shown = shown.filter(({ i }) => keep.has(i))
         }
-        rows.forEach((r) => r.zone && zones.add(r.zone))
+        shown.forEach(({ r }) => r.zone && zones.add(r.zone))
+        const last = g.rows.length - 1
+        const gap = (key: string) => (
+          <tr key={key} className="border-t border-edge" aria-hidden>
+            <td colSpan={8} className="py-0.5 text-center text-[13px] leading-none tracking-[0.3em] text-mute">
+              ···
+            </td>
+          </tr>
+        )
         return (
           <div key={gi}>
             {g.name && standings.groups.length > 1 ? <h3 className="mb-2 text-[12px] font-medium text-dim">{g.name}</h3> : null}
-            <div className="scrollbar-none -mx-4 overflow-x-auto sm:mx-0">
-              <table className="w-full min-w-[420px] text-[13px]">
+            <div className="-mx-4 sm:mx-0">
+              <table className="w-full text-[13px]">
                 <thead>
                   <tr className="text-[11px] font-medium text-mute">
-                    <th className="w-8 py-1.5 pl-4 text-left sm:pl-1">#</th>
+                    <th className="w-11 py-1.5 pl-4 pr-2 text-right sm:w-9 sm:pl-1">#</th>
                     <th className="py-1.5 text-left">Команда</th>
                     <th className="w-8 py-1.5 text-center" title="Игры">И</th>
-                    <th className="w-8 py-1.5 text-center" title="Победы">В</th>
-                    <th className="w-8 py-1.5 text-center" title="Ничьи">Н</th>
-                    <th className="w-8 py-1.5 text-center" title="Поражения">П</th>
+                    <th className="hidden w-8 py-1.5 text-center sm:table-cell" title="Победы">В</th>
+                    <th className="hidden w-8 py-1.5 text-center sm:table-cell" title="Ничьи">Н</th>
+                    <th className="hidden w-8 py-1.5 text-center sm:table-cell" title="Поражения">П</th>
                     <th className="w-14 py-1.5 text-center" title="Мячи">М</th>
                     <th className="w-10 py-1.5 pr-4 text-center sm:pr-1" title="Очки">О</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => {
+                  {shown.length && shown[0].i > 0 ? gap('top') : null}
+                  {shown.map(({ r, i }, k) => {
                     const hl = highlight.includes(r.teamId)
+                    const prev = k ? shown[k - 1].i : i
                     return (
-                      <tr key={r.teamId} className={`border-t border-edge ${hl ? 'bg-white/[0.04]' : ''}`}>
-                        <td className="relative py-2 pl-4 sm:pl-1">
-                          {r.zone && ZONE[r.zone] ? <span className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${ZONE[r.zone]}`} /> : null}
-                          <span className="num font-medium text-mute">{r.rank}</span>
-                        </td>
-                        <td className="py-2">
-                          <span className="flex items-center gap-2">
-                            <TeamLogo name={r.team} src={r.logo} size={18} />
-                            <span className={`truncate ${hl ? 'font-semibold text-fg' : 'text-fg/90'}`}>{r.team}</span>
-                          </span>
-                        </td>
-                        <td className="num py-2 text-center text-dim">{r.played}</td>
-                        <td className="num py-2 text-center">{r.wins}</td>
-                        <td className="num py-2 text-center">{r.draws}</td>
-                        <td className="num py-2 text-center">{r.losses}</td>
-                        <td className="num py-2 text-center text-dim">
-                          {r.goalsFor}:{r.goalsAgainst}
-                        </td>
-                        <td className="num py-2 pr-4 text-center font-semibold sm:pr-1">{r.points}</td>
-                      </tr>
+                      <Fragment key={r.teamId}>
+                        {i - prev > 1 ? gap(`gap-${i}`) : null}
+                        <tr className={`border-t border-edge ${hl ? 'bg-white/[0.04]' : ''}`}>
+                          <td className="relative py-2 pl-4 pr-2 text-right sm:pl-1">
+                            {r.zone && ZONE[r.zone] ? <span className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${ZONE[r.zone]}`} /> : null}
+                            <span className="num font-medium text-mute">{r.rank}</span>
+                          </td>
+                          <td className="py-2">
+                            <span className="flex min-w-0 items-center gap-2">
+                              <TeamLogo name={r.team} src={r.logo} size={18} />
+                              <span className={`truncate ${hl ? 'font-semibold text-fg' : 'text-fg/90'}`}>{r.team}</span>
+                            </span>
+                          </td>
+                          <td className="num py-2 text-center text-dim">{r.played}</td>
+                          <td className="num hidden py-2 text-center sm:table-cell">{r.wins}</td>
+                          <td className="num hidden py-2 text-center sm:table-cell">{r.draws}</td>
+                          <td className="num hidden py-2 text-center sm:table-cell">{r.losses}</td>
+                          <td className="num py-2 text-center text-dim">
+                            {r.goalsFor}:{r.goalsAgainst}
+                          </td>
+                          <td className="num py-2 pr-4 text-center font-semibold sm:pr-1">{r.points}</td>
+                        </tr>
+                      </Fragment>
                     )
                   })}
+                  {shown.length && shown[shown.length - 1].i < last ? gap('bottom') : null}
                 </tbody>
               </table>
             </div>
