@@ -130,7 +130,9 @@ export default async function MatchPage({ params }: Props) {
     }
     return out.every((sr) => sr.pts.length) ? out : []
   })()
-  const chanceChanges = chanceSeries.length ? Math.max(...chanceSeries.map((sr) => sr.pts.length)) - 1 : 0
+  // блок — только если шанс какого-то исхода сдвинулся хотя бы на 3 п.п. (владелец: «а как менялись шансы как?» —
+  // 400px ровных линий под фразой «шансы почти не менялись»)
+  const chanceMoved = chanceSeries.some((sr) => Math.max(...sr.pts.map((p) => p.v)) - Math.min(...sr.pts.map((p) => p.v)) >= 3)
   // вывод одной фразой: самое заметное изменение и выгоден ли сейчас кэф PARI по нашей оценке
   const chanceText = (() => {
     if (!chanceSeries.length) return null
@@ -335,8 +337,10 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {chanceSeries.length && chanceChanges > 0 ? (
-            <Section title="Как менялись шансы" aside={`по линии PARI · до матча · ${pluralN(chanceChanges, ['изменение', 'изменения', 'изменений'])}`}>
+          {chanceMoved ? (
+            // справа — без «9 изменений»: число ничего не говорит и спорило с «почти не менялись», а на телефоне длинная
+            // подпись сжимала заголовок в две строки
+            <Section title="Как менялись шансы" aside="до матча · линия PARI">
               <ChanceChart series={chanceSeries} end={Math.min(m.ts, appNow())} />
               <p className="mt-3 text-[13.5px] leading-relaxed text-dim">
                 {chanceText} <span className="text-mute">Линия — шансы из кэфов PARI без маржи букмекера, пунктир — оценка tag.bet.</span>

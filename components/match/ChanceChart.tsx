@@ -12,7 +12,9 @@ export type ChanceSeries = { key: string; label: string; color: string; est: num
 /**
  * Как менялись шансы (владелец: «а может лучше сделать как менялась линия типа оценка tag.bet?»): ступеньки шансов
  * исходов по линии PARI в процентах (кэфы без маржи) — новичку «52% → 55%» понятнее, чем «1.83 → 1.75»; пунктир того же
- * цвета — оценка tag.bet по этому исходу, у правого края подписи: шанс по линии и оценка. Цвета исходов — синий,
+ * цвета — оценка tag.bet по этому исходу, у правого края — шанс по линии («65% Бетис»; «оценка tag.bet 64%» второй
+ * строкой у каждого исхода повторялась трижды и сдвигала подписи друг к другу — владелец: «а как менялись шансы как?»;
+ * наша оценка — пунктир и строка «До матча» на табло). Цвета исходов — синий,
  * бирюзовый, оранжевый (палитра проверена валидатором dataviz на различимость и дальтонизм); подписи — цветом текста.
  * При наведении — вертикаль, шансы и кэфы всех исходов на этот момент.
  */
@@ -67,12 +69,12 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
       })
       .join(' ')
 
-  // подписи справа — две строки (шанс и оценка); близкие исходы раздвигаем, чтобы не наезжали
+  // подписи справа — одна строка; близкие исходы раздвигаем, чтобы не наезжали
   const labels = series
     .map((s) => ({ s, last: s.pts[s.pts.length - 1], y: y(s.pts[s.pts.length - 1]?.v ?? 0) }))
     .filter((l) => l.last)
     .sort((a, b) => a.y - b.y)
-  const GAP = 32
+  const GAP = 20
   for (let i = 1; i < labels.length; i++) labels[i].y = Math.max(labels[i].y, labels[i - 1].y + GAP)
   const over = labels.length ? labels[labels.length - 1].y - (H - B - 8) : 0
   if (over > 0) for (const l of labels) l.y -= over
@@ -122,15 +124,10 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
         {labels.map(({ s, last, y: ly }) => (
           <g key={s.key}>
             <circle cx={w - R} cy={y(last.v)} r={4} fill={s.color} stroke="var(--color-panel-2)" strokeWidth={2} />
-            <text x={w - R + 10} y={ly - 7} dominantBaseline="central" className="fill-fg text-[12px]">
+            <text x={w - R + 10} y={ly} dominantBaseline="central" className="fill-fg text-[12px]">
               <tspan className="num font-semibold">{last.v}%</tspan>
               <tspan className="fill-dim"> {s.label}</tspan>
             </text>
-            {s.est != null ? (
-              <text x={w - R + 10} y={ly + 9} dominantBaseline="central" className="fill-mute text-[11px]">
-                оценка tag.bet {s.est}%
-              </text>
-            ) : null}
           </g>
         ))}
         {hover != null ? <line x1={hover} x2={hover} y1={T} y2={H - B} stroke="currentColor" className="text-dim" strokeDasharray="3 3" /> : null}

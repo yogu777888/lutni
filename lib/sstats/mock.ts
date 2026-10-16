@@ -904,14 +904,32 @@ function pariHistoryMock(eventId: number, now: number) {
   const p0 = trueProbs(g.lh, g.la)
   const end = Math.min(now, g.kickoff)
   const start = g.kickoff - 7 * 86_400_000
-  // смещение шанса хозяев у открытия: потом линия плавно идёт к честной цене
-  let drift = (r() - 0.5) * 0.16
+  // «прогруз» — та же сторона, что у кэфов на открытии в `bookOdds` (те же первые два числа `rng('move', id)`): иначе
+  // метка «кэф упал» говорила «шанс вырос», а график PARI рядом — «упал» (владелец: «а как менялись шансы как?»).
+  // У такого матча шанс этой стороны растёт от открытия к началу, у остальных — смещение у открытия гаснет
+  const move = rng('move', g.id)
+  const dropSide = move() < 0.2 ? (move() < 0.5 ? 'home' : 'away') : null
+  const fair = { home: p0.ph, draw: p0.pd, away: p0.pa }
+  const open = { ...fair }
+  if (dropSide) {
+    open[dropSide] = fair[dropSide] / 1.17 // кэф на открытии выше на ~17%
+    const rise = dropSide === 'home' ? 'away' : 'home'
+    open[rise] = fair[rise] / 0.88 // на другую сторону — ниже на ~12%
+    const s = open.home + open.draw + open.away
+    open.home /= s
+    open.draw /= s
+    open.away /= s
+  }
+  let drift = dropSide ? 0 : (r() - 0.5) * 0.16
   const snaps = []
   for (let t = start; t <= end; t += (6 + r() * 8) * 3_600_000) {
     drift *= 0.82 + r() * 0.1
-    const home = Math.min(0.95, Math.max(0.03, p0.ph + drift))
+    // доля пути от открытия к честной цене: деньги приходят ближе к началу
+    const f = Math.min(1, (t - start) / (g.kickoff - start)) ** 1.6
+    const base = (k: 'home' | 'draw' | 'away') => open[k] + (fair[k] - open[k]) * f
+    const home = Math.min(0.95, Math.max(0.03, base('home') + drift))
     const rest = 1 - home
-    const share = p0.pd / (p0.pd + p0.pa)
+    const share = base('draw') / (base('draw') + base('away'))
     const over = Math.min(0.95, Math.max(0.05, p0.over['2.5'] + drift * 0.4))
     snaps.push({
       seconds: null,
