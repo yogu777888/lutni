@@ -149,10 +149,17 @@ export function buildPreview(p: PreviewInput): Paragraph[] {
   if (p.h2h) {
     const h = p.h2h
     const n = h.games.length
-    let text = `В ${pluralN(n, ['последней очной встрече', 'последних очных встречах', 'последних очных встречах'])}: ${pluralN(h.homeWins, ['победа', 'победы', 'побед'])} команды ${q(home)}, ${pluralN(h.draws, ['ничья', 'ничьи', 'ничьих'])} и ${pluralN(h.awayWins, ['победа', 'победы', 'побед'])} команды ${q(away)}.`
-    text += ` В среднем ${dec(h.avgGoals)} гола за матч, 3 гола и больше — в ${pct(h.over25Rate)} встреч, обе забивали в ${pct(h.bttsRate)}.`
-    const last = h.games[0]
-    text += ` Последняя встреча: ${last.home.name} — ${last.away.name} ${last.score.home}:${last.score.away} (${formatDateLong(last.ts)}).`
+    const game = (g: (typeof h.games)[number]) => `${q(g.home.name)} — ${q(g.away.name)} ${g.score.home}:${g.score.away} (${formatDateLong(g.ts)})`
+    // проценты — только от трёх встреч (владелец: «а прогноз на матч как?» — «в 1 последней очной встрече… 3 гола и больше —
+    // в 100% встреч, обе забивали в 0%» по одному матчу звучало нелепо); меньше — просто сами встречи
+    let text: string
+    if (n >= 3) {
+      text = `В ${pluralN(n, ['последней очной встрече', 'последних очных встречах', 'последних очных встречах'])}: ${pluralN(h.homeWins, ['победа', 'победы', 'побед'])} команды ${q(home)}, ${pluralN(h.draws, ['ничья', 'ничьи', 'ничьих'])} и ${pluralN(h.awayWins, ['победа', 'победы', 'побед'])} команды ${q(away)}.`
+      text += ` В среднем ${dec(h.avgGoals)} гола за матч, 3 гола и больше — в ${pct(h.over25Rate)} встреч, обе забивали в ${pct(h.bttsRate)}.`
+      text += ` Последняя встреча: ${game(h.games[0])}.`
+    } else {
+      text = n === 1 ? `Последняя встреча: ${game(h.games[0])}.` : `Последние встречи: ${h.games.map(game).join(', ')}.`
+    }
     out.push({ title: 'Личные встречи', text })
   }
 
@@ -177,14 +184,11 @@ export function buildPreview(p: PreviewInput): Paragraph[] {
     }
     if (model) {
       const s = model.topScores
-      parts.push(
-        `Модель tag.bet ожидает ${dec(model.lambdas.home)} гола от хозяев и ${dec(model.lambdas.away)} от гостей; самый вероятный счёт — ${s[0].home}:${s[0].away} (${pct(s[0].p)})${s[1] ? `, затем ${s[1].home}:${s[1].away}` : ''}.`,
-      )
+      // самый вероятный счёт — только до начала (как в блоке «Голы и счёт»: по ходу матча читался как прогноз сейчас);
+      // «рейтинга силы команд» нет — числа без шкалы новичку ничего не говорят (убран и из блока)
+      const score = m.status === 'scheduled' && s[0] ? `; самый вероятный счёт — ${s[0].home}:${s[0].away} (${pct(s[0].p)})${s[1] ? `, затем ${s[1].home}:${s[1].away}` : ''}` : ''
+      parts.push(`Модель tag.bet ожидает ${dec(model.lambdas.home)} гола от хозяев и ${dec(model.lambdas.away)} от гостей${score}.`)
       parts.push(`Шанс, что будет 3 гола и больше, — ${pct(model.over['2.5'])}, что забьют обе команды, — ${pct(model.btts)}.`)
-    }
-    if (p.glicko) {
-      // без названия «Glicko-2»: простыми словами (владелец согласился)
-      parts.push(`Рейтинг силы команд: ${q(home)} — ${Math.round(p.glicko.homeRating)}, ${q(away)} — ${Math.round(p.glicko.awayRating)}.`)
     }
     const move = p.tags.find((t) => t.slug === 'progruz')
     if (move) parts.push(`${move.reason}.`)
@@ -217,16 +221,26 @@ export function buildPreview(p: PreviewInput): Paragraph[] {
     const c = pick.candidate
     // простыми словами, без «П2» и «value»; кэф — только легального партнёра (зарубежных по имени не называем)
     const o = c.bestPartner
-    let text = `Наш прогноз — ${describePick(c, m)}. Шанс по нашей оценке — ${pct(c.prob)}, честная цена — ${c.fairOdd.toFixed(2)}.`
-    if (o?.partner) {
-      text += ` Лучший коэффициент у партнёров — ${o.value.toFixed(2)} (${o.partner.name})`
-      text += pick.kind === 'value' ? `: букмекер платит на ${((c.ev ?? 0) * 100).toFixed(1).replace('.', ',')}% больше, чем исход стоит.` : '.'
-    }
-    if (pick.kind !== 'value') {
+    let text: string
+    if (pick.kind === 'value') {
+      // выгодная ставка — не «наш прогноз» (владелец: «а прогноз на матч как?»): «Наш прогноз — победа «Райо Вальекано»»
+      // при шансе 35% читалось как «tag.bet считает, что победит «Райо»», а фаворит абзацем выше — соперник
+      text = `Выгодная ставка — ${describePick(c, m)}: по нашей оценке шанс ${pct(c.prob)} (честная цена ${c.fairOdd.toFixed(2)})`
+      text += o?.partner
+        ? `, а ${o.partner.name} платит ${o.value.toFixed(2)} — на ${((c.ev ?? 0) * 100).toFixed(1).replace('.', ',')}% больше, чем исход стоит.`
+        : '.'
+      // оговорка — только когда это правда: выгодной бывает и ставка на фаворита
+      const x = model?.x12 ?? cons.x12
+      const k = c.key as 'home' | 'draw' | 'away'
+      if (x && k in x && x[k] < Math.max(x.home, x.draw, x.away)) text += ' Это не самый вероятный исход — выгоден коэффициент.'
+    } else {
+      text = `Наш прогноз — ${describePick(c, m)}. Шанс по нашей оценке — ${pct(c.prob)}, честная цена — ${c.fairOdd.toFixed(2)}.`
+      if (o?.partner) text += ` Лучший коэффициент у партнёров — ${o.value.toFixed(2)} (${o.partner.name}).`
       text += ' Букмекеры не переплачивают за этот исход — это просто самый вероятный исход с приемлемым коэффициентом.'
     }
     out.push({ title: 'Прогноз', text })
   }
 
-  return out
+  // однобуквенные предлоги и союзы — неразрывным пробелом к следующему слову: «В» не висит в конце строки
+  return out.map((x) => ({ ...x, text: x.text.replace(/(?<=^|[\s(«])([вксуоиаВКСУОИА]) /g, '$1\u00a0') }))
 }

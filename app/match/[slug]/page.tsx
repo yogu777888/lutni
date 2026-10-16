@@ -363,19 +363,6 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {ins.preview.length ? (
-            <Section title={`${m.status === 'finished' ? 'Обзор матча' : 'Прогноз на матч'} ${pair}`}>
-              <div className="prose-ru space-y-4">
-                {ins.preview.map((p) => (
-                  <div key={p.title}>
-                    <h3 className="mb-1 text-[14px] font-semibold">{p.title}</h3>
-                    <p className="text-[15px]">{p.text}</p>
-                  </div>
-                ))}
-              </div>
-            </Section>
-          ) : null}
-
           {ins.homeForm || ins.awayForm ? (
             <Section title="Форма команд" aside="последние матчи">
               <FormBlock home={m.home} away={m.away} homeForm={ins.homeForm} awayForm={ins.awayForm} />
@@ -397,6 +384,22 @@ export default async function MatchPage({ params }: Props) {
           {ins.standings ? (
             <Section title="Турнирная таблица" aside={<Link href={leagueHref(m.league)} className="transition-colors hover:text-fg">полностью →</Link>}>
               <StandingsTable standings={ins.standings} highlight={[m.home.id, m.away.id]} compact />
+            </Section>
+          ) : null}
+
+          {/* текст для чтения и поисковиков — в конце (владелец: «а прогноз на матч как?»): пересказывает «Форму команд», «Личные
+              встречи» и «Кадровые потери», которые раньше шли сразу за ним; строка была ~150 знаков — глаз терял строку;
+              после начала — «Перед матчем» («Обзор матча» обещал события, а в тексте расклад до матча); ширина строки — ~75 знаков */}
+          {ins.preview.length ? (
+            <Section title={`${scheduled ? 'Прогноз на матч' : 'Перед матчем:'} ${pair}`}>
+              <div className="prose-ru max-w-[62ch] space-y-4">
+                {ins.preview.map((p) => (
+                  <div key={p.title}>
+                    <h3 className="mb-1 text-[14px] font-semibold">{p.title}</h3>
+                    <p className="text-[15px]">{p.text}</p>
+                  </div>
+                ))}
+              </div>
             </Section>
           ) : null}
 
