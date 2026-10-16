@@ -145,12 +145,17 @@ const SEEDS: PartnerSeed[] = [
 
 const envKey = (slug: string) => slug.toUpperCase().replace(/[^A-Z0-9]+/g, '_')
 
+/** Заглушка бонуса из настроек: в строках «Где поставить» её не показываем — у всех шести одна и та же, ничего не говорит. */
+export const GENERIC_BONUS = 'Бонус для новых клиентов'
+
 function build(seed: PartnerSeed): Partner {
   const key = envKey(seed.slug)
   const envUrl = process.env[`AFF_${key}_URL`]
   const url = envUrl || seed.defaultUrl || seed.site
   return {
     ...seed,
+    // настоящие условия бонуса от партнёрки — AFF_<SLUG>_BONUS («Фрибет до 10 000 ₽»), без правки кода
+    bonus: process.env[`AFF_${key}_BONUS`] || seed.bonus,
     url,
     configured: Boolean(envUrl || seed.defaultUrl),
     ad: {

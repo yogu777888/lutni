@@ -151,6 +151,8 @@ export default async function MatchPage({ params }: Props) {
         : ''
     return first + second
   })()
+  const disclaimer =
+    'Прогноз и вероятности рассчитаны автоматически по данным букмекерских линий и статистике и не гарантируют результат. 18+. Ставьте только ту сумму, потерю которой готовы принять.'
   const formN = Math.max(ins.homeForm?.games.length ?? 0, ins.awayForm?.games.length ?? 0)
   const over25 = model?.over['2.5'] ?? cons.over['2.5']
   const btts = model?.btts ?? cons.btts
@@ -406,13 +408,12 @@ export default async function MatchPage({ params }: Props) {
                   </div>
                 ))}
               </div>
+              <p className="mt-5 text-[11px] leading-relaxed text-mute">{disclaimer}</p>
             </Section>
           ) : null}
 
-          <p className="text-[11px] leading-relaxed text-mute xl:px-2 xl:pt-2">
-            Прогноз и вероятности рассчитаны автоматически по данным букмекерских линий и статистике и не гарантируют результат. 18+.
-            Ставьте только ту сумму, потерю которой готовы принять.
-          </p>
+          {/* оговорка — последней строкой «Прогноза» (висела отдельным абзацем между карточками); прогноза нет — отдельно */}
+          {ins.preview.length ? null : <p className="text-[11px] leading-relaxed text-mute xl:px-2 xl:pt-2">{disclaimer}</p>}
         </div>
 
         <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start xl:static xl:space-y-2 2xl:sticky 2xl:top-[72px]">
