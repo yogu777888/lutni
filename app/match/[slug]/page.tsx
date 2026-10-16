@@ -372,7 +372,11 @@ export default async function MatchPage({ params }: Props) {
           ) : null}
 
           {ins.h2h ? (
-            <Section title="Личные встречи">
+            // сколько встреч — сразу, как в «Форме команд»
+            <Section
+              title="Личные встречи"
+              aside={`${ins.h2h.games.length >= 3 ? 'последние ' : ''}${pluralN(ins.h2h.games.length, ['встреча', 'встречи', 'встреч'])}`}
+            >
               <H2HBlock h2h={ins.h2h} home={m.home} away={m.away} />
             </Section>
           ) : null}
