@@ -1,6 +1,9 @@
 import type { MatchEvent, StatPair } from '@/lib/types'
 import { visibleStats } from '@/lib/sstats/normalize'
+import { TeamLogo } from '../TeamLogo'
 import { Timeline, type TimelineMark } from './Timeline'
+
+type Side = { name: string; logo: string | null }
 
 const GOALS = new Set<MatchEvent['kind']>(['goal', 'own-goal', 'penalty'])
 
@@ -82,14 +85,14 @@ export function EventsBlock({
   score: { home: number; away: number } | null
   /** минута идущего матча (до неё — прошедшая часть полосы); null — матч окончен */
   now: number | null
-  home: string
-  away: string
+  home: Side
+  away: Side
 }) {
   const shown = events.filter((e) => e.kind !== 'sub' && e.kind !== 'other' && e.kind !== 'var')
   const flow = withScore(shown, now == null ? score : null)
   const end = Math.max(90, ...shown.map((e) => e.minute + (e.extra ?? 0)), now ?? 0)
   const tip = (e: Flow) =>
-    `${minuteText(e)} · ${e.side === 'home' ? home : away}: ${e.player || 'игрок не указан'}${e.score ? ` — ${e.score}` : ''}${
+    `${minuteText(e)} · ${e.side === 'home' ? home.name : away.name}: ${e.player || 'игрок не указан'}${e.score ? ` — ${e.score}` : ''}${
       e.kind === 'penalty' ? ' (пенальти)' : e.kind === 'own-goal' ? ' (автогол)' : e.kind === 'missed-penalty' ? ' (незабитый пенальти)' : ''
     }${e.kind === 'yellow' ? ' (жёлтая)' : e.kind === 'red' ? ' (красная)' : ''}`
   let h = 0
@@ -118,47 +121,70 @@ const HIDE = new Set(['totalPasses'])
 
 /**
  * Статистика по ходу матча — без цветов команд, как у Apple Sports: у каждой строки светлее та сторона, где больше
- * (лаймом были хозяева, а лайм у нас — «выгодно»). Две колонки строк — блок вдвое ниже. Дорожка под полосой видна
- * (была 6% — полосы разной длины висели посередине «ёлочкой», а цифры стояли в 200px от них): каждая строка — полоса
- * от края до края, цифры — на её концах.
+ * (лаймом были хозяева, а лайм у нас — «выгодно»). Дорожка под полосой видна (была 6% — полосы разной длины висели
+ * посередине «ёлочкой»): каждая строка — полоса от края до края, цифры — на её концах.
+ *
+ * Чьи цифры — шапкой с эмблемами над колонкой (владелец: «немного непонятно в графиках, где какая команда»): слева
+ * хозяева, справа гости. Колонок от md две — первая и вторая половина строк (удары и моменты / угловые, фолы,
+ * карточки), шапка над каждой и черта между ними: иначе «45%» гостей в одной колонке и «1.33» хозяев в другой стояли
+ * рядом и читались парой. На телефоне колонка одна — и шапка одна, порядок строк тот же.
  */
-export function StatsBars({ stats: all }: { stats: StatPair[] }) {
+export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home: Side; away: Side }) {
   const stats = visibleStats(all).filter((s) => !HIDE.has(s.key))
   if (!stats.length) return <p className="text-sm text-dim">Статистика появится по ходу матча.</p>
+  const half = Math.ceil(stats.length / 2)
+  const cols = [stats.slice(0, half), stats.slice(half)].filter((c) => c.length)
+  const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2))
+  const bar = (more: boolean, eq: boolean) => (eq ? 'bg-white/45' : more ? 'bg-white/85' : 'bg-white/30')
+  const team = (t: Side, right = false) => (
+    <span className={`flex min-w-0 items-center gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
+      <TeamLogo name={t.name} src={t.logo} size={20} />
+      <span className="truncate">{t.name}</span>
+    </span>
+  )
   return (
-    <ul className="grid gap-x-10 gap-y-3 md:grid-cols-2">
-      {stats.map((s) => {
-        const total = s.home + s.away || 1
-        const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2))
-        const bar = (more: boolean, eq: boolean) => (eq ? 'bg-white/45' : more ? 'bg-white/85' : 'bg-white/30')
-        const eq = s.home === s.away
-        return (
-          <li key={s.key} title={HINT[s.key]}>
-            <div className="mb-1 flex justify-between text-[13px]">
-              <span className={`num ${s.home > s.away ? 'font-semibold text-fg' : 'text-dim'}`}>
-                {fmt(s.home)}
-                {s.suffix ?? ''}
-              </span>
-              <span className="text-xs text-mute">
-                {s.label}
-                {HINT[s.key] ? <span className="ml-1 text-mute/70">ⓘ</span> : null}
-              </span>
-              <span className={`num ${s.away > s.home ? 'font-semibold text-fg' : 'text-dim'}`}>
-                {fmt(s.away)}
-                {s.suffix ?? ''}
-              </span>
-            </div>
-            <div className="flex h-1.5 gap-0.5">
-              <div className="flex flex-1 justify-end overflow-hidden rounded-l-full bg-white/[0.09]">
-                <div className={`h-full rounded-l-full ${bar(s.home > s.away, eq)}`} style={{ width: `${(s.home / total) * 100}%` }} />
-              </div>
-              <div className="flex-1 overflow-hidden rounded-r-full bg-white/[0.09]">
-                <div className={`h-full rounded-r-full ${bar(s.away > s.home, eq)}`} style={{ width: `${(s.away / total) * 100}%` }} />
-              </div>
-            </div>
-          </li>
-        )
-      })}
-    </ul>
+    <div className="grid gap-y-3 md:grid-cols-2">
+      {cols.map((col, ci) => (
+        <div key={ci} className={ci ? 'md:border-l md:border-white/[0.08] md:pl-10' : cols.length > 1 ? 'md:pr-10' : ''}>
+          {/* на телефоне вторая колонка идёт сразу под первой — шапка у неё не нужна */}
+          <div className={`mb-3 items-center justify-between gap-3 text-[13px] font-semibold text-fg/90 ${ci ? 'hidden md:flex' : 'flex'}`}>
+            {team(home)}
+            {team(away, true)}
+          </div>
+          <ul className="space-y-3">
+            {col.map((s) => {
+              const total = s.home + s.away || 1
+              const eq = s.home === s.away
+              return (
+                <li key={s.key} title={HINT[s.key]}>
+                  <div className="mb-1 flex justify-between text-[13px]">
+                    <span className={`num ${s.home > s.away ? 'font-semibold text-fg' : 'text-dim'}`}>
+                      {fmt(s.home)}
+                      {s.suffix ?? ''}
+                    </span>
+                    <span className="text-xs text-mute">
+                      {s.label}
+                      {HINT[s.key] ? <span className="ml-1 text-mute/70">ⓘ</span> : null}
+                    </span>
+                    <span className={`num ${s.away > s.home ? 'font-semibold text-fg' : 'text-dim'}`}>
+                      {fmt(s.away)}
+                      {s.suffix ?? ''}
+                    </span>
+                  </div>
+                  <div className="flex h-1.5 gap-0.5">
+                    <div className="flex flex-1 justify-end overflow-hidden rounded-l-full bg-white/[0.09]">
+                      <div className={`h-full rounded-l-full ${bar(s.home > s.away, eq)}`} style={{ width: `${(s.home / total) * 100}%` }} />
+                    </div>
+                    <div className="flex-1 overflow-hidden rounded-r-full bg-white/[0.09]">
+                      <div className={`h-full rounded-r-full ${bar(s.away > s.home, eq)}`} style={{ width: `${(s.away / total) * 100}%` }} />
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      ))}
+    </div>
   )
 }

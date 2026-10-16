@@ -270,10 +270,10 @@ export default async function MatchPage({ params }: Props) {
                   events={full.events}
                   score={m.score ?? null}
                   now={isLive ? (m.elapsed ?? null) : null}
-                  home={m.home.name}
-                  away={m.away.name}
+                  home={m.home}
+                  away={m.away}
                 />
-                <StatsBars stats={full.stats} />
+                <StatsBars stats={full.stats} home={m.home} away={m.away} />
               </div>
             </Section>
           ) : null}
