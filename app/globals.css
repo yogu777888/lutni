@@ -875,13 +875,6 @@ html[data-shell-rc] .shell-r-rail {
       radial-gradient(circle at 100% 100%, transparent 19.5px, #090c10 20px) left 0 top 8px / 20px 20px no-repeat,
       radial-gradient(circle at 0 100%, transparent 19.5px, #090c10 20px) right 0 top 8px / 20px 20px no-repeat;
   }
-  /* закреплённая первая колонка таблицы кэфов — цвета панели (иначе светлее остальной таблицы) */
-  .shell-center:has(.bare-match) .odds-sticky {
-    background: var(--color-panel);
-  }
-}
-.odds-sticky {
-  background: var(--color-panel-2);
 }
 
 

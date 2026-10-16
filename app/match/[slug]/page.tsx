@@ -348,20 +348,18 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {legalBooks.length || scheduled ? (
+          {/* только до начала (владелец: «а коэффициенты букмекеров как?»): после — по доматчевым кэфам не поставить, а кэфы
+              «сейчас» — на табло */}
+          {scheduled ? (
             <Section
               title="Коэффициенты букмекеров"
               aside={
                 legalBooks.length
-                  ? `${scheduled ? '' : 'до матча · '}${pluralN(legalBooks.length, ['букмекер', 'букмекера', 'букмекеров'])} с линией${hasMoves(legalBooks, m) ? ' · ▼▲ — изменение с открытия' : ''}`
+                  ? `${pluralN(legalBooks.length, ['букмекер', 'букмекера', 'букмекеров'])} с линией${hasMoves(legalBooks, m) ? ' · ▼▲ — изменение с открытия' : ''}`
                   : 'линии в нашей базе пока нет'
               }
             >
               <OddsTable match={m} books={legalBooks} model={model} candidates={candidates} />
-              <p className="mt-4 text-[11px] text-mute">
-                Лаймом — кэф выше честной цены (по оценке tag.bet), белым жирным — лучший в колонке. Кэфы меняются — проверяйте
-                у букмекера. <span className="whitespace-nowrap">Реклама · 18+</span>
-              </p>
             </Section>
           ) : null}
 
