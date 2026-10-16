@@ -209,23 +209,31 @@ function normalizeStats(s: RawStatistics | null | undefined): StatPair[] {
   return out
 }
 
-/** Для списков статистики: строки 0 : 0 ничего не говорят (кроме карточек) — не показываем. */
-export const visibleStats = (stats: StatPair[]) =>
-  stats.filter((s) => s.home !== 0 || s.away !== 0 || s.key === 'redCards' || s.key === 'yellowCards')
+/**
+ * Для списков статистики: строки 0 : 0 ничего не говорят — не показываем, кроме жёлтых карточек (на них ставят и по
+ * ходу матча). «Красные карточки 0 : 0» приходили почти в каждом матче настоящего API — строка появляется, когда
+ * красная есть (и она же — на полосе матча).
+ */
+export const visibleStats = (stats: StatPair[]) => stats.filter((s) => s.home !== 0 || s.away !== 0 || s.key === 'yellowCards')
 
-function eventKind(e: RawEvent): MatchEvent['kind'] {
+/**
+ * Решения VAR (тип 4) — не гол и не карточка, хотя в названии бывают «penalty», «goal», «card»: «Penalty confirmed» —
+ * пенальти назначен (его могут и не забить), «Red card cancelled», «Goal cancelled» — отменены. Раньше «Penalty
+ * confirmed» шёл голом с пенальти: на табло появлялся лишний автор гола, счёт на полосе не сходился с итогом, а
+ * отменённая красная стояла на полосе (настоящий API, «Junior» — «Deportivo Pereira» 1:1, октябрь 2026).
+ */
+export function eventKind(e: RawEvent): MatchEvent['kind'] {
   const n = (e.name || '').toLowerCase()
   const t = num(e.type)
+  if (t === 4 || /cancel|disallow|confirm|\bvar\b/.test(n)) return 'var'
   if (t === 1 || /goal|penalty/.test(n)) {
     if (/missed/.test(n)) return 'missed-penalty'
     if (/own/.test(n)) return 'own-goal'
     if (/penalty/.test(n)) return 'penalty'
-    if (/cancel|disallow/.test(n)) return 'var'
     return 'goal'
   }
   if (t === 2 || /card/.test(n)) return /red|second yellow/.test(n) ? 'red' : 'yellow'
   if (t === 3 || /subst/.test(n)) return 'sub'
-  if (t === 4 || /var/.test(n)) return 'var'
   return 'other'
 }
 

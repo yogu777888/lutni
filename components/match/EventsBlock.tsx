@@ -1,14 +1,15 @@
 import type { MatchEvent, StatPair } from '@/lib/types'
 import { visibleStats } from '@/lib/sstats/normalize'
+import { Hint } from './Hint'
 import { Timeline, type TimelineMark } from './Timeline'
 
-type Side = { name: string }
+type Side = { name: string; logo?: string | null }
 
 const GOALS = new Set<MatchEvent['kind']>(['goal', 'own-goal', 'penalty'])
 
 /** Подсказки к непонятным строкам статистики (xG словами — владелец: на странице жаргон убрали). */
 const HINT: Record<string, string> = {
-  expectedGoals: 'Сколько голов обычно забивают с таких моментов: чем больше, тем опаснее атаки',
+  expectedGoals: 'Сколько голов обычно забивают с таких моментов: чем больше, тем опаснее атаки. Например, 1.33 — в среднем чуть больше гола.',
 }
 
 type Flow = MatchEvent & { score: string | null }
@@ -90,10 +91,17 @@ export function EventsBlock({
   const shown = events.filter((e) => e.kind !== 'sub' && e.kind !== 'other' && e.kind !== 'var')
   const flow = withScore(shown, now == null ? score : null)
   const end = Math.max(90, ...shown.map((e) => e.minute + (e.extra ?? 0)), now ?? 0)
-  const tip = (e: Flow) =>
-    `${minuteText(e)} · ${e.side === 'home' ? home.name : away.name}: ${e.player || 'игрок не указан'}${e.score ? ` — ${e.score}` : ''}${
-      e.kind === 'penalty' ? ' (пенальти)' : e.kind === 'own-goal' ? ' (автогол)' : e.kind === 'missed-penalty' ? ' (незабитый пенальти)' : ''
-    }${e.kind === 'yellow' ? ' (жёлтая)' : e.kind === 'red' ? ' (красная)' : ''}`
+  // подсказка значка: сверху — минута и что случилось, ниже — игрок и команда (у автогола — только игрок: поставщики
+  // пишут его то за команду игрока, то за получившую гол; чей он — видно по ряду, где стоит плашка)
+  const what = (e: Flow) => {
+    const sc = e.score ? ` ${e.score}` : ''
+    if (e.kind === 'goal') return `Гол${sc}`
+    if (e.kind === 'penalty') return `Гол с пенальти${sc}`
+    if (e.kind === 'own-goal') return `Автогол${sc}`
+    if (e.kind === 'missed-penalty') return 'Незабитый пенальти'
+    return e.kind === 'red' ? 'Красная карточка' : 'Жёлтая карточка'
+  }
+  const who = (e: Flow) => [e.player, e.kind === 'own-goal' ? '' : e.side === 'home' ? home.name : away.name].filter(Boolean).join(' · ')
   let h = 0
   const marks: TimelineMark[] = flow.map((e) => {
     const goal = GOALS.has(e.kind)
@@ -109,14 +117,25 @@ export function EventsBlock({
       side,
       at: e.minute + (e.extra ?? 0),
       label: goal ? e.score : null,
-      tip: tip(e),
+      head: `${minuteText(e)} · ${what(e)}`,
+      sub: who(e),
     }
   })
   return <Timeline marks={marks} end={end} now={now} home={home} away={away} />
 }
 
-/** Строки, которые на странице не показываем: «Передачи 325 : 266» новичку ничего не говорят (в сторис — свой отбор). */
-const HIDE = new Set(['totalPasses'])
+/**
+ * Строки, которые на странице не показываем: «Передачи 325 : 266» новичку ничего не говорят (в сторис — свой отбор),
+ * «Сейвы» — почти то же, что удары соперника в створ минус голы (на настоящих матчах строк было 11, на телефоне блок — ~700px).
+ */
+const HIDE = new Set(['totalPasses', 'goalkeeperSaves'])
+
+/**
+ * Порядок строк: сначала понятное — кто давит (владение, удары, в створ, голевые моменты), «Качество моментов» (дробь
+ * с ⓘ) — после них, дальше угловые, фолы, карточки, офсайды. От md это и есть две колонки: игра / стандарты и карточки.
+ */
+const ORDER = ['ballPossession', 'totalShots', 'shotsOnGoal', 'bigChances', 'expectedGoals', 'dangerousAttacks', 'cornerKicks', 'fouls', 'yellowCards', 'redCards', 'offsides']
+const rank = (key: string) => (ORDER.includes(key) ? ORDER.indexOf(key) : ORDER.length)
 
 /**
  * Статистика по ходу матча — без цветов команд, как у Apple Sports: у каждой строки светлее та сторона, где больше
@@ -130,7 +149,9 @@ const HIDE = new Set(['totalPasses'])
  * рядом и читались парой. На телефоне колонка одна — и шапка одна, порядок строк тот же.
  */
 export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home: Side; away: Side }) {
-  const stats = visibleStats(all).filter((s) => !HIDE.has(s.key))
+  const stats = visibleStats(all)
+    .filter((s) => !HIDE.has(s.key))
+    .sort((a, b) => rank(a.key) - rank(b.key))
   if (!stats.length) return <p className="text-sm text-dim">Статистика появится по ходу матча.</p>
   const half = Math.ceil(stats.length / 2)
   const cols = [stats.slice(0, half), stats.slice(half)].filter((c) => c.length)
@@ -150,7 +171,7 @@ export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home:
               const total = s.home + s.away || 1
               const eq = s.home === s.away
               return (
-                <li key={s.key} title={HINT[s.key]}>
+                <li key={s.key} className="relative">
                   <div className="mb-1 flex justify-between text-[13px]">
                     <span className={`num ${s.home > s.away ? 'font-semibold text-fg' : 'text-dim'}`}>
                       {fmt(s.home)}
@@ -158,7 +179,7 @@ export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home:
                     </span>
                     <span className="text-xs text-mute">
                       {s.label}
-                      {HINT[s.key] ? <span className="ml-1 text-mute/70">ⓘ</span> : null}
+                      {HINT[s.key] ? <Hint title={s.label} text={HINT[s.key]} /> : null}
                     </span>
                     <span className={`num ${s.away > s.home ? 'font-semibold text-fg' : 'text-dim'}`}>
                       {fmt(s.away)}

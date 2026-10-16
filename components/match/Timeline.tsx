@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { TeamLogo } from '../TeamLogo'
 
 export type TimelineMark = {
   kind: 'goal' | 'yellow' | 'red' | 'miss'
@@ -9,7 +10,9 @@ export type TimelineMark = {
   at: number
   /** у гола — счёт после него («1:0»), null — счёт не сошёлся с итогом */
   label: string | null
-  tip: string
+  /** подсказка: «17′ · Гол 1:0» и ниже «B. Petrov · Бетис» */
+  head: string
+  sub: string
 }
 
 const H = 20 // высота яруса
@@ -49,11 +52,14 @@ export function Timeline({
   end: number
   /** минута идущего матча (до неё — пройденная часть полосы); null — матч окончен */
   now: number | null
-  home: { name: string }
-  away: { name: string }
+  home: { name: string; logo?: string | null }
+  away: { name: string; logo?: string | null }
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(0)
+  // открытая подсказка (номер значка): мышью — при наведении, на телефоне — по нажатию (`title` там не открывается),
+  // с клавиатуры — в фокусе; закрывается нажатием мимо и Esc
+  const [act, setAct] = useState<number | null>(null)
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -61,6 +67,19 @@ export function Timeline({
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+  useEffect(() => {
+    if (act == null) return
+    const off = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setAct(null)
+    }
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setAct(null)
+    document.addEventListener('pointerdown', off)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('pointerdown', off)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [act])
 
   const pct = (at: number) => Math.min(100, (at / end) * 100)
   // значок у края не вылезает за полосу: центр — не ближе половины ширины к краю (то же правило — в `left` ниже)
@@ -97,15 +116,25 @@ export function Timeline({
   const height = half + room('away')
   const off = (t: number) => NEAR + t * (H + GAP)
 
+  const tipAt = act == null || !w ? null : marks[act]
   return (
     <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4">
-      {/* чьи ряды: подпись — на уровне ближнего к черте яруса */}
-      {/* чьи ряды — названием, без эмблем (владелец: «а сейчас не много логотипов?»): эмблемы — на табло и в панели */}
-      <div className="relative max-w-[96px] text-[12px] leading-tight text-dim sm:max-w-[140px]" style={{ height }}>
-        <span className="invisible block h-0 overflow-hidden">{home.name.length > away.name.length ? home.name : away.name}</span>
+      {/* чьи ряды: подпись — на уровне ближнего к черте яруса; эмблема — одна на команду в блоке (владелец: «в формах
+          команд есть лого, а тут нет»; до этого — «а сейчас не много логотипов?»: их было 10, над колонками статистики
+          названия остались текстом) */}
+      <div className="relative max-w-[116px] text-[12px] leading-tight text-dim sm:max-w-[164px]" style={{ height }}>
+        <span className="invisible flex h-0 gap-1.5 overflow-hidden">
+          <span className="w-[18px] shrink-0" />
+          {home.name.length > away.name.length ? home.name : away.name}
+        </span>
         {[home, away].map((t, i) => (
-          <span key={i} className="absolute left-0 right-0 -translate-y-1/2 truncate" style={{ top: i ? half + NEAR + H / 2 : half - NEAR - H / 2 }}>
-            {t.name}
+          <span
+            key={i}
+            className="absolute left-0 right-0 flex -translate-y-1/2 items-center gap-1.5"
+            style={{ top: i ? half + NEAR + H / 2 : half - NEAR - H / 2 }}
+          >
+            <TeamLogo name={t.name} src={t.logo ?? null} size={18} />
+            <span className="min-w-0 truncate">{t.name}</span>
           </span>
         ))}
       </div>
@@ -123,21 +152,50 @@ export function Timeline({
           {marks.map((m, i) => {
             const hw = widthOf(m) / 2
             return (
-              <span
+              <button
                 key={i}
-                title={m.tip}
-                role="img"
-                aria-label={m.tip}
-                className={`absolute flex h-5 -translate-x-1/2 ${m.side === 'home' ? 'items-end' : 'items-start'}`}
+                type="button"
+                aria-label={m.sub ? `${m.head} — ${m.sub}` : m.head}
+                onPointerEnter={(e) => e.pointerType === 'mouse' && setAct(i)}
+                onPointerLeave={(e) => e.pointerType === 'mouse' && setAct(null)}
+                onFocus={() => setAct(i)}
+                onBlur={() => setAct(null)}
+                onClick={() => setAct(i)}
+                // палец больше значка: зона нажатия — на 6px шире со всех сторон
+                className={`absolute flex h-5 -translate-x-1/2 after:absolute after:-inset-1.5 ${m.side === 'home' ? 'items-end' : 'items-start'} ${
+                  act === i ? 'z-10 scale-110' : ''
+                } transition-transform`}
                 style={{
                   left: `clamp(${hw}px, ${pct(m.at)}%, calc(100% - ${hw}px))`,
                   ...(m.side === 'home' ? { bottom: height - half + off(tiers[i]) } : { top: half + off(tiers[i]) }),
                 }}
               >
                 <Mark m={m} />
-              </span>
+              </button>
             )
           })}
+          {/* подсказка — от черты наружу (над значком хозяев, под значком гостей), у краёв — прижата к краю полосы */}
+          {tipAt && act != null ? (
+            <div
+              role="tooltip"
+              className={`pointer-events-none absolute z-20 w-max max-w-[240px] rounded-ctl border border-edge bg-panel-2 px-3 py-2 text-[12.5px] leading-snug shadow-[0_8px_24px_rgb(0_0_0/0.3)] ${
+                center(tipAt) > w / 3 && center(tipAt) < (w * 2) / 3 ? '-translate-x-1/2' : ''
+              }`}
+              style={{
+                ...(center(tipAt) <= w / 3
+                  ? { left: Math.max(0, center(tipAt) - 14) }
+                  : center(tipAt) >= (w * 2) / 3
+                    ? { right: Math.max(0, w - center(tipAt) - 14) }
+                    : { left: center(tipAt) }),
+                ...(tipAt.side === 'home'
+                  ? { bottom: height - half + off(tiers[act]) + H + 6 }
+                  : { top: half + off(tiers[act]) + H + 6 }),
+              }}
+            >
+              <div className="num font-semibold text-fg">{tipAt.head}</div>
+              {tipAt.sub ? <div className="text-dim">{tipAt.sub}</div> : null}
+            </div>
+          ) : null}
         </div>
         <div className="relative mt-1.5 h-4 text-[11px] text-mute">
           <span className="absolute left-0">0′</span>

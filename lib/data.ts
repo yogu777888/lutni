@@ -149,7 +149,9 @@ export async function getMatchFull(id: number, opts: Opts = {}): Promise<MatchFu
   const tz = tzOffsetHours()
   try {
     return await cache.get(
-      `game:${id}`,
+      // v2 — события VAR больше не голы и не карточки (`eventKind`): в кэше лежит уже разобранный матч, и у сыгранных
+      // старый разбор с лишним голом жил бы ещё неделю
+      `game:v2:${id}`,
       async () => N.normalizeFull(await apiGet<RawGameFull>(`/Games/${id}`, { TimeZone: tz }, opts), tz),
       (full) => matchTtl(full.match),
     )
