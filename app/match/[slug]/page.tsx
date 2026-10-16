@@ -28,9 +28,10 @@ import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { distinctPair, matchColors } from '@/lib/team-colors'
 import { handNotes } from '@/lib/hand-notes'
-import { appNow, formatDateShort, formatTime, idFromSlug, pct, pluralN, ymdInTz } from '@/lib/format'
+import { leagueTitle } from '@/lib/flags'
+import { appNow, formatDateShort, formatDayMonth, formatTime, idFromSlug, pct, pluralN, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
-import { leagueHref, matchHref } from '@/lib/links'
+import { leagueHref, listHref, matchHref } from '@/lib/links'
 import { buildStory } from '@/lib/story'
 import type { Match } from '@/lib/types'
 import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
@@ -158,10 +159,21 @@ export default async function MatchPage({ params }: Props) {
   const btts = model?.btts ?? cons.btts
 
   const sameDay = await settle(getMatchesByDate(ymdInTz(m.ts)), [] as Match[])
+  // «Другие матчи» (владелец: «а другие матчи как?»): своя лига первой, внутри — идущие, предстоящие (ближайший первым),
+  // сыгранные (свежий первым) в конце: сверху стояли три итога в 16:00, а предстоящий матч — последним
+  const stateRank = (o: Match) => (o.status === 'live' || o.status === 'suspended' ? 0 : o.status === 'scheduled' ? 1 : o.status === 'finished' ? 2 : 3)
   const related = sameDay
     .filter((o) => o.id !== m.id)
-    .sort((a, b) => Number(b.league.id === m.league.id) - Number(a.league.id === m.league.id) || a.ts - b.ts)
+    .sort(
+      (a, b) =>
+        Number(b.league.id === m.league.id) - Number(a.league.id === m.league.id) ||
+        stateRank(a) - stateRank(b) ||
+        (stateRank(a) === 2 ? b.ts - a.ts : a.ts - b.ts),
+    )
     .slice(0, 6)
+  const matchDay = ymdInTz(m.ts)
+  const today = ymdInTz(appNow())
+  const relatedNote = `${related.every((o) => o.league.id === m.league.id) ? `${leagueTitle(m.league.name)} · ` : ''}${matchDay === today ? 'сегодня' : formatDayMonth(m.ts)}`
 
   // табло матча: шанс, кэф и честная цена. Кэфы — одной линии одного легального партнёра, с его именем и ссылкой к нему
   // (как в строках списка): раньше три ячейки собирались у разных букмекеров под подписью «Кэф букмекера». Партнёр —
@@ -427,13 +439,23 @@ export default async function MatchPage({ params }: Props) {
             </div>
           </section>
           {related.length ? (
-            <section className="card overflow-hidden">
-              <h2 className="h2 border-b border-edge px-5 py-4 text-[20px] font-bold tracking-[-0.02em] sm:text-[22px]">Другие матчи</h2>
-              <div className="divide-y divide-edge">
+            // какие это матчи — справа от заголовка; широкий блок (от xl до 2xl он уходит под основную колонку на всю ширину)
+            // — две колонки, иначе название слева и счёт в 1500px справа; внизу — весь список дня
+            <section className="@container card overflow-hidden">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-5 py-4">
+                <h2 className="h2 text-[20px] font-bold tracking-[-0.02em] sm:text-[22px]">Другие матчи</h2>
+                <span className="text-[12px] text-mute">{relatedNote}</span>
+              </div>
+              <div className="grid @2xl:grid-cols-2">
                 {related.map((o) => (
-                  <MatchRow key={o.id} m={o} tags={[]} compact showLeague={o.league.id !== m.league.id} />
+                  <div key={o.id} className="border-t border-edge @2xl:even:border-l">
+                    <MatchRow m={o} tags={[]} compact showLeague={o.league.id !== m.league.id} />
+                  </div>
                 ))}
               </div>
+              <Link href={listHref(matchDay, today)} className="block border-t border-edge px-5 py-3 text-[13px] text-dim transition-colors hover:text-fg">
+                Все матчи дня →
+              </Link>
             </section>
           ) : null}
         </aside>
