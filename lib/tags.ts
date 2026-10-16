@@ -177,8 +177,14 @@ export const TAGS: TagDef[] = [
 
 export const TAG_BY_SLUG = new Map(TAGS.map((t) => [t.slug, t]))
 
-/** p — вероятность, на которой держится тег (тоталы, «обе забьют», фаворит): чтобы не доставать цифру из текста. */
-export type TagHit = { slug: string; score: number; reason: string; p?: number }
+/**
+ * p — вероятность, на которой держится тег (тоталы, «обе забьют», фаворит): чтобы не доставать цифру из текста.
+ * short — тот же повод одним фактом, без повтора названия тега («Победа «Хетафе»: 7.42 → 6.37 (−14%)»): для строки
+ * рядом с меткой на странице матча (владелец: «а теги матча как?»). `reason` не трогаем — из него берут цифры
+ * `lib/verdict.ts`, `lib/preview.ts` и `statFor`, и его показывают сторис и подсказки. В старом кэше short нет —
+ * показываем reason.
+ */
+export type TagHit = { slug: string; score: number; reason: string; p?: number; short?: string }
 
 export type TagInput = {
   match: Match
@@ -195,14 +201,16 @@ export type TagInput = {
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x))
 const MATCHES = ['матч', 'матча', 'матчей'] as const
+const WINS = ['победа', 'победы', 'побед'] as const
+const LOSSES = ['поражение', 'поражения', 'поражений'] as const
 const q = (name: string) => `«${name}»`
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 
 export function computeTags(input: TagInput): TagHit[] {
   const { match, cons, model } = input
   const hits: TagHit[] = []
-  const add = (slug: string, score: number, reason: string, p?: number) =>
-    hits.push(p === undefined ? { slug, score: clamp01(score), reason } : { slug, score: clamp01(score), reason, p })
+  const add = (slug: string, score: number, reason: string, short: string, p?: number) =>
+    hits.push(p === undefined ? { slug, score: clamp01(score), reason, short } : { slug, score: clamp01(score), reason, short, p })
   const home = match.home.name
   const away = match.away.name
 
@@ -216,10 +224,12 @@ export function computeTags(input: TagInput): TagHit[] {
   if (values.length) {
     const c = values[0]
     const o = c.bestPartner ?? c.best!
+    const bk = o.partner?.name ?? o.bookmakerName
     add(
       'value',
       (c.ev ?? 0) / 0.12,
-      `${cap(outcomeText(c.key, match))} за ${o.value.toFixed(2)} (${o.partner?.name ?? o.bookmakerName}) при честной цене ${c.fairOdd.toFixed(2)}: выгода +${((c.ev ?? 0) * 100).toFixed(1)}%`,
+      `${cap(outcomeText(c.key, match))} за ${o.value.toFixed(2)} (${bk}) при честной цене ${c.fairOdd.toFixed(2)}: выгода +${((c.ev ?? 0) * 100).toFixed(1)}%`,
+      `${cap(outcomeText(c.key, match))}: ${o.value.toFixed(2)} в ${bk}, честная цена ${c.fairOdd.toFixed(2)}`,
     )
   }
 
@@ -237,40 +247,48 @@ export function computeTags(input: TagInput): TagHit[] {
         'progruz',
         best.drop / 0.2,
         `Коэффициент на победу ${q(best.side === 'home' ? home : away)} упал с ${best.from.toFixed(2)} до ${best.to.toFixed(2)} (−${Math.round(best.drop * 100)}%)`,
+        `Победа ${q(best.side === 'home' ? home : away)}: ${best.from.toFixed(2)} → ${best.to.toFixed(2)} (−${Math.round(best.drop * 100)}%)`,
       )
     }
   }
 
   // тоталы
   if (over25 != null) {
-    if (over25 >= 0.57) add('tb-2-5', (over25 - 0.55) / 0.2, `Скорее будет 3 гола и больше: шанс ${pct(over25)}`, over25)
-    else if (1 - over25 >= 0.57) add('tm-2-5', (0.45 - over25) / 0.2, `Скорее будет не больше 2 голов: шанс ${pct(1 - over25)}`, 1 - over25)
+    if (over25 >= 0.57) add('tb-2-5', (over25 - 0.55) / 0.2, `Скорее будет 3 гола и больше: шанс ${pct(over25)}`, `3 гола и больше\u00a0— шанс ${pct(over25)}`, over25)
+    else if (1 - over25 >= 0.57)
+      add('tm-2-5', (0.45 - over25) / 0.2, `Скорее будет не больше 2 голов: шанс ${pct(1 - over25)}`, `Не больше 2 голов\u00a0— шанс ${pct(1 - over25)}`, 1 - over25)
   } else if (input.homeForm && input.awayForm) {
     const f = (input.homeForm.over25Rate + input.awayForm.over25Rate) / 2
-    if (f >= 0.7) add('tb-2-5', (f - 0.6) / 0.3, `3 гола и больше было в ${pct(f)} последних матчей команд`, f)
-    if (f <= 0.3) add('tm-2-5', (0.4 - f) / 0.3, `Не больше 2 голов было в ${pct(1 - f)} последних матчей команд`, 1 - f)
+    if (f >= 0.7) add('tb-2-5', (f - 0.6) / 0.3, `3 гола и больше было в ${pct(f)} последних матчей команд`, `3 гола и больше\u00a0— в\u00a0${pct(f)} последних матчей команд`, f)
+    if (f <= 0.3)
+      add('tm-2-5', (0.4 - f) / 0.3, `Не больше 2 голов было в ${pct(1 - f)} последних матчей команд`, `Не больше 2 голов\u00a0— в\u00a0${pct(1 - f)} последних матчей команд`, 1 - f)
   }
 
   // обе забьют
   if (btts != null && btts >= 0.57) {
-    add('obe-zabyut', (btts - 0.55) / 0.2, `Скорее забьют обе команды: шанс ${pct(btts)}`, btts)
+    add('obe-zabyut', (btts - 0.55) / 0.2, `Скорее забьют обе команды: шанс ${pct(btts)}`, `Шанс ${pct(btts)}`, btts)
   } else if (btts == null && input.homeForm && input.awayForm) {
     const hf = input.homeForm
     const af = input.awayForm
     if (hf.bttsRate >= 0.6 && af.bttsRate >= 0.6 && hf.failedToScoreRate <= 0.2 && af.failedToScoreRate <= 0.2) {
       const rate = (hf.bttsRate + af.bttsRate) / 2
-      add('obe-zabyut', rate - 0.4, `Обе забивали в ${pct(rate)} последних матчей команд`, rate)
+      add('obe-zabyut', rate - 0.4, `Обе забивали в ${pct(rate)} последних матчей команд`, `Забивали обе\u00a0— в\u00a0${pct(rate)} последних матчей команд`, rate)
     }
   }
 
   // фаворит / равные
   if (x12) {
     const fav = x12.home >= x12.away ? { name: home, p: x12.home } : { name: away, p: x12.away }
-    if (fav.p >= 0.6) add('favorit', (fav.p - 0.55) / 0.3, `Шансы ${q(fav.name)} на победу — ${pct(fav.p)}`, fav.p)
+    if (fav.p >= 0.6) add('favorit', (fav.p - 0.55) / 0.3, `Шансы ${q(fav.name)} на победу — ${pct(fav.p)}`, `${q(fav.name)}, шанс ${pct(fav.p)}`, fav.p)
     const diff = Math.abs(x12.home - x12.away)
     if (diff <= 0.06) {
       const s = split100(x12)
-      add('ravnye', 1 - diff / 0.06, `Силы почти равны: шансы ${q(home)} — ${s.home}%, ${q(away)} — ${s.away}%, ничьей — ${s.draw}%`)
+      add(
+        'ravnye',
+        1 - diff / 0.06,
+        `Силы почти равны: шансы ${q(home)} — ${s.home}%, ${q(away)} — ${s.away}%, ничьей — ${s.draw}%`,
+        `${q(home)} ${s.home}% · ничья ${s.draw}% · ${q(away)} ${s.away}%`,
+      )
     }
   }
 
@@ -288,6 +306,7 @@ export function computeTags(input: TagInput): TagHit[] {
         'andedog',
         (dog.points5 - fav.points5) / 9,
         `Команда ${q(dogHome ? home : away)} — не фаворит (шанс ${pct(dogP)}), но за 5 матчей набрала ${pluralN(dog.points5, ['очко', 'очка', 'очков'])} против ${fav.points5} у соперника`,
+        `${q(dogHome ? home : away)}: ${pluralN(dog.points5, ['очко', 'очка', 'очков'])} за 5 матчей, у\u00a0соперника\u00a0—\u00a0${fav.points5}`,
       )
     }
   }
@@ -300,15 +319,20 @@ export function computeTags(input: TagInput): TagHit[] {
     if (!f?.streak) continue
     const { kind, len } = f.streak
     const games = pluralN(len, MATCHES)
-    if (kind === 'W' && len >= 4) add('seriya', len / 8, `Команда ${q(name)} выиграла ${games} подряд`)
-    if (kind === 'L' && len >= 4) add('seriya', len / 8, `Команда ${q(name)} проиграла ${games} подряд`)
-    if (kind === 'unbeaten' && len >= 8) add('seriya', len / 14, `Команда ${q(name)} не проигрывает ${games} подряд`)
-    if (kind === 'winless' && len >= 6) add('seriya', len / 12, `Команда ${q(name)} не побеждает ${games} подряд`)
+    if (kind === 'W' && len >= 4) add('seriya', len / 8, `Команда ${q(name)} выиграла ${games} подряд`, `${q(name)}: ${pluralN(len, WINS)} подряд`)
+    if (kind === 'L' && len >= 4) add('seriya', len / 8, `Команда ${q(name)} проиграла ${games} подряд`, `${q(name)}: ${pluralN(len, LOSSES)} подряд`)
+    if (kind === 'unbeaten' && len >= 8) add('seriya', len / 14, `Команда ${q(name)} не проигрывает ${games} подряд`, `${q(name)}: ${games} без поражений`)
+    if (kind === 'winless' && len >= 6) add('seriya', len / 12, `Команда ${q(name)} не побеждает ${games} подряд`, `${q(name)}: ${games} без побед`)
   }
 
   // крепость
   if (hf && hf.home.played >= 4 && hf.home.unbeatenRun >= 5 && hf.home.wins >= 3) {
-    add('krepost', hf.home.unbeatenRun / 8, `${q(home)} не проигрывает дома ${pluralN(hf.home.unbeatenRun, MATCHES)} подряд`)
+    add(
+      'krepost',
+      hf.home.unbeatenRun / 8,
+      `${q(home)} не проигрывает дома ${pluralN(hf.home.unbeatenRun, MATCHES)} подряд`,
+      `${q(home)}: ${pluralN(hf.home.unbeatenRun, MATCHES)} дома без поражений`,
+    )
   }
 
   // кадровые потери
@@ -318,7 +342,7 @@ export function computeTags(input: TagInput): TagHit[] {
       [match.away, away],
     ] as const) {
       const n = input.injuries.filter((i) => i.teamId === team.id).length
-      if (n >= 3) add('kadry', n / 6, `Команда ${q(name)} не досчитается ${n} игроков`)
+      if (n >= 3) add('kadry', n / 6, `Команда ${q(name)} не досчитается ${n} игроков`, `${q(name)}: без ${n} игроков`)
     }
   }
 
@@ -326,9 +350,13 @@ export function computeTags(input: TagInput): TagHit[] {
   const h = input.h2h
   if (h && h.games.length >= 4) {
     const n = h.games.length
-    if (h.over25Rate >= 0.75) add('h2h', h.over25Rate - 0.25, `В ${Math.round(h.over25Rate * n)} из ${n} последних личных встреч было 3 гола и больше`)
-    else if (h.homeWins / n >= 0.75) add('h2h', h.homeWins / n - 0.25, `Команда ${q(home)} выиграла ${h.homeWins} из ${n} последних личных встреч`)
-    else if (h.awayWins / n >= 0.75) add('h2h', h.awayWins / n - 0.25, `Команда ${q(away)} выиграла ${h.awayWins} из ${n} последних личных встреч`)
+    const over = Math.round(h.over25Rate * n)
+    if (h.over25Rate >= 0.75)
+      add('h2h', h.over25Rate - 0.25, `В ${over} из ${n} последних личных встреч было 3 гола и больше`, `3 гола и больше\u00a0— в\u00a0${over} из ${n} последних встреч`)
+    else if (h.homeWins / n >= 0.75)
+      add('h2h', h.homeWins / n - 0.25, `Команда ${q(home)} выиграла ${h.homeWins} из ${n} последних личных встреч`, `${q(home)}: ${pluralN(h.homeWins, WINS)} в\u00a0${n} последних встречах`)
+    else if (h.awayWins / n >= 0.75)
+      add('h2h', h.awayWins / n - 0.25, `Команда ${q(away)} выиграла ${h.awayWins} из ${n} последних личных встреч`, `${q(away)}: ${pluralN(h.awayWins, WINS)} в\u00a0${n} последних встречах`)
   }
 
   // топ-матч
@@ -336,7 +364,8 @@ export function computeTags(input: TagInput): TagHit[] {
   if (table && table.rows.length >= 8) {
     const rh = table.rows.find((r) => r.teamId === match.home.id)?.rank
     const ra = table.rows.find((r) => r.teamId === match.away.id)?.rank
-    if (rh && ra && rh <= 4 && ra <= 4) add('top-match', 1 - (rh + ra) / 10, `Встреча команд с ${Math.min(rh, ra)}-го и ${Math.max(rh, ra)}-го места`)
+    if (rh && ra && rh <= 4 && ra <= 4)
+      add('top-match', 1 - (rh + ra) / 10, `Встреча команд с ${Math.min(rh, ra)}-го и ${Math.max(rh, ra)}-го места`, `${Math.min(rh, ra)}-е и ${Math.max(rh, ra)}-е место в таблице`)
   }
 
   // один тег одного типа — оставляем самый сильный

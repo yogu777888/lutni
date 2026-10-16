@@ -278,14 +278,17 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {/* после начала «Нашего вывода» нет — теги с поводами здесь */}
+          {/* после начала прогноза нет — подборки матча с поводами здесь (владелец: «а теги матча как?»): «В подборках», как
+              в меню, правой панели и в блоке до начала («Теги» — наше внутреннее слово); метки — колонкой одной ширины,
+              факты — ровной колонкой справа (каждая фраза начиналась сразу за своей меткой — «ёлочка»), на телефоне метка
+              над фактом; факт — короткий (`short`), без повтора метки: «#кэф упал — Победа «Хетафе»: 7.42 → 6.37 (−14%)» */}
           {!scheduled && tags.length ? (
-            <Section title="Теги матча" aside="до матча">
-              <ul className="space-y-3">
+            <Section title="В подборках" aside="до матча">
+              <ul className="grid gap-y-4 sm:grid-cols-[max-content_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-3">
                 {tags.map((t) => (
-                  <li key={t.slug} className="flex items-start gap-3">
-                    <TagPill slug={t.slug} size="md" className="shrink-0" />
-                    <p className="pt-1 text-[14px] leading-relaxed text-dim">{t.reason}</p>
+                  <li key={t.slug} className="flex flex-col items-start gap-1.5 sm:col-span-2 sm:grid sm:grid-cols-subgrid">
+                    <TagPill slug={t.slug} size="md" className="sm:justify-self-start" />
+                    <p className="text-[14px] leading-relaxed text-dim sm:pt-1">{t.short ?? t.reason}</p>
                   </li>
                 ))}
               </ul>
