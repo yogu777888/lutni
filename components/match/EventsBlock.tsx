@@ -1,9 +1,8 @@
 import type { MatchEvent, StatPair } from '@/lib/types'
 import { visibleStats } from '@/lib/sstats/normalize'
-import { TeamLogo } from '../TeamLogo'
 import { Timeline, type TimelineMark } from './Timeline'
 
-type Side = { name: string; logo: string | null }
+type Side = { name: string }
 
 const GOALS = new Set<MatchEvent['kind']>(['goal', 'own-goal', 'penalty'])
 
@@ -124,8 +123,9 @@ const HIDE = new Set(['totalPasses'])
  * (лаймом были хозяева, а лайм у нас — «выгодно»). Дорожка под полосой видна (была 6% — полосы разной длины висели
  * посередине «ёлочкой»): каждая строка — полоса от края до края, цифры — на её концах.
  *
- * Чьи цифры — шапкой с эмблемами над колонкой (владелец: «немного непонятно в графиках, где какая команда»): слева
- * хозяева, справа гости. Колонок от md две — первая и вторая половина строк (удары и моменты / угловые, фолы,
+ * Чьи цифры — названиями над колонкой (владелец: «немного непонятно в графиках, где какая команда»): слева хозяева,
+ * справа гости; мелко и серым, как подпись столбца, без эмблем (владелец: «а сейчас не много логотипов?» — с эмблемами
+ * в шапках и у полосы на экране их было 10; эмблемы — на табло и в панели сверху). Колонок от md две — первая и вторая половина строк (удары и моменты / угловые, фолы,
  * карточки), шапка над каждой и черта между ними: иначе «45%» гостей в одной колонке и «1.33» хозяев в другой стояли
  * рядом и читались парой. На телефоне колонка одна — и шапка одна, порядок строк тот же.
  */
@@ -136,20 +136,14 @@ export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home:
   const cols = [stats.slice(0, half), stats.slice(half)].filter((c) => c.length)
   const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2))
   const bar = (more: boolean, eq: boolean) => (eq ? 'bg-white/45' : more ? 'bg-white/85' : 'bg-white/30')
-  const team = (t: Side, right = false) => (
-    <span className={`flex min-w-0 items-center gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
-      <TeamLogo name={t.name} src={t.logo} size={20} />
-      <span className="truncate">{t.name}</span>
-    </span>
-  )
   return (
     <div className="grid gap-y-3 md:grid-cols-2">
       {cols.map((col, ci) => (
         <div key={ci} className={ci ? 'md:border-l md:border-white/[0.08] md:pl-10' : cols.length > 1 ? 'md:pr-10' : ''}>
           {/* на телефоне вторая колонка идёт сразу под первой — шапка у неё не нужна */}
-          <div className={`mb-3 items-center justify-between gap-3 text-[13px] font-semibold text-fg/90 ${ci ? 'hidden md:flex' : 'flex'}`}>
-            {team(home)}
-            {team(away, true)}
+          <div className={`mb-2.5 justify-between gap-3 text-[12px] text-dim ${ci ? 'hidden md:flex' : 'flex'}`}>
+            <span className="min-w-0 truncate">{home.name}</span>
+            <span className="min-w-0 truncate text-right">{away.name}</span>
           </div>
           <ul className="space-y-3">
             {col.map((s) => {

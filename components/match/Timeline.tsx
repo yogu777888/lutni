@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { TeamLogo } from '../TeamLogo'
 
 export type TimelineMark = {
   kind: 'goal' | 'yellow' | 'red' | 'miss'
@@ -50,8 +49,8 @@ export function Timeline({
   end: number
   /** минута идущего матча (до неё — пройденная часть полосы); null — матч окончен */
   now: number | null
-  home: { name: string; logo: string | null }
-  away: { name: string; logo: string | null }
+  home: { name: string }
+  away: { name: string }
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(0)
@@ -101,20 +100,12 @@ export function Timeline({
   return (
     <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4">
       {/* чьи ряды: подпись — на уровне ближнего к черте яруса */}
-      {/* эмблема — та же, что в шапке статистики ниже: ряд над чертой и левые цифры — одна команда */}
-      <div className="relative max-w-[112px] text-[12px] leading-tight text-dim sm:max-w-[160px]" style={{ height }}>
-        <span className="invisible flex h-0 items-center gap-1.5 overflow-hidden">
-          <span className="w-4 shrink-0" />
-          {home.name.length > away.name.length ? home.name : away.name}
-        </span>
+      {/* чьи ряды — названием, без эмблем (владелец: «а сейчас не много логотипов?»): эмблемы — на табло и в панели */}
+      <div className="relative max-w-[96px] text-[12px] leading-tight text-dim sm:max-w-[140px]" style={{ height }}>
+        <span className="invisible block h-0 overflow-hidden">{home.name.length > away.name.length ? home.name : away.name}</span>
         {[home, away].map((t, i) => (
-          <span
-            key={i}
-            className="absolute left-0 right-0 flex -translate-y-1/2 items-center gap-1.5"
-            style={{ top: i ? half + NEAR + H / 2 : half - NEAR - H / 2 }}
-          >
-            <TeamLogo name={t.name} src={t.logo} size={16} />
-            <span className="min-w-0 truncate">{t.name}</span>
+          <span key={i} className="absolute left-0 right-0 -translate-y-1/2 truncate" style={{ top: i ? half + NEAR + H / 2 : half - NEAR - H / 2 }}>
+            {t.name}
           </span>
         ))}
       </div>
