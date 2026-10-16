@@ -16,7 +16,7 @@ export function Sidebar() {
         </div>
         <p className="mt-4 text-[11px] text-mute">Только букмекеры с лицензией ФНС России.</p>
         <Link href="/bookmakers" className="group mt-4 inline-flex items-center gap-1.5 border-b-2 border-acid pb-0.5 text-[14px] font-semibold">
-          Весь рейтинг <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+          Все букмекеры <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
         </Link>
       </section>
       <section className="card p-6">

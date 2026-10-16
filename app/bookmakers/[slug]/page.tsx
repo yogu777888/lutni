@@ -5,7 +5,6 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { CtaLink } from '@/components/CtaLink'
 import { PartnerBadge } from '@/components/PartnerBadge'
 import { Section } from '@/components/Section'
-import { Stars } from '@/components/Stars'
 import { getPartner } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
 
@@ -17,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!p) return {}
   return {
     title: `${p.name}: обзор букмекера, бонус и отзывы`,
-    description: `Обзор букмекерской конторы ${p.name}: лицензия, коэффициенты на футбол, плюсы и минусы, бонус для новых клиентов. Оценка tag.bet — ${p.rating.toFixed(1)} из 5.`,
+    description: `Обзор букмекерской конторы ${p.name}: лицензия, коэффициенты на футбол, плюсы и минусы, бонус для новых клиентов.`,
     alternates: { canonical: `/bookmakers/${p.slug}` },
   }
 }
@@ -41,11 +40,8 @@ export default async function BookmakerPage({ params }: Props) {
           <PartnerBadge partner={p} size={60} />
           <div className="flex-1">
             <h1 className="display text-[36px] sm:text-[56px]">Букмекер {p.name}</h1>
-            <div className="mt-1.5 flex items-center gap-2">
-              <Stars value={p.rating} />
-              <span className="num text-[13px] font-medium text-dim">{p.rating.toFixed(1)} / 5</span>
-              <span className="text-[12px] text-mute">· оценка tag.bet</span>
-            </div>
+            {/* оценки «4.8 / 5 · оценка tag.bet» нет: она была заглушкой без критериев */}
+            <p className="mt-1.5 text-[13px] text-dim">{p.license}</p>
           </div>
         </div>
         <div className="mt-6 rounded-tile bg-white/[0.04] p-5">

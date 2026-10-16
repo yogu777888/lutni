@@ -27,7 +27,7 @@ export function Footer() {
           <Link href="/tags" className="text-dim hover:text-fg">Все теги</Link>
           <Link href="/tag/value" className="text-dim hover:text-fg">Выгодные ставки</Link>
           <Link href="/leagues" className="text-dim hover:text-fg">Лиги и таблицы</Link>
-          <Link href="/bookmakers" className="text-dim hover:text-fg">Рейтинг букмекеров</Link>
+          <Link href="/bookmakers" className="text-dim hover:text-fg">Букмекеры</Link>
         </nav>
         <nav aria-label="Информация" className="flex flex-col gap-2 text-sm">
           <span className="mb-1 text-[12px] font-medium text-mute">Информация</span>

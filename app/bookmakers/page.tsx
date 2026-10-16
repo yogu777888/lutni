@@ -3,14 +3,12 @@ import Link from 'next/link'
 import { AdMark } from '@/components/AdMark'
 import { CtaLink } from '@/components/CtaLink'
 import { PartnerBadge } from '@/components/PartnerBadge'
-import { Stars } from '@/components/Stars'
 import { PARTNERS } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
 
 export const metadata: Metadata = {
-  title: 'Рейтинг легальных букмекеров: бонусы, коэффициенты, выплаты',
-  description:
-    'Рейтинг легальных букмекерских контор от tag.bet: уровень коэффициентов, линия на футбол, выплаты, приложение и бонусы для новых клиентов.',
+  title: 'Легальные букмекеры: лицензии, линия на футбол, бонусы',
+  description: 'Легальные букмекерские конторы с лицензией ФНС России: особенности линии на футбол, плюсы и минусы, бонусы для новых клиентов.',
   alternates: { canonical: '/bookmakers' },
 }
 
@@ -18,26 +16,24 @@ export default function BookmakersPage() {
   return (
     <>
       <div className="mb-8 pt-2">
-        <h1 className="display text-[36px] sm:text-[56px]">Рейтинг букмекеров</h1>
+        {/* без оценок и места в списке (владелец: «сортируй по оценке надо?» — оценки 4.3–4.8 были заглушками без
+            критериев, а сравнение в рекламе должно быть обоснованным); «оцениваем маржу, выплаты…» — тоже убрано: этого
+            мы не делали. Порядок — партнёрский (PARTNERS). Настоящий рейтинг — только с критериями и методикой */}
+        <h1 className="display text-[36px] sm:text-[56px]">Легальные букмекеры</h1>
         <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-dim">
-          Только легальные букмекеры с лицензией. Оцениваем уровень коэффициентов на футбол (маржу считаем по реальным линиям), ширину
-          росписи, скорость выплат и удобство приложения.
+          Только букмекеры с лицензией ФНС России и членством в ЕЦУПИС. Ссылки на букмекеров — партнёрские: мы можем получать
+          вознаграждение.
         </p>
       </div>
-      <ol className="space-y-3">
-        {PARTNERS.map((p, i) => (
+      <ul className="space-y-3">
+        {PARTNERS.map((p) => (
           <li key={p.slug} className="card p-5 sm:p-6">
             <div className="flex flex-wrap items-center gap-4">
-              <span className="num w-5 text-center text-[15px] font-medium text-mute">{i + 1}</span>
               <PartnerBadge partner={p} size={48} />
               <div className="min-w-[160px] flex-1">
                 <Link href={`/bookmakers/${p.slug}`} className="text-[18px] font-semibold tracking-tight transition-opacity hover:opacity-75">
                   {p.name}
                 </Link>
-                <div className="mt-1 flex items-center gap-2">
-                  <Stars value={p.rating} />
-                  <span className="num text-[13px] font-medium text-dim">{p.rating.toFixed(1)}</span>
-                </div>
                 <p className="mt-1 text-[12px] text-mute">{p.license}</p>
               </div>
               <div className="w-full sm:w-auto sm:min-w-[220px]">
@@ -56,7 +52,7 @@ export default function BookmakersPage() {
                 </Link>
               </div>
             </div>
-            <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-1 pl-9 text-[13px] text-dim">
+            <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-dim">
               {p.highlights.map((h) => (
                 <li key={h} className="flex items-center gap-1.5">
                   <span className="text-mute">✓</span>
@@ -64,12 +60,12 @@ export default function BookmakersPage() {
                 </li>
               ))}
             </ul>
-            <AdMark partner={p} className="mt-2 pl-9" />
+            <AdMark partner={p} className="mt-2" />
           </li>
         ))}
-      </ol>
+      </ul>
       <p className="mt-8 text-[12px] leading-relaxed text-mute">
-        Рейтинг носит информационный характер. Перед регистрацией проверьте наличие лицензии на сайте букмекера. 18+. Азартные игры
+        Информация носит справочный характер. Перед регистрацией проверьте наличие лицензии на сайте букмекера. 18+. Азартные игры
         могут вызывать зависимость.
       </p>
     </>
