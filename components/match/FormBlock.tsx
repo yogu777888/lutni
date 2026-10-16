@@ -1,12 +1,16 @@
 import { formatDayShort } from '@/lib/format'
-import type { Res, TeamForm } from '@/lib/stats'
+import type { Res, TeamForm as TeamFormData } from '@/lib/stats'
 import type { Team } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
 
+/**
+ * Результат — яркостью, а не светофором (владелец: «а форма команд как?»): зелёная «В» и красная «П» спорили с красным
+ * «идёт» и с правилом «светофор не используем»; как в статистике матча — чем лучше, тем ярче.
+ */
 const RES: Record<Res, { label: string; cls: string }> = {
-  W: { label: 'В', cls: 'bg-win/[0.16] text-win' },
-  D: { label: 'Н', cls: 'bg-draw/[0.14] text-draw' },
-  L: { label: 'П', cls: 'bg-loss/[0.16] text-loss' },
+  W: { label: 'В', cls: 'bg-white/85 text-ink' },
+  D: { label: 'Н', cls: 'bg-white/[0.16] text-fg/80' },
+  L: { label: 'П', cls: 'text-mute ring-1 ring-inset ring-white/15' },
 }
 
 export function ResBadge({ r, size = 'sm' }: { r: Res; size?: 'sm' | 'xs' }) {
@@ -22,41 +26,36 @@ export function ResBadge({ r, size = 'sm' }: { r: Res; size?: 'sm' | 'xs' }) {
   )
 }
 
-function TeamFormCard({ team, form }: { team: Team; form: TeamForm }) {
+/**
+ * Одна команда: цифры за последние матчи (до 10 — о выборке говорит подпись раздела) и 5 последних матчей, свежий
+ * сверху. Значков формы в шапке нет: они шли старый → новый слева направо, а список — новый → старый сверху вниз, и
+ * в значках было 5 матчей, в списке 6 — сверить было нельзя; та же форма — столбиком справа в списке.
+ */
+function TeamForm({ team, form }: { team: Team; form: TeamFormData }) {
+  const stat = (label: string, value: string) => (
+    <div className="flex flex-col justify-between">
+      <dt className="text-[11px] leading-tight text-mute">{label}</dt>
+      <dd className="num mt-1 text-[15px] font-semibold">{value}</dd>
+    </div>
+  )
   return (
-    <div className="rounded-tile bg-white/[0.04] p-4">
+    <div>
       <div className="flex items-center gap-2">
         <TeamLogo name={team.name} src={team.logo} size={22} />
         <span className="truncate font-semibold">{team.name}</span>
-        <span className="ml-auto flex gap-1">
-          {[...form.last5].reverse().map((r, i) => (
-            <ResBadge key={i} r={r} size="xs" />
-          ))}
-        </span>
       </div>
-      <dl className="mt-3 grid grid-cols-4 gap-1 text-center text-[11px]">
-        <div>
-          <dt className="text-mute">Забивает</dt>
-          <dd className="num mt-0.5 text-[15px] font-semibold">{form.gfAvg.toFixed(1)}</dd>
-        </div>
-        <div>
-          <dt className="text-mute">Пропускает</dt>
-          <dd className="num mt-0.5 text-[15px] font-semibold">{form.gaAvg.toFixed(1)}</dd>
-        </div>
-        <div>
-          <dt className="text-mute">3+ гола</dt>
-          <dd className="num mt-0.5 text-[15px] font-semibold">{Math.round(form.over25Rate * 100)}%</dd>
-        </div>
-        <div>
-          <dt className="text-mute">Обе забьют</dt>
-          <dd className="num mt-0.5 text-[15px] font-semibold">{Math.round(form.bttsRate * 100)}%</dd>
-        </div>
+      <dl className="mt-3 grid grid-cols-4 gap-2 text-center">
+        {stat('Забивает за\u00a0игру', form.gfAvg.toFixed(1))}
+        {stat('Пропускает за\u00a0игру', form.gaAvg.toFixed(1))}
+        {stat('3+ гола', `${Math.round(form.over25Rate * 100)}%`)}
+        {stat('Обе забили', `${Math.round(form.bttsRate * 100)}%`)}
       </dl>
       <ul className="mt-3 space-y-1">
-        {form.games.slice(0, 6).map((g) => (
+        {form.games.slice(0, 5).map((g) => (
           <li key={g.id} className="flex items-center gap-2 text-[13px]">
             <span className="num w-10 shrink-0 text-[11px] text-mute">{formatDayShort(g.ts)}</span>
-            <span className="w-4 shrink-0 text-[11px] text-mute">{g.isHome ? 'Д' : 'Г'}</span>
+            {/* «Д / Г» новичку не расшифровать — словами */}
+            <span className="w-[52px] shrink-0 text-[11px] text-mute">{g.isHome ? 'дома' : 'в гостях'}</span>
             <span className="min-w-0 flex-1 truncate">{g.opponent.name}</span>
             <span className="num shrink-0 font-medium">
               {g.gf}:{g.ga}
@@ -69,11 +68,14 @@ function TeamFormCard({ team, form }: { team: Team; form: TeamForm }) {
   )
 }
 
-export function FormBlock({ home, away, homeForm, awayForm }: { home: Team; away: Team; homeForm: TeamForm | null; awayForm: TeamForm | null }) {
+/** Две колонки через черту, как статистика матча (были две плашки внутри карточки — «блок в блоке»); на телефоне — одна под другой. */
+export function FormBlock({ home, away, homeForm, awayForm }: { home: Team; away: Team; homeForm: TeamFormData | null; awayForm: TeamFormData | null }) {
   return (
-    <div className="grid gap-3 md:grid-cols-2">
-      {homeForm ? <TeamFormCard team={home} form={homeForm} /> : <p className="text-sm text-dim">Нет данных о форме: {home.name}</p>}
-      {awayForm ? <TeamFormCard team={away} form={awayForm} /> : <p className="text-sm text-dim">Нет данных о форме: {away.name}</p>}
+    <div className="grid md:grid-cols-2">
+      <div className="md:pr-10">{homeForm ? <TeamForm team={home} form={homeForm} /> : <p className="text-sm text-dim">Нет данных о форме: {home.name}</p>}</div>
+      <div className="mt-5 border-t border-white/[0.08] pt-5 md:mt-0 md:border-l md:border-t-0 md:pl-10 md:pt-0">
+        {awayForm ? <TeamForm team={away} form={awayForm} /> : <p className="text-sm text-dim">Нет данных о форме: {away.name}</p>}
+      </div>
     </div>
   )
 }

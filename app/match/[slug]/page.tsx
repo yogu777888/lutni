@@ -151,6 +151,7 @@ export default async function MatchPage({ params }: Props) {
         : ''
     return first + second
   })()
+  const formN = Math.max(ins.homeForm?.games.length ?? 0, ins.awayForm?.games.length ?? 0)
   const over25 = model?.over['2.5'] ?? cons.over['2.5']
   const btts = model?.btts ?? cons.btts
 
@@ -364,7 +365,8 @@ export default async function MatchPage({ params }: Props) {
           ) : null}
 
           {ins.homeForm || ins.awayForm ? (
-            <Section title="Форма команд" aside="последние матчи">
+            // цифры — по последним (до 10) матчам: выборку называем числом (было «последние матчи», а в карточке — три разные выборки)
+            <Section title="Форма команд" aside={formN > 1 ? `последние ${pluralN(formN, ['матч', 'матча', 'матчей'])}` : 'последний матч'}>
               <FormBlock home={m.home} away={m.away} homeForm={ins.homeForm} awayForm={ins.awayForm} />
             </Section>
           ) : null}
