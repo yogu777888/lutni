@@ -492,8 +492,7 @@
   }
   .st-glow {
     background:
-      radial-gradient(120% 60% at 50% -10%, rgb(200 255 46 / 0.13), transparent 60%),
-      radial-gradient(80% 50% at 50% 110%, rgb(57 135 229 / 0.1), transparent 60%),
+      radial-gradient(130% 55% at 50% -12%, rgb(200 255 46 / 0.1), transparent 66%),
       var(--color-ink);
   }
 }

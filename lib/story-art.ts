@@ -71,9 +71,6 @@ export const CIRCLE_BG = 'var(--color-panel-2)'
 /** Фон просмотрщика историй: то же свечение, но мягко и сверху — текст остаётся читаемым. */
 export function artGlow(art: Art): string {
   const mix = (c: string, p: number) => `color-mix(in oklab, ${c} ${p}%, transparent)`
-  return [
-    `radial-gradient(120% 60% at 30% -10%, ${mix(art.a, 30)}, transparent 62%)`,
-    `radial-gradient(90% 50% at 90% 110%, ${mix(art.b, 18)}, transparent 62%)`,
-    'var(--color-ink)',
-  ].join(', ')
+  // одно свечение сверху цветом подборки (владелец: «а визуально истории как?» — второе пятно снизу справа читалось разводами)
+  return [`radial-gradient(130% 55% at 50% -12%, ${mix(art.a, 28)}, transparent 66%)`, 'var(--color-ink)'].join(', ')
 }

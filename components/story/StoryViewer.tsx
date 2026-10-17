@@ -5,7 +5,6 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { SPONSORED_REL } from '@/lib/affiliate'
 import type { StoryData } from '@/lib/story'
 import { artFor, artGlow } from '@/lib/story-art'
-import { TeamLogo } from '../TeamLogo'
 import { OPEN_STORY, openStory, type OpenStoryDetail, type StoryQueueItem } from './events'
 import { markSeen, type SeenMark } from './seen'
 import { Slide, SLIDE_MS } from './slides'
@@ -556,12 +555,9 @@ export function StoryViewer() {
         <div className="flex items-center gap-2.5 px-3 pt-2.5">
           {story ? (
             <>
-              <span className="flex shrink-0 -space-x-1.5">
-                <TeamLogo name={story.home.name} src={story.home.logo} size={24} />
-                <TeamLogo name={story.away.name} src={story.away.logo} size={24} />
-              </span>
-              <span className="min-w-0 flex-1 leading-tight">
-                <span className="block truncate text-[13px] font-bold">
+              {/* без эмблем (они крупно на обложке): название матча целиком, длинное — в две строки, а не «Реал Сось…» */}
+              <span className="min-w-0 flex-1 pl-1 leading-tight">
+                <span className="line-clamp-2 text-[13px] font-bold">
                   {story.home.name} — {story.away.name}
                 </span>
                 {/* одна полоса прогресса — слайды матча; место матча в подборке — словами («матч 2 из 8», было второй
@@ -624,13 +620,14 @@ export function StoryViewer() {
                 <p className="mt-1.5 text-center text-[11px] text-dim">{story.cta.ad}</p>
               </div>
             ) : null}
+            {/* тихой ссылкой: кнопка в рамке на каждом слайде была тяжелее самих данных, а на последнем — второй кнопкой под ставкой */}
             <a
               href={story.href}
               onClick={goFull}
-              className="flex items-center justify-center gap-1.5 rounded-tile bg-panel/60 py-2.5 text-[13px] font-semibold text-fg/85 ring-1 ring-inset ring-edge-2 transition hover:bg-panel-2"
+              className="flex items-center justify-center gap-1 py-1.5 text-[13px] font-semibold text-dim transition-colors hover:text-fg"
             >
               Полный разбор матча
-              <Icon d={ICONS.next} className="h-4 w-4" />
+              <Icon d={ICONS.next} className="h-3.5 w-3.5" />
             </a>
           </div>
         ) : null}

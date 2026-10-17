@@ -79,6 +79,7 @@ const dec = (v: number, d = 1) => v.toFixed(d).replace('.', ',')
 const intFmt = (v: number) => String(Math.round(v))
 const wait = (ms: number) => ({ animationDelay: `${ms}ms` })
 
+/** Слайд с данными: заголовок сверху, данные сразу под ним (не по центру оставшегося места — висели в пустоте). */
 function Frame({ children }: { children: React.ReactNode }) {
   return <div className="flex h-full flex-col px-5 pb-2 pt-3">{children}</div>
 }
@@ -205,11 +206,16 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
   return (
     <Frame>
       <Head eyebrow="Кто фаворит" title={s.title} sub={s.sub} />
-      <div className="my-auto py-4">
+      <div className="mt-6">
         <div className="grid h-[min(26dvh,200px)] grid-cols-3 items-end gap-3 border-b border-white/15">
           {keys.map((k, i) => (
             <div key={k} className="flex h-full flex-col items-center justify-end">
-              <Num value={n[k] / 100} format={pctFmt} delay={300 + i * 120} className="mb-1.5 text-[26px] font-bold" />
+              <Num
+                value={n[k] / 100}
+                format={pctFmt}
+                delay={300 + i * 120}
+                className={`display-num mb-1.5 leading-none ${s.probs[k] === max ? 'text-[44px]' : 'text-[26px] text-fg/70'}`}
+              />
               <div
                 className={`st-grow-y w-full rounded-t-[6px] ${s.probs[k] === max ? 'bg-fg/85' : 'bg-white/25'}`}
                 style={{ height: `${Math.max(3, (s.probs[k] / max) * 80)}%`, ...wait(300 + i * 120) }}
@@ -272,7 +278,12 @@ function Goals({ s, story }: { s: S<'goals'>; story: StoryData }) {
   return (
     <Frame>
       <Head eyebrow="Голы" title={s.title} sub={s.sub} />
-      <div className="my-auto space-y-5 py-4">
+      <div className="mt-6 space-y-5">
+        {/* главная цифра слайда — сколько голов ждём, крупно, как счёт на сайте */}
+        <div className="st-pop flex items-baseline gap-3" style={wait(200)}>
+          <Num value={s.total} format={(v) => dec(v)} delay={200} className="display-num text-[64px] leading-none" />
+          <span className="text-[15px] font-semibold text-dim">гола ждём в среднем</span>
+        </div>
         {s.over25 != null ? <ChanceLine p={s.over25} label="3 гола и больше" delay={300} /> : null}
         {s.btts != null ? <ChanceLine p={s.btts} label="Обе забьют" delay={450} /> : null}
         {s.scores.length ? (
@@ -331,9 +342,10 @@ function FormTeam({ team, f, base }: { team: StoryTeam; f: FormSide | null; base
           </div>
         ))}
       </div>
-      <div className="mt-3 flex items-baseline justify-between gap-3 text-[13px]">
-        <span>
-          <Num value={f.points5} format={intFmt} delay={base + 500} className="font-bold" /> <span className="text-dim">из 15 очков</span>
+      <div className="mt-3 flex items-end justify-between gap-3 text-[13px]">
+        <span className="flex items-baseline gap-1.5">
+          <Num value={f.points5} format={intFmt} delay={base + 500} className="display-num text-[30px] leading-none" />
+          <span className="text-dim">из 15 очков</span>
         </span>
         <span className="text-dim">
           забивает {dec(f.gfAvg)} · пропускает {dec(f.gaAvg)} <span className="whitespace-nowrap">за игру</span>
@@ -347,7 +359,7 @@ function Form({ s, story }: { s: S<'form'>; story: StoryData }) {
   return (
     <Frame>
       <Head eyebrow="Форма" title={s.title} sub={s.sub} />
-      <div className="my-auto space-y-3 py-4">
+      <div className="mt-6 space-y-3">
         <FormTeam team={story.home} f={s.home} base={250} />
         <FormTeam team={story.away} f={s.away} base={450} />
         <p className="st-fade text-center text-[11px] text-mute" style={wait(900)}>
@@ -397,7 +409,7 @@ function Stats({ s, story }: { s: S<'stats'>; story: StoryData }) {
   return (
     <Frame>
       <Head eyebrow="Статистика" title={s.title} sub={s.sub} />
-      <div className="my-auto space-y-4 py-4">
+      <div className="mt-6 space-y-4">
         <Legend story={story} />
         <Butterfly rows={s.rows} />
       </div>
@@ -425,7 +437,7 @@ function GoalsTimeline({ s, story }: { s: S<'goalsTimeline'>; story: StoryData }
   return (
     <Frame>
       <Head eyebrow="Голы" title={s.title} sub={s.sub} />
-      <div className="my-auto py-4">
+      <div className="mt-6">
         <Legend story={story} />
         <div className="relative mt-4">
           <div className="st-grow-y absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-white/15" style={{ transformOrigin: 'top' }} />

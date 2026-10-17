@@ -61,6 +61,8 @@ export type StorySlide =
       kind: 'goals'
       title: string
       sub: string
+      /** сколько голов ждём в сумме — главная цифра слайда */
+      total: number
       over25: number | null
       btts: number | null
       /** три самых вероятных счёта */
@@ -241,9 +243,10 @@ export function buildStory(ins: MatchInsights): StoryData | null {
   if (scheduled && model) {
     const total = model.lambdas.home + model.lambdas.away
     const over25 = model.over['2.5'] ?? cons.over['2.5'] ?? null
-    let title = `Ждём около ${dec(total)} гола`
-    if (over25 != null && over25 >= 0.6) title = `Будут голы: ждём около ${dec(total)}`
-    else if (over25 != null && over25 <= 0.42) title = `Голов будет немного: ждём около ${dec(total)}`
+    // число — крупно на слайде (`total`), в заголовке — вывод словами
+    let title = 'Голов — как обычно'
+    if (over25 != null && over25 >= 0.6) title = 'Скорее будут голы'
+    else if (over25 != null && over25 <= 0.42) title = 'Голов будет немного'
     const scores = poissonGrid(model.lambdas.home, model.lambdas.away)
       .flatMap((row, i) => row.map((p, j) => ({ home: i, away: j, p })))
       .sort((a, b) => b.p - a.p)
@@ -252,6 +255,7 @@ export function buildStory(ins: MatchInsights): StoryData | null {
       kind: 'goals',
       title,
       sub: `Сколько голов ждём: ${q(H)} — ${dec(model.lambdas.home)}, ${q(A)} — ${dec(model.lambdas.away)}`,
+      total,
       over25,
       btts: model.btts,
       scores,
