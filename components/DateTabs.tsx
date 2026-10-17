@@ -36,6 +36,7 @@ export function DateTabs({
   hash = '',
   section,
   fade = false,
+  chips = false,
 }: {
   active: string
   today: string
@@ -45,6 +46,8 @@ export function DateTabs({
   section?: string
   /** на телефоне рядом справа — переключатель порядка: правый край затухает, видно, что дни листаются */
   fade?: boolean
+  /** ниже lg — чипами, как у YouTube (второй ряд шапки на главной и «Матчах»): выбранный белый, остальные серые; от lg — чертой */
+  chips?: boolean
 }) {
   const href = (d: string) => (section === 'all' ? listHref(d, today) : section ? `/matches/${d}/${section}` : `${dayHref(d, today)}${hash}`)
   const strip = Array.from({ length: SITE.daysAhead + 2 }, (_, i) => addDays(today, i - 1))
@@ -54,7 +57,7 @@ export function DateTabs({
   return (
     <nav aria-label="Выбор дня" className={`scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 ${fade ? 'mr-0 pr-6 max-sm:[mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)]' : ''}`}
     >
-      <div className="flex w-max items-center gap-5">
+      <div className={`flex w-max items-center ${chips ? 'gap-2 lg:gap-5' : 'gap-5'}`}>
         {days.map((d) => {
           const on = d === active
           return (
@@ -65,9 +68,15 @@ export function DateTabs({
               aria-current={on ? 'page' : undefined}
               // черта выбранного дня — белая, как у пункта меню в шапке (владелец спросил «а хедер как?», согласился): лаймовая
               // была единственным лаймом на экране не про ставку и спорила с выгодными кэфами; «вы здесь» — везде одного цвета
-              className={`inline-flex h-9 shrink-0 items-center border-b-2 text-[15px] font-medium transition-colors ${
-                on ? 'border-fg text-fg' : 'border-transparent text-dim hover:text-fg'
-              }`}
+              className={
+                chips
+                  ? `inline-flex shrink-0 items-center font-medium transition-colors max-lg:h-8 max-lg:rounded-full max-lg:px-3.5 max-lg:text-[14px] lg:h-9 lg:border-b-2 lg:text-[15px] ${
+                      on ? 'max-lg:bg-fg max-lg:text-ink lg:border-fg lg:text-fg' : 'max-lg:bg-white/[0.08] max-lg:text-fg/85 lg:border-transparent lg:text-dim lg:hover:text-fg'
+                    }`
+                  : `inline-flex h-9 shrink-0 items-center border-b-2 text-[15px] font-medium transition-colors ${
+                      on ? 'border-fg text-fg' : 'border-transparent text-dim hover:text-fg'
+                    }`
+              }
             >
               {label(d)}
               {d === today && liveToday ? (
@@ -76,7 +85,7 @@ export function DateTabs({
             </Link>
           )
         })}
-        <DatePicker active={active} today={today} min={addDays(today, -365)} max={addDays(today, 60)} hash={hash} section={section} />
+        <DatePicker active={active} today={today} min={addDays(today, -365)} max={addDays(today, 60)} hash={hash} section={section} chips={chips} />
       </div>
     </nav>
   )

@@ -7,7 +7,7 @@ import { useRef } from 'react'
  * Кнопка «календарь» рядом с вкладками дней: любой день в пределах года назад и двух месяцев вперёд.
  * Сам выбор — системный календарь браузера (input type=date), без своих попапов.
  */
-export function DatePicker({ active, today, min, max, hash = '', section }: { active: string; today: string; min: string; max: string; hash?: string; section?: string }) {
+export function DatePicker({ active, today, min, max, hash = '', section, chips = false }: { active: string; today: string; min: string; max: string; hash?: string; section?: string; chips?: boolean }) {
   const router = useRouter()
   const input = useRef<HTMLInputElement>(null)
 
@@ -28,7 +28,10 @@ export function DatePicker({ active, today, min, max, hash = '', section }: { ac
       <button
         type="button"
         onClick={open}
-        className="inline-flex h-9 items-center gap-1.5 border-b-2 border-transparent text-[15px] font-medium text-dim transition-colors hover:text-fg"
+        // `chips` — ниже lg чипом, как дни рядом (ряд шапки на главной)
+        className={`inline-flex h-9 items-center gap-1.5 border-b-2 border-transparent text-[15px] font-medium text-dim transition-colors hover:text-fg ${
+          chips ? 'max-lg:h-8 max-lg:rounded-full max-lg:border-0 max-lg:bg-white/[0.08] max-lg:px-3 max-lg:text-[14px] max-lg:text-fg/85' : ''
+        }`}
         aria-label="Выбрать дату"
         title="Выбрать дату"
       >

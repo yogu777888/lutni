@@ -197,7 +197,7 @@ export async function DayView({
         <>
           {/* заголовок — тихая строка с датой (на xl — только для поисковиков): главное на экране — матчи */}
           {/* на телефоне — тоже только для поисковиков: день видно во вкладках, а строка отодвигала список (владелец: «а на телефоне главная как?») */}
-          <h1 className="h1-quiet fade-up sr-only text-[15px] text-dim sm:not-sr-only xl:sr-only">
+          <h1 className="sr-only">
             {heading.title} · {heading.date.charAt(0).toLowerCase() + heading.date.slice(1)}
           </h1>
 
@@ -242,12 +242,13 @@ export async function DayView({
       {showList ? (
       <section
         id="matches"
-        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : view === 'home' ? 'sm:mt-6' : 'mt-3 sm:mt-6'} xl:mt-0`}
+        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : view === 'home' ? '-mt-4 sm:-mt-6 lg:mt-0' : 'mt-3 sm:mt-6'} xl:mt-0`}
       >
-        {/* ниже xl — тоже панелью и липкой под шапкой, как на компьютере (владелец: «сортировку по дням как на пк сделать
-            в блоке»): плашка цвета панели, дни слева, порядок справа; подложка цвета фона и 8px под плашкой — список уходит под неё
-            без просвета в скруглённых углах; от xl — правила .bare-panel в app/globals.css */}
-        <div className="bare-panel max-xl:sticky max-xl:top-[65px] max-xl:z-30 max-xl:bg-[#090c10] max-xl:pb-2">
+        {/* ниже lg (телефон, планшет) — второй ряд шапки, как чипы у YouTube (владелец: «да зачем ты в отдельном блоке под
+            хедер сделал?»): без своей плашки, липкий вплотную под шапкой, при прокрутке — то же стекло, что у шапки, и одна
+            черта снизу (`.hdr-sub` в app/globals.css); lg–xl — плашкой цвета панели, липкой под шапкой; от xl — правила
+            .bare-panel в app/globals.css */}
+        <div className="bare-panel hdr-sub max-lg:sticky max-lg:top-[65px] max-lg:z-30 max-lg:-mx-4 lg:max-xl:sticky lg:max-xl:top-[65px] lg:max-xl:z-30 lg:max-xl:bg-[#090c10] lg:max-xl:pb-2">
         {listHead ? (
           // заголовок — как у полок выше: одна схема на всю страницу
           <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
@@ -255,14 +256,15 @@ export async function DayView({
         {/* выбор дня — и здесь, у списка (как и чип в «Главных матчах», ведёт на страницу дня); рядом — порядок списка */}
         {/* на телефоне дни и порядок — одной строкой: порядок значками (часы / список), дни листаются вбок */}
         <div
-          className={`flex items-center justify-between gap-x-3 gap-y-3 max-xl:rounded-card max-xl:bg-panel max-xl:py-1.5 max-xl:pl-4 max-xl:pr-1.5 max-xl:shadow-[0_10px_30px_rgb(0_0_0/0.45)] sm:flex-wrap sm:gap-x-6 ${listHead ? 'mt-5' : ''}`}
+          className={`flex items-center justify-between gap-x-3 gap-y-3 max-lg:py-2 max-lg:pl-4 max-lg:pr-3 lg:flex-wrap lg:gap-x-6 lg:max-xl:rounded-card lg:max-xl:bg-panel lg:max-xl:py-1.5 lg:max-xl:pl-4 lg:max-xl:pr-1.5 lg:max-xl:shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${listHead ? 'mt-5' : ''}`}
         >
-          <div className="min-w-0 flex-1 sm:w-auto sm:flex-none">
+          <div className="min-w-0 flex-1 lg:w-auto lg:flex-none">
             <DateTabs
               active={ymd}
               today={today}
               liveToday={liveToday}
               fade={!(past || !matches.length)}
+              chips
               {...(view === 'list' ? { section: 'all' } : { hash: '#matches' })}
             />
           </div>
@@ -271,7 +273,7 @@ export async function DayView({
             // вложены по правилу «внешний = внутренний + отступ»: строка 20px, отступ 10 → переключатель 10px (rounded-ctl),
             // отступ 4 → выбранный 6px; капсулой у края строки скругления не сходились (владелец: «а скругление чипа где по
             // турнирам / по времени?»)
-            <nav aria-label="Порядок матчей" className="flex shrink-0 items-center gap-1 rounded-ctl bg-white/[0.04] p-1 text-[14px] font-medium">
+            <nav aria-label="Порядок матчей" className="flex shrink-0 items-center gap-1 rounded-ctl bg-white/[0.04] p-1 text-[14px] font-medium max-lg:rounded-full max-lg:bg-white/[0.06] max-lg:p-0.5">
               {(
                 [
                   ['league', 'По турнирам', view === 'list' ? `${list}${fq ? `?${fq}` : ''}` : `${base}#matches`],
@@ -285,10 +287,10 @@ export async function DayView({
                   scroll={false}
                   aria-current={(k === 'time') === byTime ? 'true' : undefined}
                   title={label}
-                  className={`flex h-8 items-center rounded-md px-2 transition-colors sm:h-auto sm:px-3.5 sm:py-1.5 ${(k === 'time') === byTime ? 'bg-white/[0.08] text-fg' : 'text-dim hover:text-fg'}`}
+                  className={`flex h-8 items-center rounded-md px-2 transition-colors max-lg:rounded-full max-lg:px-2.5 lg:h-auto lg:px-3.5 lg:py-1.5 ${(k === 'time') === byTime ? 'bg-white/[0.08] text-fg max-lg:bg-white/[0.14]' : 'text-dim hover:text-fg'}`}
                 >
                   <SortIcon k={k} />
-                  <span className="sr-only sm:not-sr-only">{label}</span>
+                  <span className="sr-only lg:not-sr-only">{label}</span>
                 </Link>
               ))}
             </nav>
@@ -364,10 +366,10 @@ export async function DayView({
   )
 }
 
-/** Значок порядка на телефоне: «По турнирам» — список с заголовками групп, «По времени» — часы. */
+/** Значок порядка ниже lg (ряд шапки): «По турнирам» — список с заголовками групп, «По времени» — часы. */
 function SortIcon({ k }: { k: 'league' | 'time' }) {
   return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden className="sm:hidden">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden className="lg:hidden">
       {k === 'time' ? (
         <>
           <circle cx="12" cy="12" r="8.5" />
