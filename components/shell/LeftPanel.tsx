@@ -280,7 +280,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
           <button
             type="button"
             onClick={playLive}
-            {...tipProps('Сейчас в игре', `${matchesN(day.live)} ${inLeagues(day.leagues.filter((l) => l.live).length)} · нажмите — разбор`)}
+            {...tipProps('Сейчас в игре', `${matchesN(day.live)} ${inLeagues(day.liveLeagues)} · нажмите — разбор`)}
             aria-label="Сейчас в игре: смотреть разбор матчей"
             className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
           >
@@ -331,7 +331,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                 >
                   <span className="min-w-0 flex-1 leading-tight">
                     <span className="block truncate">Сейчас в игре</span>
-                    <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">{`${matchesN(day.live)} ${inLeagues(day.leagues.filter((l) => l.live).length)}`}</span>
+                    <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">{`${matchesN(day.live)} ${inLeagues(day.liveLeagues)}`}</span>
                   </span>
                 </a>
               </div>

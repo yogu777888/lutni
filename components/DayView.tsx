@@ -93,10 +93,15 @@ export async function DayView({
   // фильтр — и в ссылках порядка «По турнирам / По времени»
   const fq = filtered ? filterQuery(filter) : ''
   const liveAll = listItems.filter((i) => isLive(i.match))
-  // в «Сейчас в игре» — сначала топ-лиги, потом матчи с линией; женские и молодёжные — в конец
-  const liveTop = [...liveAll].sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts).slice(0, LIVE_LIMIT)
+  const liveSorted = [...liveAll].sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts)
+  // в «Сейчас в игре» сверху — только топ-турниры (владелец согласился: на настоящих данных в субботу утром первый экран
+  // занимали «Petřín Plzeň — Rokycany» и «6 из 42» без ссылки на остальные), остальные идущие — под раскрывашкой
+  // «Ещё 36 матчей в других турнирах» в том же блоке; топ-лиги сверх шести — в своих блоках, как были
+  const liveMain = liveSorted.filter((i) => featuredRank(i.match.league) >= 0)
+  const liveTop = liveMain.slice(0, LIVE_LIMIT)
+  const liveRest = liveSorted.filter((i) => featuredRank(i.match.league) < 0)
   // идущие из «Сейчас в игре» в блоках лиг не повторяем (владелец: матчи дублировались); в шапке лиги — «● N в игре»
-  const liveShown = new Set(liveTop.map((i) => i.match.id))
+  const liveShown = new Set([...liveTop, ...liveRest].map((i) => i.match.id))
   const liveIn = new Map<number, number>()
   for (const i of liveTop) liveIn.set(i.match.league.id, (liveIn.get(i.match.league.id) ?? 0) + 1)
   const groups = new Map<number, { league: League; items: FeedItem[]; rank: number }>()
@@ -282,7 +287,7 @@ export async function DayView({
             ) : null}
             {/* матчи избранных команд (звёздочка на странице матча) — первыми; нет избранных — блока нет */}
             <FavMatches ymd={ymd} />
-            {liveTop.length ? <LiveBlock items={liveTop} total={liveAll.length} /> : null}
+            {liveTop.length || liveRest.length ? <LiveBlock items={liveTop} total={liveMain.length} rest={liveRest} /> : null}
             {byTime && timeList.length ? <TimeBlock items={timeList} lines={lines} /> : null}
             {byTime ? null : featured.map((g) => (
               <LeagueBlock key={g.league.id} league={g.league} items={g.items} lines={lines} live={liveIn.get(g.league.id) ?? 0} featured />

@@ -37,6 +37,8 @@ export type DayLeague = {
 
 export type DayLeagues = {
   live: number
+  /** в скольких турнирах идут матчи — по всем идущим, а не по списку панели: было «42 матча в 1 турнире» */
+  liveLeagues: number
   /** идущие матчи (главные первыми, как в «Сейчас в игре») — сторис по клику на значок «Сейчас в игре» и его кольцо */
   liveItems: { id: number; href: string }[]
   leagues: DayLeague[]
@@ -104,6 +106,7 @@ export async function dayLeagues(): Promise<DayLeagues> {
   const live = (now?.matches ?? []).filter(isLive).sort((a, b) => liveRank(a) - liveRank(b) || a.ts - b.ts)
   return {
     live: live.length,
+    liveLeagues: new Set(live.map((m) => m.league.id)).size,
     liveItems: live.map((m) => ({ id: m.id, href: matchHref(m) })),
     leagues: now?.leagues ?? [],
     tomorrow: (next?.leagues ?? []).slice(0, TOMORROW_LIMIT),

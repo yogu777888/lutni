@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { FeedItem } from '@/lib/data'
-import { formatTime } from '@/lib/format'
+import { formatTime, pluralN } from '@/lib/format'
 import { leagueHref } from '@/lib/links'
 import type { X12Line } from '@/lib/lines'
 import type { League } from '@/lib/types'
@@ -82,10 +82,15 @@ export function LeagueBlock({
   )
 }
 
-export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }) {
+/**
+ * «Сейчас в игре»: сверху — идущие матчи топ-турниров (`items`), ниже под раскрывашкой — идущие в остальных (`rest`,
+ * с турниром под командами: «Petřín Plzeň — Rokycany» без него ни о чём не говорит). Нет идущих в топ-турнирах — блок
+ * из шапки и одной строки «42 матча идут в других турнирах», а не первый экран низших лиг.
+ */
+export function LiveBlock({ items, total, rest = [] }: { items: FeedItem[]; total: number; rest?: FeedItem[] }) {
   return (
     <section id="live" className="card scroll-mt-24 overflow-hidden">
-      <header className="flex items-baseline justify-between gap-3 border-b border-edge px-4 py-4 sm:px-5">
+      <header className={`flex items-baseline justify-between gap-3 px-4 py-4 sm:px-5 ${items.length ? 'border-b border-edge' : ''}`}>
         {/* без плашки LIVE — «LIVE» и «Сейчас в игре» говорили одно и то же */}
         <span className="flex items-center gap-2.5 text-[20px] font-bold tracking-tight">
           <span className="h-2 w-2 animate-pulse-live rounded-full bg-live" aria-hidden />
@@ -99,6 +104,25 @@ export function LiveBlock({ items, total }: { items: FeedItem[]; total: number }
           <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} />
         ))}
       </div>
+      {rest.length ? (
+        <details className="group/rest border-t border-edge">
+          <summary className="flex items-center justify-between gap-3 px-4 py-3.5 text-[14px] text-dim transition-colors hover:text-fg sm:px-5">
+            <span>
+              {items.length
+                ? `Ещё ${pluralN(rest.length, ['матч', 'матча', 'матчей'])} в других турнирах`
+                : `${pluralN(rest.length, ['матч идёт', 'матча идут', 'матчей идут'])} в других турнирах`}
+            </span>
+            <span aria-hidden className="text-mute transition-transform group-open/rest:rotate-180">
+              ▾
+            </span>
+          </summary>
+          <div className="divide-y divide-edge border-t border-edge">
+            {rest.map((it) => (
+              <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} showLeague />
+            ))}
+          </div>
+        </details>
+      ) : null}
     </section>
   )
 }
