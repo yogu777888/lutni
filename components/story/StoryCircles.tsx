@@ -117,7 +117,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             className="group flex w-[80px] shrink-0 flex-col items-center focus-visible:outline-none"
           >
             {/* фокус с клавиатуры — белым кругом вокруг кружка */}
-            <span className={`relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 h-[58px] w-[58px] lg:h-[clamp(46px,calc(14vh_-_50px),58px)] lg:w-[clamp(46px,calc(14vh_-_50px),58px)]`}>
+            <span data-story-key={g.key} className={`relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 h-[58px] w-[58px] lg:h-[clamp(46px,calc(14vh_-_50px),58px)] lg:w-[clamp(46px,calc(14vh_-_50px),58px)]`}>
               <Ring kind={g.kind} n={g.items.length} seen={n} />
               <Disc k={g.key} cover={covers[g.key]} />
             </span>

@@ -168,6 +168,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
           <button
             key={g.key}
             type="button"
+            data-story-key={g.key}
             onClick={(e) => play(gi, e)}
             {...tipProps(
               g.label,
@@ -223,6 +224,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                           (14 белых кнопок разом были ярче всего на странице) */}
                       <button
                         type="button"
+                        data-story-key={g.key}
                         onClick={(e) => play(gi, e)}
                         aria-label={`${g.label}: смотреть разбор матчей`}
                         title="Смотреть разбор"

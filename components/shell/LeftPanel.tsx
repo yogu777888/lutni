@@ -191,6 +191,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     <button
       key={l.id}
       type="button"
+      data-story-key={`league-${l.id}`}
       onClick={play(list, list.indexOf(l))}
       {...tipProps(
         l.name,
@@ -244,7 +245,8 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
         >
           <button
             type="button"
-            onClick={play(list, list.indexOf(l))}
+            data-story-key={`league-${l.id}`}
+      onClick={play(list, list.indexOf(l))}
             aria-label={`${l.name}: смотреть разбор матчей`}
             className="relative shrink-0 rounded-full"
           >
@@ -279,6 +281,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
         {day.live ? (
           <button
             type="button"
+            data-story-key="live"
             onClick={playLive}
             {...tipProps('Сейчас в игре', `${matchesN(day.live)} ${inLeagues(day.liveLeagues)} · нажмите — разбор`)}
             aria-label="Сейчас в игре: смотреть разбор матчей"
@@ -316,7 +319,8 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             // матчей подряд (группа 'live', как у прежних кружков), кольцо — непросмотренные; название — к блоку
             <li>
               <div className={`group -mx-2 ${row} ${active === 'live' ? 'bg-white/[0.07]' : 'hover:bg-white/[0.04]'}`}>
-                <button type="button" onClick={playLive} aria-label="Сейчас в игре: смотреть разбор матчей" className="relative shrink-0 rounded-full">
+                <button type="button" data-story-key="live"
+            onClick={playLive} aria-label="Сейчас в игре: смотреть разбор матчей" className="relative shrink-0 rounded-full">
                   <span aria-hidden className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.06]">
                     <StorySymbol k="live" tone="currentColor" className="h-[18px] w-[18px]" />
                   </span>

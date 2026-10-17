@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { SPONSORED_REL } from '@/lib/affiliate'
 import type { StoryData } from '@/lib/story'
 import { artFor, artGlow } from '@/lib/story-art'
@@ -65,6 +65,37 @@ function GroupLabel({ label, kind }: { label: string; kind: NonNullable<Item['gr
 
 const btn = 'flex h-9 w-9 items-center justify-center rounded-full text-fg/90 transition hover:bg-white/10 active:scale-95'
 
+/*
+ * Открытие, как у приложений на iOS (владелец: «а можно сделать анимацию открытия историй типа как на ios приложения
+ * открываются?»): история вырастает из кружка, по которому нажали, и сворачивается в кружок своей подборки или турнира.
+ * Двигаем только `transform` и обрезку (`clip-path`) самой панели — без пересчёта раскладки страницы и без библиотек;
+ * содержимое проявляется в конце, чтобы текст не масштабировался. Открыли не из кружка (строка, кнопка, ссылка) —
+ * мягко из центра; «уменьшить движение» — без анимации.
+ */
+const GROW = 'cubic-bezier(0.2, 0.9, 0.25, 1)'
+const SHRINK = 'cubic-bezier(0.4, 0, 0.2, 1)'
+const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/** Кружок, из которого растёт история: элемент с `data-story-key` (сам или внутри), не крупнее 96px и на экране. */
+function circleOf(el: Element | null | undefined): DOMRect | null {
+  if (!el?.isConnected) return null
+  const c = el.matches('[data-story-key]') ? el : el.querySelector('[data-story-key]')
+  if (!c) return null
+  const r = c.getBoundingClientRect()
+  if (!r.width || r.width > 96 || r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) return null
+  return r
+}
+
+/** Панель, уменьшенная до кружка и обрезанная в круг на его месте (обрезка — в координатах панели до уменьшения). */
+function asCircle(p: DOMRect, c: DOMRect): Keyframe {
+  const dx = c.left + c.width / 2 - (p.left + p.width / 2)
+  const dy = c.top + c.height / 2 - (p.top + p.height / 2)
+  const side = Math.min(p.width, p.height)
+  const v = (p.height - side) / 2
+  const h = (p.width - side) / 2
+  return { transform: `translate(${dx}px, ${dy}px) scale(${c.width / side})`, clipPath: `inset(${v}px ${h}px round ${side / 2}px)` }
+}
+
 /**
  * Сторис матча на весь экран. Открывается кликом по матчу (StoryLink),
  * кнопкой на странице матча или ссылкой ?story=<id>.
@@ -92,6 +123,10 @@ export function StoryViewer() {
   const pushed = useRef(false)
   const deep = useRef(false)
   const dialog = useRef<HTMLDivElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
+  const closing = useRef(false)
+  /** Подборка или турнир текущего матча — в его кружок сворачиваемся при закрытии. */
+  const groupKey = useRef<string | null>(null)
   const gesture = useRef<{ x: number; y: number; held: boolean; timer: number } | null>(null)
 
   const load = useCallback((id: number) => {
@@ -122,7 +157,7 @@ export function StoryViewer() {
     if (el?.isConnected) el.focus({ preventScroll: true })
   }, [])
 
-  const close = useCallback(() => {
+  const closeNow = useCallback(() => {
     reset()
     if (pushed.current) {
       pushed.current = false
@@ -134,6 +169,33 @@ export function StoryViewer() {
       history.replaceState(history.state, '', u.pathname + u.search + u.hash)
     }
   }, [reset])
+
+  /** Закрыть со сворачиванием в кружок (или растворением, если кружка на экране нет). */
+  const close = useCallback(() => {
+    const p = panel.current
+    const d = dialog.current
+    if (closing.current) return
+    if (!p || !d || calm()) return closeNow()
+    closing.current = true
+    const key = groupKey.current
+    const own = key ? [...document.querySelectorAll(`[data-story-key="${CSS.escape(key)}"]`)].map(circleOf).find(Boolean) : null
+    const c = own ?? circleOf(opener.current)
+    const box = p.getBoundingClientRect()
+    const R = getComputedStyle(p).borderTopLeftRadius
+    const opts = { duration: c ? 320 : 200, easing: SHRINK, fill: 'forwards' as const }
+    d.animate({ backgroundColor: ['rgb(0 0 0 / 0.85)', 'rgb(0 0 0 / 0)'], backdropFilter: ['blur(12px)', 'blur(0px)'] }, opts)
+    for (const k of d.children) if (k !== p) (k as HTMLElement).animate({ opacity: [1, 0] }, { duration: 150, fill: 'forwards' })
+    for (const k of p.children) (k as HTMLElement).animate({ opacity: [1, 0] }, { duration: c ? 140 : 200, fill: 'forwards' })
+    const a = c
+      ? p.animate([{ transform: 'none', clipPath: `inset(0px 0px round ${R})` }, asCircle(box, c)], opts)
+      : p.animate({ transform: ['none', 'scale(0.94)'], opacity: [1, 0] }, opts)
+    void a.finished
+      .catch(() => {})
+      .then(() => {
+        closing.current = false
+        closeNow()
+      })
+  }, [closeNow])
 
   /** Закрыть и перейти на страницу: запись сторис в истории заменяем ею, чтобы «Назад» вёл к списку. */
   const leaveTo = useCallback(
@@ -295,6 +357,30 @@ export function StoryViewer() {
   }, [open])
 
   useEffect(() => {
+    groupKey.current = items[pos]?.group?.key ?? null
+  }, [items, pos])
+
+  // открытие: панель вырастает из кружка (см. `asCircle`), фон затемняется, содержимое проявляется в последней трети
+  useLayoutEffect(() => {
+    if (!open) return
+    closing.current = false
+    const p = panel.current
+    const d = dialog.current
+    if (!p || !d || calm()) return
+    const box = p.getBoundingClientRect()
+    const c = circleOf(opener.current)
+    const R = getComputedStyle(p).borderTopLeftRadius
+    d.animate({ backgroundColor: ['rgb(0 0 0 / 0)', 'rgb(0 0 0 / 0.85)'], backdropFilter: ['blur(0px)', 'blur(12px)'] }, { duration: 300, easing: 'ease-out' })
+    for (const k of d.children) if (k !== p) (k as HTMLElement).animate({ opacity: [0, 1] }, { duration: 200, delay: 200, fill: 'backwards' })
+    if (c) {
+      p.animate([asCircle(box, c), { transform: 'none', clipPath: `inset(0px 0px round ${R})` }], { duration: 440, easing: GROW })
+      for (const k of p.children) (k as HTMLElement).animate({ opacity: [0, 1] }, { duration: 200, delay: 240, easing: 'ease-out', fill: 'backwards' })
+    } else {
+      p.animate({ transform: ['scale(0.94)', 'none'], opacity: [0, 1] }, { duration: 280, easing: GROW })
+    }
+  }, [open])
+
+  useEffect(() => {
     if (!toast) return
     const t = window.setTimeout(() => setToast(null), 1800)
     return () => window.clearTimeout(t)
@@ -386,6 +472,7 @@ export function StoryViewer() {
       </button>
 
       <div
+        ref={panel}
         className="st-glow relative isolate flex h-dvh w-full select-none flex-col overflow-hidden transition-[background] duration-500 sm:h-[min(92dvh,860px)] sm:w-auto sm:aspect-[9/16] sm:rounded-card sm:shadow-2xl sm:ring-1 sm:ring-edge-2"
         style={panelBg ? { background: panelBg } : undefined}
       >
