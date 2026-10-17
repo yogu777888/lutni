@@ -321,9 +321,10 @@ export async function DayView({
           </div>
         ) : null}
         <div
-          className={`mt-3 grid gap-10 sm:mt-6 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-2 xl:!grid-cols-1 xl:gap-2' : ''}`}
+          className={`mt-3 grid gap-3 sm:mt-6 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-2 xl:!grid-cols-1 xl:gap-2' : ''}`}
         >
-          <div className={`min-w-0 space-y-5 ${view === 'home' ? 'xl:space-y-2' : ''}`}>
+          {/* между блоками на телефоне 12px — тот же шаг, что у ряда дней и кружков сверху (было 20) */}
+          <div className={`min-w-0 space-y-3 sm:space-y-5 ${view === 'home' ? 'xl:space-y-2' : ''}`}>
             {failed ? (
               <div className="card p-5 text-[15px] text-dim">
                 Не удалось загрузить матчи: источник данных временно недоступен. Обновите страницу через минуту.

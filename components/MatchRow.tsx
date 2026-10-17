@@ -13,8 +13,9 @@ import { TeamLogo } from './TeamLogo'
  * Колонки строки матча — одни и те же у каждой строки, в любом состоянии (владелец: «время везде по-разному, кэфы не
  * везде есть, счёт не везде есть»): время · матч · счёт · кэфы. На телефоне — время · команды в две строки · счёт, кэфы ниже.
  */
-export const ROW_COLS = 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_11.25rem]'
-const ROW_COLS_NO_ODDS = 'grid-cols-[3.25rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_auto]'
+// на телефоне колонка времени 44px (было 52 + зазор 16 — под временем пустовала треть строки; владелец: «а по блокам на главной что скажешь?»)
+export const ROW_COLS = 'grid-cols-[2.75rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_11.25rem]'
+const ROW_COLS_NO_ODDS = 'grid-cols-[2.75rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_auto]'
 
 const isLive = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
@@ -165,9 +166,9 @@ export function MatchRow({
   // не везде есть, счёт не везде есть»). Выгодный кэф — только лаймовой ячейкой, без подписи (объяснение — в подсказке).
   return (
     <div
-      className={`relative grid items-center gap-x-4 gap-y-2.5 px-4 py-3 sm:py-2.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : ROW_COLS}`}
+      className={`relative grid items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:gap-x-4 sm:gap-y-2.5 sm:py-2.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : ROW_COLS}`}
     >
-      <div className="self-start pt-1 sm:self-center sm:pt-0">
+      <div className="self-start pt-0.5 sm:self-center sm:pt-0">
         <StatusCell m={m} />
       </div>
 
@@ -178,7 +179,7 @@ export function MatchRow({
           href={matchHref(m)}
           prefetch={false}
           // на телефоне команды в две строки — справа счёт, иначе названия обрезаются
-          className="flex min-w-0 flex-col items-start gap-1 text-[15px] font-semibold after:absolute after:inset-0 after:content-[''] sm:flex-row sm:items-center sm:gap-0 sm:text-[16px]"
+          className="flex min-w-0 flex-col items-start gap-0.5 text-[15px] font-semibold after:absolute after:inset-0 after:content-[''] sm:flex-row sm:items-center sm:gap-0 sm:text-[16px]"
         >
           {name(m.home, Boolean(awayWon))}
           <span className="mx-1.5 hidden shrink-0 font-normal text-mute sm:inline">—</span>
@@ -192,7 +193,8 @@ export function MatchRow({
       {m.status === 'scheduled' && !noOdds ? (
         <>
           <span className="sm:hidden" />
-          <div className="col-span-2 col-start-2 sm:col-span-1 sm:col-start-auto">
+          {/* на телефоне кэфы — во всю ширину строки, от левого края под временем: ячейки крупнее, слева нет пустого «кармана» */}
+          <div className="col-span-3 col-start-1 sm:col-span-1 sm:col-start-auto">
             <Odds m={m} hotKey={hotKey} line={line} />
           </div>
         </>

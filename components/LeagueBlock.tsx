@@ -46,7 +46,8 @@ export function LeagueBlock({
   return (
     // id — для «Турниров дня» в левой панели (клик прокручивает сюда)
     <section id={`league-${league.id}`} className="card scroll-mt-36 overflow-hidden xl:scroll-mt-24">
-      <header className="flex items-center justify-between gap-3 border-b border-edge px-4 py-4 sm:px-5">
+      {/* справа — на линии названия (под ним на телефоне ещё строка «Кэфы PARI · Реклама»: по центру двух строк «● 3 · Таблица» висели посередине) */}
+      <header className="flex items-start justify-between gap-3 border-b border-edge px-4 py-3.5 sm:items-center sm:px-5 sm:py-4">
         <div className="min-w-0">
           <Link href={leagueHref(league)} prefetch={false} className="group flex min-w-0 items-center gap-2.5">
             <Flag league={league} />
@@ -60,7 +61,7 @@ export function LeagueBlock({
             <AdNote items={items} lines={lines} full />
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-3 text-[13px] font-medium sm:gap-4">
+        <div className="mt-[5px] flex shrink-0 items-center gap-3 text-[13px] font-medium sm:mt-0 sm:gap-4">
           <span className="hidden sm:inline">
             <AdNote items={items} lines={lines} />
           </span>

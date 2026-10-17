@@ -13,7 +13,7 @@ import { ValueBlock } from './shell/RightPanel'
  */
 export function Sidebar({ values = [] }: { values?: ValueRow[] }) {
   return (
-    <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+    <aside className="space-y-3 sm:space-y-5 lg:sticky lg:top-24 lg:self-start">
       {values.length ? <ValueBlock rows={values} card /> : null}
       <section className="card overflow-hidden">
         <BlockHead title="Где ставить" line />
