@@ -248,8 +248,9 @@ export default async function MatchPage({ params }: Props) {
         }
         partner={heroLine}
       >
+        {/* на узком телефоне крошки не влезают и листаются вбок — край затухает, а не обрывается на «Овьедо — Ре» */}
         <Breadcrumbs
-          className="min-w-0 text-[13px]"
+          className="min-w-0 pr-7 text-[13px] [mask-image:linear-gradient(90deg,#000_calc(100%_-_28px),transparent)]"
           items={[
             { href: leagueHref(m.league), label: m.league.name },
             { href: canonical, label: pair },

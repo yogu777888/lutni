@@ -37,6 +37,8 @@ export function MatchBar({
   partner: { name: string; href: string; live?: boolean } | null
 }) {
   const [show, setShow] = useState(false)
+  // прилипла под шапкой (ниже xl): тогда над панелью — полоска цвета фона, страница в щели не просвечивает
+  const [stuck, setStuck] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   // переходы включаем после первого кадра: при заходе на страницу состояние ставится сразу, без вспышки крошки → табло
   const [ready, setReady] = useState(false)
@@ -49,10 +51,12 @@ export function MatchBar({
     const check = () => {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
-        const t = Math.round((ref.current?.getBoundingClientRect().top ?? 72))
+        const el = ref.current
+        const box = el?.getBoundingClientRect()
         // сами цифры (первый ряд в #match-score): сменяем, когда половина крупного счёта ушла под панель
         const r = (board?.firstElementChild ?? board)?.getBoundingClientRect()
-        setShow(r ? (r.top + r.bottom) / 2 < t + 58 : false)
+        setShow(r && box ? (r.top + r.bottom) / 2 < box.bottom : false)
+        setStuck(el && box ? Math.abs(box.top - parseFloat(getComputedStyle(el).top)) < 1 : false)
       })
     }
     check()
@@ -67,19 +71,28 @@ export function MatchBar({
     }
   }, [])
 
+  // название — до двух строк, а не «Райо Валь…» (высоты панели хватает): на телефоне и на 768–1024 рядом с кэфами
   const team = (t: Side, right = false) => (
     <span className={`flex min-w-0 items-center gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
       <TeamLogo name={t.name} src={t.logo} size={22} />
-      <span className="truncate text-[14px] font-semibold sm:text-[15px]">{t.name}</span>
+      <span className="line-clamp-2 break-words text-[14px] font-semibold leading-[1.15] sm:text-[15px]">{t.name}</span>
     </span>
   )
+  const outcome = (k: BarOdd['key']) => (k === 'draw' ? 'Ничья' : `«${k === 'home' ? home.name : away.name}»`)
 
   const swap = ready ? 'transition-[opacity,transform] duration-200 ease-out' : ''
   return (
     // место под шапкой — классами, а не после замера: иначе при заходе на страницу панель вставала на 64px и через кадр
     // прыгала вниз (владелец: «при переходе с главной верхний блок и текст в нём прыгает»). Шапка: от lg — 64px и черта,
-    // ниже — два ряда (99px); от xl — 72px, как строка дней на главной (шапка 64 + полоска рамки 8)
-    <div ref={ref} className="match-top page-enter sticky top-[105px] z-30 mb-4 lg:top-[71px] xl:top-[72px] xl:mb-2">
+    // ниже — два ряда (99px); от xl — 72px, как строка дней на главной (шапка 64 + полоска рамки 8). Ниже xl панель —
+    // вплотную под шапкой, а 6px над ней — полоска цвета фона, пока панель прилипла (`stuck`): в щели между шапкой и
+    // панелью просвечивала прокручиваемая страница (владелец: «а мини табло сверху при прокрутке как?»)
+    <div
+      ref={ref}
+      className={`match-top page-enter sticky top-[99px] z-30 -mt-1.5 mb-4 pt-1.5 lg:top-[65px] xl:top-[72px] xl:mb-2 xl:mt-0 xl:pt-0 ${
+        stuck ? 'bg-[#090c10]' : ''
+      }`}
+    >
       <div className="match-top-in flex min-h-[57.5px] items-center gap-3 rounded-card bg-panel-3 px-3 py-2 shadow-[0_10px_30px_rgb(0_0_0/0.45)] sm:px-4">
         <BackButton fallback="/matches" />
         <div className="relative flex min-w-0 flex-1 items-center self-stretch">
@@ -96,7 +109,8 @@ export function MatchBar({
             {/* счёт одной группой вплотную — «эмблема Бетис 1:0 Хетафе эмблема» сразу после «←», на месте крошек (владелец:
                 «как тебе хлебные крошки и то, что потом появляется?» — по сетке во всю ширину названия прилипали к краям, между
                 ними и счётом было по ~300px пустоты); кэфы — справа (ml-auto) */}
-            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+            {/* на телефоне кэфов в панели нет — счёт по центру свободного места, а не прижат влево с пустотой справа */}
+            <div className="mx-auto flex min-w-0 items-center gap-2.5 sm:gap-3 md:mx-0">
               {team(home)}
               <span className="flex flex-col items-center leading-none">
                 <span className="num display-num whitespace-nowrap text-[20px] font-semibold">{center}</span>
@@ -111,10 +125,17 @@ export function MatchBar({
             </div>
             {odds && partner ? (
               <div className="ml-auto hidden shrink-0 items-center gap-1.5 md:flex">
+                {/* «Реклама» — и у кэфов по ходу матча: раньше там было «PARI / сейчас», а ячейки — ссылки к букмекеру (ст. 18.1) */}
                 <span className="mr-1 text-right text-[11px] leading-tight text-mute">
                   {partner.name}
+                  {partner.live ? (
+                    <span className="ml-1 inline-flex items-center gap-1 text-live">
+                      <span className="h-1 w-1 rounded-full bg-live" />
+                      сейчас
+                    </span>
+                  ) : null}
                   <br />
-                  {partner.live ? 'сейчас' : 'Реклама'}
+                  Реклама · 18+
                 </span>
                 {odds.map((o) => (
                   <a
@@ -123,11 +144,13 @@ export function MatchBar({
                     target="_blank"
                     rel={SPONSORED_REL}
                     title={`${o.title}: ${o.odd.toFixed(2)} в ${partner.name} · Реклама 18+`}
-                    className={`num grid h-8 min-w-[52px] place-items-center rounded-ctl px-2 text-[14px] font-semibold transition-colors ${
+                    // подпись исхода над числом, как на табло: без неё «1.01», стоявший сразу после «Хетафе», читался кэфом «Хетафе»
+                    className={`flex h-10 min-w-[60px] max-w-[88px] flex-col items-center justify-center rounded-ctl px-2 leading-none transition-colors ${
                       o.hot ? 'bg-acid text-acid-ink hover:bg-acid/85' : 'bg-white/[0.07] text-fg hover:bg-white/[0.14]'
                     }`}
                   >
-                    {o.odd.toFixed(2)}
+                    <span className={`block max-w-full truncate text-[10px] ${o.hot ? 'text-acid-ink/70' : 'text-mute'}`}>{outcome(o.key)}</span>
+                    <span className="num mt-1 text-[14px] font-semibold">{o.odd.toFixed(2)}</span>
                   </a>
                 ))}
               </div>
