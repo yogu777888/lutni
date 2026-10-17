@@ -45,7 +45,7 @@ export function LeagueBlock({
 }) {
   return (
     // id — для «Турниров дня» в левой панели (клик прокручивает сюда)
-    <section id={`league-${league.id}`} className="card scroll-mt-24 overflow-hidden">
+    <section id={`league-${league.id}`} className="card scroll-mt-36 overflow-hidden xl:scroll-mt-24">
       <header className="flex items-center justify-between gap-3 border-b border-edge px-4 py-4 sm:px-5">
         <div className="min-w-0">
           <Link href={leagueHref(league)} prefetch={false} className="group flex min-w-0 items-center gap-2.5">
@@ -99,7 +99,7 @@ export function LeagueBlock({
  */
 export function LiveBlock({ items, total, rest = [] }: { items: FeedItem[]; total: number; rest?: FeedItem[] }) {
   return (
-    <section id="live" className="card scroll-mt-24 overflow-hidden">
+    <section id="live" className="card scroll-mt-36 overflow-hidden xl:scroll-mt-24">
       <header className={`flex items-baseline justify-between gap-3 px-4 py-4 sm:px-5 ${items.length ? 'border-b border-edge' : ''}`}>
         {/* без плашки LIVE — «LIVE» и «Сейчас в игре» говорили одно и то же */}
         <span className="flex items-center gap-2.5 text-[20px] font-bold tracking-tight">

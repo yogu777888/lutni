@@ -11,7 +11,7 @@ import { Search } from './Search'
 /**
  * Шапка одной спокойной строкой: надпись tag.bet и меню текстом слева, справа поиск, «Реклама · 18+» и «Бонус».
  * Бегущую строку матчей убрали — шапка была перегружена, а идущие матчи и так видны в «В игре» и «Главных матчах».
- * Ниже lg меню — тем же текстом во втором ряду.
+ * Ниже lg меню — внизу экрана (`TabBar`), шапка — в один ряд (был второй ряд с меню текстом, ~44px первого экрана).
  */
 export function Header() {
   const partner = primaryPartner()
@@ -63,11 +63,6 @@ export function Header() {
             </span>
           ) : null}
         </div>
-      </div>
-      {/* ниже lg — то же меню текстом вторым рядом, прокручивается вбок, если не влезает */}
-      {/* правый край затухает — видно, что меню листается (на 390px обрывалось на «Букмеке») */}
-      <div className="scrollbar-none -mt-2 overflow-x-auto px-2 pb-1.5 pr-8 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:px-3 sm:pr-8 lg:hidden">
-        <NavLinks className="w-max" />
       </div>
     </HeaderShell>
   )

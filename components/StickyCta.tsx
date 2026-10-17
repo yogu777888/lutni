@@ -12,7 +12,8 @@ export function StickyCta({ partner, href, title, subtitle, action }: { partner:
   return (
     <StickyHide
       target="pick-cta"
-      className="sticky-cta fixed inset-x-0 bottom-0 z-40 border-t border-edge bg-ink/85 px-3 pb-[max(env(safe-area-inset-bottom),10px)] pt-2.5 backdrop-blur-xl backdrop-saturate-150 lg:hidden"
+      // над нижним меню (`TabBar`, место — `--tabbar`): плавающей плашкой тем же стеклом
+      className="sticky-cta fixed inset-x-3 bottom-[var(--tabbar)] z-40 mx-auto max-w-md rounded-card bg-[#151b22]/80 px-3 py-2.5 shadow-[0_12px_40px_rgb(0_0_0/0.5),inset_0_0_0_1px_rgb(255_255_255/0.09)] backdrop-blur-xl backdrop-saturate-150 lg:hidden"
     >
       <a href={href} target="_blank" rel={SPONSORED_REL} className="flex items-center gap-3">
         <PartnerBadge partner={partner} size={36} />

@@ -5,6 +5,7 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Footer } from '@/components/Footer'
 import { CookieNotice } from '@/components/CookieNotice'
+import { TabBar } from '@/components/TabBar'
 import { Header } from '@/components/Header'
 import { Metrika } from '@/components/Metrika'
 import { LeftPanel } from '@/components/shell/LeftPanel'
@@ -47,6 +48,8 @@ export const viewport: Viewport = {
   themeColor: '#090c10',
   width: 'device-width',
   initialScale: 1,
+  // нижнее меню (TabBar) встаёт над полоской жестов iPhone — env(safe-area-inset-bottom) работает только с cover
+  viewportFit: 'cover',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -81,6 +84,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
           </aside>
         </div>
+        <TabBar />
         <CookieNotice />
         <StoryViewer />
         {SITE.metrikaId ? <Metrika id={SITE.metrikaId} /> : null}

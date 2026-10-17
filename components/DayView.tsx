@@ -251,14 +251,19 @@ export async function DayView({
         id="matches"
         className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : 'mt-3 sm:mt-6'} xl:mt-0`}
       >
-        <div className="bare-panel">
+        {/* ниже xl — тоже панелью и липкой под шапкой, как на компьютере (владелец: «сортировку по дням как на пк сделать
+            в блоке»): плашка цвета панели, дни слева, порядок справа; подложка цвета фона и 8px под плашкой — список уходит под неё
+            без просвета в скруглённых углах; от xl — правила .bare-panel в app/globals.css */}
+        <div className="bare-panel max-xl:sticky max-xl:top-[65px] max-xl:z-30 max-xl:bg-[#090c10] max-xl:pb-2">
         {listHead ? (
           // заголовок — как у полок выше: одна схема на всю страницу
           <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
         ) : null}
         {/* выбор дня — и здесь, у списка (как и чип в «Главных матчах», ведёт на страницу дня); рядом — порядок списка */}
         {/* на телефоне дни и порядок — одной строкой: порядок значками (часы / список), дни листаются вбок */}
-        <div className={`flex items-center justify-between gap-x-3 gap-y-3 sm:flex-wrap sm:gap-x-6 ${listHead ? 'mt-5' : ''}`}>
+        <div
+          className={`flex items-center justify-between gap-x-3 gap-y-3 max-xl:rounded-card max-xl:bg-panel max-xl:py-1.5 max-xl:pl-4 max-xl:pr-1.5 max-xl:shadow-[0_10px_30px_rgb(0_0_0/0.45)] sm:flex-wrap sm:gap-x-6 ${listHead ? 'mt-5' : ''}`}
+        >
           <div className="min-w-0 flex-1 sm:w-auto sm:flex-none">
             <DateTabs
               active={ymd}
@@ -298,7 +303,7 @@ export async function DayView({
         </div>
         </div>
         <div
-          className={`mt-5 grid gap-10 sm:mt-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-2 xl:!grid-cols-1 xl:gap-2' : ''}`}
+          className={`mt-3 grid gap-10 sm:mt-6 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-2 xl:!grid-cols-1 xl:gap-2' : ''}`}
         >
           <div className={`min-w-0 space-y-5 ${view === 'home' ? 'xl:space-y-2' : ''}`}>
             {failed ? (

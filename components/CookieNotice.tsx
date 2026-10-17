@@ -34,7 +34,7 @@ export function CookieNotice() {
     <div
       role="region"
       aria-label="Cookie"
-      className={`${state === 'out' ? 'cookie-out' : 'cookie-in'} fixed inset-x-3 bottom-3 z-[60] rounded-card bg-[#161c24]/90 p-4 text-[#eef2f6] shadow-[0_20px_60px_rgb(0_0_0/0.5),inset_0_0_0_1px_rgb(255_255_255/0.08),inset_0_1px_0_rgb(255_255_255/0.06)] backdrop-blur-xl sm:inset-x-auto sm:bottom-5 sm:left-5 sm:w-[360px] sm:p-5`}
+      className={`${state === 'out' ? 'cookie-out' : 'cookie-in'} fixed inset-x-3 bottom-[calc(var(--tabbar,0px)+4px)] z-[60] rounded-card bg-[#161c24]/90 p-4 text-[#eef2f6] shadow-[0_20px_60px_rgb(0_0_0/0.5),inset_0_0_0_1px_rgb(255_255_255/0.08),inset_0_1px_0_rgb(255_255_255/0.06)] backdrop-blur-xl sm:inset-x-auto sm:left-5 lg:bottom-5 sm:w-[360px] sm:p-5`}
     >
       <div className="flex gap-3.5">
         <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-b from-[#232c37] to-[#161c24] shadow-[inset_0_1px_0_rgb(255_255_255/0.08),inset_0_0_0_1px_rgb(255_255_255/0.06)]">

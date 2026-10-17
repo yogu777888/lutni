@@ -19,7 +19,7 @@ export function StickyHide({ target, className, children }: { target: string; cl
     return () => io.disconnect()
   }, [target])
   return (
-    <div aria-hidden={hide} inert={hide} className={`${className} transition-transform duration-200 ease-out motion-reduce:transition-none ${hide ? 'translate-y-full' : ''}`}>
+    <div aria-hidden={hide} inert={hide} className={`${className} transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none ${hide ? 'pointer-events-none translate-y-4 opacity-0' : ''}`}>
       {children}
     </div>
   )
