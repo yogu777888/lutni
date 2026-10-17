@@ -6,6 +6,7 @@ import type { Metadata, Viewport } from 'next'
 import { Footer } from '@/components/Footer'
 import { CookieNotice } from '@/components/CookieNotice'
 import { TabBar } from '@/components/TabBar'
+import { BarsAutoHide } from '@/components/BarsAutoHide'
 import { Header } from '@/components/Header'
 import { Metrika } from '@/components/Metrika'
 import { LeftPanel } from '@/components/shell/LeftPanel'
@@ -85,6 +86,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </aside>
         </div>
         <TabBar />
+        <BarsAutoHide />
         <CookieNotice />
         <StoryViewer />
         {SITE.metrikaId ? <Metrika id={SITE.metrikaId} /> : null}

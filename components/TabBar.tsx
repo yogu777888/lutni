@@ -49,7 +49,7 @@ export function TabBar() {
   return (
     <nav
       aria-label="Основное меню"
-      className="fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),10px)] z-40 mx-auto grid h-16 max-w-md grid-cols-5 gap-1 rounded-full bg-[#151b22]/75 p-1.5 shadow-[0_12px_40px_rgb(0_0_0/0.55),inset_0_0_0_1px_rgb(255_255_255/0.09),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl backdrop-saturate-150 lg:hidden"
+      className="tabbar fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),10px)] z-40 mx-auto grid h-16 max-w-md grid-cols-5 gap-1 rounded-full bg-[#151b22]/75 p-1.5 shadow-[0_12px_40px_rgb(0_0_0/0.55),inset_0_0_0_1px_rgb(255_255_255/0.09),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl backdrop-saturate-150 lg:hidden"
     >
       {NAV.map((n) => {
         const on = n.href === active

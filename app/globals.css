@@ -978,14 +978,67 @@ html[data-shell-rc] .shell-r-rail {
       background-color 0.3s,
       border-color 0.3s;
   }
-  body:has(header[data-scrolled]) .hdr-sub {
+  body:has(.site-header[data-scrolled]) .hdr-sub {
     background-color: #090c10;
     border-bottom-color: var(--color-edge);
   }
-  body:has(.hdr-sub) header[data-scrolled] {
+  body:has(.hdr-sub) .site-header[data-scrolled] {
     background-color: #090c10;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     border-bottom-color: #090c10;
+  }
+}
+
+/* ниже lg шапка и нижнее меню уходят при прокрутке вниз и возвращаются при прокрутке вверх — вместе, по одному правилу
+   (`BarsAutoHide` ставит html[data-bars-hidden]). С шапкой уходит ряд дней (.hdr-sub), мини-табло матча (.match-top)
+   поднимается к верху экрана, плашка ставки (.sticky-cta) опускается на место меню. Шапка при прокрутке — сплошным цветом
+   фона, без стекла (сквозь стекло просвечивал текст страницы). Меню — стеклом: оно плавает поверх страницы */
+@media (max-width: 1023.98px) {
+  .site-header[data-scrolled] {
+    background-color: #090c10;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .site-header,
+  .hdr-sub,
+  .tabbar {
+    transition-property: transform, background-color, border-color;
+    transition-duration: 0.25s;
+    transition-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+  .match-top {
+    transition: top 0.25s cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+  .sticky-cta {
+    transition:
+      transform 0.2s ease-out,
+      opacity 0.2s ease-out,
+      bottom 0.25s cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+  /* отступ страницы снизу (--tabbar) не трогаем — иначе высота страницы менялась бы на ходу */
+  html[data-bars-hidden] .sticky-cta {
+    bottom: max(env(safe-area-inset-bottom), 10px);
+  }
+  html[data-bars-hidden] .site-header {
+    transform: translateY(-100%);
+  }
+  html[data-bars-hidden] .hdr-sub {
+    transform: translateY(calc(-100% - 66px));
+  }
+  html[data-bars-hidden] .match-top {
+    top: 0;
+  }
+  html[data-bars-hidden] .tabbar {
+    transform: translateY(calc(100% + 40px));
+  }
+}
+@media (max-width: 1023.98px) and (prefers-reduced-motion: reduce) {
+  .site-header,
+  .hdr-sub,
+  .tabbar,
+  .match-top,
+  .sticky-cta {
+    transition: none;
   }
 }
