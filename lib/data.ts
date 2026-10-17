@@ -149,9 +149,9 @@ export async function getMatchFull(id: number, opts: Opts = {}): Promise<MatchFu
   const tz = tzOffsetHours()
   try {
     return await cache.get(
-      // v2 — события VAR больше не голы и не карточки (`eventKind`): в кэше лежит уже разобранный матч, и у сыгранных
-      // старый разбор с лишним голом жил бы ещё неделю
-      `game:v2:${id}`,
+      // в кэше лежит уже разобранный матч, и у сыгранных старый разбор жил бы ещё неделю: v2 — события VAR больше не
+      // голы и не карточки (`eventKind`), v3 — тур по-русски («Clausura - 11» → «Клаусура, 11-й тур», `ruRound`)
+      `game:v3:${id}`,
       async () => N.normalizeFull(await apiGet<RawGameFull>(`/Games/${id}`, { TimeZone: tz }, opts), tz),
       (full) => matchTtl(full.match),
     )

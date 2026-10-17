@@ -71,7 +71,8 @@ function TeamForm({ team, form }: { team: Team; form: TeamFormData }) {
 /** Две колонки через черту, как статистика матча (были две плашки внутри карточки — «блок в блоке»); на телефоне — одна под другой. */
 export function FormBlock({ home, away, homeForm, awayForm }: { home: Team; away: Team; homeForm: TeamFormData | null; awayForm: TeamFormData | null }) {
   return (
-    <div className="grid md:grid-cols-2">
+    // grid-cols-1 — колонка не шире экрана: без неё на 360px длинное «Sarmiento Junin» и подписи цифр растягивали её на 1px
+    <div className="grid grid-cols-1 md:grid-cols-2">
       <div className="md:pr-10">{homeForm ? <TeamForm team={home} form={homeForm} /> : <p className="text-sm text-dim">Нет данных о форме: {home.name}</p>}</div>
       <div className="mt-5 border-t border-white/[0.08] pt-5 md:mt-0 md:border-l md:border-t-0 md:pl-10 md:pt-0">
         {awayForm ? <TeamForm team={away} form={awayForm} /> : <p className="text-sm text-dim">Нет данных о форме: {away.name}</p>}

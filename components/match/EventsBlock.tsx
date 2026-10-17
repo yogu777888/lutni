@@ -158,7 +158,7 @@ export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home:
   const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2))
   const bar = (more: boolean, eq: boolean) => (eq ? 'bg-white/45' : more ? 'bg-white/85' : 'bg-white/30')
   return (
-    <div className="grid gap-y-3 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-y-3 md:grid-cols-2">
       {cols.map((col, ci) => (
         <div key={ci} className={ci ? 'md:border-l md:border-white/[0.08] md:pl-10' : cols.length > 1 ? 'md:pr-10' : ''}>
           {/* на телефоне вторая колонка идёт сразу под первой — шапка у неё не нужна */}

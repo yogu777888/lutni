@@ -85,19 +85,54 @@ const STAGES: [RegExp, string][] = [
   [/^relegation round$/i, 'Стыковые матчи'],
 ]
 
-export function ruRound(raw: string | null | undefined): string | null {
+/**
+ * Этап перед номером тура («Clausura - 11», «Girone A - 10», «1st Phase - 5»): по-русски, номер — «11-й тур». На
+ * настоящем API таких названий десятки, раньше они шли в табло как есть («Clausura - 11»).
+ */
+const PHASES: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^apertura$/i, () => 'Апертура'],
+  [/^clausura$/i, () => 'Клаусура'],
+  [/^group stage$/i, () => 'Групповой этап'],
+  [/^(group|girone)\s+([a-z0-9]+)$/i, (m) => `Группа ${m[2].toUpperCase()}`],
+  [/^(\d+)(st|nd|rd|th) phase$/i, (m) => `${m[1]}-й этап`],
+  [/^championship (group|round)$/i, () => 'Группа за чемпионство'],
+  [/^relegation (group|round)$/i, () => 'Группа на вылет'],
+  [/^promotion (group|round)$/i, () => 'Группа за повышение'],
+  [/^qualification$/i, () => 'Квалификация'],
+]
+
+const bare = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '')
+
+/**
+ * Тур словами. `league` — название лиги из API, как есть: у региональных лиг этап повторяет его («Bayern - 15» у
+ * «Regionalliga - Bayern») — тогда только «15-й тур». Неизвестный этап — «Fall Season, 4-й тур»: хотя бы номер по-русски.
+ */
+export function ruRound(raw: string | null | undefined, league?: string | null): string | null {
   if (!raw) return null
   const s = raw.trim()
   let m: RegExpExecArray | null
-  if ((m = /^(regular season|league stage|league phase|matchday)\s*-\s*(\d+)$/i.exec(s))) {
-    const prefix = /league (stage|phase)/i.test(m[1]) ? 'Общий этап, ' : ''
-    return `${prefix}${m[2]}-й тур`
+  if ((m = /^(.+?)\s*-\s*(\d+)$/.exec(s))) {
+    const [, stage, n] = m
+    if (/^(regular season|matchday|round)$/i.test(stage)) return `${n}-й тур`
+    if (/^league (stage|phase)$/i.test(stage)) return `Общий этап, ${n}-й тур`
+    for (const [re, ru] of PHASES) {
+      const p = re.exec(stage)
+      if (p) return `${ru(p)}, ${n}-й тур`
+    }
+    if (league && bare(league).includes(bare(stage))) return `${n}-й тур`
+    return `${stage}, ${n}-й тур`
   }
-  if ((m = /^group\s+([a-z0-9]+)\s*-\s*(\d+)$/i.exec(s))) return `Группа ${m[1].toUpperCase()}, ${m[2]}-й тур`
-  if ((m = /^(\d+)(st|nd|rd|th) qualifying round$/i.exec(s))) return `${m[1]}-й квалификационный раунд`
+  if ((m = /^(\d+)(st|nd|rd|th) (qualifying round|round qualifying)$/i.exec(s))) return `${m[1]}-й квалификационный раунд`
+  if ((m = /^(\d+)(st|nd|rd|th) preliminary round$/i.exec(s))) return `${m[1]}-й предварительный раунд`
   if ((m = /^(\d+)(st|nd|rd|th) round$/i.exec(s))) return `${m[1]}-й раунд`
   if ((m = /^round\s*(\d+)$/i.exec(s))) return `${m[1]}-й тур`
+  // «Regular Season» без номера ничего не говорит — не пишем
+  if (/^regular season$/i.test(s)) return null
   for (const [re, ru] of STAGES) if (re.test(s)) return ru
+  for (const [re, ru] of PHASES) {
+    const p = re.exec(s)
+    if (p) return ru(p)
+  }
   return s
 }
 
@@ -170,7 +205,7 @@ export function normalizeGame(g: RawGame, tzOffset: number): Match {
     scoreHT: pair(g.homeHTResult, g.awayHTResult),
     league,
     season: g.season ? { year: int(g.season.year), uid: g.season.uid } : null,
-    round: ruRound(g.roundName),
+    round: ruRound(g.roundName, g.season?.league?.name),
     odds: hasOdds ? odds : null,
   }
 }

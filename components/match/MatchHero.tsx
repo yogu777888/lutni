@@ -1,8 +1,6 @@
-import Link from 'next/link'
 import { SITE } from '@/config/site'
 import { SPONSORED_REL } from '@/lib/affiliate'
 import { formatDateLong, formatTime, formatWeekdayLong, ymdInTz } from '@/lib/format'
-import { leagueHref } from '@/lib/links'
 import { split100 } from '@/lib/verdict'
 import type { MatchFull } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
@@ -82,12 +80,15 @@ export function MatchHero({
       <span className="relative grid h-[var(--disc)] w-[var(--disc)] place-items-center rounded-full bg-white/[0.08] ring-1 ring-white/15 [--disc:68px] sm:[--disc:104px]">
         {notes?.[k] && !started ? <HandNote text={notes[k]!} short={notes[k]!.length <= 12} /> : null}
         <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
+        {/* звёздочка «в избранное» — в нижнем углу эмблемы, снаружи от счёта, как значок на аватарке: у названия она
+            висела справа и при узкой колонке команды (телефон, 1280 с панелями) упиралась в край табло или уходила за
+            него («Реал Мадрид», «Deportivo Pereira»; владелец согласился) */}
+        <span className={`absolute -bottom-1 rounded-full bg-panel-2 ring-1 ring-white/10 ${k === 'home' ? '-left-1.5' : '-right-1.5'}`}>
+          <FavStar id={t.id} name={t.name} logo={t.logo} compact />
+        </span>
       </span>
-      {/* звёздочка «в избранное» — рядом с названием, без подписи (подсказка — при наведении) */}
-      {/* звёздочка висит справа от названия, само название — по центру под эмблемой */}
-      <span className="relative max-w-full">
-        <span className={`line-clamp-2 hyphens-auto break-words font-semibold leading-tight tracking-[-0.02em] sm:text-[26px] ${phoneSize(t.name)}`}>{t.name}</span>
-        <FavStar id={t.id} name={t.name} logo={t.logo} compact className="absolute left-full top-1/2 ml-0.5 -translate-y-1/2 sm:ml-1" />
+      <span className={`line-clamp-2 max-w-full hyphens-auto break-words font-semibold leading-tight tracking-[-0.02em] sm:text-[26px] ${phoneSize(t.name)}`}>
+        {t.name}
       </span>
       {goals?.[k].length ? (
         <ul className="-mt-1.5 space-y-0.5 text-[12.5px] leading-snug text-dim sm:text-[13.5px]">
@@ -112,23 +113,15 @@ export function MatchHero({
         />
       ) : null}
       <div className="relative">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[13px] text-dim">
-        <Link
-          href={leagueHref(m.league)}
-          className="inline-flex items-center gap-2 rounded-ctl border border-transparent bg-white/[0.07] px-2.5 py-1 font-semibold text-fg transition-colors hover:bg-white/[0.11]"
-        >
-          {/* точка — только «идёт»: лайм у нас значит «выгодно» */}
-          {live ? <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" /> : null}
-          {m.league.name}
-        </Link>
-        <span>
-          {m.round ? `${m.round} · ` : ''}
-          <span className="capitalize">{formatWeekdayLong(m.ts)}</span>, {formatDateLong(m.ts)}
-        </span>
-      </div>
+      {/* турнир — в крошках сверху (плашкой «Испания. Ла Лига» он стоял второй раз в 100px от них, а на телефоне плашка и
+          дата были двумя строками до счёта; владелец согласился), здесь — тур и день одной тихой строкой по центру, как
+          табло под ней; «идёт» — красной точкой у минуты */}
+      <p className="text-center text-[13px] text-dim first-letter:uppercase">
+        {[m.round, `${formatWeekdayLong(m.ts)}, ${formatDateLong(m.ts)}`].filter(Boolean).join(' · ')}
+      </p>
 
       {/* табло по центру, как в «Главных матчах»: хозяева слева, гости справа, в середине время или счёт */}
-      <div id="match-board" className={`${started ? 'mt-8 sm:mt-10' : 'mt-12 sm:mt-14'} grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 sm:gap-x-8 ${started ? 'items-start' : 'items-center'}`}>
+      <div id="match-board" className={`${started ? 'mt-6 sm:mt-8' : 'mt-12 sm:mt-14'} grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 sm:gap-x-8 ${started ? 'items-start' : 'items-center'}`}>
         {team(m.home, 'home')}
         {/* после начала колонки команд — по верху (под названием разное число голов, эмблемы съезжали), счёт — на уровне эмблем */}
         <div id="match-score" className={`text-center ${started ? 'pt-3 sm:pt-5' : ''}`}>
@@ -175,10 +168,14 @@ export function MatchHero({
         // ячейкам, а не по середине правой части вместе с пометкой: иначе «До матча» стояло ниже кэфов (владелец: «сейчас как?»)
         <div className="@container mt-6 border-t border-white/10 pt-5">
           <div className="grid gap-x-6 gap-y-3 @3xl:grid-cols-[minmax(0,1fr)_auto] @3xl:items-center">
+          {/* перенос — только между исходами, «·» — в конце строки: «Реал» и «Мадрид», «Ривер Плейт» и «61%» расходились */}
           <p className="text-[13px] text-dim">
-            До матча: «{m.home.name}» {n?.home}% · ничья {n?.draw}% · «{m.away.name}» {n?.away}%
+            До матча: <span className="whitespace-nowrap">«{m.home.name}» {n?.home}% ·</span> <span className="whitespace-nowrap">ничья {n?.draw}% ·</span>{' '}
+            <span className="whitespace-nowrap">«{m.away.name}» {n?.away}%</span>
           </p>
-          {cells.every((c) => c.odd) ? (
+          {/* у сыгранного ячеек нет: выглядели кнопками ставки, но никуда не вели, а кэфы до матча — те же проценты слева
+              другими цифрами (7.05 · 4.70 · 1.45 ≈ 14% · 20% · 66%; владелец согласился) */}
+          {cells.every((c) => c.odd) && !over ? (
             <div id="match-odds" className="flex flex-wrap items-center gap-2 @3xl:justify-end">
               <span className="w-full text-[12px] leading-tight text-dim sm:mr-1 sm:w-auto">
                 Кэфы <span className="font-semibold text-fg">{line?.name ?? 'до матча'}</span>
@@ -193,7 +190,7 @@ export function MatchHero({
                 const label = c.key === 'draw' ? 'Ничья' : `«${c.key === 'home' ? m.home.name : m.away.name}»`
                 const body = (
                   <>
-                    <span className="block max-w-[110px] truncate text-[11px] text-mute">{label}</span>
+                    <span className="block truncate text-[11px] text-mute sm:max-w-[110px]">{label}</span>
                     <span className="num block text-[17px] font-semibold leading-tight">{c.odd!.toFixed(2)}</span>
                   </>
                 )
@@ -204,12 +201,12 @@ export function MatchHero({
                     target="_blank"
                     rel={SPONSORED_REL}
                     title={`${c.key === 'draw' ? 'Ничья' : `Победа ${label}`}: ${c.odd!.toFixed(2)} в ${line.name}${line.live ? ' сейчас' : ''} · Реклама 18+`}
-                    className="min-w-[84px] flex-1 rounded-tile bg-white/[0.06] px-3 py-1.5 transition-colors hover:bg-white/[0.12] sm:flex-none"
+                    className="min-w-[84px] flex-1 rounded-tile bg-white/[0.06] px-2.5 py-1.5 transition-colors hover:bg-white/[0.12] sm:flex-none sm:px-3"
                   >
                     {body}
                   </a>
                 ) : (
-                  <div key={c.key} className="min-w-[84px] flex-1 rounded-tile bg-white/[0.04] px-3 py-1.5 sm:flex-none">
+                  <div key={c.key} className="min-w-[84px] flex-1 rounded-tile bg-white/[0.04] px-2.5 py-1.5 sm:flex-none sm:px-3">
                     {body}
                   </div>
                 )
