@@ -4,7 +4,8 @@ import { SITE } from '@/config/site'
 import { PartnerCard } from './PartnerCard'
 import { TagPill } from './TagPill'
 
-export function Sidebar() {
+/** `tags={false}` — без «Как читать теги»: где в строках тегов нет (страница лиги), легенда объясняла то, чего на экране нет. */
+export function Sidebar({ tags = true }: { tags?: boolean }) {
   return (
     <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
       <section className="card p-6">
@@ -19,26 +20,28 @@ export function Sidebar() {
           Все букмекеры <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
         </Link>
       </section>
-      <section className="card p-6">
-        <p className="eyebrow">Как читать теги</p>
-        <ul className="mt-4 space-y-3 text-[14px]">
-          <li className="flex items-center gap-2.5">
-            <TagPill slug="value" link={false} />
-            <span className="text-dim">платят больше, чем стоит</span>
-          </li>
-          <li className="flex items-center gap-2.5">
-            <TagPill slug="progruz" link={false} />
-            <span className="text-dim">кэф резко снизился</span>
-          </li>
-          <li className="flex items-center gap-2.5">
-            <TagPill slug="tb-2-5" link={false} />
-            <span className="text-dim">ждём 3 гола и больше</span>
-          </li>
-        </ul>
-        <Link href="/tags" className="group mt-5 inline-flex items-center gap-1.5 border-b-2 border-acid pb-0.5 text-[14px] font-semibold">
-          Все теги <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-        </Link>
-      </section>
+      {tags ? (
+        <section className="card p-6">
+          <p className="eyebrow">Как читать теги</p>
+          <ul className="mt-4 space-y-3 text-[14px]">
+            <li className="flex items-center gap-2.5">
+              <TagPill slug="value" link={false} />
+              <span className="text-dim">платят больше, чем стоит</span>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <TagPill slug="progruz" link={false} />
+              <span className="text-dim">кэф резко снизился</span>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <TagPill slug="tb-2-5" link={false} />
+              <span className="text-dim">ждём 3 гола и больше</span>
+            </li>
+          </ul>
+          <Link href="/tags" className="group mt-5 inline-flex items-center gap-1.5 border-b-2 border-acid pb-0.5 text-[14px] font-semibold">
+            Все теги <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+          </Link>
+        </section>
+      ) : null}
       {SITE.telegramUrl ? (
         <a href={SITE.telegramUrl} target="_blank" rel="noopener" className="card flex items-center gap-3 p-6 transition-colors hover:bg-panel-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#229ED9] text-lg font-bold text-[#fff]">✈</span>

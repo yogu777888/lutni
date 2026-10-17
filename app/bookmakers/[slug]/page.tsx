@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AdMark } from '@/components/AdMark'
+import { BlockHead } from '@/components/BlockHead'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { CtaLink } from '@/components/CtaLink'
 import { MatchRow } from '@/components/MatchRow'
@@ -96,7 +97,7 @@ export default async function BookmakerPage({ params }: Props) {
             ближайших матчах, теми же строками и с той же шапкой, что блок лиги на главной: ссылки на матч, кэфы — к
             букмекеру, лаймом — выгодный кэф */}
         <section id="kefy" className="card scroll-mt-24 overflow-hidden">
-          <Head title={`Кэфы ${p.name}${day ? ` ${day.when}` : ''}`} aside={day ? `${pluralN(day.rows.length, ['матч', 'матча', 'матчей'])} · Реклама · 18+` : null} line={Boolean(day)} />
+          <BlockHead title={`Кэфы ${p.name}${day ? ` ${day.when}` : ''}`} aside={day ? `${pluralN(day.rows.length, ['матч', 'матча', 'матчей'])} · Реклама · 18+` : null} line={Boolean(day)} />
           {day ? (
             <>
               <div className="divide-y divide-edge">
@@ -135,7 +136,7 @@ export default async function BookmakerPage({ params }: Props) {
         </section>
 
         <section className="card overflow-hidden">
-          <Head title={bonus ? 'Как получить бонус' : 'Как зарегистрироваться'} />
+          <BlockHead title={bonus ? 'Как получить бонус' : 'Как зарегистрироваться'} />
           <ol className="space-y-2.5 px-4 pb-5 text-[15px] sm:px-5">
             {steps.map((s, i) => (
               <li key={i} className="flex gap-2.5">
@@ -150,15 +151,5 @@ export default async function BookmakerPage({ params }: Props) {
         </section>
       </div>
     </>
-  )
-}
-
-/** Шапка раздела — как у блока лиги на главной: Onest 20px жирным (не Oswald заглавными), подпись справа. */
-function Head({ title, aside = null, line = false }: { title: string; aside?: string | null; line?: boolean }) {
-  return (
-    <header className={`flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 py-4 sm:px-5 ${line ? 'border-b border-edge' : ''}`}>
-      <h2 className="text-[20px] font-bold tracking-tight">{title}</h2>
-      {aside ? <span className="text-[12px] text-mute">{aside}</span> : null}
-    </header>
   )
 }
