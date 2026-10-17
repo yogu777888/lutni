@@ -1,4 +1,4 @@
-import { GENERIC_BONUS, type Partner } from '@/config/bookmakers'
+import { realBonus, type Partner } from '@/config/bookmakers'
 import { goHref, SPONSORED_REL, type Placement } from '@/lib/affiliate'
 import { AdMark } from './AdMark'
 import { PartnerBadge } from './PartnerBadge'
@@ -10,7 +10,7 @@ import { PartnerBadge } from './PartnerBadge'
  * заглушка «Бонус для новых клиентов» у всех одна — её не показываем.
  */
 export function PartnerCard({ partner, placement }: { partner: Partner; placement: Placement; rank?: number }) {
-  const bonus = partner.bonus && partner.bonus !== GENERIC_BONUS ? partner.bonus : null
+  const bonus = realBonus(partner)
   return (
     <div className="py-3 first:pt-0 last:pb-0">
       <a

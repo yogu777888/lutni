@@ -3,16 +3,22 @@ import Link from 'next/link'
 import { AdMark } from '@/components/AdMark'
 import { CtaLink } from '@/components/CtaLink'
 import { PartnerBadge } from '@/components/PartnerBadge'
-import { PARTNERS } from '@/config/bookmakers'
+import { PARTNERS, realBonus } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
+import { pluralN } from '@/lib/format'
+import { partnerLines } from '@/lib/partner-lines'
+
+// сколько матчей с линией у каждого партнёра — из нашего кэша, на каждый запрос
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Легальные букмекеры: лицензии, линия на футбол, бонусы',
-  description: 'Легальные букмекерские конторы с лицензией ФНС России: особенности линии на футбол, плюсы и минусы, бонусы для новых клиентов.',
+  title: 'Легальные букмекеры: лицензии и коэффициенты на футбол',
+  description: 'Легальные букмекерские конторы с лицензией ФНС России: официальные сайты и у кого коэффициенты на футбол есть на tag.bet.',
   alternates: { canonical: '/bookmakers' },
 }
 
-export default function BookmakersPage() {
+export default async function BookmakersPage() {
+  const lines = await partnerLines()
   return (
     <>
       <div className="mb-8 pt-2">
@@ -25,44 +31,46 @@ export default function BookmakersPage() {
           вознаграждение.
         </p>
       </div>
+      {/* в карточке — только то, что отличает букмекеров (владелец: «а страница букмекеров как?»): лицензия у всех одна —
+          она в подзаголовке выше; заглушки «Бонус для новых клиентов» и выдуманных «плюсов» («быстрые выплаты», «высокие
+          коэффициенты» — непроверенное сравнение в рекламе) нет; вместо них — есть ли кэфы букмекера на tag.bet */}
       <ul className="space-y-3">
-        {PARTNERS.map((p) => (
-          <li key={p.slug} className="card p-5 sm:p-6">
-            <div className="flex flex-wrap items-center gap-4">
-              <PartnerBadge partner={p} size={48} />
-              <div className="min-w-[160px] flex-1">
-                <Link href={`/bookmakers/${p.slug}`} className="text-[18px] font-semibold tracking-tight transition-opacity hover:opacity-75">
-                  {p.name}
-                </Link>
-                <p className="mt-1 text-[12px] text-mute">{p.license}</p>
+        {PARTNERS.map((p) => {
+          const day = lines.get(p.slug)
+          const bonus = realBonus(p)
+          return (
+            <li key={p.slug} className="card p-5 sm:p-6">
+              <div className="flex flex-wrap items-center gap-4">
+                <PartnerBadge partner={p} size={48} />
+                <div className="min-w-[160px] flex-1">
+                  <Link href={`/bookmakers/${p.slug}`} className="text-[18px] font-semibold tracking-tight transition-opacity hover:opacity-75">
+                    {p.name}
+                  </Link>
+                  {day ? (
+                    <Link href={`/bookmakers/${p.slug}#kefy`} className="mt-1 block text-[13.5px] text-dim transition-colors hover:text-fg">
+                      Кэфы на tag.bet — в {pluralN(day.rows.length, ['матче', 'матчах', 'матчах'])} {day.when} →
+                    </Link>
+                  ) : (
+                    <p className="mt-1 text-[13.5px] text-mute">Кэфов на tag.bet пока нет — линия на сайте букмекера</p>
+                  )}
+                  {bonus ? <p className="mt-1 text-[13.5px] font-medium">{bonus}</p> : null}
+                </div>
+                <div className="flex w-full gap-2 sm:w-auto">
+                  <CtaLink href={goHref(p, 'bookmakers')} variant="light" className="flex-1 sm:flex-none">
+                    На сайт
+                  </CtaLink>
+                  <Link
+                    href={`/bookmakers/${p.slug}`}
+                    className="inline-flex flex-1 items-center justify-center rounded-full bg-white/[0.08] px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-white/[0.13] sm:flex-none"
+                  >
+                    Обзор
+                  </Link>
+                </div>
               </div>
-              <div className="w-full sm:w-auto sm:min-w-[220px]">
-                <p className="text-[14px] font-medium">{p.bonus}</p>
-                <p className="text-[12px] text-mute">{p.bonusNote}</p>
-              </div>
-              <div className="flex w-full gap-2 sm:w-auto">
-                <CtaLink href={goHref(p, 'bookmakers')} variant="light" className="flex-1 sm:flex-none">
-                  На сайт
-                </CtaLink>
-                <Link
-                  href={`/bookmakers/${p.slug}`}
-                  className="inline-flex flex-1 items-center justify-center rounded-full bg-white/[0.08] px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-white/[0.13] sm:flex-none"
-                >
-                  Обзор
-                </Link>
-              </div>
-            </div>
-            <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-dim">
-              {p.highlights.map((h) => (
-                <li key={h} className="flex items-center gap-1.5">
-                  <span className="text-mute">✓</span>
-                  {h}
-                </li>
-              ))}
-            </ul>
-            <AdMark partner={p} className="mt-2" />
-          </li>
-        ))}
+              <AdMark partner={p} className="mt-3" />
+            </li>
+          )
+        })}
       </ul>
       <p className="mt-8 text-[12px] leading-relaxed text-mute">
         Информация носит справочный характер. Перед регистрацией проверьте наличие лицензии на сайте букмекера. 18+. Азартные игры
