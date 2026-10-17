@@ -107,7 +107,8 @@ export function headlineFor(p: Probs1x2, m: Pick<Match, 'home' | 'away'>): { lev
   const side = p.home >= p.away ? 'home' : 'away'
   const fav = Math.max(p.home, p.away)
   const name = q(side === 'home' ? m.home.name : m.away.name)
-  if (Math.abs(p.home - p.away) <= 0.06) return { level: 'even', side: null, text: 'Силы равны — 50 на 50' }
+  // «50 на 50» при 35% · 25% · 40% читалось буквально — ни у одного исхода нет 50% (подборка «#50 на 50» — своё название)
+  if (Math.abs(p.home - p.away) <= 0.06) return { level: 'even', side: null, text: 'Силы примерно равны' }
   // пороги — как у тега #фаворит (60%) и слайда «Кто фаворит» (47%), чтобы слова везде совпадали
   if (fav >= 0.6) return { level: 'strong', side, text: `Явный фаворит — ${name}` }
   if (fav >= 0.47) return { level: 'lean', side, text: `Скорее выиграет ${name}` }

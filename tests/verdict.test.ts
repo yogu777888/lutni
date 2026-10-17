@@ -68,7 +68,7 @@ describe('вывод по матчу', () => {
     expect(headlineFor({ home: 0.7, draw: 0.18, away: 0.12 }, m)).toMatchObject({ level: 'strong', side: 'home', text: 'Явный фаворит — «Арсенал»' })
     expect(headlineFor({ home: 0.2, draw: 0.25, away: 0.55 }, m)).toMatchObject({ level: 'lean', side: 'away', text: 'Скорее выиграет «Челси»' })
     expect(headlineFor({ home: 0.44, draw: 0.3, away: 0.26 }, m)).toMatchObject({ level: 'slight', text: 'Чуть сильнее «Арсенал»' })
-    expect(headlineFor({ home: 0.38, draw: 0.28, away: 0.34 }, m)).toMatchObject({ level: 'even', side: null, text: 'Силы равны — 50 на 50' })
+    expect(headlineFor({ home: 0.38, draw: 0.28, away: 0.34 }, m)).toMatchObject({ level: 'even', side: null, text: 'Силы примерно равны' })
   })
 
   it('из коротких кэфов: шансы, голы, падение кэфа и ставка словами', () => {

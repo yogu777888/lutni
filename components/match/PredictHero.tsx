@@ -1,7 +1,5 @@
-import Link from 'next/link'
 import { SITE } from '@/config/site'
 import { formatTime, formatWeekdayLong, formatDateLong, ymdInTz } from '@/lib/format'
-import { leagueHref } from '@/lib/links'
 import type { Pick } from '@/lib/model'
 import type { TagHit } from '@/lib/tags'
 import type { Match } from '@/lib/types'
@@ -57,18 +55,14 @@ export function PredictHero({
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_70%_at_50%_0%,rgb(200_255_46/0.07),transparent_70%)]" />
       <ClubGlow id={m.id} ymd={ymd} home={tint?.home} away={tint?.away} />
       <div className="relative">
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[13px] text-dim">
-          <Link href={leagueHref(m.league)} className="font-semibold text-fg transition-colors hover:text-dim">
-            {m.league.name}
-          </Link>
-          <span>
-            {m.round ? `${m.round} · ` : ''}
-            <span className="capitalize">{formatWeekdayLong(m.ts)}</span>, {formatDateLong(m.ts)}
-          </span>
-        </div>
+        {/* турнир — в крошках над блоком (здесь он стоял второй раз, на телефоне турнир и дата — две строки); тур и день —
+            одной тихой строкой по центру, как на табло после начала (`MatchHero`) */}
+        <p className="text-center text-[13px] text-dim first-letter:uppercase">
+          {[m.round, `${formatWeekdayLong(m.ts)}, ${formatDateLong(m.ts)}`].filter(Boolean).join(' · ')}
+        </p>
 
         {/* строка матча: по ней же мини-табло понимает, что пора появиться (#match-board) */}
-        <div id="match-board" className="mt-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-5">
+        <div id="match-board" className="mt-4 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-5">
           {team(m.home)}
           <span id="match-score" className="text-center leading-none">
             <span className="num display-num block text-[30px] font-semibold sm:text-[36px]">{formatTime(m.ts)}</span>
