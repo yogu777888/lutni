@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { BlockMore } from '../BlockMore'
 import { useEffect, useId, useState } from 'react'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayPicks, ValueRow } from '@/lib/day-picks'
@@ -56,7 +57,7 @@ function Right({ m, stat, hot }: { m: CompactMatch; stat?: string; hot: boolean 
  * и блок почти всегда пустовал): исход словами и лаймовый кэф — ссылка к букмекеру (`goHref(…, 'panel')`, rel=sponsored);
  * все — PARI: он в заголовке («PARI · Реклама · 18+»), иначе букмекер подписан под каждой плашкой; у PARI
  * пусто, а у других есть — строка «У PARI сегодня выгодных нет…»; совсем нет — так и пишем, а не прячем блок (пропадающий
- * блок выглядит поломкой); внизу «Все выгодные →» — по всем легальным партнёрам (/tag/value).
+ * блок выглядит поломкой); внизу «Все выгодные ставки →» — по всем легальным партнёрам (/tag/value).
  */
 /** `card` — отдельной панелью (ниже xl правой панели нет, блок стоит в боковой колонке списка — `Sidebar`). */
 export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: boolean }) {
@@ -128,9 +129,9 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
           </li>
         ))}
       </ul>
-      <Link href="/tag/value" prefetch={false} className="mt-2 inline-block text-[13px] font-medium text-dim transition-colors hover:text-fg">
-        Все выгодные →
-      </Link>
+      <BlockMore href="/tag/value" panel={!card} className={card ? '-mx-4 -mb-4 mt-3 sm:-mx-5' : ''}>
+        Все выгодные ставки
+      </BlockMore>
     </section>
   )
 }

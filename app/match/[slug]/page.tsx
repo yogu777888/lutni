@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { BlockMore } from '@/components/BlockMore'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
 import { MatchBar } from '@/components/match/MatchBar'
@@ -432,14 +433,18 @@ export default async function MatchPage({ params }: Props) {
         </div>
 
         <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start xl:static xl:space-y-2 2xl:sticky 2xl:top-[72px]">
-          <section className="card p-6">
-            {/* заголовки — один вид на всей странице (как у Section), без мелких заглавных */}
-            <h2 className="h2 text-[20px] font-bold tracking-[-0.02em] sm:text-[22px]">Где поставить</h2>
-            <div className="mt-4 divide-y divide-edge">
-              {PARTNERS.slice(0, 3).map((p, i) => (
-                <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} />
-              ))}
+          <section className="card overflow-hidden">
+            <div className="p-6">
+              {/* заголовки — один вид на всей странице (как у Section), без мелких заглавных */}
+              <h2 className="h2 text-[20px] font-bold tracking-[-0.02em] sm:text-[22px]">Где поставить</h2>
+              <div className="mt-4 divide-y divide-edge">
+                {PARTNERS.slice(0, 3).map((p, i) => (
+                  <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} />
+                ))}
+              </div>
             </div>
+            {/* легальных букмекеров 17, здесь — три: остальные — на странице «Букмекеры» */}
+            <BlockMore href="/bookmakers">Все букмекеры</BlockMore>
           </section>
           {related.length ? (
             // какие это матчи — справа от заголовка; широкий блок (от xl до 2xl он уходит под основную колонку на всю ширину)
@@ -456,9 +461,7 @@ export default async function MatchPage({ params }: Props) {
                   </div>
                 ))}
               </div>
-              <Link href={listHref(matchDay, today)} className="block border-t border-edge px-5 py-3 text-[13px] text-dim transition-colors hover:text-fg">
-                Все матчи дня →
-              </Link>
+              <BlockMore href={listHref(matchDay, today)}>Все матчи дня</BlockMore>
             </section>
           ) : null}
         </aside>

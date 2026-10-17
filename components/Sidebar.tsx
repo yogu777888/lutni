@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { BlockMore } from './BlockMore'
 import { PARTNERS } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import type { ValueRow } from '@/lib/day-picks'
@@ -22,12 +22,9 @@ export function Sidebar({ values = [] }: { values?: ValueRow[] }) {
             <PartnerCard key={p.slug} partner={p} placement="sidebar" />
           ))}
         </div>
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-t border-edge px-4 py-3.5 sm:px-5">
-          <span className="text-[12px] text-mute">Только букмекеры с лицензией ФНС России.</span>
-          <Link href="/bookmakers" className="text-[13px] font-medium text-dim transition-colors hover:text-fg">
-            Все букмекеры →
-          </Link>
-        </div>
+        {/* про лицензию — над чертой, у списка; под чертой — только ссылка, как во всех блоках-списках (`BlockMore`) */}
+        <p className="px-4 pb-3.5 text-[12px] text-mute sm:px-5">Только букмекеры с лицензией ФНС России.</p>
+        <BlockMore href="/bookmakers">Все букмекеры</BlockMore>
       </section>
       {SITE.telegramUrl ? (
         <a href={SITE.telegramUrl} target="_blank" rel="noopener" className="card flex items-center gap-3 p-6 transition-colors hover:bg-panel-3">
