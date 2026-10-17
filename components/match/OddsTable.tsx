@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { PARTNERS, partnerForApiBookmaker, type Partner } from '@/config/bookmakers'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import { formatOdd } from '@/lib/format'
@@ -53,7 +54,9 @@ export function OddsTable({
   // на сайт, а не прочерки — шесть «—» подряд читаются как «сломалось» (владелец: «у кого нет кэфов просто ссылку на их
   // сайт»); чужие кэфы под их имя не подставляем
   const shown = new Set(rows.map((b) => partnerForApiBookmaker(b.bookmakerId, b.bookmakerName)?.slug))
-  const linkOnly = open ? PARTNERS.filter((p) => !shown.has(p.slug)) : []
+  // не больше пяти чипов (легальных букмекеров теперь 17 — чипы заняли бы полэкрана), остальные — «Все букмекеры →»
+  const others = open ? PARTNERS.filter((p) => !shown.has(p.slug)) : []
+  const linkOnly = others.slice(0, 5)
 
   const info = (b: BookOdds, c: Col) => {
     const q = c.get(b)
@@ -224,6 +227,11 @@ export function OddsTable({
               {p.name}
             </a>
           ))}
+          {others.length > linkOnly.length ? (
+            <Link href="/bookmakers" className="ml-1 text-[12.5px] font-medium text-dim transition-colors hover:text-fg">
+              Все букмекеры →
+            </Link>
+          ) : null}
         </div>
       ) : null}
 

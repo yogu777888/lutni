@@ -31,6 +31,10 @@ function Links({ label, items, className = '' }: { label: string; items: [string
  * (владелец: «а футер как тебе?»). От xl подвала нет.
  */
 export function Footer() {
+  // рекламодатели — те, у кого есть партнёрская ссылка (`AFF_<SLUG>_URL`); пока ни у кого нет — первые шесть партнёров
+  // (легальных букмекеров 17, у остальных «На сайт» ведёт на официальный сайт — это не реклама по договору)
+  const configured = PARTNERS.filter((p) => p.configured)
+  const advertisers = configured.length ? configured : PARTNERS.slice(0, 6)
   const info: [string, string][] = [
     ['/about', 'Как мы считаем'],
     ['/responsible-gaming', 'Ответственная игра'],
@@ -48,7 +52,7 @@ export function Footer() {
           <p>Ссылки на букмекеров — партнёрские: мы можем получать вознаграждение.</p>
           {/* рекламодатели — для кнопок с пометкой «Реклама» (на телефоне подсказки при наведении нет): юрлицо из
               AFF_<SLUG>_ADVERTISER, нет его — имя партнёра */}
-          <p>Реклама: {PARTNERS.map((p) => p.ad.advertiser || p.name).join(', ')}.</p>
+          <p>Реклама: {advertisers.map((p) => p.ad.advertiser || p.name).join(', ')}.</p>
           <Links label="Информация" items={info} />
           <p>
             © {new Date().getFullYear()} {SITE.name}
