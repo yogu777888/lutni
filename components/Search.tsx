@@ -104,7 +104,9 @@ export function Search() {
         onClick={() => setOpen(true)}
         aria-label="Поиск команды или турнира"
         title="Поиск"
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[0.08] hover:text-fg lg:hidden"
+        // ниже lg — круглой кнопкой у правого края шапки, последней (`order-last`; владелец: «не нравится, где стоит кнопка
+        // поиска» — лупа висела посередине между надписью и «Рекламой»), как у YouTube
+        className="order-last grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/[0.08] text-fg/85 transition-colors hover:bg-white/[0.14] hover:text-fg lg:hidden"
       >
         <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
           <circle cx="11" cy="11" r="6.5" />

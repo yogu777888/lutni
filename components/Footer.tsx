@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PARTNERS } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { Wordmark } from './Logo'
 
@@ -57,6 +58,9 @@ export function Footer() {
             <span className="font-semibold text-dim">18+</span> · Ставки — это риск. Не призыв делать ставки.
           </p>
           <p>Ссылки на букмекеров — партнёрские: мы можем получать вознаграждение.</p>
+          {/* рекламодатели — для кнопок с пометкой «Реклама» (на телефоне подсказки при наведении нет): юрлицо из
+              AFF_<SLUG>_ADVERTISER, нет его — имя партнёра */}
+          <p>Реклама: {PARTNERS.map((p) => p.ad.advertiser || p.name).join(', ')}.</p>
           <Links label="Информация" items={info} />
           <p>
             © {new Date().getFullYear()} {SITE.name}
