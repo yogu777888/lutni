@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { addDays, idFromSlug, plural, slugify, tzOffsetHours, ymdInTz } from '@/lib/format'
-import { ruLeague, ruTeam } from '@/lib/i18n/ru'
+import { flagCode } from '@/lib/flags'
+import { ruCountry, ruLeague, ruTeam } from '@/lib/i18n/ru'
 import { ruRound } from '@/lib/sstats/normalize'
 
 describe('format', () => {
@@ -41,6 +42,24 @@ describe('format', () => {
     expect(ruTeam('Krylia Sovetov')).toBe('Крылья Советов')
     expect(ruTeam('Gençlerbirliği S.K.')).toBe('Генчлербирлиги')
     expect(ruTeam('Raków Częstochowa')).toBe('Ракув')
+    // сборные — по словарю стран, с припиской (на «Лиге наций» стояли «Türkiye», «Belgium»)
+    expect(ruTeam('Türkiye')).toBe('Турция')
+    expect(ruTeam('Belgium')).toBe('Бельгия')
+    expect(ruTeam('Russia U21')).toBe('Россия U21')
+    expect(ruTeam('Norway W')).toBe('Норвегия (жен.)')
+    expect(ruTeam('Mexico W U17')).toBe('Мексика U17 (жен.)')
+    expect(ruTeam('Cape Verde Islands')).toBe('Кабо-Верде')
+    expect(ruTeam('Manchester United U21')).toBe('Манчестер Юнайтед U21')
+    expect(ruTeam('World')).toBe('World')
+    // страны турниров, которых не было в словаре (шли по-английски через дефис)
+    expect(ruLeague('1st Division', 'Albania')).toMatch(/^Албания\. /)
+    expect(ruCountry('Antigua-And-Barbuda')).toBe('Антигуа и Барбуда')
+    expect(ruLeague('FA Cup', 'England')).toBe('Англия. Кубок Англии')
+    expect(ruLeague('FA Cup', 'Scotland')).toBe('Шотландия. Кубок страны')
+    expect(ruLeague('FA Cup', 'China')).toBe('Китай. Кубок страны')
+    expect(ruCountry('Congo-DR')).toBe('ДР Конго')
+    expect(flagCode({ country: 'Congo-DR', countryCode: 'CG' })).toBe('cd')
+    expect(flagCode({ country: 'Congo', countryCode: 'CD' })).toBe('cg')
     expect(ruRound('Regular Season - 12')).toBe('12-й тур')
     expect(ruRound('Round of 16')).toBe('1/8 финала')
     // названия туров с настоящего API

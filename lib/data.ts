@@ -300,8 +300,10 @@ export async function getInjuries(m: Match, opts: Opts = {}): Promise<Injury[]> 
 // ─── Лиги и таблицы ──────────────────────────────────────────────────────────
 
 export async function getLeagues(opts: Opts = {}): Promise<LeagueInfo[]> {
+  // v3 — названия по-русски (109 стран дописаны в словарь, «FA Cup» не в Англии — «Кубок страны»): в кэше на диске они
+  // жили бы ещё сутки по-старому
   return cache.get(
-    'leagues',
+    'leagues:v3',
     async () => N.normalizeLeagues(await apiGet<RawLeagueWithSeasons[]>('/Leagues', {}, opts)),
     { ttl: 24 * H, stale: 6 * 24 * H },
   )

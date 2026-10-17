@@ -93,6 +93,170 @@ Estonia=Эстония
 Latvia=Латвия
 Lithuania=Литва
 Moldova=Молдова
+Albania=Албания
+Algeria=Алжир
+Andorra=Андорра
+Angola=Ангола
+Antigua-And-Barbuda|Antigua and Barbuda=Антигуа и Барбуда
+Aruba=Аруба
+Azerbaidjan=Азербайджан
+Bahrain=Бахрейн
+Bangladesh=Бангладеш
+Barbados=Барбадос
+Belize=Белиз
+Benin=Бенин
+Bermuda=Бермуды
+Bhutan=Бутан
+Bolivia=Боливия
+Bosnia|Bosnia and Herzegovina|Bosnia & Herzegovina=Босния и Герцеговина
+Botswana=Ботсвана
+Burkina-Faso|Burkina Faso=Буркина-Фасо
+Burundi=Бурунди
+Cambodia=Камбоджа
+Cameroon=Камерун
+Canada=Канада
+Chinese-Taipei|Chinese Taipei|Taiwan=Китайский Тайбэй
+Congo=Конго
+Congo-DR|DR Congo|Congo DR=ДР Конго
+Costa-Rica|Costa Rica=Коста-Рика
+Cuba=Куба
+Curacao=Кюрасао
+Dominican-Republic|Dominican Republic=Доминиканская Республика
+Ecuador=Эквадор
+El-Salvador|El Salvador=Сальвадор
+Eswatini=Эсватини
+Ethiopia=Эфиопия
+Faroe-Islands|Faroe Islands=Фарерские острова
+Fiji=Фиджи
+Gabon=Габон
+Gambia=Гамбия
+Ghana=Гана
+Gibraltar=Гибралтар
+Grenada=Гренада
+Guadeloupe=Гваделупа
+Guatemala=Гватемала
+Guinea=Гвинея
+Haiti=Гаити
+Honduras=Гондурас
+Hong-Kong|Hong Kong=Гонконг
+India=Индия
+Indonesia=Индонезия
+Iraq=Ирак
+Ivory-Coast|Ivory Coast|Cote D'Ivoire=Кот-д’Ивуар
+Jamaica=Ямайка
+Jordan=Иордания
+Kenya=Кения
+Kosovo=Косово
+Kuwait=Кувейт
+Kyrgyzstan=Киргизия
+Laos=Лаос
+Lebanon=Ливан
+Lesotho=Лесото
+Liberia=Либерия
+Libya=Ливия
+Liechtenstein=Лихтенштейн
+Luxembourg=Люксембург
+Macao|Macau=Макао
+Macedonia|North Macedonia|FYR Macedonia=Северная Македония
+Malawi=Малави
+Malaysia=Малайзия
+Maldives=Мальдивы
+Mali=Мали
+Malta=Мальта
+Mauritania=Мавритания
+Mauritius=Маврикий
+Mongolia=Монголия
+Montenegro=Черногория
+Myanmar=Мьянма
+Namibia=Намибия
+Nepal=Непал
+New-Zealand|New Zealand=Новая Зеландия
+Nicaragua=Никарагуа
+Nigeria=Нигерия
+Oman=Оман
+Pakistan=Пакистан
+Palestine=Палестина
+Panama=Панама
+Paraguay=Парагвай
+Peru=Перу
+Philippines=Филиппины
+Rwanda=Руанда
+San-Marino|San Marino=Сан-Марино
+Senegal=Сенегал
+Singapore=Сингапур
+Somalia=Сомали
+South-Africa|South Africa=ЮАР
+Sudan=Судан
+Surinam|Suriname=Суринам
+Syria=Сирия
+Tajikistan=Таджикистан
+Tanzania=Танзания
+Thailand=Таиланд
+Togo=Того
+Trinidad-And-Tobago|Trinidad and Tobago=Тринидад и Тобаго
+Tunisia=Тунис
+Turkmenistan=Туркмения
+Uganda=Уганда
+Venezuela=Венесуэла
+Vietnam=Вьетнам
+Yemen=Йемен
+Zambia=Замбия
+Zimbabwe=Зимбабве
+Rep. Of Ireland|Republic of Ireland=Ирландия
+China PR=Китай
+Hong Kong, China=Гонконг
+St. Vincent / Gren.=Сент-Винсент и Гренадины
+Kyrgyz Republic=Киргизия
+Comoros=Коморы
+Niger=Нигер
+Cape Verde Islands|Cape Verde=Кабо-Верде
+Equatorial Guinea=Экваториальная Гвинея
+Mozambique=Мозамбик
+Central African Republic=ЦАР
+Madagascar=Мадагаскар
+North Korea|Korea DPR=КНДР
+Guinea-Bissau=Гвинея-Бисау
+Sri Lanka=Шри-Ланка
+Afghanistan=Афганистан
+Eritrea=Эритрея
+South Sudan=Южный Судан
+Sierra Leone=Сьерра-Леоне
+Anguilla=Ангилья
+Djibouti=Джибути
+St. Vincent / Grenadines|Saint Vincent and the Grenadines=Сент-Винсент и Гренадины
+British Virgin Islands=Британские Виргинские острова
+St. Kitts and Nevis|Saint Kitts and Nevis=Сент-Китс и Невис
+Chad=Чад
+Puerto Rico=Пуэрто-Рико
+Vanuatu=Вануату
+Seychelles=Сейшелы
+New Caledonia=Новая Каледония
+Dominica=Доминика
+Sao Tome and Principe=Сан-Томе и Принсипи
+Cayman Islands=Каймановы острова
+Papua New Guinea=Папуа — Новая Гвинея
+Solomon Islands=Соломоновы острова
+Timor-Leste|East Timor=Восточный Тимор
+Brunei=Бруней
+St. Lucia|Saint Lucia=Сент-Люсия
+Guyana=Гайана
+Saint Martin=Сен-Мартен
+US Virgin Islands=Виргинские острова США
+Montserrat=Монтсеррат
+Bahamas=Багамы
+Bonaire=Бонайре
+Turks and Caicos Islands=Тёркс и Кайкос
+Tahiti=Таити
+French Guyana|French Guiana=Французская Гвиана
+Sint Maarten=Синт-Мартен
+Martinique=Мартиника
+Samoa=Самоа
+American Samoa=Американское Самоа
+Guam=Гуам
+Cook Islands=Острова Кука
+Tonga=Тонга
+Basque Country=Страна Басков
+Catalonia Selection|Catalonia=Каталония
 `)
 
 const LEAGUES = dict(`
@@ -707,16 +871,41 @@ export function ruCountry(name: string | undefined | null): string {
   return lookup(COUNTRIES, name) ?? name ?? ''
 }
 
+/** Вторые составы и сборные с припиской: «Russia U21», «Norway W», «Morocco B». */
+const TEAM_SUFFIX = /^(.+?)\s+(W U\d{2}|U\d{2}|W|Women|B)$/i
+
+/**
+ * Название команды по-русски. Клубы — из `TEAMS`; сборных там нет — их название совпадает со страной (владелец: «страница
+ * лиг как?» — на «Лиге наций» стояли «Türkiye», «Belgium», «Armenia»), поэтому дальше — словарь стран (кроме «World»,
+ * «Europe»). Приписка сохраняется: «Russia U21» → «Россия U21», «Norway W» → «Норвегия (жен.)», «Arsenal U21» → «Арсенал U21».
+ */
 export function ruTeam(name: string): string {
-  return lookup(TEAMS, name) ?? name
+  const club = lookup(TEAMS, name)
+  if (club) return club
+  const m = name.match(TEAM_SUFFIX)
+  const base = m ? m[1] : name
+  const ru = lookup(TEAMS, base) ?? (INTERNATIONAL.has(key(base)) ? undefined : lookup(COUNTRIES, base))
+  if (!ru) return name
+  if (!m) return ru
+  const tail = m[2].toUpperCase()
+  // «W U17» — женская молодёжная: «Мексика U17 (жен.)»
+  if (tail.startsWith('W ')) return `${ru} ${tail.slice(2)} (жен.)`
+  return tail === 'W' || tail === 'WOMEN' ? `${ru} (жен.)` : `${ru} ${tail}`
 }
 
 const INTERNATIONAL = new Set(['world', 'europe', 'international', ''])
 
+/**
+ * Перевод — про одну страну, а название есть и у других: «FA Cup» — ещё в Шотландии, Гонконге, Китае, Малайзии, Омане…
+ * (было «Китай. Кубок Англии»). Не в Англии — «Кубок страны»: страна видна в приставке и по флагу.
+ */
+const ENGLAND_ONLY: Record<string, string> = { 'fa cup': 'Кубок страны', 'community shield': 'Суперкубок страны' }
+
 /** «Англия. Премьер-лига», «Лига чемпионов УЕФА». */
 export function ruLeague(name: string, country?: string | null): string {
-  const league = lookup(LEAGUES, name) ?? leagueByParts(name) ?? name
   const c = key(country ?? '')
+  const other = c && c !== 'england' ? ENGLAND_ONLY[key(name)] : undefined
+  const league = other ?? lookup(LEAGUES, name) ?? leagueByParts(name) ?? name
   if (INTERNATIONAL.has(c)) return league
   return `${ruCountry(country)}. ${league}`
 }
