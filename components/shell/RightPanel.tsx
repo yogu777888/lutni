@@ -51,12 +51,17 @@ function Right({ m, stat, hot }: { m: CompactMatch; stat?: string; hot: boolean 
  */
 /**
  * «Выгодно сегодня» внизу панели (владелец согласился: блок ушёл из центра, а нижняя половина панели пустовала):
- * до трёх лучших выгодных ставок дня — только по линии PARI (владелец: «а можно блок выгодно сегодня сделать только про
- * пари?»): исход словами и лаймовый кэф PARI — ссылка к нему (`goHref(…, 'panel')`, rel=sponsored); «PARI · Реклама · 18+» —
- * в заголовке (рекламодатель один на блок, подпись под каждой плашкой повторяла его); выгодных у PARI нет — так и пишем,
- * а не прячем блок (пропадающий блок выглядит поломкой); внизу «Все выгодные →» — по всем легальным партнёрам (/tag/value).
+ * до трёх лучших выгодных ставок дня — сначала по линии PARI, не хватает — у других легальных партнёров (владелец: «а можно
+ * блок выгодно сегодня сделать только про пари?», потом «сначала PARI, потом остальные»: у PARI выгодные бывают редко,
+ * и блок почти всегда пустовал): исход словами и лаймовый кэф — ссылка к букмекеру (`goHref(…, 'panel')`, rel=sponsored);
+ * все — PARI: он в заголовке («PARI · Реклама · 18+»), иначе букмекер подписан под каждой плашкой; у PARI
+ * пусто, а у других есть — строка «У PARI сегодня выгодных нет…»; совсем нет — так и пишем, а не прячем блок (пропадающий
+ * блок выглядит поломкой); внизу «Все выгодные →» — по всем легальным партнёрам (/tag/value).
  */
 function ValueBlock({ rows }: { rows: ValueRow[] }) {
+  // все ставки — PARI: он назван в заголовке, как было; есть другие — подписан каждый кэф (имя другого букмекера в заголовке
+  // не влезало в 288px: «Марафон · Реклама · 18+» переносилось вместе с «Выгодно сегодня»)
+  const onlyPari = rows.length > 0 && rows.every((r) => r.slug === 'pari')
   return (
     <section className="relative mt-6 border-t border-edge pt-4">
       <h3 className="flex items-baseline justify-between text-[15px] font-semibold">
@@ -82,9 +87,13 @@ function ValueBlock({ rows }: { rows: ValueRow[] }) {
             <span className="mt-1.5 block text-mute">Оценка, а не гарантия · 18+</span>
           </span>
         </span>
-        <span className="text-[11.5px] font-normal text-mute">PARI · Реклама · 18+</span>
+        {rows.length ? <span className="text-[11.5px] font-normal text-mute">{onlyPari ? 'PARI · ' : ''}Реклама · 18+</span> : null}
       </h3>
-      {rows.length ? null : <p className="mt-2 text-[13px] text-dim">Сегодня у PARI выгодных ставок нет.</p>}
+      {rows.length ? null : <p className="mt-2 text-[13px] text-dim">Сегодня выгодных ставок нет.</p>}
+      {/* у PARI пусто, а у других есть — так и пишем: главного партнёра в блоке не видно, и это не поломка */}
+      {rows.length && !rows.some((r) => r.slug === 'pari') ? (
+        <p className="mt-1.5 text-[12.5px] leading-snug text-mute">У PARI сегодня выгодных нет — у других легальных букмекеров:</p>
+      ) : null}
       <ul className="mt-2 space-y-1">
         {rows.map((r) => (
           // без круга с эмблемами слева (владелец согласился: эмблемы по 16px внахлёст не различить, а круг съедал место —
@@ -101,16 +110,19 @@ function ValueBlock({ rows }: { rows: ValueRow[] }) {
                 {r.time} · {r.side === 'home' ? `против «${r.away}»` : r.side === 'away' ? `против «${r.home}»` : `${r.home} — ${r.away}`}
               </span>
             </Link>
-            <a
-              href={goHref(r.slug, 'panel', r.id)}
-              target="_blank"
-              rel={SPONSORED_REL}
-              title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выгода +${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
-              // как лаймовая ячейка кэфа в строке списка (34px, 15px): три высоких плашки с букмекером были ярче всего на странице
-              className="num grid h-[34px] w-14 shrink-0 place-items-center rounded-ctl bg-acid text-[15px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
-            >
-              {r.odd.toFixed(2)}
-            </a>
+            <span className="flex shrink-0 flex-col items-center gap-0.5">
+              <a
+                href={goHref(r.slug, 'panel', r.id)}
+                target="_blank"
+                rel={SPONSORED_REL}
+                title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выгода +${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
+                // как лаймовая ячейка кэфа в строке списка (34px, 15px): три высоких плашки с букмекером были ярче всего на странице
+                className="num grid h-[34px] w-14 place-items-center rounded-ctl bg-acid text-[15px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
+              >
+                {r.odd.toFixed(2)}
+              </a>
+              {onlyPari ? null : <span className="text-[10.5px] leading-none text-mute">{r.bookmaker}</span>}
+            </span>
           </li>
         ))}
       </ul>

@@ -66,8 +66,6 @@ export async function warmOnce() {
   warmerState.running = true
   const started = Date.now()
   try {
-    // «Проверка шансов» (/about#proverka): 30 прошедших дней считаются один раз и дальше берутся из кэша
-    await settle(getChanceCheck({ priority: 'low' }), null)
     const max = Number(process.env.WARMER_MAX_MATCHES || 60)
     const today = todayYmd()
     const now = appNow()
@@ -83,6 +81,10 @@ export async function warmOnce() {
     }
     targets.sort(featuredFirst)
     for (const m of targets.slice(0, max)) await analyze(m.id)
+    // «Проверка шансов» (/about#proverka) — после матчей: 30 прошедших дней считаются один раз и дальше берутся из кэша,
+    // а первым шагом после перезапуска они держали пустыми «Все выгодные» и лайм в списке (разборы матчей — только в
+    // памяти), пока не досчитаются
+    await settle(getChanceCheck({ priority: 'low' }), null)
   } finally {
     warmerState.running = false
     warmerState.lastRun = Date.now()
