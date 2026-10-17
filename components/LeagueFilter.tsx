@@ -49,7 +49,7 @@ export function LeagueFilter({ target }: { target: string }) {
     if (empty) empty.hidden = !n || found > 0
   }, [q, target])
   return (
-    <label className="relative mt-4 block max-w-md">
+    <label className="relative mt-1 block max-w-md">
       <span className="sr-only">Найти страну или турнир</span>
       <svg
         aria-hidden

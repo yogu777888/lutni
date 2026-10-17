@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
 import { BlockHead } from '@/components/BlockHead'
-import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { PageHead } from '@/components/PageHead'
 import { Flag } from '@/components/Flag'
 import { MatchRow } from '@/components/MatchRow'
 import { Sidebar } from '@/components/Sidebar'
@@ -124,18 +124,12 @@ export default async function LeaguePage({ params }: Props) {
       <span hidden className="bare-sub" />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-1 xl:gap-2">
         <div className="min-w-0 space-y-4 xl:space-y-2">
-          <section className="card px-4 py-4 sm:px-5">
-            <Breadcrumbs items={[{ href: '/leagues', label: 'Лиги' }, { href: canonical, label: league.name }]} className="mb-3" />
-            <div className="flex items-center gap-3">
-              <Flag league={league} className="!h-9 !w-9" />
-              <div className="min-w-0">
-                <h1 className="h1-block text-[24px] leading-tight sm:text-[28px]">{title}</h1>
-                {country || season ? (
-                  <p className="mt-0.5 text-[13px] text-dim first-letter:uppercase">{[country, season].filter(Boolean).join(' · ')}</p>
-                ) : null}
-              </div>
-            </div>
-          </section>
+          <PageHead
+            crumbs={[{ href: '/leagues', label: 'Лиги' }, { href: canonical, label: league.name }]}
+            lead={<Flag league={league} className="!h-9 !w-9" />}
+            title={title}
+            sub={country || season ? <span className="block first-letter:uppercase">{[country, season].filter(Boolean).join(' · ')}</span> : null}
+          />
 
           <section className="card overflow-hidden">
             <BlockHead title="Ближайшие матчи" aside={books.length ? `Кэфы ${books.join(', ')} · Реклама` : null} line />

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AdMark } from '@/components/AdMark'
 import { BlockHead } from '@/components/BlockHead'
-import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { PageHead } from '@/components/PageHead'
 import { CtaLink } from '@/components/CtaLink'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerBadge } from '@/components/PartnerBadge'
@@ -63,35 +63,31 @@ export default async function BookmakerPage({ params }: Props) {
       <div className="space-y-4 xl:space-y-2">
         {/* шапка — одной строкой: знак, название, лицензия и сайт, кнопка справа (~110px вместо ~280: карточка с градиентом
             и «БУКМЕКЕР PARI» Oswald 56px; «Кэфы PARI сегодня» начинались на середине экрана) */}
-        <section className="card px-4 py-4 sm:px-5">
-          <Breadcrumbs
-            items={[{ href: '/bookmakers', label: 'Букмекеры' }, { href: `/bookmakers/${p.slug}`, label: p.name }]}
-            className="mb-3"
-          />
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-            <PartnerBadge partner={p} size={48} />
-            <div className="min-w-0 flex-1">
-              <h1 className="h1-block text-[24px] leading-tight sm:text-[28px]">Букмекер {p.name}</h1>
-              {/* оценки «4.8 / 5 · оценка tag.bet» нет: она была заглушкой без критериев; официальный сайт — здесь, а не
-                  отдельным разделом «Лицензия и надёжность» (он повторял эту строку) */}
-              <p className="mt-1 text-[13px] leading-snug text-dim">
-                {p.license} · официальный сайт <span className="font-semibold text-fg/85">{domain(p.site)}</span>
-              </p>
-              {/* бонус — только настоящий (AFF_<SLUG>_BONUS), заглушку «Бонус для новых клиентов» не показываем */}
+        {/* оценки «4.8 / 5 · оценка tag.bet» нет: она была заглушкой без критериев; официальный сайт — в подписи, а не
+            отдельным разделом «Лицензия и надёжность»; бонус — только настоящий (AFF_<SLUG>_BONUS) */}
+        <PageHead
+          crumbs={[{ href: '/bookmakers', label: 'Букмекеры' }, { href: `/bookmakers/${p.slug}`, label: p.name }]}
+          lead={<PartnerBadge partner={p} size={48} />}
+          title={`Букмекер ${p.name}`}
+          sub={
+            <>
+              {p.license} · официальный сайт <span className="font-semibold text-fg/85">{domain(p.site)}</span>
               {bonus ? (
-                <p className="mt-1 text-[14px] font-medium">
+                <span className="mt-1 block text-[14px] font-medium text-fg">
                   {bonus} <span className="text-[12px] font-normal text-mute">· {p.bonusNote}</span>
-                </p>
+                </span>
               ) : null}
-            </div>
-            <div className="w-full sm:w-auto">
+            </>
+          }
+          aside={
+            <>
               <CtaLink href={goHref(p, 'review')} className="w-full sm:w-auto">
                 {cta}
               </CtaLink>
               <AdMark partner={p} className="mt-1.5 sm:text-right" />
-            </div>
-          </div>
-        </section>
+            </>
+          }
+        />
 
         {/* вместо выдуманных «Плюсов» и «Минусов» (владелец: «а страница букмекеров как?») — кэфы этого букмекера в
             ближайших матчах, теми же строками и с той же шапкой, что блок лиги на главной: ссылки на матч, кэфы — к

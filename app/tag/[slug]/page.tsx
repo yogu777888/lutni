@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AdMark } from '@/components/AdMark'
 import { BlockHead } from '@/components/BlockHead'
-import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { PageHead } from '@/components/PageHead'
+import { StorySymbol } from '@/components/story/StorySymbol'
 import { CtaLink } from '@/components/CtaLink'
 import { getPartner, primaryPartner } from '@/config/bookmakers'
 import { isFeatured } from '@/config/leagues'
@@ -171,12 +172,18 @@ export default async function TagPage({ params }: Props) {
       {/* вид главной (владелец: «а страница выгодно как?»): без подложки, шапка панелью вместо плаката Oswald 56px */}
       <span hidden className="bare-sub" />
       <div className="space-y-4 xl:space-y-2">
-        <section className="card px-4 py-4 sm:px-5">
-          <Breadcrumbs items={[{ href: '/tags', label: 'Подборки' }, { href: `/tag/${t.slug}`, label: t.title }]} className="mb-3" />
-          <h1 className="h1-block text-[24px] leading-tight sm:text-[28px]">{t.title}</h1>
-          <p className="mt-1.5 max-w-[68ch] text-[14px] leading-relaxed text-dim">{t.about}</p>
+        <PageHead
+          crumbs={[{ href: '/tags', label: 'Подборки' }, { href: `/tag/${t.slug}`, label: t.title }]}
+          lead={
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.06]">
+              <StorySymbol k={t.slug} tone="currentColor" className="h-[18px] w-[18px]" />
+            </span>
+          }
+          title={t.title}
+          sub={t.about}
+        >
           {isValue ? null : (
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <span className="text-[13px] text-mute">
                 Что обычно ставят: <span className="font-medium text-fg">{t.bet}</span>
               </span>
@@ -186,7 +193,7 @@ export default async function TagPage({ params }: Props) {
               <AdMark partner={partner} />
             </div>
           )}
-        </section>
+        </PageHead>
 
         {!ok ? <div className="card px-4 py-4 text-[14px] text-dim sm:px-5">Источник данных временно недоступен — список может быть неполным.</div> : null}
 

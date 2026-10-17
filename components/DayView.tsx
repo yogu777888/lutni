@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PageHead } from './PageHead'
 import { countryRank, FEATURED_LEAGUES, featuredRank } from '@/config/leagues'
 import { daySnaps, getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { x12For, type X12Line } from '@/lib/lines'
@@ -187,7 +188,8 @@ export async function DayView({
       {liveAll.length ? <LiveRefresh /> : null}
       {/* главная от xl — без общей подложки центра: баннер, «Сейчас в игре» и лиги — отдельными блоками на фоне
           страницы, как боковые панели (владелец: «чтобы не делать блок в блоке»; правила — .bare-page в app/globals.css) */}
-      {view === 'home' ? <span hidden className="bare-page" /> : null}
+      {/* «Матчи» — так же, с шапкой PageHead (владелец: «на всех страницах разные по размеру заголовки?») */}
+      <span hidden className="bare-page" />
       {view === 'home' ? (
         <>
           {/* заголовок — тихая строка с датой (на xl — только для поисковиков): главное на экране — матчи */}
@@ -209,21 +211,27 @@ export async function DayView({
           (тёмный текст), фон — на тон темнее карточек, чтобы карточки турниров на ней читались */}
       {view === 'list' ? (
         // страница «Матчи»: заголовок — как на главной, но про список
-        <section className="min-w-0 pt-1 sm:pt-0">
-          <p className="fade-up text-[14px] font-medium text-dim">{heading.date}</p>
-          <h1 className="mt-1.5 text-[30px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[34px]">
-            {listTitle(heading.title)}
-            <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
-          </h1>
-          {filtered ? (
-            <p className="mt-2 text-[14px] text-dim">
-              Своя подборка: {pluralN(listItems.length, ['матч', 'матча', 'матчей'])} из {items.length} ·{' '}
-              <Link href={list} className="font-semibold text-fg underline decoration-edge-2 underline-offset-4 hover:decoration-fg">
-                показать все
-              </Link>
-            </p>
-          ) : null}
-        </section>
+        <PageHead
+          title={
+            <>
+              {listTitle(heading.title)}
+              <span className="sr-only">, {formatDayMonth(ymdToNoonTs(ymd))}</span>
+            </>
+          }
+          sub={
+            <>
+              <span className="first-letter:uppercase">{heading.date}</span>
+              {filtered ? (
+                <>
+                  {' · '}Своя подборка: {pluralN(listItems.length, ['матч', 'матча', 'матчей'])} из {items.length} ·{' '}
+                  <Link href={list} className="font-semibold text-fg underline decoration-edge-2 underline-offset-4 hover:decoration-fg">
+                    показать все
+                  </Link>
+                </>
+              ) : null}
+            </>
+          }
+        />
       ) : null}
       {view === 'list' ? (
         // «Своя подборка» — что показывать, турниры, теги и порядок (раньше была в правой панели каркаса)
@@ -237,9 +245,9 @@ export async function DayView({
       {showList ? (
       <section
         id="matches"
-        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : 'mt-5 sm:mt-6'} ${view === 'home' ? 'xl:mt-0' : ''}`}
+        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : 'mt-5 sm:mt-6'} xl:mt-0`}
       >
-        <div className={view === 'home' ? 'bare-panel' : undefined}>
+        <div className="bare-panel">
         {listHead ? (
           // заголовок — как у полок выше: одна схема на всю страницу
           <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
@@ -328,7 +336,7 @@ export async function DayView({
             ) : null}
           </div>
           {/* на главной от xl «Где ставить» и прочее — не нужно: подборки и вход — в правой панели */}
-          <div className={view === 'home' ? 'xl:hidden' : undefined}>
+          <div className="xl:hidden">
             <Sidebar />
           </div>
         </div>

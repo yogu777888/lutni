@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { dayHeading } from '@/components/DayView'
 import { Coverage, Crests, Filters, MatchWhen, PickHead, STAGES, STAGE_LABEL, pickParam, stageOf, withParam, type StageKey } from '@/components/picks/Shared'
 import { featuredInfo, isFeatured } from '@/config/leagues'
@@ -84,13 +83,9 @@ export default async function OddsMovesPage({ params, searchParams }: Props) {
 
   return (
     <>
-      <Breadcrumbs
-        items={[
-          { href: dayHref(date, today), label: heading.title },
-          { href: base, label: 'Движение коэффициентов' },
-        ]}
-      />
+      <span hidden className="bare-sub" />
       <PickHead ymd={date} today={today} date={heading.date} title="Движение коэффициентов" icon="pick-moves" section="odds"
+        crumbs={[{ href: dayHref(date, today), label: heading.title }, { href: base, label: 'Движение коэффициентов' }]}
         how={
           <>
             Это доматчевая линия: у ещё не начавшихся матчей — до момента, когда мы её взяли, у начавшихся — до начала матча. LIVE-коэффициенты здесь не
@@ -102,7 +97,7 @@ export default async function OddsMovesPage({ params, searchParams }: Props) {
         Как менялась линия на матчи дня: коэффициент открытия и последнее значение у одного букмекера — по исходам и тоталу 2,5.
       </PickHead>
 
-      <div className="card mt-4 space-y-4 p-4 sm:p-5">
+      <div className="card mt-4 xl:mt-2 space-y-4 p-4 sm:p-5">
         <Filters
           groups={[
             {
@@ -135,10 +130,10 @@ export default async function OddsMovesPage({ params, searchParams }: Props) {
         <Coverage covered={covered} total={matches.length} pending={pending} what="Кэфы открытия" />
       </div>
 
-      {failed ? <div className="card mt-6 p-5 text-[15px] text-dim">Не удалось загрузить матчи: источник данных временно недоступен. Обновите страницу через минуту.</div> : null}
+      {failed ? <div className="card mt-6 xl:mt-2 p-5 text-[15px] text-dim">Не удалось загрузить матчи: источник данных временно недоступен. Обновите страницу через минуту.</div> : null}
 
       {rows.length ? (
-        <div className="card mt-6 overflow-hidden">
+        <div className="card mt-6 xl:mt-2 overflow-hidden">
           <div className="hidden grid-cols-[72px_minmax(0,1fr)_minmax(0,0.8fr)_150px_88px_minmax(0,0.9fr)] gap-4 gap-x-6 border-b border-edge px-5 py-3 text-[12px] font-medium uppercase tracking-[0.06em] text-mute lg:grid">
             <span>Время</span>
             <span>Матч</span>
@@ -183,7 +178,7 @@ export default async function OddsMovesPage({ params, searchParams }: Props) {
           </ul>
         </div>
       ) : (
-        <div className="card mt-6 p-8 text-center">
+        <div className="card mt-6 xl:mt-2 p-8 text-center">
           <p className="text-[16px] font-semibold">{covered ? 'Таких изменений линии нет' : 'Линии с кэфами открытия пока нет'}</p>
           {covered && (min !== '5' || dir !== 'all' || mk !== 'all' || st !== 'all' || top !== 'all') ? (
             <Link href={base} className="mt-3 inline-block border-b-2 border-acid pb-0.5 text-[15px] font-semibold">

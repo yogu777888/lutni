@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { dayHeading } from '@/components/DayView'
 import { Coverage, Crests, Filters, MatchWhen, PickHead, STAGES, STAGE_LABEL, pickParam, stageOf, withParam, type StageKey } from '@/components/picks/Shared'
 import { featuredInfo, isFeatured } from '@/config/leagues'
@@ -74,13 +73,9 @@ export default async function GoalsPage({ params, searchParams }: Props) {
 
   return (
     <>
-      <Breadcrumbs
-        items={[
-          { href: dayHref(date, today), label: heading.title },
-          { href: base, label: 'Голевые матчи' },
-        ]}
-      />
+      <span hidden className="bare-sub" />
       <PickHead ymd={date} today={today} date={heading.date} title="Голевые матчи" icon="pick-goals" section="goals"
+        crumbs={[{ href: dayHref(date, today), label: heading.title }, { href: base, label: 'Голевые матчи' }]}
         how={
           <>
             Шанс — из пары коэффициентов «больше 2,5 / меньше 2,5» одного букмекера в одном снимке линии, без маржи: (1/ТБ) ÷ (1/ТБ + 1/ТМ). Средние голы команд
@@ -91,7 +86,7 @@ export default async function GoalsPage({ params, searchParams }: Props) {
         Матчи дня, где по линии букмекера вероятнее 3 гола и больше. Сравнивайте шанс, коэффициенты и время матчей в одной таблице.
       </PickHead>
 
-      <div className="card mt-4 space-y-4 p-4 sm:p-5">
+      <div className="card mt-4 xl:mt-2 space-y-4 p-4 sm:p-5">
         <Filters
           groups={[
             { label: 'Шанс от', options: MINS.map((v) => ({ label: `${v}%`, href: withParam(base, q, 'min', v, '55'), on: v === min })) },
@@ -115,10 +110,10 @@ export default async function GoalsPage({ params, searchParams }: Props) {
         <Coverage covered={covered} total={matches.length} pending={pending} what="Линия на тотал 2,5" />
       </div>
 
-      {failed ? <div className="card mt-6 p-5 text-[15px] text-dim">Не удалось загрузить матчи: источник данных временно недоступен. Обновите страницу через минуту.</div> : null}
+      {failed ? <div className="card mt-6 xl:mt-2 p-5 text-[15px] text-dim">Не удалось загрузить матчи: источник данных временно недоступен. Обновите страницу через минуту.</div> : null}
 
       {rows.length ? (
-        <div className="card mt-6 overflow-hidden">
+        <div className="card mt-6 xl:mt-2 overflow-hidden">
           {/* шапка таблицы — только на широком экране; на телефоне каждая строка — карточка с подписями */}
           <div className="hidden grid-cols-[72px_minmax(0,1fr)_120px_96px_96px_150px] gap-4 border-b border-edge px-5 py-3 text-[12px] font-medium uppercase tracking-[0.06em] text-mute md:grid">
             <span>Время</span>
@@ -175,7 +170,7 @@ export default async function GoalsPage({ params, searchParams }: Props) {
           </ul>
         </div>
       ) : (
-        <div className="card mt-6 p-8 text-center">
+        <div className="card mt-6 xl:mt-2 p-8 text-center">
           <p className="text-[16px] font-semibold">{covered ? `Матчей с шансом 3+ голов от ${min}% нет` : 'Линии букмекеров на тотал пока нет'}</p>
           {covered && min !== '50' ? (
             <Link href={withParam(base, q, 'min', '50', '55')} className="mt-3 inline-block border-b-2 border-acid pb-0.5 text-[15px] font-semibold">

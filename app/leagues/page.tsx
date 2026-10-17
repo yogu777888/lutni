@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BlockHead } from '@/components/BlockHead'
 import { LeagueFilter } from '@/components/LeagueFilter'
+import { PageHead } from '@/components/PageHead'
 import { getLeagues } from '@/lib/data'
 import { pluralN } from '@/lib/format'
 import { leagueIndex, type IndexGroup } from '@/lib/league-index'
@@ -84,15 +85,16 @@ export default async function LeaguesPage() {
     <>
       <span hidden className="bare-sub" />
       <div className="space-y-4 xl:space-y-2">
-        <section className="card px-4 py-4 sm:px-5">
-          <h1 className="h1-block text-[24px] leading-tight sm:text-[28px]">Лиги и турниры</h1>
-          <p className="mt-1 text-[13.5px] leading-snug text-dim">
-            {failed
+        <PageHead
+          title="Лиги и турниры"
+          sub={
+            failed
               ? 'Список лиг временно недоступен.'
-              : `Таблицы, расписание и результаты — ${pluralN(total, ['турнир', 'турнира', 'турниров'])} из ${pluralN(countries, ['страны', 'стран', 'стран'])}.`}
-          </p>
+              : `Таблицы, расписание и результаты — ${pluralN(total, ['турнир', 'турнира', 'турниров'])} из ${pluralN(countries, ['страны', 'стран', 'стран'])}.`
+          }
+        >
           {failed ? null : <LeagueFilter target="league-index" />}
-        </section>
+        </PageHead>
 
         <div id="league-index" className="space-y-4 xl:space-y-2">
           {top.length ? (

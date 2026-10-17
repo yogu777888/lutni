@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { PageHead } from '@/components/PageHead'
 import { StorySymbol } from '@/components/story/StorySymbol'
 import { getUpcomingFeed } from '@/lib/data'
 import { appNow, pluralN, todayYmd, ymdInTz } from '@/lib/format'
@@ -45,13 +46,10 @@ export default async function TagsPage() {
     <>
       <span hidden className="bare-sub" />
       <div className="space-y-4 xl:space-y-2">
-        <section className="card px-4 py-4 sm:px-5">
-          <h1 className="h1-block text-[24px] leading-tight sm:text-[28px]">Подборки</h1>
-          <p className="mt-1 max-w-[68ch] text-[14px] leading-relaxed text-dim">
-            Матчи, собранные по одному признаку: где ждём много голов, где есть явный фаворит, где упал кэф. Признак считается по
-            данным — кэфам букмекеров, форме команд, травмам. Это подсказка, где посмотреть, а не гарантия.
-          </p>
-        </section>
+        <PageHead
+          title="Подборки"
+          sub="Матчи, собранные по одному признаку: где ждём много голов, где есть явный фаворит, где упал кэф. Признак считается по данным — кэфам букмекеров, форме команд, травмам. Это подсказка, где посмотреть, а не гарантия."
+        />
         <section className="card overflow-hidden">
           <ul className="divide-y divide-edge">
             {rows.map(({ t, state, empty }) => (

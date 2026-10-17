@@ -2,7 +2,9 @@ import Link from 'next/link'
 import { formatTime, pluralN } from '@/lib/format'
 import { isLive } from '@/lib/rank'
 import type { Match } from '@/lib/types'
+import type { Crumb } from '../Breadcrumbs'
 import { DateTabs } from '../DateTabs'
+import { PageHead } from '../PageHead'
 import { TeamLogo } from '../TeamLogo'
 import { StorySymbol, discBackground, symbolColor } from '../story/StorySymbol'
 
@@ -46,9 +48,9 @@ export function Filters({ groups }: { groups: FilterGroup[] }) {
 }
 
 /**
- * Шапка подборки — карточка в стиле главной: значок подборки (тот же диск, что у плитки «Подборок»), дата, заголовок
- * и одна фраза; «как считаем» — под раскрывашкой (раньше простыня текста отталкивала); снизу — выбор дня
- * (вкладки ведут на ту же подборку другого дня).
+ * Шапка подборки — общая шапка страницы (`PageHead`): крошки, значок подборки (тот же диск, что у плитки «Подборок»),
+ * заголовок и одна фраза; дата — в подписи; «как считаем» — под раскрывашкой; снизу — выбор дня (вкладки ведут на ту же
+ * подборку другого дня).
  */
 export function PickHead({
   ymd,
@@ -59,6 +61,7 @@ export function PickHead({
   how,
   children,
   section,
+  crumbs,
 }: {
   ymd: string
   today: string
@@ -69,36 +72,40 @@ export function PickHead({
   how?: React.ReactNode
   children: React.ReactNode
   section: string
+  crumbs: Crumb[]
 }) {
   return (
-    <section className="card min-w-0 p-5 sm:p-7">
-      <div className="flex items-start gap-4 sm:gap-5">
+    <PageHead
+      crumbs={crumbs}
+      lead={
         <span
           aria-hidden
-          className="story-disc grid h-12 w-12 shrink-0 place-items-center rounded-full sm:h-14 sm:w-14"
+          className="story-disc grid h-9 w-9 place-items-center rounded-full"
           style={{ background: discBackground(symbolColor(icon)) }}
         >
           <StorySymbol k={icon} tone="#ffffff" className="h-[56%] w-[56%]" />
         </span>
-        <div className="min-w-0">
-          <p className="text-[13px] font-medium text-dim">{date}</p>
-          <h1 className="mt-1 text-[28px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[36px]">{title}</h1>
-          <div className="mt-2.5 max-w-3xl text-[15px] leading-relaxed text-dim">{children}</div>
-          {how ? (
-            <details className="group mt-3">
-              <summary className="inline-flex cursor-pointer items-center gap-1 text-[13px] font-medium text-dim transition-colors hover:text-fg">
-                Как считаем
-                <span aria-hidden className="transition group-open:rotate-180">▾</span>
-              </summary>
-              <div className="mt-2 max-w-3xl text-[13px] leading-relaxed text-mute">{how}</div>
-            </details>
-          ) : null}
-        </div>
-      </div>
-      <div className="mt-5 border-t border-edge pt-4">
+      }
+      title={title}
+      sub={
+        <>
+          <span className="first-letter:uppercase">{date}</span>. {children}
+        </>
+      }
+    >
+      {how ? (
+        <details className="group">
+          <summary className="inline-flex cursor-pointer items-center gap-1 text-[13px] font-medium text-dim transition-colors hover:text-fg">
+            Как считаем
+            <span aria-hidden className="transition group-open:rotate-180">▾</span>
+          </summary>
+          <div className="mt-2 max-w-3xl text-[13px] leading-relaxed text-mute">{how}</div>
+        </details>
+      ) : null}
+      <div className="mt-3 border-t border-edge pt-3">
         <DateTabs active={ymd} today={today} section={section} />
       </div>
-    </section>
+    </PageHead>
   )
 }
 
