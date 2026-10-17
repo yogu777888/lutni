@@ -73,6 +73,22 @@ const btn = 'flex h-9 w-9 items-center justify-center rounded-full text-fg/90 tr
  * мягко из центра; «уменьшить движение» — без анимации.
  */
 const GROW = 'cubic-bezier(0.2, 0.9, 0.25, 1)'
+/**
+ * Пружина, как у iOS (владелец: «на айфонах оно как будто вылетает с более интересной анимацией»): затухающее колебание
+ * с перелётом ~2% (ζ 0.78), ступенями для `linear()`; браузер без `linear()` (старый Safari) — плавное замедление `GROW`.
+ */
+const SPRING = (() => {
+  const z = 0.78
+  const w = 7.6
+  const wd = w * Math.sqrt(1 - z * z)
+  const pts = Array.from({ length: 41 }, (_, i) => {
+    const t = i / 40
+    const v = i === 40 ? 1 : 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + ((z * w) / wd) * Math.sin(wd * t))
+    return v.toFixed(4)
+  })
+  return `linear(${pts.join(', ')})`
+})()
+const spring = () => (CSS.supports('animation-timing-function', 'linear(0, 1)') ? SPRING : GROW)
 const SHRINK = 'cubic-bezier(0.4, 0, 0.2, 1)'
 const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -124,6 +140,7 @@ export function StoryViewer() {
   const deep = useRef(false)
   const dialog = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
+  const shade = useRef<HTMLDivElement>(null)
   const closing = useRef(false)
   /** Подборка или турнир текущего матча — в его кружок сворачиваемся при закрытии. */
   const groupKey = useRef<string | null>(null)
@@ -183,8 +200,8 @@ export function StoryViewer() {
     const box = p.getBoundingClientRect()
     const R = getComputedStyle(p).borderTopLeftRadius
     const opts = { duration: c ? 320 : 200, easing: SHRINK, fill: 'forwards' as const }
-    d.animate({ backgroundColor: ['rgb(0 0 0 / 0.85)', 'rgb(0 0 0 / 0)'], backdropFilter: ['blur(12px)', 'blur(0px)'] }, opts)
-    for (const k of d.children) if (k !== p) (k as HTMLElement).animate({ opacity: [1, 0] }, { duration: 150, fill: 'forwards' })
+    // затемнение — только прозрачностью слоя: размытие не пересчитывается каждый кадр (на iPhone фон от этого дрожал)
+    for (const k of d.children) if (k !== p) (k as HTMLElement).animate({ opacity: [1, 0] }, k === shade.current ? opts : { duration: 150, fill: 'forwards' })
     for (const k of p.children) (k as HTMLElement).animate({ opacity: [1, 0] }, { duration: c ? 140 : 200, fill: 'forwards' })
     const a = c
       ? p.animate([{ transform: 'none', clipPath: `inset(0px 0px round ${R})` }, asCircle(box, c)], opts)
@@ -269,9 +286,11 @@ export function StoryViewer() {
         history.pushState({ ...history.state, tagStory: true }, '')
         pushed.current = true
       }
+      const at = Math.max(0, list.findIndex((i) => i.id === d.id))
+      setPos(at)
       void show(
         list,
-        Math.max(0, list.findIndex((i) => i.id === d.id)),
+        at,
         1,
         d.queue?.length ? { fallbackHref: d.href } : { strict: true },
       )
@@ -346,12 +365,16 @@ export function StoryViewer() {
     if (!open) return
     const root = document.documentElement
     const prevOverflow = root.style.overflow
+    // страница за историей не сдвигается вбок: место под полосой прокрутки остаётся (Windows, Mac с мышью)
+    const prevGutter = root.style.scrollbarGutter
+    if (window.innerWidth - root.clientWidth > 0) root.style.scrollbarGutter = 'stable'
     root.style.overflow = 'hidden'
     dialog.current?.focus({ preventScroll: true })
     const onVis = () => setHidden(document.visibilityState === 'hidden')
     document.addEventListener('visibilitychange', onVis)
     return () => {
       root.style.overflow = prevOverflow
+      root.style.scrollbarGutter = prevGutter
       document.removeEventListener('visibilitychange', onVis)
     }
   }, [open])
@@ -370,11 +393,33 @@ export function StoryViewer() {
     const box = p.getBoundingClientRect()
     const c = circleOf(opener.current)
     const R = getComputedStyle(p).borderTopLeftRadius
-    d.animate({ backgroundColor: ['rgb(0 0 0 / 0)', 'rgb(0 0 0 / 0.85)'], backdropFilter: ['blur(0px)', 'blur(12px)'] }, { duration: 300, easing: 'ease-out' })
-    for (const k of d.children) if (k !== p) (k as HTMLElement).animate({ opacity: [0, 1] }, { duration: 200, delay: 200, fill: 'backwards' })
+    shade.current?.animate({ opacity: [0, 1] }, { duration: 320, easing: 'ease-out' })
+    for (const k of d.children) if (k !== p && k !== shade.current) (k as HTMLElement).animate({ opacity: [0, 1] }, { duration: 200, delay: 200, fill: 'backwards' })
     if (c) {
-      p.animate([asCircle(box, c), { transform: 'none', clipPath: `inset(0px 0px round ${R})` }], { duration: 440, easing: GROW })
-      for (const k of p.children) (k as HTMLElement).animate({ opacity: [0, 1] }, { duration: 200, delay: 240, easing: 'ease-out', fill: 'backwards' })
+      const ease = spring()
+      p.animate([asCircle(box, c), { transform: 'none', clipPath: `inset(0px 0px round ${R})` }], { duration: 520, easing: ease })
+      for (const k of p.children) (k as HTMLElement).animate({ opacity: [0, 1] }, { duration: 220, delay: 230, easing: 'ease-out', fill: 'backwards' })
+      // значок превращается в историю, как приложение на iOS: копия кружка растёт вместе с панелью и растворяется к середине
+      const src = opener.current
+      const el = src && (src.matches('[data-story-key]') ? src : src.querySelector('[data-story-key]'))
+      if (el) {
+        const ghost = document.createElement('div')
+        ghost.setAttribute('aria-hidden', 'true')
+        Object.assign(ghost.style, { position: 'fixed', left: `${c.left}px`, top: `${c.top}px`, width: `${c.width}px`, height: `${c.height}px`, zIndex: '101', pointerEvents: 'none' })
+        const copy = el.cloneNode(true) as HTMLElement
+        copy.removeAttribute('data-story-key')
+        Object.assign(copy.style, { width: '100%', height: '100%', margin: '0' })
+        ghost.append(copy)
+        document.body.append(ghost)
+        const side = Math.min(box.width, box.height)
+        const dx = box.left + box.width / 2 - (c.left + c.width / 2)
+        const dy = box.top + box.height / 2 - (c.top + c.height / 2)
+        ghost.animate({ transform: ['none', `translate(${dx}px, ${dy}px) scale(${(side * 0.5) / c.width})`] }, { duration: 520, easing: ease, fill: 'forwards' })
+        void ghost
+          .animate({ opacity: [1, 1, 0] }, { duration: 300, easing: 'ease-out', fill: 'forwards' })
+          .finished.catch(() => {})
+          .then(() => ghost.remove())
+      }
     } else {
       p.animate({ transform: ['scale(0.94)', 'none'], opacity: [0, 1] }, { duration: 280, easing: GROW })
     }
@@ -396,7 +441,8 @@ export function StoryViewer() {
   const group = item?.group
   const focus = focusFor(item, story)
   // фон — цвета кружка, из которого открыли (или тега матча); своя картинка кружка — сверху
-  const artKey = group?.key ?? focus?.slug ?? null
+  // цвет кружка известен до загрузки матча — панель сразу в нём, а не перекрашивается через 0,1–0,3 с («мерцает»)
+  const artKey = group?.key ?? items[pos]?.group?.key ?? focus?.slug ?? null
   const panelBg = artKey ? artGlow(artFor(artKey)) : undefined
   const duration = (k: NonNullable<typeof current>['kind']) => (k === 'cover' && focus ? 6500 : SLIDE_MS[k])
 
@@ -462,11 +508,13 @@ export function StoryViewer() {
       aria-modal="true"
       aria-label={story ? `Разбор матча: ${story.home.name} — ${story.away.name}` : 'Разбор матча'}
       tabIndex={-1}
-      className="on-dark fixed inset-0 z-[100] flex items-center justify-center bg-black/85 outline-none backdrop-blur-md"
+      className="on-dark fixed inset-0 z-[100] isolate flex items-center justify-center outline-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) close()
       }}
     >
+      {/* затемнение отдельным слоем: появляется прозрачностью, размытие постоянное (анимация размытия мерцала) */}
+      <div ref={shade} aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-black/[0.88] backdrop-blur-md" />
       <button type="button" onClick={prev} className={`${btn} mr-5 hidden h-11 w-11 bg-white/5 sm:flex`} aria-label="Назад">
         <Icon d={ICONS.prev} />
       </button>
