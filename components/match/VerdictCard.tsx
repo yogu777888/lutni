@@ -108,7 +108,8 @@ export function PickPanel({ pick, match, className = '' }: { pick: Pick; match: 
               <Stat label={`Кэф ${partner.name}`} value={c.bestPartner.value.toFixed(2)} />
             ) : null}
           </dl>
-          <div className="mt-3">
+          {/* #pick-cta — по нему нижняя плашка на телефоне прячется, пока эта кнопка на экране (`StickyCta`) */}
+          <div id="pick-cta" className="mt-3">
             <CtaLink href={goHref(partner, 'pick', match.id)} size="lg" className="w-full">
               {c.bestPartner && offer ? `Поставить за ${offer.value.toFixed(2)} в ${partner.name}` : `Сделать ставку в ${partner.name}`}
             </CtaLink>

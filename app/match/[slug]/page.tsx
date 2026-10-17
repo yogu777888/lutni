@@ -70,6 +70,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
+
 export default async function MatchPage({ params }: Props) {
   const { slug } = await params
   const id = idFromSlug(slug)
@@ -466,8 +468,10 @@ export default async function MatchPage({ params }: Props) {
         <StickyCta
           partner={partner}
           href={goHref(partner, 'sticky', m.id)}
-          title={pick ? `Прогноз: ${outcomeText(pick.candidate.key, m)}${pickOffer ? ` за ${pickOffer.value.toFixed(2)}` : ''}` : `Ставки на ${pair}`}
-          subtitle={partner.name}
+          // кэф — первым: «Прогноз: победа «Райо Вал…» обрезал и его, и исход; тип ставки — как в первом блоке, а не
+          // «Прогноз» (там у не выгодной честно написано «выгоды нет»)
+          title={pick ? `${pickOffer ? `${pickOffer.value.toFixed(2)} · ` : ''}${cap(outcomeText(pick.candidate.key, m))}` : `Ставки на ${pair}`}
+          subtitle={pick ? `${pick.kind === 'value' ? 'Выгодная ставка' : 'Наш выбор'} · ${partner.name}` : partner.name}
           action="Ставка"
         />
       ) : null}
