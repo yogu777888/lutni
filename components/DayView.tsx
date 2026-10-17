@@ -201,13 +201,6 @@ export async function DayView({
             {heading.title} · {heading.date.charAt(0).toLowerCase() + heading.date.slice(1)}
           </h1>
 
-      {/* подборки дня — в правой панели каркаса (RightPanel); ниже xl панели нет — кружками историй */}
-      {storyGroups.length ? (
-        <div className="mt-1 sm:mt-4 xl:hidden">
-          <StoryCircles groups={storyGroups} />
-        </div>
-      ) : null}
-
         </>
       ) : null}
       {/* без сводки (в этот день нет ни одного «взрослого» матча) список идёт сразу под заголовком страницы — второй заголовок не нужен */}
@@ -249,7 +242,7 @@ export async function DayView({
       {showList ? (
       <section
         id="matches"
-        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : 'mt-3 sm:mt-6'} xl:mt-0`}
+        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : view === 'home' ? 'sm:mt-6' : 'mt-3 sm:mt-6'} xl:mt-0`}
       >
         {/* ниже xl — тоже панелью и липкой под шапкой, как на компьютере (владелец: «сортировку по дням как на пк сделать
             в блоке»): плашка цвета панели, дни слева, порядок справа; подложка цвета фона и 8px под плашкой — список уходит под неё
@@ -302,6 +295,13 @@ export async function DayView({
           )}
         </div>
         </div>
+        {/* кружки историй — под днями и порядком (владелец: «а может на главной сортировки перенести под хедер?»): истории
+            собраны из матчей выбранного дня, переключатель управляет и ими; на xl — подборки в правой панели каркаса */}
+        {view === 'home' && storyGroups.length ? (
+          <div className="mt-2 sm:mt-4 xl:hidden">
+            <StoryCircles groups={storyGroups} />
+          </div>
+        ) : null}
         <div
           className={`mt-3 grid gap-10 sm:mt-6 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-2 xl:!grid-cols-1 xl:gap-2' : ''}`}
         >
