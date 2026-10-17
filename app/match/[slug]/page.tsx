@@ -20,7 +20,6 @@ import { Section } from '@/components/Section'
 import { StandingsTable } from '@/components/StandingsTable'
 import { StickyCta } from '@/components/StickyCta'
 import { StoryButton } from '@/components/story/StoryButton'
-import { TagPill } from '@/components/TagPill'
 import { PARTNERS, partnerForApiBookmaker, primaryPartner } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
@@ -34,6 +33,7 @@ import { appNow, formatDateShort, formatDayMonth, formatTime, idFromSlug, pct, p
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
 import { buildStory } from '@/lib/story'
+import { TAG_BY_SLUG } from '@/lib/tags'
 import type { Match } from '@/lib/types'
 import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
 
@@ -284,7 +284,7 @@ export default async function MatchPage({ params }: Props) {
         <div className="min-w-0 space-y-6 xl:space-y-2">
           {!scheduled && (full.events.length || full.stats.length) ? (
             // в игре — «Сейчас в матче»: эти цифры учитывают счёт и ход игры; доматчевые блоки ниже подписаны «До матча»
-            <Section title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'} aside={m.status === 'live' ? 'обновляется сама' : 'итог'}>
+            <Section title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'} aside={m.status === 'live' ? 'обновляется каждые 30 с' : 'итог'}>
               {/* сверху — полоса матча 0′–90′ во всю ширину, ниже — статистика в две колонки */}
               <div className="space-y-6">
                 <EventsBlock
@@ -308,8 +308,10 @@ export default async function MatchPage({ params }: Props) {
               <ul className="grid gap-y-4 sm:grid-cols-[max-content_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-3">
                 {tags.map((t) => (
                   <li key={t.slug} className="flex flex-col items-start gap-1.5 sm:col-span-2 sm:grid sm:grid-cols-subgrid">
-                    <TagPill slug={t.slug} size="md" className="sm:justify-self-start" />
-                    <p className="text-[14px] leading-relaxed text-dim sm:pt-1">{t.short ?? t.reason}</p>
+                    <Link href={`/tag/${t.slug}`} prefetch={false} title={TAG_BY_SLUG.get(t.slug)?.hint} className="text-[15px] font-semibold transition-colors hover:text-dim">
+                      {TAG_BY_SLUG.get(t.slug)?.title ?? t.slug}
+                    </Link>
+                    <p className="text-[14px] leading-relaxed text-dim sm:pt-px">{t.short ?? t.reason}</p>
                   </li>
                 ))}
               </ul>
@@ -406,8 +408,10 @@ export default async function MatchPage({ params }: Props) {
           ) : null}
 
           {ins.standings ? (
-            <Section title="Турнирная таблица" aside={<Link href={leagueHref(m.league)} className="transition-colors hover:text-fg">полностью →</Link>}>
+            // «полностью →» справа от заголовка — нижней строкой `BlockMore`, как у остальных блоков-списков
+            <Section title="Турнирная таблица" className="overflow-hidden">
               <StandingsTable standings={ins.standings} highlight={[m.home.id, m.away.id]} compact />
+              <BlockMore href={leagueHref(m.league)} className="-mx-5 -mb-5 mt-4 !px-5 !py-3.5 sm:-mx-7 sm:-mb-7 sm:!px-7">Вся таблица</BlockMore>
             </Section>
           ) : null}
 

@@ -124,7 +124,7 @@ export function Timeline({
           названия остались текстом) */}
       <div className="relative max-w-[116px] text-[12px] leading-tight text-dim sm:max-w-[164px]" style={{ height }}>
         <span className="invisible flex h-0 gap-1.5 overflow-hidden">
-          <span className="w-[18px] shrink-0" />
+          <span className="w-[22px] shrink-0" />
           {home.name.length > away.name.length ? home.name : away.name}
         </span>
         {[home, away].map((t, i) => (
@@ -133,7 +133,7 @@ export function Timeline({
             className="absolute left-0 right-0 flex -translate-y-1/2 items-center gap-1.5"
             style={{ top: i ? half + NEAR + H / 2 : half - NEAR - H / 2 }}
           >
-            <TeamLogo name={t.name} src={t.logo ?? null} size={18} />
+            <TeamLogo name={t.name} src={t.logo ?? null} size={22} />
             <span className="min-w-0 truncate">{t.name}</span>
           </span>
         ))}
