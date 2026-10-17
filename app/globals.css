@@ -955,11 +955,11 @@ html[data-shell-rc] .shell-r-rail {
   }
 }
 
-/* нижнее меню ниже lg (`TabBar`: капсула 64px на 10px над низом или над полоской жестов iPhone) — `--tabbar` — сколько
+/* нижнее меню ниже lg (`TabBar`: капсула 54px на 16px над низом или над полоской жестов iPhone) — `--tabbar` — сколько
    оно занимает снизу вместе с зазором 8px: отступ страницы, место нижней плашки ставки (`StickyCta`) и cookie над ним */
 @media (max-width: 1023.98px) {
   :root {
-    --tabbar: calc(64px + max(env(safe-area-inset-bottom), 10px) + 8px);
+    --tabbar: calc(54px + max(env(safe-area-inset-bottom), 16px) + 8px);
   }
   body {
     padding-bottom: var(--tabbar);
@@ -1029,7 +1029,7 @@ html[data-shell-rc] .shell-r-rail {
     top: 0;
   }
   html[data-bars-hidden] .tabbar {
-    transform: translateY(calc(100% + 40px));
+    transform: translateY(calc(100% + 56px));
   }
 }
 @media (max-width: 1023.98px) and (prefers-reduced-motion: reduce) {
