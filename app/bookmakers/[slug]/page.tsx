@@ -6,7 +6,6 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { CtaLink } from '@/components/CtaLink'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerBadge } from '@/components/PartnerBadge'
-import { Section } from '@/components/Section'
 import { getPartner, realBonus } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
 import { pluralN, todayYmd } from '@/lib/format'
@@ -53,79 +52,92 @@ export default async function BookmakerPage({ params }: Props) {
   ]
   return (
     <>
-      <Breadcrumbs items={[{ href: '/bookmakers', label: 'Букмекеры' }, { href: `/bookmakers/${p.slug}`, label: p.name }]} />
-      <div className="pitch-bg card mb-6 p-6 sm:p-8">
-        <div className="flex flex-wrap items-center gap-4">
-          <PartnerBadge partner={p} size={60} />
-          <div className="flex-1">
-            <h1 className="display text-[36px] sm:text-[56px]">Букмекер {p.name}</h1>
-            {/* оценки «4.8 / 5 · оценка tag.bet» нет: она была заглушкой без критериев; официальный сайт — здесь, а не
-                отдельным разделом «Лицензия и надёжность» (он повторял эту строку) */}
-            <p className="mt-1.5 text-[13px] text-dim">
-              {p.license} · официальный сайт <span className="font-semibold text-fg/85">{domain(p.site)}</span>
-            </p>
-          </div>
-        </div>
-        {/* бонус — только настоящий (AFF_<SLUG>_BONUS), заглушку «Бонус для новых клиентов» не показываем; без него —
-            одна кнопка без плашки (серая плашка вокруг одной кнопки выглядела пустой) */}
-        <div className={bonus ? 'mt-6 rounded-tile bg-white/[0.04] p-5' : 'mt-6'}>
-          {bonus ? (
-            <>
-              <p className="text-[18px] font-semibold tracking-tight">{bonus}</p>
-              <p className="mt-1 text-[12px] text-mute">{p.bonusNote}</p>
-            </>
-          ) : null}
-          <CtaLink href={goHref(p, 'review')} className={`w-full py-3 text-[15px] sm:w-auto ${bonus ? 'mt-4' : ''}`}>
-            {cta}
-          </CtaLink>
-          <AdMark partner={p} className="mt-2" />
-        </div>
-      </div>
-
-      {/* вместо выдуманных «Плюсов» и «Минусов» (владелец: «а страница букмекеров как?») — кэфы этого букмекера в
-          ближайших матчах, теми же строками, что в списке: ссылки на матч, кэфы — к букмекеру, лаймом — выгодный кэф */}
-      {day ? (
-        <section id="kefy" className="card mb-6 scroll-mt-24 overflow-hidden">
-          <header className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-edge px-4 py-4 sm:px-5">
-            <h2 className="h2 text-[20px] font-bold tracking-[-0.02em] sm:text-[22px]">
-              Кэфы {p.name} {day.when}
-            </h2>
-            <span className="text-[12px] text-mute">
-              {pluralN(day.rows.length, ['матч', 'матча', 'матчей'])} · Реклама · 18+
-            </span>
-          </header>
-          <div className="divide-y divide-edge">
-            {shown.map(({ item, line }) => (
-              <MatchRow key={item.match.id} m={item.match} tags={item.tags} summary={item.summary} line={line} showLeague />
-            ))}
-          </div>
-          <div className="border-t border-edge px-4 py-3 text-[13.5px] sm:px-5">
-            <Link href={listHref(day.ymd, todayYmd())} className="text-dim transition-colors hover:text-fg">
-              Все матчи {day.when} →
-            </Link>
+      {/* от xl — без подложки центра, разделы — панелями через 8px, как на главной (владелец: «а визуально страница
+          букмекеры как? относительно главной»; правила — .bare-sub в app/globals.css) */}
+      <span hidden className="bare-sub" />
+      <div className="space-y-4 xl:space-y-2">
+        {/* шапка — одной строкой: знак, название, лицензия и сайт, кнопка справа (~110px вместо ~280: карточка с градиентом
+            и «БУКМЕКЕР PARI» Oswald 56px; «Кэфы PARI сегодня» начинались на середине экрана) */}
+        <section className="card px-4 py-4 sm:px-5">
+          <Breadcrumbs
+            items={[{ href: '/bookmakers', label: 'Букмекеры' }, { href: `/bookmakers/${p.slug}`, label: p.name }]}
+            className="mb-3"
+          />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <PartnerBadge partner={p} size={48} />
+            <div className="min-w-0 flex-1">
+              <h1 className="h1-block text-[24px] leading-tight sm:text-[28px]">Букмекер {p.name}</h1>
+              {/* оценки «4.8 / 5 · оценка tag.bet» нет: она была заглушкой без критериев; официальный сайт — здесь, а не
+                  отдельным разделом «Лицензия и надёжность» (он повторял эту строку) */}
+              <p className="mt-1 text-[13px] leading-snug text-dim">
+                {p.license} · официальный сайт <span className="font-semibold text-fg/85">{domain(p.site)}</span>
+              </p>
+              {/* бонус — только настоящий (AFF_<SLUG>_BONUS), заглушку «Бонус для новых клиентов» не показываем */}
+              {bonus ? (
+                <p className="mt-1 text-[14px] font-medium">
+                  {bonus} <span className="text-[12px] font-normal text-mute">· {p.bonusNote}</span>
+                </p>
+              ) : null}
+            </div>
+            <div className="w-full sm:w-auto">
+              <CtaLink href={goHref(p, 'review')} className="w-full sm:w-auto">
+                {cta}
+              </CtaLink>
+              <AdMark partner={p} className="mt-1.5 sm:text-right" />
+            </div>
           </div>
         </section>
-      ) : (
-        <Section id="kefy" title={`Кэфы ${p.name}`} className="mb-6">
-          <p className="max-w-[62ch] text-[15px] leading-relaxed text-fg/85">
-            Кэфы {p.name} на tag.bet пока не сравниваем: их линии нет в наших данных. Коэффициенты — на сайте букмекера.
-          </p>
-        </Section>
-      )}
 
-      <Section title={bonus ? 'Как получить бонус' : 'Как зарегистрироваться'}>
-        <ol className="space-y-2.5 text-[15px]">
-          {steps.map((s, i) => (
-            <li key={i} className="flex gap-2.5">
-              <span className="num mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-[11px] font-semibold text-fg">{i + 1}</span>
-              {s}
-            </li>
-          ))}
-        </ol>
-      </Section>
-      <p className="mt-8 text-[12px] leading-relaxed text-mute">
-        Информация носит справочный характер; условия бонусов устанавливает букмекер и может изменить их в любой момент. 18+.
-      </p>
+        {/* вместо выдуманных «Плюсов» и «Минусов» (владелец: «а страница букмекеров как?») — кэфы этого букмекера в
+            ближайших матчах, теми же строками и с той же шапкой, что блок лиги на главной: ссылки на матч, кэфы — к
+            букмекеру, лаймом — выгодный кэф */}
+        <section id="kefy" className="card scroll-mt-24 overflow-hidden">
+          <Head title={`Кэфы ${p.name}${day ? ` ${day.when}` : ''}`} aside={day ? `${pluralN(day.rows.length, ['матч', 'матча', 'матчей'])} · Реклама · 18+` : null} line={Boolean(day)} />
+          {day ? (
+            <>
+              <div className="divide-y divide-edge">
+                {shown.map(({ item, line }) => (
+                  <MatchRow key={item.match.id} m={item.match} tags={item.tags} summary={item.summary} line={line} showLeague />
+                ))}
+              </div>
+              <div className="border-t border-edge px-4 py-3 text-[13.5px] sm:px-5">
+                <Link href={listHref(day.ymd, todayYmd())} className="text-dim transition-colors hover:text-fg">
+                  Все матчи {day.when} →
+                </Link>
+              </div>
+            </>
+          ) : (
+            <p className="max-w-[62ch] px-4 pb-5 text-[15px] leading-relaxed text-fg/85 sm:px-5">
+              Кэфы {p.name} на tag.bet пока не сравниваем: их линии нет в наших данных. Коэффициенты — на сайте букмекера.
+            </p>
+          )}
+        </section>
+
+        <section className="card overflow-hidden">
+          <Head title={bonus ? 'Как получить бонус' : 'Как зарегистрироваться'} />
+          <ol className="space-y-2.5 px-4 pb-5 text-[15px] sm:px-5">
+            {steps.map((s, i) => (
+              <li key={i} className="flex gap-2.5">
+                <span className="num mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-[11px] font-semibold text-fg">{i + 1}</span>
+                {s}
+              </li>
+            ))}
+          </ol>
+          <p className="border-t border-edge px-4 py-3 text-[12px] leading-relaxed text-mute sm:px-5">
+            Информация носит справочный характер; условия бонусов устанавливает букмекер и может изменить их в любой момент. 18+.
+          </p>
+        </section>
+      </div>
     </>
+  )
+}
+
+/** Шапка раздела — как у блока лиги на главной: Onest 20px жирным (не Oswald заглавными), подпись справа. */
+function Head({ title, aside = null, line = false }: { title: string; aside?: string | null; line?: boolean }) {
+  return (
+    <header className={`flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 py-4 sm:px-5 ${line ? 'border-b border-edge' : ''}`}>
+      <h2 className="text-[20px] font-bold tracking-tight">{title}</h2>
+      {aside ? <span className="text-[12px] text-mute">{aside}</span> : null}
+    </header>
   )
 }

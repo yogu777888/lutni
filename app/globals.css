@@ -671,6 +671,14 @@ h1.h1-quiet {
   letter-spacing: 0;
   text-transform: none;
 }
+/* заголовок страницы в панели («Букмекеры»): как заголовки блоков на главной («Ла Лига», «Сейчас в игре») — Onest
+   жирным, без заглавных; плакатный Oswald 56px был самым крупным на сайте и занимал ~170px первого экрана */
+h1.h1-block {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-transform: none;
+}
 .display-num {
   font-weight: 500;
   letter-spacing: 0;
@@ -877,6 +885,23 @@ html[data-shell-rc] .shell-r-rail {
   }
 }
 
+
+/* Простые страницы от xl — тоже без «блока в блоке», как главная (владелец: «а визуально страница букмекеры как?
+   относительно главной»): центр прозрачный (без графитовой подложки и лаймового света сверху), каждый раздел — панель
+   bg-panel без рамки, зазор 8px (xl:space-y-2 на странице). Метка — .bare-sub (сейчас — «Букмекеры»). */
+@media (min-width: 1280px) {
+  .shell-center:has(.bare-sub) {
+    background: transparent;
+  }
+  .shell-center:has(.bare-sub) > main {
+    max-width: 90rem;
+    padding: 0;
+  }
+  .shell-center:has(.bare-sub) .card {
+    border-color: transparent;
+    background: var(--color-panel);
+  }
+}
 
 /* «Бонус» в шапке: при наведении по кнопке один раз пробегает блик (владелец спрашивал про эмодзи и анимацию —
    постоянное мигание с подарком читается как «лёгкие деньги» (ст. 27 закона «О рекламе») и как казино-сайт;
