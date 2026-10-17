@@ -254,9 +254,10 @@ export async function DayView({
           <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
         ) : null}
         {/* выбор дня — и здесь, у списка (как и чип в «Главных матчах», ведёт на страницу дня); рядом — порядок списка */}
-        {/* на телефоне дни и порядок — одной строкой: порядок значками (часы / список), дни листаются вбок */}
+        {/* на телефоне дни и порядок — одной строкой: порядок значками (список / часы) слева (владелец: «может сортировку по времени
+            влево перенести?»), дни листаются вбок до края экрана */}
         <div
-          className={`flex items-center justify-between gap-x-3 gap-y-3 max-lg:py-2 max-lg:pl-4 max-lg:pr-3 lg:flex-wrap lg:gap-x-6 lg:max-xl:rounded-card lg:max-xl:bg-panel lg:max-xl:py-1.5 lg:max-xl:pl-4 lg:max-xl:pr-1.5 lg:max-xl:shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${listHead ? 'mt-5' : ''}`}
+          className={`flex items-center justify-between gap-x-3 gap-y-3 max-lg:py-2 max-lg:pl-4 max-lg:pr-0 lg:flex-wrap lg:gap-x-6 lg:max-xl:rounded-card lg:max-xl:bg-panel lg:max-xl:py-1.5 lg:max-xl:pl-4 lg:max-xl:pr-1.5 lg:max-xl:shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${listHead ? 'mt-5' : ''}`}
         >
           <div className="min-w-0 flex-1 lg:w-auto lg:flex-none">
             <DateTabs
@@ -273,7 +274,7 @@ export async function DayView({
             // вложены по правилу «внешний = внутренний + отступ»: строка 20px, отступ 10 → переключатель 10px (rounded-ctl),
             // отступ 4 → выбранный 6px; капсулой у края строки скругления не сходились (владелец: «а скругление чипа где по
             // турнирам / по времени?»)
-            <nav aria-label="Порядок матчей" className="flex shrink-0 items-center gap-1 rounded-ctl bg-white/[0.04] p-1 text-[14px] font-medium max-lg:rounded-full max-lg:bg-white/[0.06] max-lg:p-0.5">
+            <nav aria-label="Порядок матчей" className="flex shrink-0 items-center gap-1 rounded-ctl bg-white/[0.04] p-1 text-[14px] font-medium max-lg:order-first max-lg:rounded-full max-lg:bg-white/[0.06] max-lg:p-0.5">
               {(
                 [
                   ['league', 'По турнирам', view === 'list' ? `${list}${fq ? `?${fq}` : ''}` : `${base}#matches`],

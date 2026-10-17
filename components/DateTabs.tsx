@@ -44,7 +44,7 @@ export function DateTabs({
   hash?: string
   /** подборка дня (`goals`, `odds`): вкладки ведут на ту же подборку другого дня */
   section?: string
-  /** на телефоне рядом справа — переключатель порядка: правый край затухает, видно, что дни листаются */
+  /** ниже lg слева — переключатель порядка: дни начинаются после него и листаются до края экрана, правый край затухает */
   fade?: boolean
   /** ниже lg — чипами, как у YouTube (второй ряд шапки на главной и «Матчах»): выбранный белый, остальные серые; от lg — чертой */
   chips?: boolean
@@ -55,7 +55,7 @@ export function DateTabs({
   const days = strip.includes(active) ? strip : active < strip[0] ? [active, ...strip] : [...strip, active]
   const label = (d: string) => (strip.includes(d) ? shortDay(d, today) : dayMonthFmt.format(ymdToNoonTs(d)).replace('.', ''))
   return (
-    <nav aria-label="Выбор дня" className={`scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 ${fade ? 'mr-0 pr-6 max-sm:[mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)]' : ''}`}
+    <nav aria-label="Выбор дня" className={`scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 ${fade ? 'max-lg:mx-0 max-lg:pl-0 max-lg:pr-6 max-sm:[mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)] lg:mr-0' : ''}`}
     >
       <div className={`flex w-max items-center ${chips ? 'gap-2 lg:gap-5' : 'gap-5'}`}>
         {days.map((d) => {

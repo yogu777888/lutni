@@ -968,7 +968,9 @@ html[data-shell-rc] .shell-r-rail {
 }
 
 /* дни и порядок на главной и «Матчах» ниже lg — второй ряд шапки (`.hdr-sub` в DayView, как чипы у YouTube): наверху
-   страницы — на фоне, как сама шапка; после прокрутки — то же стекло, что у шапки, а черта — одна, под рядом */
+   страницы — на фоне, как сама шапка; после прокрутки у шапки и ряда — один сплошной цвет фона без стекла, черта — одна,
+   под рядом. Два слоя стекла размывали каждый своё — тон расходился, и на стыке был виден шов (владелец: «у сортировки
+   видно что свой фон и даже немного зазор между фоном хедера») */
 @media (max-width: 1023.98px) {
   .hdr-sub {
     border-bottom: 1px solid transparent;
@@ -977,12 +979,13 @@ html[data-shell-rc] .shell-r-rail {
       border-color 0.3s;
   }
   body:has(header[data-scrolled]) .hdr-sub {
-    background-color: rgb(11 15 20 / 0.75);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
+    background-color: #090c10;
     border-bottom-color: var(--color-edge);
   }
   body:has(.hdr-sub) header[data-scrolled] {
-    border-bottom-color: transparent;
+    background-color: #090c10;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-bottom-color: #090c10;
   }
 }
