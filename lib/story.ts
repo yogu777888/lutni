@@ -9,21 +9,22 @@
 import { primaryPartner, type Partner } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { goHref } from './affiliate'
+import { partnerBooks } from './lines'
 import type { MatchInsights } from './data'
-import { dayLabel, formatDateShort, formatTime, pct, pluralN, todayYmd, ymdInTz } from './format'
+import { dayLabel, formatTime, pluralN, todayYmd, ymdInTz } from './format'
 import { matchHref } from './links'
 import { visibleStats } from './sstats/normalize'
-import { buildVerdict, outcomeText } from './verdict'
+import { buildVerdict, outcomeText, split100 } from './verdict'
 import type { Res } from './stats'
-import { TAG_BY_SLUG, type TagDef } from './tags'
+import { TAG_BY_SLUG } from './tags'
 import type { MatchStatus, Score } from './types'
 
 export type Side = 'home' | 'away'
 
 export type StoryTeam = { name: string; logo: string | null }
 
-/** Строка сравнения «хозяева — гости»; better — у кого показатель лучше (null — без оценки). */
-export type CompareRow = { label: string; home: number; away: number; text: [string, string]; better: Side | null }
+/** Строка статистики «хозяева — гости». */
+export type CompareRow = { label: string; home: number; away: number; text: [string, string] }
 
 export type FormSide = {
   last5: Res[]
@@ -34,42 +35,38 @@ export type FormSide = {
   note: string | null
 }
 
+type X12 = { home: number; draw: number; away: number }
+
 export type StorySlide =
   | {
       kind: 'cover'
-      tags: { slug: string; label: string; kind: TagDef['kind']; reason: string }[]
+      /** подборки матча: название, как в правой панели, и факт коротко (`short`); reason — для цифры в «почему» */
+      tags: { slug: string; title: string; short: string; reason: string }[]
       teaser: string
       /** вывод словами до матча: «Скорее выиграет «X»» */
       verdict: string | null
+      /** после начала — оценка до матча строкой, проценты в сумме 100 */
+      before: X12 | null
     }
   | {
       kind: 'odds'
       title: string
       sub: string
-      probs: { home: number; draw: number; away: number }
-      fair: { home: number; draw: number; away: number }
-      best: { home: number | null; draw: number | null; away: number | null }
+      probs: X12
+      fair: X12
+      /** линия главного легального партнёра — ячейки ведут к нему */
+      line: { partner: string; href: string; odds: { home: number | null; draw: number | null; away: number | null } } | null
     }
-  | { kind: 'goals'; title: string; sub: string; xg: { home: number; away: number }; over25: number | null; btts: number | null }
-  | { kind: 'scores'; title: string; sub: string; grid: number[][]; top: { home: number; away: number; p: number } }
+  | {
+      kind: 'goals'
+      title: string
+      sub: string
+      over25: number | null
+      btts: number | null
+      /** три самых вероятных счёта */
+      scores: { home: number; away: number; p: number }[]
+    }
   | { kind: 'form'; title: string; sub: string; home: FormSide | null; away: FormSide | null }
-  | { kind: 'compare'; title: string; sub: string; rows: CompareRow[] }
-  | {
-      kind: 'h2h'
-      title: string
-      sub: string
-      wins: { home: number; draws: number; away: number }
-      avgGoals: number
-      over25Rate: number
-      bttsRate: number
-      games: { date: string; home: string; away: string; score: string; winner: Side | 'draw' }[]
-    }
-  | {
-      kind: 'movement'
-      title: string
-      sub: string
-      rows: { outcome: 'home' | 'draw' | 'away'; label: string; opening: number; current: number; change: number }[]
-    }
   | { kind: 'stats'; title: string; sub: string; rows: CompareRow[] }
   | {
       kind: 'goalsTimeline'
@@ -88,7 +85,6 @@ export type StorySlide =
       bookmaker: string | null
       ev: number | null
       value: boolean
-      confidence: number
     }
 
 export type StoryCta = { partner: string; color: string; textColor: string; short: string; href: string; text: string; ad: string }
@@ -132,45 +128,46 @@ function poissonGrid(lh: number, la: number, n = 5): number[][] {
   return ph.map((x) => pa.map((y) => x * y))
 }
 
-function compareRow(
-  label: string,
-  home: number,
-  away: number,
-  fmt: (x: number) => string,
-  dir: 'high' | 'low' | null,
-): CompareRow {
-  const eps = 1e-9
-  let better: Side | null = null
-  if (dir && Math.abs(home - away) > eps) better = (home > away) === (dir === 'high') ? 'home' : 'away'
-  return { label, home, away, text: [fmt(home), fmt(away)], better }
+function compareRow(label: string, home: number, away: number, fmt: (x: number) => string): CompareRow {
+  return { label, home, away, text: [fmt(home), fmt(away)] }
 }
 
-/** Собирает сторис матча. null — если показывать почти нечего. */
+/**
+ * Собирает сторис матча. null — если показывать почти нечего.
+ *
+ * Владелец: «а сами истории как?» — согласился на пять правок: слова и цвета — как на сайте (без xG, Glicko-2,
+ * «консенсуса», звёзд «уверенности», «Хозяева/Гости»; без цветов команд и светофора), кэфы — только линия легального
+ * партнёра с пометкой рекламы (было «лучший кэф» среди всех букмекеров, включая зарубежных), слайды — по состоянию
+ * матча: до начала — обложка, «Кто фаворит», голы и вероятный счёт, форма, прогноз (~40 с вместо 8 слайдов больше
+ * минуты; «Кто сильнее» повторял «Форму», «Движение кэфов» — обложку, личные встречи — на странице матча); идёт или
+ * сыгран — обложка со счётом и строкой «До матча», голы, статистика (доматчевые слайды по ходу игры — прошлое).
+ */
 export function buildStory(ins: MatchInsights): StoryData | null {
-  const { match: m, full, cons, model, pick, homeForm, awayForm, h2h, glicko, tags } = ins
+  const { match: m, full, cons, model, pick, homeForm, awayForm, tags } = ins
   const H = m.home.name
   const A = m.away.name
   const scheduled = m.status === 'scheduled'
   const played = m.status === 'finished' || m.status === 'live' || m.status === 'suspended'
   const slides: StorySlide[] = []
+  const x = model?.x12 ?? cons.x12
 
   // ── обложка
   const coverTags = tags.flatMap((t) => {
     const def = TAG_BY_SLUG.get(t.slug)
-    return def ? [{ slug: def.slug, label: def.label, kind: def.kind, reason: t.reason }] : []
+    return def ? [{ slug: def.slug, title: def.title, short: t.short ?? t.reason, reason: t.reason }] : []
   })
   const offer0 = pick ? (pick.candidate.bestPartner ?? pick.candidate.best) : null
   const verdict = scheduled
     ? buildVerdict({
         match: m,
         tags,
-        probs: model?.x12 ?? cons.x12,
+        probs: x,
         pick: pick ? { key: pick.candidate.key, odd: offer0?.value ?? null, kind: pick.kind } : null,
       })
     : null
-  slides.push({ kind: 'cover', tags: coverTags, teaser: '', verdict: verdict?.headline ?? null })
+  slides.push({ kind: 'cover', tags: coverTags, teaser: '', verdict: verdict?.headline ?? null, before: played && x ? split100(x) : null })
 
-  // ── ход матча (live и завершённые)
+  // ── ход матча (идёт и сыгран): голы и статистика; доматчевых слайдов нет — по ходу игры это прошлое
   if (played) {
     const goals = full.events
       .filter((e) => e.kind === 'goal' || e.kind === 'own-goal' || e.kind === 'penalty')
@@ -208,20 +205,13 @@ export function buildStory(ins: MatchInsights): StoryData | null {
         kind: 'stats',
         title,
         sub: m.status === 'live' ? 'Цифры по ходу игры' : 'Итоговые цифры',
-        rows: stats.map((s) =>
-          compareRow(s.label, s.home, s.away, (x) => `${Number.isInteger(x) ? x : dec(x, 2)}${s.suffix ?? ''}`, null),
-        ),
+        rows: stats.map((s) => compareRow(s.label, s.home, s.away, (v) => `${Number.isInteger(v) ? v : dec(v, 2)}${s.suffix ?? ''}`)),
       })
     }
   }
 
-  // ── кто фаворит: вероятности 1X2 без маржи
-  const x = model?.x12 ?? cons.x12
-  if (x) {
-    const best = (o: 'home' | 'draw' | 'away') => {
-      const c = ins.candidates.find((c) => c.key === o)
-      return (c?.bestPartner ?? c?.best)?.value ?? null
-    }
+  // ── кто фаворит: оценка tag.bet и кэфы главного легального партнёра
+  if (scheduled && x) {
     const fav = x.home >= x.away ? 'home' : 'away'
     const favP = Math.max(x.home, x.away)
     const favName = fav === 'home' ? H : A
@@ -230,68 +220,46 @@ export function buildStory(ins: MatchInsights): StoryData | null {
     else if (favP >= 0.47) title = `Команда ${q(favName)} — фаворит`
     else if (x.draw >= 0.3 && Math.abs(x.home - x.away) < 0.08) title = 'Равный матч, ничья вполне вероятна'
     else title = 'Явного фаворита нет'
+    const ref = partnerBooks(ins.books).find((r) => r.book.x12?.home || r.book.x12?.away)
     slides.push({
       kind: 'odds',
-      title: played ? `До матча: ${title[0].toLowerCase()}${title.slice(1)}` : title,
-      sub: `Без маржи букмекеров: шансы по консенсусу ${cons.books > 1 ? `${pluralN(cons.books, ['букмекера', 'букмекеров', 'букмекеров'])}` : 'рынка'}${model?.source === 'market+xg' ? ' и xG' : ''}`,
+      title,
+      sub: 'Шансы — оценка tag.bet. Под ними — честная цена и кэф букмекера',
       probs: x,
       fair: { home: 1 / x.home, draw: 1 / x.draw, away: 1 / x.away },
-      best: { home: best('home'), draw: best('draw'), away: best('away') },
+      line: ref
+        ? {
+            partner: ref.partner.name,
+            href: goHref(ref.partner, 'story-odds', m.id),
+            odds: { home: ref.book.x12?.home?.value ?? null, draw: ref.book.x12?.draw?.value ?? null, away: ref.book.x12?.away?.value ?? null },
+          }
+        : null,
     })
   }
 
-  // ── движение линии (если что-то заметно сдвинулось)
-  if (scheduled) {
-    const labels = { home: 'Хозяева', draw: 'Ничья', away: 'Гости' } as const
-    const rows = (['home', 'draw', 'away'] as const).flatMap((o) => {
-      const mv = cons.movement[o]
-      if (!mv || !(mv.opening > 1) || !(mv.current > 1)) return []
-      return [{ outcome: o, label: labels[o], opening: mv.opening, current: mv.current, change: mv.current / mv.opening - 1 }]
-    })
-    const top = [...rows].sort((a, b) => a.change - b.change)[0]
-    if (rows.length === 3 && top && top.change <= -0.04) {
-      const who = top.outcome === 'home' ? `победу команды ${q(H)}` : top.outcome === 'away' ? `победу команды ${q(A)}` : 'ничью'
-      slides.push({
-        kind: 'movement',
-        // только факт: кэф снизился. Почему — догадка (ставки, новости о составах), поэтому — «часто так бывает»
-        title: top.outcome === 'draw' ? 'Кэф на ничью снизился' : `Кэф на ${q(top.outcome === 'home' ? H : A)} снизился`,
-        sub: `Коэффициент на ${who} упал с ${top.opening.toFixed(2)} до ${top.current.toFixed(2)}. Так часто бывает, когда на исход много ставят или выходят новости о составах`,
-        rows,
-      })
-    }
-  }
-
-  // ── голы: xG, тотал, «обе забьют»
-  if (model) {
+  // ── голы и вероятный счёт
+  if (scheduled && model) {
     const total = model.lambdas.home + model.lambdas.away
     const over25 = model.over['2.5'] ?? cons.over['2.5'] ?? null
     let title = `Ждём около ${dec(total)} гола`
-    if (over25 != null && over25 >= 0.6) title = `Будут голы: ждём ${dec(total)} в среднем`
-    else if (over25 != null && over25 <= 0.42) title = `Голов будет немного: ждём ${dec(total)}`
+    if (over25 != null && over25 >= 0.6) title = `Будут голы: ждём около ${dec(total)}`
+    else if (over25 != null && over25 <= 0.42) title = `Голов будет немного: ждём около ${dec(total)}`
+    const scores = poissonGrid(model.lambdas.home, model.lambdas.away)
+      .flatMap((row, i) => row.map((p, j) => ({ home: i, away: j, p })))
+      .sort((a, b) => b.p - a.p)
+      .slice(0, 3)
     slides.push({
       kind: 'goals',
-      title: played ? `До матча ждали ${dec(total)} гола` : title,
-      sub: 'Ожидаемые голы (xG) каждой команды и шансы на тоталы',
-      xg: model.lambdas,
+      title,
+      sub: `Сколько голов ждём: ${q(H)} — ${dec(model.lambdas.home)}, ${q(A)} — ${dec(model.lambdas.away)}`,
       over25,
       btts: model.btts,
+      scores,
     })
-    const grid = poissonGrid(model.lambdas.home, model.lambdas.away)
-    let top = { home: 0, away: 0, p: 0 }
-    grid.forEach((row, i) => row.forEach((p, j) => p > top.p && (top = { home: i, away: j, p })))
-    if (scheduled) {
-      slides.push({
-        kind: 'scores',
-        title: `Самый вероятный счёт — ${top.home}:${top.away}`,
-        sub: `Но даже у него лишь ${pct(top.p)}: футбол непредсказуем. Чем ярче клетка, тем вероятнее счёт`,
-        grid,
-        top,
-      })
-    }
   }
 
   // ── форма
-  if (homeForm || awayForm) {
+  if (scheduled && (homeForm || awayForm)) {
     const side = (f: typeof homeForm): FormSide | null => {
       if (!f) return null
       let note: string | null = null
@@ -314,81 +282,34 @@ export function buildStory(ins: MatchInsights): StoryData | null {
       if (Math.abs(d) >= 4) title = `Команда ${q(d > 0 ? H : A)} в форме лучше`
       else title = 'По форме — почти поровну'
     }
-    slides.push({ kind: 'form', title, sub: 'Последние 5 матчей и очки из 15 возможных', home: side(homeForm), away: side(awayForm) })
-  }
-
-  // ── сравнение по цифрам
-  if (homeForm && awayForm) {
-    const rows: CompareRow[] = [
-      compareRow('Забивают за игру', homeForm.gfAvg, awayForm.gfAvg, (v) => dec(v), 'high'),
-      compareRow('Пропускают за игру', homeForm.gaAvg, awayForm.gaAvg, (v) => dec(v), 'low'),
-      compareRow('Очки в 5 матчах', homeForm.points5, awayForm.points5, (v) => String(v), 'high'),
-      compareRow('Матчи «на ноль»', homeForm.cleanSheetRate, awayForm.cleanSheetRate, (v) => pct(v), 'high'),
-      compareRow('Матчи без гола', homeForm.failedToScoreRate, awayForm.failedToScoreRate, (v) => pct(v), 'low'),
-    ]
-    if (glicko) rows.push(compareRow('Рейтинг Glicko-2', glicko.homeRating, glicko.awayRating, (v) => String(Math.round(v)), 'high'))
-    const hw = rows.filter((r) => r.better === 'home').length
-    const aw = rows.filter((r) => r.better === 'away').length
-    const lead = Math.max(hw, aw)
-    const title =
-      hw === aw
-        ? 'По цифрам — паритет'
-        : lead === rows.length
-          ? `Команда ${q(hw > aw ? H : A)} лучше по всем ${rows.length} показателям`
-          : `Команда ${q(hw > aw ? H : A)} лучше в ${lead} из ${rows.length} показателей`
-    slides.push({ kind: 'compare', title, sub: 'Последние матчи каждой команды, у кого показатель лучше — отмечено', rows })
-  }
-
-  // ── личные встречи
-  if (h2h && h2h.games.length >= 2) {
-    const n = h2h.games.length
-    let title: string
-    if (h2h.homeWins > h2h.awayWins && h2h.homeWins >= n / 2) title = `Команда ${q(H)} выиграла ${h2h.homeWins} из ${n} личных встреч`
-    else if (h2h.awayWins > h2h.homeWins && h2h.awayWins >= n / 2) title = `Команда ${q(A)} выиграла ${h2h.awayWins} из ${n} личных встреч`
-    else title = `Личные встречи: ${h2h.homeWins}–${h2h.draws}–${h2h.awayWins}`
-    slides.push({
-      kind: 'h2h',
-      title,
-      sub: `В среднем ${dec(h2h.avgGoals)} гола за матч, ТБ 2.5 — в ${pct(h2h.over25Rate)} встреч`,
-      wins: { home: h2h.homeWins, draws: h2h.draws, away: h2h.awayWins },
-      avgGoals: h2h.avgGoals,
-      over25Rate: h2h.over25Rate,
-      bttsRate: h2h.bttsRate,
-      games: h2h.games.slice(0, 5).map((g) => {
-        const hs = g.home.id === m.home.id ? g.score.home : g.score.away
-        const as = g.home.id === m.home.id ? g.score.away : g.score.home
-        return {
-          date: formatDateShort(g.ts),
-          home: g.home.name,
-          away: g.away.name,
-          score: `${g.score.home}:${g.score.away}`,
-          winner: hs > as ? 'home' : hs < as ? 'away' : 'draw',
-        }
-      }),
-    })
+    slides.push({ kind: 'form', title, sub: 'Последние 5 матчей: очки из 15 возможных, голы за игру', home: side(homeForm), away: side(awayForm) })
   }
 
   // ── прогноз
-  if (pick) {
+  if (scheduled && pick) {
     const c = pick.candidate
     const offer = c.bestPartner ?? c.best
+    const value = pick.kind === 'value'
     slides.push({
       kind: 'pick',
-      // исход словами, а не «П1»; пояснение — почему это ставка
+      // исход словами, а не «П1»; пояснение — как в «Прогнозе tag.bet» на странице матча
       label: cap(outcomeText(c.key, m)),
-      desc: pick.kind === 'value' ? 'Букмекер платит за этот исход больше, чем он стоит' : 'Самый вероятный исход с нормальным кэфом',
+      desc: value
+        ? 'Букмекер платит за этот исход больше, чем он стоит по оценке tag.bet'
+        : c.ev != null && c.ev < 0
+          ? 'Самый вероятный исход, но кэф ниже честной цены — выгоды нет'
+          : 'Самый вероятный исход, кэф — около честной цены',
       prob: c.prob,
       fairOdd: c.fairOdd,
       odd: offer?.value ?? null,
-      bookmaker: offer ? (offer.partner?.name ?? offer.bookmakerName) : null,
+      bookmaker: offer?.partner?.name ?? null,
       ev: c.ev,
-      value: pick.kind === 'value',
-      confidence: pick.confidence,
+      value,
     })
   }
 
-  // без хотя бы двух слайдов с данными это не сторис, а пустышка
-  if (slides.filter((s) => s.kind !== 'cover').length < 2) return null
+  // до начала — хотя бы два слайда с данными, после — хотя бы один (голы или статистика)
+  if (slides.filter((s) => s.kind !== 'cover').length < (scheduled ? 2 : 1)) return null
 
   const cover = slides[0] as Extract<StorySlide, { kind: 'cover' }>
   cover.teaser = `${pluralN(slides.length - 1, ['слайд', 'слайда', 'слайдов'])} о матче — листайте`
@@ -404,11 +325,11 @@ export function buildStory(ins: MatchInsights): StoryData | null {
         short: partner.short,
         href: goHref(partner, 'story', m.id),
         text:
-          pick && offer
-            ? `Поставить за ${offer.value.toFixed(2)}`
+          pick && offer && scheduled
+            ? `Поставить за ${offer.value.toFixed(2)} в ${partner.name}`
             : m.status === 'live'
-              ? `Ставки по ходу матча в ${partner.name}`
-              : `Сделать ставку в ${partner.name}`,
+              ? `Кэфы по ходу матча — в ${partner.name}`
+              : `На сайт ${partner.name}`,
         ad: adText(partner),
       }
     : null

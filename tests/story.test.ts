@@ -12,13 +12,15 @@ describe('сторис матча', () => {
     expect(story).not.toBeNull()
     const kinds = story!.slides.map((s) => s.kind)
     expect(kinds[0]).toBe('cover')
-    expect(kinds).toEqual(expect.arrayContaining(['odds', 'goals', 'scores', 'form', 'compare']))
+    expect(kinds).toEqual(expect.arrayContaining(['odds', 'goals', 'form']))
+    // до начала — без «Кто сильнее», точного счёта таблицей и прочего: не больше пяти слайдов
+    expect(kinds.length).toBeLessThanOrEqual(5)
     // вероятности 1X2 в сумме — 100%
     const odds = story!.slides.find((s) => s.kind === 'odds')
     if (odds?.kind === 'odds') expect(odds.probs.home + odds.probs.draw + odds.probs.away).toBeCloseTo(1, 5)
-    // тепловая карта счёта — вероятности, самый вероятный счёт отмечен верно
-    const sc = story!.slides.find((s) => s.kind === 'scores')
-    if (sc?.kind === 'scores') expect(Math.max(...sc.grid.flat())).toBeCloseTo(sc.top.p, 10)
+    // три самых вероятных счёта — по убыванию
+    const g = story!.slides.find((s) => s.kind === 'goals')
+    if (g?.kind === 'goals') expect(g.scores.map((x) => x.p)).toEqual([...g.scores.map((x) => x.p)].sort((a, b) => b - a))
     // прогноз — последним слайдом, ссылка партнёра с местом размещения story
     if (ins!.pick) expect(kinds.at(-1)).toBe('pick')
     expect(story!.cta?.href).toMatch(/^\/go\/[a-z-]+\?p=story&m=\d+$/)
@@ -35,6 +37,9 @@ describe('сторис матча', () => {
     const kinds = story!.slides.map((s) => s.kind)
     expect(kinds).toEqual(expect.arrayContaining(['goalsTimeline', 'stats']))
     expect(kinds).not.toContain('pick')
+    // после матча доматчевых слайдов нет — оценка до матча строкой на обложке
+    expect(kinds).not.toContain('odds')
+    expect(kinds).not.toContain('form')
     expect(story!.cta).toBeNull()
   })
 })

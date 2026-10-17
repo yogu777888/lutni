@@ -553,27 +553,6 @@ export function StoryViewer() {
             </div>
           ))}
         </div>
-        {/* прогресс по матчам истории: до 10 матчей — сегменты, больше — одна тонкая полоса и «3 / 15»
-            (десятки узких сегментов не читаются). Матчи до текущего — пройдены */}
-        {group && group.total > 1 ? (
-          <div className="flex items-center gap-2 px-3 pt-1.5" aria-label={`Матч ${group.pos} из ${group.total}`}>
-            {group.total <= 10 ? (
-              <div className="flex flex-1 gap-[3px]">
-                {Array.from({ length: group.total }, (_, i) => (
-                  <span key={i} className={`h-[2px] flex-1 rounded-full ${i < group.pos ? 'bg-fg/70' : 'bg-white/15'}`} />
-                ))}
-              </div>
-            ) : (
-              <div className="h-[2px] flex-1 overflow-hidden rounded-full bg-white/15">
-                <div className="h-full rounded-full bg-fg/70 transition-[width] duration-300" style={{ width: `${(group.pos / group.total) * 100}%` }} />
-              </div>
-            )}
-            <span className="num shrink-0 text-[11px] text-dim">
-              {group.pos} / {group.total}
-            </span>
-          </div>
-        ) : null}
-
         <div className="flex items-center gap-2.5 px-3 pt-2.5">
           {story ? (
             <>
@@ -585,16 +564,14 @@ export function StoryViewer() {
                 <span className="block truncate text-[13px] font-bold">
                   {story.home.name} — {story.away.name}
                 </span>
-                <span className="block truncate text-[11px] text-dim">
-                  {/* у сторис лиги (из левой панели) группа и турнир — одно и то же: «Ла Лига · Испания. Ла Лига» */}
-                  {group && !group.key.startsWith('league-') ? (
-                    <>
-                      <GroupLabel label={group.label} kind={group.kind} />
-                      {' · '}
-                    </>
-                  ) : null}
-                  {story.league}
-                </span>
+                {/* одна полоса прогресса — слайды матча; место матча в подборке — словами («матч 2 из 8», было второй
+                    полосой «1 / 8» под первой); турнир — на обложке, здесь не повторяем */}
+                {group ? (
+                  <span className="block truncate text-[11px] text-dim">
+                    <GroupLabel label={group.label} kind={group.kind} />
+                    {group.total > 1 ? ` · матч ${group.pos} из ${group.total}` : ''}
+                  </span>
+                ) : null}
               </span>
             </>
           ) : (
@@ -639,10 +616,10 @@ export function StoryViewer() {
                   href={story.cta.href}
                   target="_blank"
                   rel={SPONSORED_REL}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-tile bg-btn px-3 py-3.5 text-[15px] font-bold text-btn-ink shadow-[0_8px_28px_-8px_rgb(244_241_230/0.35)] transition hover:bg-white active:scale-[0.98]"
+                  className="flex w-full items-center justify-center rounded-tile bg-acid px-3 py-3.5 text-[15px] font-bold text-acid-ink transition hover:bg-acid/90 active:scale-[0.98]"
                 >
+                  {/* переход к букмекеру — лаймом, как «Поставить за 3.12 в PARI» на странице матча */}
                   {story.cta.text}
-                  <span className="font-semibold opacity-65">· {story.cta.partner}</span>
                 </a>
                 <p className="mt-1.5 text-center text-[11px] text-dim">{story.cta.ad}</p>
               </div>

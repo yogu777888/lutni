@@ -17,6 +17,7 @@ export type Placement =
   | 'review'
   | 'match-cta'
   | 'story'
+  | 'story-odds'
   | 'main-odds'
   | 'main-live-odds'
   | 'panel'
