@@ -60,19 +60,24 @@ export default async function BookmakersPage() {
                       Кэфы на tag.bet — в {pluralN(day.rows.length, ['матче', 'матчах', 'матчах'])} {day.when}
                     </p>
                   ) : (
-                    <p className="text-[13px] leading-snug text-mute">Кэфов на tag.bet пока нет — линия на сайте букмекера</p>
+                    // без «— линия на сайте букмекера»: на 360px строка шла в три строки, а «На сайт» рядом и так говорит, где линия
+                    <p className="text-[13px] leading-snug text-mute">Кэфов на tag.bet пока нет</p>
                   )}
                   {bonus ? <p className="mt-0.5 text-[13px] font-medium">{bonus}</p> : null}
-                  <AdMark partner={p} className="mt-1" />
                 </div>
-                <a
-                  href={goHref(p, 'bookmakers')}
-                  target="_blank"
-                  rel={SPONSORED_REL}
-                  className="relative z-10 inline-flex h-[34px] items-center rounded-ctl bg-white/[0.08] px-3.5 text-[13px] font-semibold transition-colors hover:bg-btn hover:text-btn-ink"
-                >
-                  На сайт
-                </a>
+                {/* «Реклама · 18+» — у самой кнопки, как «Реклама 18+ · Бонус» в шапке: от sm слева от неё, на телефоне под
+                    ней; третьей строкой под названием она делала строку 91px вместо ~68 (на 1280×720 влезало пять из шести) */}
+                <div className="relative z-10 flex flex-col-reverse items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
+                  <AdMark partner={p} className="max-w-[12rem] text-right" />
+                  <a
+                    href={goHref(p, 'bookmakers')}
+                    target="_blank"
+                    rel={SPONSORED_REL}
+                    className="inline-flex h-[34px] shrink-0 items-center rounded-ctl bg-white/[0.08] px-3.5 text-[13px] font-semibold transition-colors hover:bg-btn hover:text-btn-ink"
+                  >
+                    На сайт
+                  </a>
+                </div>
               </li>
             )
           })}

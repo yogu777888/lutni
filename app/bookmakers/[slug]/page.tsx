@@ -10,7 +10,7 @@ import { getPartner, realBonus } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
 import { pluralN, todayYmd } from '@/lib/format'
 import { listHref } from '@/lib/links'
-import { partnerLines } from '@/lib/partner-lines'
+import { partnerLines, type PartnerRow } from '@/lib/partner-lines'
 
 // кэфы партнёра в ближайших матчах — из нашего кэша, на каждый запрос
 export const dynamic = 'force-dynamic'
@@ -40,7 +40,11 @@ export default async function BookmakerPage({ params }: Props) {
   if (!p) notFound()
   const day = (await partnerLines()).get(p.slug)
   // главные матчи (топ-турниры первыми), а на экране — по времени: по турнирам время скакало 20:30 → 23:00 → 20:00
-  const shown = day ? day.rows.slice(0, SHOWN).sort((a, b) => a.item.match.ts - b.item.match.ts) : []
+  const byTime = (a: PartnerRow, b: PartnerRow) => a.item.match.ts - b.item.match.ts
+  const shown = day ? day.rows.slice(0, SHOWN).sort(byTime) : []
+  // остальные — под раскрывашкой, как «Ещё N матчей в других турнирах» на главной: «36 матчей» в шапке при 10 строках
+  // и ссылке на весь список дня (там не только PARI) — остальные 26 было не найти
+  const more = day ? day.rows.slice(SHOWN).sort(byTime) : []
   const bonus = realBonus(p)
   // «Получить бонус» — только когда знаем, какой бонус: без условий от партнёрки кнопка обещала бы неизвестно что
   const cta = bonus ? `Получить бонус в ${p.name}` : `На сайт ${p.name}`
@@ -100,6 +104,23 @@ export default async function BookmakerPage({ params }: Props) {
                   <MatchRow key={item.match.id} m={item.match} tags={item.tags} summary={item.summary} line={line} showLeague />
                 ))}
               </div>
+              {more.length ? (
+                <details className="group/more border-t border-edge">
+                  <summary className="flex items-center justify-between gap-3 px-4 py-3.5 text-[14px] text-dim transition-colors hover:text-fg sm:px-5">
+                    <span>
+                      Ещё {pluralN(more.length, ['матч', 'матча', 'матчей'])} с кэфами {p.name}
+                    </span>
+                    <span aria-hidden className="text-mute transition-transform group-open/more:rotate-180">
+                      ▾
+                    </span>
+                  </summary>
+                  <div className="divide-y divide-edge border-t border-edge">
+                    {more.map(({ item, line }) => (
+                      <MatchRow key={item.match.id} m={item.match} tags={item.tags} summary={item.summary} line={line} showLeague />
+                    ))}
+                  </div>
+                </details>
+              ) : null}
               <div className="border-t border-edge px-4 py-3 text-[13.5px] sm:px-5">
                 <Link href={listHref(day.ymd, todayYmd())} className="text-dim transition-colors hover:text-fg">
                   Все матчи {day.when} →
