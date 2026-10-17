@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { PARTNERS } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
-import { Wordmark } from './Logo'
 
 /** Ссылки строкой: «·» приклеена к концу ссылки (nowrap) — при переносе строка кончается точкой, а не начинается с «· Cookie». */
 function Links({ label, items, className = '' }: { label: string; items: [string, string][]; className?: string }) {
@@ -26,9 +25,10 @@ function Links({ label, items, className = '' }: { label: string; items: [string
 }
 
 /**
- * Подвал ниже xl — той же системой строк, что правовой блок в левой панели (`Legal` в LeftPanel.tsx): надпись, разделы
- * строкой, предупреждения, раскрытие партнёрства, ссылки, копирайт. Было ~680px на телефоне: «Теги ставок на футбол…»,
- * кружок 18+, меню шапки столбиком, «Все теги» (владелец: «а на телефоне главная как?»). От xl подвала нет.
+ * Подвал ниже xl — только правовой блок, той же системой строк, что внизу левой панели (`Legal` в LeftPanel.tsx):
+ * предупреждения, раскрытие партнёрства, рекламодатели, ссылки, копирайт. Без надписи tag.bet (она в шапке и в «©») и
+ * без строки разделов (повторяла нижнее меню `TabBar` и меню шапки), без черты сверху и пустой полосы перед ним
+ * (владелец: «а футер как тебе?»). От xl подвала нет.
  */
 export function Footer() {
   const info: [string, string][] = [
@@ -39,21 +39,9 @@ export function Footer() {
   if (SITE.telegramUrl) info.push([SITE.telegramUrl, 'Telegram'])
   if (SITE.contactEmail) info.push([`mailto:${SITE.contactEmail}`, SITE.contactEmail])
   return (
-    <footer className="mt-6 border-t border-edge xl:hidden">
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <Wordmark size={24} className="text-fg" />
-        <Links
-          label="Разделы"
-          className="mt-4 text-[14px] font-medium text-dim"
-          items={[
-            ['/matches', 'Матчи'],
-            ['/tags', 'Подборки'],
-            ['/tag/value', 'Выгодные ставки'],
-            ['/leagues', 'Лиги'],
-            ['/bookmakers', 'Букмекеры'],
-          ]}
-        />
-        <div className="mt-5 space-y-1.5 border-t border-edge pt-4 text-[12px] leading-snug text-mute">
+    <footer className="xl:hidden">
+      <div className="mx-auto max-w-6xl px-4 pb-8">
+        <div className="space-y-1.5 text-[12px] leading-snug text-mute">
           <p>
             <span className="font-semibold text-dim">18+</span> · Ставки — это риск. Не призыв делать ставки.
           </p>
