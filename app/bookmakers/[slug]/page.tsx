@@ -49,6 +49,31 @@ export default async function BookmakerPage({ params }: Props) {
   const bonus = realBonus(p)
   // «Получить бонус» — только когда знаем, какой бонус: без условий от партнёрки кнопка обещала бы неизвестно что
   const cta = bonus ? `Получить бонус в ${p.name}` : `На сайт ${p.name}`
+  // маржа на исход матча по линии в наших данных — то, что мы считаем сами, а не «низкая маржа» на словах; только своя
+  // цифра букмекера, без сравнения с другими и без «выгоднее»
+  const margin = day?.rows.length
+    ? day.rows.reduce((s, { line }) => s + 1 / line.home + 1 / line.draw + 1 / line.away - 1, 0) / day.rows.length
+    : null
+  const f = p.facts ?? {}
+  const facts: [string, React.ReactNode][] = [
+    ...(margin != null && margin > 0
+      ? [[
+          'Маржа на исход матча',
+          <>
+            {(margin * 100).toFixed(1).replace('.', ',')}%{' '}
+            <span className="text-dim">
+              — в среднем по {pluralN(day!.rows.length, ['матчу', 'матчам', 'матчам'])} {day!.when}. Доля букмекера в кэфах: чем
+              она меньше, тем ближе кэфы к честной цене
+            </span>
+          </>,
+        ] as [string, React.ReactNode]]
+      : []),
+    ...(f.licenseNo ? [['Лицензия ФНС', f.licenseNo] as [string, React.ReactNode]] : []),
+    ...(f.minDeposit ? [['Минимальный депозит', f.minDeposit] as [string, React.ReactNode]] : []),
+    ...(f.payments ? [['Пополнение и вывод', f.payments] as [string, React.ReactNode]] : []),
+    ...(f.apps ? [['Приложение', f.apps] as [string, React.ReactNode]] : []),
+    ...(f.verification ? [['Идентификация', f.verification] as [string, React.ReactNode]] : []),
+  ]
   const steps = [
     `Нажмите «${cta}» — откроется официальный сайт букмекера (${domain(p.site)}).`,
     'Зарегистрируйтесь по номеру телефона и подтвердите возраст (18+).',
@@ -88,6 +113,22 @@ export default async function BookmakerPage({ params }: Props) {
             </>
           }
         />
+
+        {/* «Коротко о …» — вместо обзора с оценками (владелец: «в букмекерах какие-то обзоры надо делать?»): только то,
+            что можно проверить — маржа по нашим данным и факты из `facts` в config/bookmakers.ts; нечего показать — блока нет */}
+        {facts.length ? (
+          <section className="card overflow-hidden">
+            <BlockHead title={`Коротко о ${p.name}`} line />
+            <dl className="divide-y divide-edge text-[15px]">
+              {facts.map(([k, v]) => (
+                <div key={k} className="grid gap-0.5 px-4 py-3 sm:grid-cols-[13rem_minmax(0,1fr)] sm:gap-4 sm:px-5">
+                  <dt className="text-dim">{k}</dt>
+                  <dd className="leading-relaxed">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ) : null}
 
         {/* вместо выдуманных «Плюсов» и «Минусов» (владелец: «а страница букмекеров как?») — кэфы этого букмекера в
             ближайших матчах, теми же строками и с той же шапкой, что блок лиги на главной: ссылки на матч, кэфы — к

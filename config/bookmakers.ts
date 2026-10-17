@@ -34,6 +34,26 @@ export type Partner = {
   bonusNote: string
   license: string
   ad: { advertiser: string; erid: string }
+  /** Справка на странице букмекера — только проверенное (условия партнёрки, сайт букмекера); пусто — строки нет. */
+  facts?: BookFacts
+}
+
+/**
+ * Факты для «Коротко о …» на странице букмекера (владелец: «в букмекерах какие-то обзоры надо делать?» — обзоров с
+ * оценками и «плюсами» нет: сравнение в рекламе должно быть обоснованным). Заполняйте только то, что сверили сами
+ * или получили от партнёрки; незаполненное на странице не показывается.
+ */
+export type BookFacts = {
+  /** Номер лицензии ФНС: «№ 7». */
+  licenseNo?: string
+  /** «100 ₽». */
+  minDeposit?: string
+  /** «Банковские карты, СБП, ЮMoney». */
+  payments?: string
+  /** «iOS, Android». */
+  apps?: string
+  /** «Через Госуслуги или в салоне связи». */
+  verification?: string
 }
 
 type PartnerSeed = Omit<Partner, 'url' | 'configured' | 'ad'> & {
