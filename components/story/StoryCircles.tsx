@@ -15,11 +15,11 @@ import { discBackground, StorySymbol, symbolColor } from './StorySymbol'
 const D = 76
 /** Кольцо 2px по радиусу 36.5: между кольцом и диском — 3px воздуха. */
 const R = 36.5
-/** Не смотрели — белое кольцо (на голубом фоне это и есть акцент), LIVE — красное, просмотрено — полупрозрачное. */
-// новые матчи: в тёмной версии — лайм бренда, в голубой — белое (--ring-new в app/globals.css)
-const UNSEEN = 'var(--ring-new, #ffffff)'
+/** Не смотрели — белое кольцо, как в боковых панелях (`StoryRing`): лаймом четыре кольца спорили с «Бонусом», а лайм у нас —
+ *  деньги и «выгодно» (владелец: «посмотри ещё раз визуально на главную»); LIVE — красное, просмотрено — тусклое. */
+const UNSEEN = '#ffffff'
 const LIVE = '#ff5c63'
-const SEEN = 'rgb(255 255 255 / 0.38)'
+const SEEN = 'rgb(255 255 255 / 0.22)'
 
 /**
  * Кольцо одним контуром: просмотренная доля — приглушённая, остальное — цветом (от верха по часовой стрелке).
@@ -44,11 +44,11 @@ const plural = (n: number) => {
   return MATCH_WORDS[m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 1 : 2]
 }
 
-/** Подпись: название до двух строк («Главные / матчи» в одну строку не влезало — было «Главные м…»); число матчей — в подсказке кружка. */
+/** Подпись — в одну строку, короткое название (`short`: «Главные»; в две строки ряд был неровным, под ним — пустая строка); число матчей — в подсказке кружка. */
 function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
   return (
     <>
-      <span className={`line-clamp-2 block text-[12px] font-semibold leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>{g.label}</span>
+      <span className={`block truncate text-[12px] font-semibold leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>{g.short ?? g.label}</span>
     </>
   )
 }

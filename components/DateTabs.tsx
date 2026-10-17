@@ -79,7 +79,9 @@ export function DateTabs({
               }
             >
               {label(d)}
-              {d === today && liveToday ? (
+              {/* точка «идут матчи» — только у невыбранного «Сегодня»: на белом чипе она читалась бледным значком уведомления, а
+                  идущие матчи и так видны ниже */}
+              {d === today && liveToday && !on ? (
                 <span className="ml-1.5 h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" title="Сейчас идут матчи" aria-label="идут матчи" />
               ) : null}
             </Link>

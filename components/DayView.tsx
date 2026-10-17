@@ -270,38 +270,53 @@ export async function DayView({
             />
           </div>
           {past || !matches.length ? null : (
-            // порядок списка — обычными ссылками (?sort=time): работает без JS, у страницы один canonical. Скругления
-            // вложены по правилу «внешний = внутренний + отступ»: строка 20px, отступ 10 → переключатель 10px (rounded-ctl),
-            // отступ 4 → выбранный 6px; капсулой у края строки скругления не сходились (владелец: «а скругление чипа где по
-            // турнирам / по времени?»)
-            <nav aria-label="Порядок матчей" className="flex shrink-0 items-center gap-1 rounded-ctl bg-white/[0.04] p-1 text-[14px] font-medium max-lg:order-first max-lg:rounded-full max-lg:bg-white/[0.06] max-lg:p-0.5">
-              {(
-                [
-                  ['league', 'По турнирам', view === 'list' ? `${list}${fq ? `?${fq}` : ''}` : `${base}#matches`],
-                  ['time', 'По времени', view === 'list' ? `${list}?sort=time${fq ? `&${fq}` : ''}` : `${base}?sort=time#matches`],
-                ] as const
-              ).map(([k, label, href]) => (
-                <Link
-                  key={k}
-                  href={href}
-                  prefetch={false}
-                  scroll={false}
-                  aria-current={(k === 'time') === byTime ? 'true' : undefined}
-                  title={label}
-                  className={`flex h-8 items-center rounded-md px-2 transition-colors max-lg:rounded-full max-lg:px-2.5 lg:h-auto lg:px-3.5 lg:py-1.5 ${(k === 'time') === byTime ? 'bg-white/[0.08] text-fg max-lg:bg-white/[0.14]' : 'text-dim hover:text-fg'}`}
-                >
-                  <SortIcon k={k} />
-                  <span className="sr-only lg:not-sr-only">{label}</span>
-                </Link>
-              ))}
-            </nav>
+            (() => {
+              const orders = [
+                ['league', 'По турнирам', view === 'list' ? `${list}${fq ? `?${fq}` : ''}` : `${base}#matches`],
+                ['time', 'По времени', view === 'list' ? `${list}?sort=time${fq ? `&${fq}` : ''}` : `${base}?sort=time#matches`],
+              ] as const
+              const [cur, other] = byTime ? [orders[1], orders[0]] : [orders[0], orders[1]]
+              return (
+                <>
+                  {/* ниже lg — один чип в стиле дней со значком текущего порядка, нажатие — другой порядок (владелец: «посмотри
+                      ещё раз визуально на главную» — капсула из двух значков с серым «выбрано» спорила с белым выбранным днём) */}
+                  <Link
+                    href={other[2]}
+                    prefetch={false}
+                    scroll={false}
+                    title={`${cur[1]} · нажмите — ${other[1].toLowerCase()}`}
+                    aria-label={`Порядок: ${cur[1].toLowerCase()}. Показать ${other[1].toLowerCase()}`}
+                    className="order-first grid h-8 w-11 shrink-0 place-items-center rounded-full bg-white/[0.08] text-fg/85 transition-colors active:bg-white/[0.14] lg:hidden"
+                  >
+                    <SortIcon k={cur[0]} />
+                  </Link>
+                  {/* порядок списка — обычными ссылками (?sort=time): работает без JS, у страницы один canonical. Скругления
+                      вложены по правилу «внешний = внутренний + отступ»: строка 20px, отступ 10 → переключатель 10px
+                      (rounded-ctl), отступ 4 → выбранный 6px */}
+                  <nav aria-label="Порядок матчей" className="hidden shrink-0 items-center gap-1 rounded-ctl bg-white/[0.04] p-1 text-[14px] font-medium lg:flex">
+                    {orders.map(([k, label, href]) => (
+                      <Link
+                        key={k}
+                        href={href}
+                        prefetch={false}
+                        scroll={false}
+                        aria-current={(k === 'time') === byTime ? 'true' : undefined}
+                        className={`rounded-md px-3.5 py-1.5 transition-colors ${(k === 'time') === byTime ? 'bg-white/[0.08] text-fg' : 'text-dim hover:text-fg'}`}
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                  </nav>
+                </>
+              )
+            })()
           )}
         </div>
         </div>
         {/* кружки историй — под днями и порядком (владелец: «а может на главной сортировки перенести под хедер?»): истории
             собраны из матчей выбранного дня, переключатель управляет и ими; на xl — подборки в правой панели каркаса */}
         {view === 'home' && storyGroups.length ? (
-          <div className="mt-2 sm:mt-4 xl:hidden">
+          <div className="mt-3 sm:mt-4 xl:hidden">
             <StoryCircles groups={storyGroups} />
           </div>
         ) : null}
