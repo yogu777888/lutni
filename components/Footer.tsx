@@ -2,51 +2,63 @@ import Link from 'next/link'
 import { SITE } from '@/config/site'
 import { Wordmark } from './Logo'
 
-export function Footer() {
+/** Ссылки строкой: «·» приклеена к концу ссылки (nowrap) — при переносе строка кончается точкой, а не начинается с «· Cookie». */
+function Links({ label, items, className = '' }: { label: string; items: [string, string][]; className?: string }) {
   return (
-    // от xl подвала нет: правовая часть — внизу левой панели каркаса (LeftPanel → Legal), как у Spotify
+    <nav aria-label={label} className={`flex flex-wrap gap-x-1.5 gap-y-1 ${className}`}>
+      {items.map(([href, text], i) => (
+        <span key={href} className="whitespace-nowrap">
+          {href.startsWith('/') ? (
+            <Link href={href} className="transition-colors hover:text-fg">
+              {text}
+            </Link>
+          ) : (
+            <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener" className="transition-colors hover:text-fg">
+              {text}
+            </a>
+          )}
+          {i < items.length - 1 ? <span aria-hidden> ·</span> : null}
+        </span>
+      ))}
+    </nav>
+  )
+}
+
+/**
+ * Подвал ниже xl — той же системой строк, что правовой блок в левой панели (`Legal` в LeftPanel.tsx): надпись, разделы
+ * строкой, предупреждения, раскрытие партнёрства, ссылки, копирайт. Было ~680px на телефоне: «Теги ставок на футбол…»,
+ * кружок 18+, меню шапки столбиком, «Все теги» (владелец: «а на телефоне главная как?»). От xl подвала нет.
+ */
+export function Footer() {
+  const info: [string, string][] = [
+    ['/about', 'Как мы считаем'],
+    ['/responsible-gaming', 'Ответственная игра'],
+    ['/privacy', 'Cookie'],
+  ]
+  if (SITE.telegramUrl) info.push([SITE.telegramUrl, 'Telegram'])
+  if (SITE.contactEmail) info.push([`mailto:${SITE.contactEmail}`, SITE.contactEmail])
+  return (
     <footer className="mt-6 border-t border-edge xl:hidden">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-[1.4fr_1fr_1fr]">
-        <div>
-          <Wordmark size={26} className="text-fg" />
-          <p className="mt-3 max-w-sm text-sm leading-relaxed text-dim">
-            Теги ставок на футбол: сравнение коэффициентов, вероятности без маржи, форма команд и прогнозы на основе данных.
-          </p>
-          <div className="mt-4 flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold text-dim ring-1 ring-edge-2">18+</span>
-            <p className="text-xs leading-snug text-dim">
-              Сайт предназначен для лиц старше 18 лет.
-              <br />
-              Ставки — это риск. Играйте ответственно.
-            </p>
-          </div>
-        </div>
-        <nav aria-label="Разделы" className="flex flex-col gap-2 text-sm">
-          <span className="mb-1 text-[12px] font-medium text-mute">Разделы</span>
-          <Link href="/matches" className="text-dim hover:text-fg">Матчи сегодня</Link>
-          <Link href="/tags" className="text-dim hover:text-fg">Все теги</Link>
-          <Link href="/tag/value" className="text-dim hover:text-fg">Выгодные ставки</Link>
-          <Link href="/leagues" className="text-dim hover:text-fg">Лиги и таблицы</Link>
-          <Link href="/bookmakers" className="text-dim hover:text-fg">Букмекеры</Link>
-        </nav>
-        <nav aria-label="Информация" className="flex flex-col gap-2 text-sm">
-          <span className="mb-1 text-[12px] font-medium text-mute">Информация</span>
-          <Link href="/about" className="text-dim hover:text-fg">Как мы считаем</Link>
-          <Link href="/responsible-gaming" className="text-dim hover:text-fg">Ответственная игра</Link>
-          <Link href="/privacy" className="text-dim hover:text-fg">Cookie и конфиденциальность</Link>
-          {SITE.telegramUrl ? (
-            <a href={SITE.telegramUrl} target="_blank" rel="noopener" className="text-dim hover:text-fg">Telegram-канал</a>
-          ) : null}
-          {SITE.contactEmail ? (
-            <a href={`mailto:${SITE.contactEmail}`} className="text-dim hover:text-fg">{SITE.contactEmail}</a>
-          ) : null}
-        </nav>
-      </div>
-      <div className="border-t border-edge">
-        <div className="mx-auto max-w-6xl space-y-2 px-4 py-5 text-[11px] leading-relaxed text-mute">
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <Wordmark size={24} className="text-fg" />
+        <Links
+          label="Разделы"
+          className="mt-4 text-[14px] font-medium text-dim"
+          items={[
+            ['/matches', 'Матчи'],
+            ['/tags', 'Подборки'],
+            ['/tag/value', 'Выгодные ставки'],
+            ['/leagues', 'Лиги'],
+            ['/bookmakers', 'Букмекеры'],
+          ]}
+        />
+        <div className="mt-5 space-y-1.5 border-t border-edge pt-4 text-[12px] leading-snug text-mute">
           <p>
-            Материалы сайта носят информационно-аналитический характер и не являются призывом делать ставки. Прогнозы основаны на
-            статистике и не гарантируют результат. Ссылки на букмекеров — партнёрские: мы можем получать вознаграждение.
+            <span className="font-semibold text-dim">18+</span> · Ставки — это риск. Не призыв делать ставки.
+          </p>
+          <p>Ссылки на букмекеров — партнёрские: мы можем получать вознаграждение.</p>
+          <Links label="Информация" items={info} />
+          <p>
             © {new Date().getFullYear()} {SITE.name}
           </p>
         </div>

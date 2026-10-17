@@ -65,7 +65,8 @@ export function Header() {
         </div>
       </div>
       {/* ниже lg — то же меню текстом вторым рядом, прокручивается вбок, если не влезает */}
-      <div className="scrollbar-none -mt-2 overflow-x-auto px-2 pb-1.5 sm:px-3 lg:hidden">
+      {/* правый край затухает — видно, что меню листается (на 390px обрывалось на «Букмеке») */}
+      <div className="scrollbar-none -mt-2 overflow-x-auto px-2 pb-1.5 pr-8 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:px-3 sm:pr-8 lg:hidden">
         <NavLinks className="w-max" />
       </div>
     </HeaderShell>

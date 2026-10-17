@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayPicks, ValueRow } from '@/lib/day-picks'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
@@ -58,36 +58,38 @@ function Right({ m, stat, hot }: { m: CompactMatch; stat?: string; hot: boolean 
  * пусто, а у других есть — строка «У PARI сегодня выгодных нет…»; совсем нет — так и пишем, а не прячем блок (пропадающий
  * блок выглядит поломкой); внизу «Все выгодные →» — по всем легальным партнёрам (/tag/value).
  */
-function ValueBlock({ rows }: { rows: ValueRow[] }) {
+/** `card` — отдельной панелью (ниже xl правой панели нет, блок стоит в боковой колонке списка — `Sidebar`). */
+export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: boolean }) {
+  const hintId = useId()
   // все ставки — PARI: он назван в заголовке, как было; есть другие — подписан каждый кэф (имя другого букмекера в заголовке
   // не влезало в 288px: «Марафон · Реклама · 18+» переносилось вместе с «Выгодно сегодня»)
   const onlyPari = rows.length > 0 && rows.every((r) => r.slug === 'pari')
   return (
-    <section className="relative mt-6 border-t border-edge pt-4">
-      <h3 className="flex items-baseline justify-between text-[15px] font-semibold">
+    <section className={card ? 'card relative px-4 py-4 sm:px-5' : 'relative mt-6 border-t border-edge pt-4'}>
+      <h3 className={`flex items-baseline justify-between ${card ? 'text-[20px] font-bold tracking-tight' : 'text-[15px] font-semibold'}`}>
         {/* ⓘ — почему «выгодно» (владелец согласился: объяснение было только в подсказке плашки, её почти никто не находит);
             простыми словами и с примером, без «заработать»: оценка, а не гарантия */}
         <span className="group/vh flex items-baseline gap-1.5">
           Выгодно сегодня
           <button
             type="button"
-            aria-describedby="value-hint"
+            aria-describedby={hintId}
             aria-label="Почему «выгодно»"
             className="text-[13px] font-normal text-mute transition-colors hover:text-fg focus-visible:text-fg"
           >
             ⓘ
           </button>
           <span
-            id="value-hint"
+            id={hintId}
             role="tooltip"
-            className="pointer-events-none absolute inset-x-0 top-11 z-20 rounded-tile border border-edge bg-panel-2 p-3 text-[13px] font-normal leading-snug text-dim opacity-0 shadow-[0_10px_30px_rgb(0_0_0/0.45)] transition-opacity group-focus-within/vh:opacity-100 group-hover/vh:opacity-100"
+            className={`pointer-events-none absolute z-20 ${card ? 'inset-x-4 top-14' : 'inset-x-0 top-11'} rounded-tile border border-edge bg-panel-2 p-3 text-[13px] font-normal leading-snug text-dim opacity-0 shadow-[0_10px_30px_rgb(0_0_0/0.45)] transition-opacity group-focus-within/vh:opacity-100 group-hover/vh:opacity-100`}
           >
             <b className="mb-1 block font-semibold text-fg">Почему «выгодно»</b>
             Кэф выше, чем стоит исход по оценке tag.bet. Например, мы даём победе 40% — честный кэф для неё 2.50, а букмекер платит 2.68.
             <span className="mt-1.5 block text-mute">Оценка, а не гарантия · 18+</span>
           </span>
         </span>
-        {rows.length ? <span className="text-[11.5px] font-normal text-mute">{onlyPari ? 'PARI · ' : ''}Реклама · 18+</span> : null}
+        {rows.length ? <span className="text-[11.5px] font-normal tracking-normal text-mute">{onlyPari ? 'PARI · ' : ''}Реклама · 18+</span> : null}
       </h3>
       {rows.length ? null : <p className="mt-2 text-[13px] text-dim">Сегодня выгодных ставок нет.</p>}
       {/* у PARI пусто, а у других есть — так и пишем: главного партнёра в блоке не видно, и это не поломка */}

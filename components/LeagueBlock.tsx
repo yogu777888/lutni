@@ -19,13 +19,13 @@ const byState = (a: FeedItem, b: FeedItem) =>
   (STATE_ORDER[a.match.status] ?? 2) - (STATE_ORDER[b.match.status] ?? 2) || a.match.ts - b.match.ts
 
 /** Пометка рекламы у кэфов-ссылок: «Кэфы Winline · Реклама» — какие букмекеры стоят в строках блока (закон о рекламе). */
-function AdNote({ items, lines }: { items: FeedItem[]; lines: Record<number, X12Line> }) {
+function AdNote({ items, lines, full }: { items: FeedItem[]; lines: Record<number, X12Line>; full?: boolean }) {
   const books = [...new Set(items.map((i) => lines[i.match.id]?.bookmaker).filter(Boolean))]
   if (!books.length) return null
   return (
-    // на телефоне — коротко «Реклама» (места мало), но пометка видна везде
+    // `full` — строкой под названием на телефоне: «Кэфы PARI · Реклама · 18+»
     <span className="text-mute" title={`Кэфы ${books.join(', ')} — ссылки к букмекеру-партнёру`}>
-      <span className="hidden sm:inline">Кэфы {books.join(', ')} · </span>Реклама
+      Кэфы {books.join(', ')} · Реклама{full ? ' · 18+' : ''}
     </span>
   )
 }
@@ -47,21 +47,31 @@ export function LeagueBlock({
     // id — для «Турниров дня» в левой панели (клик прокручивает сюда)
     <section id={`league-${league.id}`} className="card scroll-mt-24 overflow-hidden">
       <header className="flex items-center justify-between gap-3 border-b border-edge px-4 py-4 sm:px-5">
-        <Link href={leagueHref(league)} prefetch={false} className="group flex min-w-0 items-center gap-2.5">
-          <Flag league={league} />
-          {/* страну говорит флаг — в названии без неё («Испания. Ла Лига» → «Ла Лига»; владелец: «название страны убрать, если есть флаг?») */}
-          <span className="truncate text-[20px] font-bold tracking-tight" title={league.name}>
-            {flagCode(league) ? leagueTitle(league.name) : league.name}
+        <div className="min-w-0">
+          <Link href={leagueHref(league)} prefetch={false} className="group flex min-w-0 items-center gap-2.5">
+            <Flag league={league} />
+            {/* страну говорит флаг — в названии без неё («Испания. Ла Лига» → «Ла Лига»; владелец: «название страны убрать, если есть флаг?») */}
+            <span className="truncate text-[20px] font-bold tracking-tight" title={league.name}>
+              {flagCode(league) ? leagueTitle(league.name) : league.name}
+            </span>
+          </Link>
+          {/* на телефоне пометка — строкой под названием: справа она вместе с «идут 3 матча» и «Таблицей» сжимала «Ла Лигу» до «Л…» */}
+          <div className="mt-1 pl-[32px] text-[12px] sm:hidden">
+            <AdNote items={items} lines={lines} full />
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-3 text-[13px] font-medium sm:gap-4">
+          <span className="hidden sm:inline">
+            <AdNote items={items} lines={lines} />
           </span>
-        </Link>
-        <div className="flex shrink-0 items-center gap-4 text-[13px] font-medium">
-          <AdNote items={items} lines={lines} />
           {/* идущие матчи лиги — наверху, в «Сейчас в игре»: здесь только пометка со ссылкой туда */}
           {live ? (
-            // серым, как «Таблица →», красная — только точка (как в боковых панелях; красные слова тянули взгляд сильнее названия лиги)
-            <a href="#live" className="flex items-center gap-1.5 text-dim transition-colors hover:text-fg">
+            // серым, как «Таблица →», красная — только точка (как в боковых панелях; красные слова тянули взгляд сильнее названия лиги);
+            // на телефоне — «● 3», полностью — в подсказке
+            <a href="#live" title={liveText(live)} className="flex items-center gap-1.5 text-dim transition-colors hover:text-fg">
               <span className="h-1.5 w-1.5 rounded-full bg-live" />
-              {liveText(live)}
+              <span className="sm:hidden">{live}</span>
+              <span className="hidden sm:inline">{liveText(live)}</span>
             </a>
           ) : null}
           {/* вместо безымянной стрелки — понятная ссылка: страница турнира с таблицей */}

@@ -181,7 +181,7 @@ export default async function LeaguePage({ params }: Props) {
         {/* «Где ставить» — ниже xl (от xl справа панель с «Выгодно сегодня», как на главной); «Как читать теги» не нужен —
             тегов в строках нет */}
         <div className="xl:hidden">
-          <Sidebar tags={false} />
+          <Sidebar />
         </div>
       </div>
     </>

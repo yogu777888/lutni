@@ -44,11 +44,11 @@ const plural = (n: number) => {
   return MATCH_WORDS[m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 1 : 2]
 }
 
-/** Подпись: название в одну строку; число матчей — в подсказке кружка. */
+/** Подпись: название до двух строк («Главные / матчи» в одну строку не влезало — было «Главные м…»); число матчей — в подсказке кружка. */
 function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
   return (
     <>
-      <span className={`block truncate text-[12px] font-semibold leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>{g.label}</span>
+      <span className={`line-clamp-2 block text-[12px] font-semibold leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>{g.label}</span>
     </>
   )
 }

@@ -1,53 +1,40 @@
 import Link from 'next/link'
 import { PARTNERS } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
+import type { ValueRow } from '@/lib/day-picks'
+import { BlockHead } from './BlockHead'
 import { PartnerCard } from './PartnerCard'
-import { TagPill } from './TagPill'
+import { ValueBlock } from './shell/RightPanel'
 
-/** `tags={false}` — без «Как читать теги»: где в строках тегов нет (страница лиги), легенда объясняла то, чего на экране нет. */
-export function Sidebar({ tags = true }: { tags?: boolean }) {
+/**
+ * Боковая колонка списка (ниже xl — под ним): «Выгодно сегодня» (`values` — только у сегодняшнего дня; на телефоне
+ * правой панели нет, а это блок, который приносит деньги) и «Где ставить». «Как читать теги» убрана: тегов в строках
+ * давно нет, легенда объясняла то, чего на экране нет (владелец: «а на телефоне главная как?»).
+ */
+export function Sidebar({ values = [] }: { values?: ValueRow[] }) {
   return (
     <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
-      <section className="card p-6">
-        <p className="eyebrow">Где ставить</p>
-        <div className="mt-4 divide-y divide-edge">
+      {values.length ? <ValueBlock rows={values} card /> : null}
+      <section className="card overflow-hidden">
+        <BlockHead title="Где ставить" line />
+        <div className="divide-y divide-edge px-4 py-4 sm:px-5">
           {PARTNERS.slice(0, 3).map((p) => (
             <PartnerCard key={p.slug} partner={p} placement="sidebar" />
           ))}
         </div>
-        <p className="mt-4 text-[11px] text-mute">Только букмекеры с лицензией ФНС России.</p>
-        <Link href="/bookmakers" className="group mt-4 inline-flex items-center gap-1.5 border-b-2 border-acid pb-0.5 text-[14px] font-semibold">
-          Все букмекеры <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-        </Link>
-      </section>
-      {tags ? (
-        <section className="card p-6">
-          <p className="eyebrow">Как читать теги</p>
-          <ul className="mt-4 space-y-3 text-[14px]">
-            <li className="flex items-center gap-2.5">
-              <TagPill slug="value" link={false} />
-              <span className="text-dim">платят больше, чем стоит</span>
-            </li>
-            <li className="flex items-center gap-2.5">
-              <TagPill slug="progruz" link={false} />
-              <span className="text-dim">кэф резко снизился</span>
-            </li>
-            <li className="flex items-center gap-2.5">
-              <TagPill slug="tb-2-5" link={false} />
-              <span className="text-dim">ждём 3 гола и больше</span>
-            </li>
-          </ul>
-          <Link href="/tags" className="group mt-5 inline-flex items-center gap-1.5 border-b-2 border-acid pb-0.5 text-[14px] font-semibold">
-            Все теги <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-t border-edge px-4 py-3.5 sm:px-5">
+          <span className="text-[12px] text-mute">Только букмекеры с лицензией ФНС России.</span>
+          <Link href="/bookmakers" className="text-[13px] font-medium text-dim transition-colors hover:text-fg">
+            Все букмекеры →
           </Link>
-        </section>
-      ) : null}
+        </div>
+      </section>
       {SITE.telegramUrl ? (
         <a href={SITE.telegramUrl} target="_blank" rel="noopener" className="card flex items-center gap-3 p-6 transition-colors hover:bg-panel-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#229ED9] text-lg font-bold text-[#fff]">✈</span>
           <span>
-            <span className="block text-[15px] font-semibold">Теги в Telegram</span>
-            <span className="text-[13px] text-dim">Value и прогрузы — сразу в ленту</span>
+            <span className="block text-[15px] font-semibold">tag.bet в Telegram</span>
+            <span className="text-[13px] text-dim">Выгодные ставки и падение кэфов — сразу в ленту</span>
           </span>
         </a>
       ) : null}

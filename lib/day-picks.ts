@@ -4,6 +4,7 @@
  * в каркасе на всех страницах, поэтому считаем из кэша слоя данных (матчи дня и сводки матчей), без новых запросов.
  * Только для сервера.
  */
+import { cache } from 'react'
 import { getPartner, type Partner } from '@/config/bookmakers'
 import { compactMatch, type CompactMatch } from './compact'
 import type { Match } from './types'
@@ -59,7 +60,8 @@ const VALUES = 3
 /** Сколько матчей подборки уходит в панель: остальные — «Все N матчей →» на странице тега. */
 const PER_GROUP = 8
 
-export async function dayPicks(): Promise<DayPicks> {
+/** `cache` — одна сборка на запрос: её берут и каркас (правая панель), и колонка списка ниже xl (`Sidebar`). */
+export const dayPicks = cache(async (): Promise<DayPicks> => {
   try {
     const matches = await getMatchesByDate(todayYmd())
     const items: FeedItem[] = matches.map((m) => ({ match: m, ...tagsFor(m) }))
@@ -154,4 +156,4 @@ export async function dayPicks(): Promise<DayPicks> {
   } catch {
     return { groups: [], matches: {}, stats: {}, totals: {}, values: [], states: {} }
   }
-}
+})

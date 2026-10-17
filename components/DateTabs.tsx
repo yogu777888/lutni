@@ -35,6 +35,7 @@ export function DateTabs({
   liveToday = false,
   hash = '',
   section,
+  fade = false,
 }: {
   active: string
   today: string
@@ -42,6 +43,8 @@ export function DateTabs({
   hash?: string
   /** подборка дня (`goals`, `odds`): вкладки ведут на ту же подборку другого дня */
   section?: string
+  /** на телефоне рядом справа — переключатель порядка: правый край затухает, видно, что дни листаются */
+  fade?: boolean
 }) {
   const href = (d: string) => (section === 'all' ? listHref(d, today) : section ? `/matches/${d}/${section}` : `${dayHref(d, today)}${hash}`)
   const strip = Array.from({ length: SITE.daysAhead + 2 }, (_, i) => addDays(today, i - 1))
@@ -49,7 +52,8 @@ export function DateTabs({
   const days = strip.includes(active) ? strip : active < strip[0] ? [active, ...strip] : [...strip, active]
   const label = (d: string) => (strip.includes(d) ? shortDay(d, today) : dayMonthFmt.format(ymdToNoonTs(d)).replace('.', ''))
   return (
-    <nav aria-label="Выбор дня" className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+    <nav aria-label="Выбор дня" className={`scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 ${fade ? 'mr-0 pr-6 max-sm:[mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)]' : ''}`}
+    >
       <div className="flex w-max items-center gap-5">
         {days.map((d) => {
           const on = d === active
