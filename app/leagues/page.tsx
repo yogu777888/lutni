@@ -92,17 +92,15 @@ export default async function LeaguesPage() {
               ? 'Список лиг временно недоступен.'
               : `Таблицы, расписание и результаты — ${pluralN(total, ['турнир', 'турнира', 'турниров'])} из ${pluralN(countries, ['страны', 'стран', 'стран'])}.`
           }
-        >
-          {failed ? null : <LeagueFilter target="league-index" />}
-        </PageHead>
+        />
 
-        <div id="league-index" className="space-y-4 xl:space-y-2">
+        <div className="space-y-4 xl:space-y-2">
           {top.length ? (
-            <section data-section className="card @container overflow-hidden">
+            <section className="card @container overflow-hidden">
               <BlockHead title="Топ-турниры" />
               <ul className="grid @xl:grid-cols-2">
                 {top.map((l) => (
-                  <li key={l.id} data-item data-q={l.q} className="border-t border-edge">
+                  <li key={l.id} data-top={l.name} data-q={l.q} className="border-t border-edge">
                     <Link href={l.href} prefetch={false} className="flex h-full items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5">
                       <Mark flag={l.flag} />
                       <span className="min-w-0">
@@ -117,9 +115,15 @@ export default async function LeaguesPage() {
           ) : null}
 
           {groups.length ? (
-            <section data-section className="card @container overflow-hidden">
-              {/* колонки — по ширине самого блока: на 1280 с панелями в три колонки обрезались «Саудовская Аравия», «Турниры сборных» */}
-              <BlockHead title="Страны и турниры" aside={pluralN(countries, ['страна', 'страны', 'стран'])} />
+            <section id="league-index" className="card @container overflow-hidden">
+              {/* колонки — по ширине самого блока: на 1280 с панелями в три колонки обрезались «Саудовская Аравия», «Турниры сборных»;
+                  фильтр — в шапке блока, рядом с тем, что он сужает */}
+              <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-4 sm:px-5">
+                <h2 className="text-[20px] font-bold tracking-tight">
+                  Страны и турниры <span className="text-[12px] font-normal text-mute">{pluralN(countries, ['страна', 'страны', 'стран'])}</span>
+                </h2>
+                <LeagueFilter target="league-index" />
+              </header>
               <ul className="grid items-start @xl:grid-cols-2 @5xl:grid-cols-3">
                 {shown.map((g) => (
                   <Group key={g.key} g={g} />
@@ -140,12 +144,11 @@ export default async function LeaguesPage() {
                   </ul>
                 </details>
               ) : null}
+              {/* текст ставит фильтр: найденное среди топ-турниров (их фильтр не прячет — они в отдельном блоке выше) */}
+              <p data-empty hidden className="border-t border-edge px-4 py-4 text-[14px] text-dim sm:px-5" />
             </section>
           ) : null}
 
-          <p data-empty hidden className="card px-4 py-4 text-[14px] text-dim sm:px-5">
-            Ничего не нашлось. Попробуйте название страны или турнира по-английски — например, «Premier League».
-          </p>
         </div>
       </div>
     </>

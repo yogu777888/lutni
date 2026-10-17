@@ -172,12 +172,16 @@ export default async function TagPage({ params }: Props) {
       {/* вид главной (владелец: «а страница выгодно как?»): без подложки, шапка панелью вместо плаката Oswald 56px */}
       <span hidden className="bare-sub" />
       <div className="space-y-4 xl:space-y-2">
+        {/* «Выгодные ставки» — пункт меню «Выгодно», страница верхнего уровня: без крошек и значка, как «Подборки», «Лиги»
+            (владелец: «на странице выгодно есть хлебные крошки и иконка» — крошки «Подборки / …» спорили с меню) */}
         <PageHead
-          crumbs={[{ href: '/tags', label: 'Подборки' }, { href: `/tag/${t.slug}`, label: t.title }]}
+          crumbs={isValue ? undefined : [{ href: '/tags', label: 'Подборки' }, { href: `/tag/${t.slug}`, label: t.title }]}
           lead={
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.06]">
-              <StorySymbol k={t.slug} tone="currentColor" className="h-[18px] w-[18px]" />
-            </span>
+            isValue ? null : (
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.06]">
+                <StorySymbol k={t.slug} tone="currentColor" className="h-[18px] w-[18px]" />
+              </span>
+            )
           }
           title={t.title}
           sub={t.about}
