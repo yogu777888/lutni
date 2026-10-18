@@ -5,6 +5,14 @@ import { useEffect, useLayoutEffect, useState } from 'react'
 
 const key = () => `tb-scroll:${location.pathname}${location.search}`
 let back = false
+// «←» без истории ведёт на шаг выше (в раздел): это не переход вперёд, а подъём — новая страница заменяет верх стека.
+// Иначе после «матч → ← Ла Лига» у лиги стояло «← Барселона — Леванте» (владелец: «из матча назад жму и он показывает
+// назад на матч а не на лиги»)
+let up = false
+const goUp = (router: ReturnType<typeof useRouter>, href: string) => {
+  up = true
+  router.push(href)
+}
 
 /**
  * Где были до этой страницы — для подписи у «←» (владелец: «на кнопке назад в матчах написана лига а переходит на
@@ -29,7 +37,8 @@ function pageLabel(path: string): string {
  * ещё та, откуда пришли; при «назад» верх — страница, с которой ушли, а нужная — на две ниже. */
 function prevFor(path: string): Page | null {
   const n = stack.length
-  if (!n) return null
+  // поднялись на шаг выше, а стек ещё не обновлён (эффект `NavWatch` идёт после подписи) — истории нет
+  if (!n || up) return null
   if (stack[n - 1].path === path) return stack[n - 2] ?? null
   if (stack[n - 2]?.path === path) return stack[n - 3] ?? null
   return stack[n - 1]
@@ -80,8 +89,12 @@ export function NavWatch() {
   }, [])
   useEffect(() => {
     const n = stack.length
-    if (back && stack[n - 2]?.path === path) stack.pop()
+    // вернулись на страницу под верхней — «назад» (кнопкой или ссылкой в тексте): снимаем верх, а не кладём её второй раз
+    if (stack[n - 2]?.path === path) stack.pop()
+    else if (up && n) stack[n - 1] = { path, label: pageLabel(path) }
     else if (stack[n - 1]?.path !== path) stack.push({ path, label: pageLabel(path) })
+    up = false
+    dispatchEvent(new Event('tb-stack'))
     if (!back) return
     back = false
     let y = 0
@@ -116,7 +129,7 @@ export function BackButton({ fallback, className = '' }: { fallback: string; cla
         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
         e.preventDefault()
         if (prevFor(location.pathname) && history.length > 1) router.back()
-        else router.push(fallback)
+        else goUp(router, fallback)
       }}
       className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/[0.06] text-dim transition-colors hover:bg-white/[0.12] hover:text-fg ${className}`}
     >
@@ -137,6 +150,12 @@ export function BackLabel({ fallback, className = '' }: { fallback: { href: stri
   const [prev, setPrev] = useState<Page | null>(null)
   // после гидратации: на сервере стека нет — сначала подпись из крошек, без расхождения разметки
   useLayoutEffect(() => setPrev(prevFor(path)), [path])
+  // стек обновился после отрисовки (переход «назад», подъём на шаг выше) — подпись пересчитываем
+  useEffect(() => {
+    const on = () => setPrev(prevFor(location.pathname))
+    addEventListener('tb-stack', on)
+    return () => removeEventListener('tb-stack', on)
+  }, [])
   return (
     <a
       href={prev?.path ?? fallback.href}
@@ -144,7 +163,7 @@ export function BackLabel({ fallback, className = '' }: { fallback: { href: stri
         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
         e.preventDefault()
         if (prev && history.length > 1) router.back()
-        else router.push(fallback.href)
+        else goUp(router, fallback.href)
       }}
       className={`transition-colors hover:text-fg ${className}`}
     >
