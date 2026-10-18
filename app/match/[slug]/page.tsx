@@ -255,6 +255,7 @@ export default async function MatchPage({ params }: Props) {
         <Breadcrumbs
           className="min-w-0 pr-7 text-[13px] [mask-image:linear-gradient(90deg,#000_calc(100%_-_28px),transparent)]"
           items={[
+            { href: '/matches', label: 'Матчи' },
             { href: leagueHref(m.league), label: m.league.name },
             { href: canonical, label: pair },
           ]}
