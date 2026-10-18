@@ -150,14 +150,19 @@ export function MatchRow({
 
   if (compact) {
     return (
-      <div className="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-3 px-4 py-3 transition-colors hover:bg-white/[0.02]">
+      // справа — шеврон, как у строк списка в iOS: видно, что строка ведёт на страницу матча (владелец: «в блоке другие
+      // матчи у матчей может справа сделать типа кнопочку стрелочку?»)
+      <div className="group relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto_auto] items-center gap-x-3 px-4 py-3 transition-colors hover:bg-white/[0.02]">
         <StatusCell m={m} />
         <Link href={matchHref(m)} prefetch={false} className="min-w-0 after:absolute after:inset-0 after:content-['']">
           <span className="block truncate text-[14px] font-semibold">{m.home.name}</span>
           <span className="block truncate text-[14px] font-semibold">{m.away.name}</span>
-          {showLeague ? <span className="block truncate text-[11px] text-mute">{m.league.name}</span> : null}
+          {showLeague ? <span className="block truncate text-[13px] text-mute">{m.league.name}</span> : null}
         </Link>
-        {played ? <Score m={m} /> : null}
+        {played ? <Score m={m} /> : <span />}
+        <svg viewBox="0 0 24 24" className="h-4 w-4 text-mute transition-colors group-hover:text-fg" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M9.5 6l6 6-6 6" />
+        </svg>
       </div>
     )
   }
