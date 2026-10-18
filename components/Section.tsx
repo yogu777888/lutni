@@ -48,7 +48,9 @@ export function Section({
 export function BlockTitle({ title, aside, className = '' }: { title: React.ReactNode; aside?: React.ReactNode; className?: string }) {
   return (
     <div className={`mb-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1 sm:px-2 ${className}`}>
-      <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">{title}</h2>
+      {/* серым, как заголовки групп в Настройках iPhone: главное — данные в карточке (владелец: «а заголовки белого цвета
+          должны быть?» — «да» на серые) */}
+      <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em] text-dim">{title}</h2>
       {aside ? <div className="text-[13px] text-mute">{aside}</div> : null}
     </div>
   )
