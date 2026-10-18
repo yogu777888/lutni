@@ -5,6 +5,7 @@ export function Section({
   children,
   className = '',
   plain = false,
+  outside = false,
 }: {
   title?: React.ReactNode
   id?: string
@@ -13,7 +14,17 @@ export function Section({
   className?: string
   /** заголовок Onest без заглавных, как шапки блоков (`BlockHead`), — на текстовых страницах с `PageHead` */
   plain?: boolean
+  /** заголовок над блоком, на фоне страницы, как разделы в Настройках iPhone (владелец: «как тебе идея заголовки вынести
+   * из блоков как на айфоне?» — «давай», сначала страница матча): в блоке — только данные */
+  outside?: boolean
 }) {
+  if (outside)
+    return (
+      <section id={id} className="min-w-0 scroll-mt-28">
+        {title ? <BlockTitle title={title} aside={aside} /> : null}
+        <div className={`card p-5 sm:p-7 ${className}`}>{children}</div>
+      </section>
+    )
   return (
     // plain — отступы как у `PageHead`: текст разделов начинается с той же вертикали, что заголовок страницы
     <section id={id} className={`card ${plain ? 'px-4 py-5 sm:px-5' : 'p-5 sm:p-7'} ${className}`}>
@@ -26,5 +37,15 @@ export function Section({
       ) : null}
       {children}
     </section>
+  )
+}
+
+/** Заголовок раздела над блоком: Onest 20px жирным, подпись справа серым; отступ слева — как у содержимого блока. */
+export function BlockTitle({ title, aside, className = '' }: { title: React.ReactNode; aside?: React.ReactNode; className?: string }) {
+  return (
+    <div className={`mb-2.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-1 sm:px-2 ${className}`}>
+      <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">{title}</h2>
+      {aside ? <div className="text-[12px] text-mute">{aside}</div> : null}
+    </div>
   )
 }

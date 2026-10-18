@@ -17,7 +17,7 @@ import { ChanceRow } from '@/components/match/ProbBars'
 import { PredictHero } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerCard } from '@/components/PartnerCard'
-import { Section } from '@/components/Section'
+import { BlockTitle, Section } from '@/components/Section'
 import { StandingsTable } from '@/components/StandingsTable'
 import { StickyCta } from '@/components/StickyCta'
 import { StoryButton } from '@/components/story/StoryButton'
@@ -245,8 +245,11 @@ export default async function MatchPage({ params }: Props) {
           в блоке на странице матча»; правила — .bare-match в app/globals.css) */}
       <span hidden className="bare-match" />
       {/* верх страницы — одна закреплённая панель: «←», крошки, а когда табло уехало — мини-табло на том же месте */}
+      {/* крошки — для поисковиков (BreadcrumbList); на экране «назад» — полоса `MatchBar` (телефон) и капсула в табло */}
+      <Breadcrumbs chip className="hidden" items={crumbs} />
       <MatchBar
         back={leagueHref(m.league)}
+        backLabel={leagueTitle(m.league.name)}
         home={{ name: m.home.name, logo: m.home.logo ?? null }}
         away={{ name: m.away.name, logo: m.away.logo ?? null }}
         center={m.score && m.status !== 'scheduled' ? `${m.score.home} : ${m.score.away}` : formatTime(m.ts)}
@@ -273,18 +276,18 @@ export default async function MatchPage({ params }: Props) {
           tags={tags}
           tint={tint ? distinctPair(tint) : null}
           story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null}
-          back={<Breadcrumbs chip className="" items={crumbs} />} pair={<NavPair fallback={upOf(crumbs)} />} league={crumbs[1]}
+          pair={<NavPair fallback={upOf(crumbs)} />} league={crumbs[1]}
         />
       ) : (
-        <MatchHero full={full} cells={cells} books={cons.books} line={heroLine} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} back={<Breadcrumbs chip className="" items={crumbs} />} pair={<NavPair fallback={upOf(crumbs)} />} league={crumbs[1]} />
+        <MatchHero full={full} cells={cells} books={cons.books} line={heroLine} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} pair={<NavPair fallback={upOf(crumbs)} />} league={crumbs[1]} />
       )}
 
       {/* на телефоне между блоками 12px, как на главной (владелец: «такое чувство что отступы между блоком больше стали?» — «да»: было 24–32) */}
-      <div className="mt-3 grid gap-3 sm:mt-8 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:mt-2 xl:grid-cols-1 xl:gap-2 2xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0 space-y-3 sm:space-y-6 xl:space-y-2">
+      <div className="mt-6 grid gap-6 sm:mt-8 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:mt-6 xl:grid-cols-1 xl:gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-6 sm:space-y-8 xl:space-y-6">
           {!scheduled && (full.events.length || full.stats.length) ? (
             // в игре — «Сейчас в матче»: эти цифры учитывают счёт и ход игры; доматчевые блоки ниже подписаны «До матча»
-            <Section title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'} aside={m.status === 'live' ? 'обновляется каждые 30 с' : 'итог'}>
+            <Section outside title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'} aside={m.status === 'live' ? 'обновляется каждые 30 с' : 'итог'}>
               {/* сверху — полоса матча 0′–90′ во всю ширину, ниже — статистика в две колонки */}
               <div className="space-y-6">
                 <EventsBlock
@@ -304,7 +307,7 @@ export default async function MatchPage({ params }: Props) {
               факты — ровной колонкой справа (каждая фраза начиналась сразу за своей меткой — «ёлочка»), на телефоне метка
               над фактом; факт — короткий (`short`), без повтора метки: «#кэф упал — Победа «Хетафе»: 7.42 → 6.37 (−14%)» */}
           {!scheduled && tags.length ? (
-            <Section title="В подборках" aside="до матча">
+            <Section outside title="В подборках" aside="до матча">
               <ul className="grid gap-y-4 sm:grid-cols-[max-content_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-3">
                 {tags.map((t) => (
                   <li key={t.slug} className="flex flex-col items-start gap-1.5 sm:col-span-2 sm:grid sm:grid-cols-subgrid">
@@ -323,7 +326,7 @@ export default async function MatchPage({ params }: Props) {
             // чьи голы — названиями («1.95 : 0.85» читалось счётом с дробями), без плашек внутри карточки и без
             // «рейтинга силы» (1684 / 1478 новичку ничего не говорят); «Вероятный счёт» — только до начала: на 59′
             // при 1:0 «1:1 — 10%» читалось как прогноз сейчас
-            <Section title="Голы и счёт" aside={scheduled ? 'оценка tag.bet' : 'до матча · оценка tag.bet'}>
+            <Section outside title="Голы и счёт" aside={scheduled ? 'оценка tag.bet' : 'до матча · оценка tag.bet'}>
               <div className="space-y-5">
                 {over25 != null || btts != null ? (
                   <ul className="grid gap-x-10 gap-y-4 md:grid-cols-2">
@@ -361,7 +364,7 @@ export default async function MatchPage({ params }: Props) {
           {chanceMoved ? (
             // справа — без «9 изменений»: число ничего не говорит и спорило с «почти не менялись», а на телефоне длинная
             // подпись сжимала заголовок в две строки
-            <Section title="Как менялись шансы" aside="до матча · линия PARI">
+            <Section outside title="Как менялись шансы" aside="до матча · линия PARI">
               <ChanceChart series={chanceSeries} end={Math.min(m.ts, appNow())} />
               <p className="mt-3 text-[13.5px] leading-relaxed text-dim">
                 {chanceText} <span className="text-mute">Линия — шансы из кэфов PARI без маржи букмекера, пунктир — оценка tag.bet.</span>
@@ -372,7 +375,7 @@ export default async function MatchPage({ params }: Props) {
           {/* только до начала (владелец: «а коэффициенты букмекеров как?»): после — по доматчевым кэфам не поставить, а кэфы
               «сейчас» — на табло */}
           {scheduled ? (
-            <Section
+            <Section outside
               title="Коэффициенты букмекеров"
               aside={
                 legalBooks.length
@@ -386,14 +389,14 @@ export default async function MatchPage({ params }: Props) {
 
           {ins.homeForm || ins.awayForm ? (
             // цифры — по последним (до 10) матчам: выборку называем числом (было «последние матчи», а в карточке — три разные выборки)
-            <Section title="Форма команд" aside={formN > 1 ? `последние ${pluralN(formN, ['матч', 'матча', 'матчей'])}` : 'последний матч'}>
+            <Section outside title="Форма команд" aside={formN > 1 ? `последние ${pluralN(formN, ['матч', 'матча', 'матчей'])}` : 'последний матч'}>
               <FormBlock home={m.home} away={m.away} homeForm={ins.homeForm} awayForm={ins.awayForm} />
             </Section>
           ) : null}
 
           {ins.h2h ? (
             // сколько встреч — сразу, как в «Форме команд»
-            <Section
+            <Section outside
               title="Личные встречи"
               aside={`${ins.h2h.games.length >= 3 ? 'последние ' : ''}${pluralN(ins.h2h.games.length, ['встреча', 'встречи', 'встреч'])}`}
             >
@@ -402,14 +405,14 @@ export default async function MatchPage({ params }: Props) {
           ) : null}
 
           {scheduled ? (
-            <Section title="Кадровые потери">
+            <Section outside title="Кадровые потери">
               <InjuriesBlock injuries={ins.injuries} home={m.home} away={m.away} />
             </Section>
           ) : null}
 
           {ins.standings ? (
             // «полностью →» справа от заголовка — нижней строкой `BlockMore`, как у остальных блоков-списков
-            <Section title="Турнирная таблица" className="overflow-hidden">
+            <Section outside title="Турнирная таблица" className="overflow-hidden">
               <StandingsTable standings={ins.standings} highlight={[m.home.id, m.away.id]} compact />
               <BlockMore href={leagueHref(m.league)} className="-mx-5 -mb-5 mt-4 !px-5 !py-3.5 sm:-mx-7 sm:-mb-7 sm:!px-7">Вся таблица</BlockMore>
             </Section>
@@ -419,7 +422,7 @@ export default async function MatchPage({ params }: Props) {
               встречи» и «Кадровые потери», которые раньше шли сразу за ним; строка была ~150 знаков — глаз терял строку;
               после начала — «Перед матчем» («Обзор матча» обещал события, а в тексте расклад до матча); ширина строки — ~75 знаков */}
           {ins.preview.length ? (
-            <Section title={`${scheduled ? 'Прогноз на матч' : 'Перед матчем:'} ${pair}`}>
+            <Section outside title={`${scheduled ? 'Прогноз на матч' : 'Перед матчем:'} ${pair}`}>
               <div className="prose-ru max-w-[62ch] space-y-4">
                 {ins.preview.map((p) => (
                   <div key={p.title}>
@@ -436,36 +439,35 @@ export default async function MatchPage({ params }: Props) {
           {ins.preview.length ? null : <p className="text-[11px] leading-relaxed text-mute xl:px-2 xl:pt-2">{disclaimer}</p>}
         </div>
 
-        <aside className="space-y-3 sm:space-y-5 lg:sticky lg:top-24 lg:self-start xl:static xl:space-y-2 2xl:sticky 2xl:top-[72px]">
-          <section className="card overflow-hidden">
-            <div className="p-6">
-              {/* заголовки — один вид на всей странице (как у Section), без мелких заглавных */}
-              <h2 className="h2 text-[20px] font-bold tracking-[-0.02em] sm:text-[22px]">Где поставить</h2>
-              <div className="mt-4 divide-y divide-edge">
+        <aside className="space-y-6 sm:space-y-8 lg:sticky lg:top-24 lg:self-start xl:static xl:space-y-6 2xl:sticky 2xl:top-[72px]">
+          <section>
+            {/* заголовок — над блоком, как у разделов страницы (`Section outside`) */}
+            <BlockTitle title="Где поставить" />
+            <div className="card overflow-hidden">
+              <div className="divide-y divide-edge px-5 py-4 sm:px-6">
                 {PARTNERS.slice(0, 3).map((p, i) => (
                   <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} />
                 ))}
               </div>
+              {/* легальных букмекеров 17, здесь — три: остальные — на странице «Букмекеры» */}
+              <BlockMore href="/bookmakers">Все букмекеры</BlockMore>
             </div>
-            {/* легальных букмекеров 17, здесь — три: остальные — на странице «Букмекеры» */}
-            <BlockMore href="/bookmakers">Все букмекеры</BlockMore>
           </section>
           {related.length ? (
             // какие это матчи — справа от заголовка; широкий блок (от xl до 2xl он уходит под основную колонку на всю ширину)
             // — две колонки, иначе название слева и счёт в 1500px справа; внизу — весь список дня
-            <section className="@container card overflow-hidden">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-5 py-4">
-                <h2 className="h2 text-[20px] font-bold tracking-[-0.02em] sm:text-[22px]">Другие матчи</h2>
-                <span className="text-[12px] text-mute">{relatedNote}</span>
-              </div>
+            <section>
+              <BlockTitle title="Другие матчи" aside={relatedNote} />
+              <div className="@container card overflow-hidden">
               <div className="grid @2xl:grid-cols-2">
-                {related.map((o) => (
-                  <div key={o.id} className="border-t border-edge @2xl:even:border-l">
+                {related.map((o, i) => (
+                  <div key={o.id} className={`border-edge @2xl:even:border-l ${i ? 'border-t' : ''} ${i === 1 ? '@2xl:border-t-0' : ''}`}>
                     <MatchRow m={o} tags={[]} compact showLeague={o.league.id !== m.league.id} />
                   </div>
                 ))}
               </div>
               <BlockMore href={listHref(matchDay, today)}>Все матчи дня</BlockMore>
+            </div>
             </section>
           ) : null}
         </aside>

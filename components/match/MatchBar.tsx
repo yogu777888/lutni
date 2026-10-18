@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { SPONSORED_REL } from '@/lib/affiliate'
-import { BackButton } from '../BackButton'
+import { BackButton, BackLabel } from '../BackButton'
 import { TeamLogo } from '../TeamLogo'
 
 type Side = { name: string; logo: string | null }
@@ -24,6 +24,7 @@ export function MatchBar({
   odds,
   partner,
   back = '/matches',
+  backLabel = 'Матчи',
 }: {
   home: Side
   away: Side
@@ -35,6 +36,8 @@ export function MatchBar({
   partner: { name: string; href: string; live?: boolean } | null
   /** куда «←», если пришли не с сайта — раздел из крошек (лига) */
   back?: string
+  /** подпись у «‹» на телефоне, если пришли не с сайта — «Ла Лига» */
+  backLabel?: string
 }) {
   const [show, setShow] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -90,21 +93,28 @@ export function MatchBar({
     // панель — только когда крупный счёт ушёл под шапку (владелец: «а можно как то красиво кнопки назад в блоке вставить?»
     // — «назад» теперь чипом в углу табло, а наверху страницы над табло пустой полосы с одним «←» нет): поверх страницы, без
     // своего места в раскладке (обёртка высотой 0), видна только при прокрутке
-    <div className="sticky top-[65px] z-30 h-0 xl:top-[72px]">
+    // ниже lg — полоса под шапкой всегда, как навигация в iOS (владелец: «под хедером сделать как на айфоне кнопку назад и
+    // по центру надпись» — «давай»): наверху «‹ Ла Лига», когда крупный счёт ушёл под полосу — по центру мини-табло, у «‹»
+    // остаётся только шеврон; от lg — как было: плашка поверх страницы только при прокрутке
+    <div className="sticky top-[65px] z-30 max-lg:-mx-4 max-lg:-mt-4 max-lg:mb-2 sm:max-lg:-mt-6 lg:h-0 xl:top-[72px]">
     <div
       ref={ref}
-      aria-hidden={!show}
-      inert={!show}
       // ниже lg — второй ряд шапки (фон и уход вместе с шапкой — правила `.match-top` в app/globals.css), от lg — плашка
-      className={`match-top absolute inset-x-0 top-0 max-lg:-inset-x-4 lg:bg-[#090c10] lg:pt-1.5 xl:pt-0 ${show ? '' : 'invisible'}`}
+      className={`match-top lg:absolute lg:inset-x-0 lg:top-0 lg:bg-[#090c10] lg:pt-1.5 xl:pt-0 ${show ? '' : 'lg:invisible'}`}
     >
-      <div className={`match-top-in flex min-h-12 items-center gap-3 px-4 py-1.5 lg:min-h-[57.5px] lg:rounded-card lg:py-2 lg:bg-panel-3 lg:shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${swap} ${show ? 'opacity-100' : '-translate-y-1 opacity-0'}`}>
-        <BackButton fallback={back} />
+      <div className={`match-top-in relative flex min-h-12 items-center gap-3 px-4 py-1.5 lg:min-h-[57.5px] lg:rounded-card lg:py-2 lg:bg-panel-3 lg:shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${swap} ${show ? 'opacity-100' : 'lg:-translate-y-1 lg:opacity-0'}`}>
+        <BackButton fallback={back} className="max-lg:hidden" />
+        <div className="pointer-events-none absolute inset-y-0 left-4 right-1/3 z-10 flex items-center lg:hidden [&>*]:pointer-events-auto">
+          <BackLabel fallback={{ href: back, label: backLabel }} bar short={show} />
+        </div>
         <div className="relative flex min-w-0 flex-1 items-center self-stretch">
           {/* мини-табло на том же месте */}
           <div
-            // с минутой под счётом ниже lg всё поднимаем на 3px: иначе минута почти касалась черты снизу ряда
-            className={`absolute inset-0 flex items-center gap-3 max-md:pr-11 ${minute ? 'max-lg:pb-1.5' : ''}`}
+            aria-hidden={!show}
+            inert={!show}
+            // с минутой под счётом ниже lg всё поднимаем на 3px: иначе минута почти касалась черты снизу ряда; слева и справа —
+            // место под «‹», счёт — по центру экрана
+            className={`absolute inset-0 flex items-center gap-3 transition-opacity duration-200 max-md:px-10 md:max-lg:pl-10 ${minute ? 'max-lg:pb-1.5' : ''} ${show ? '' : 'max-lg:opacity-0'}`}
           >
             {/* счёт одной группой вплотную — «эмблема Бетис 1:0 Хетафе эмблема» сразу после «←», на месте крошек (владелец:
                 «как тебе хлебные крошки и то, что потом появляется?» — по сетке во всю ширину названия прилипали к краям, между
