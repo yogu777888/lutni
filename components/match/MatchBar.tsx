@@ -59,7 +59,7 @@ export function MatchBar({
         // сами цифры (первый ряд в #match-score): сменяем, когда половина крупного счёта ушла под панель
         const r = (board?.firstElementChild ?? board)?.getBoundingClientRect()
         setShow(r && box ? (r.top + r.bottom) / 2 < box.bottom : false)
-        setStuck(el && box && scrollY > 0 ? Math.abs(box.top - parseFloat(getComputedStyle(el).top)) < 1 : false)
+        setStuck(el && box ? Math.abs(box.top - parseFloat(getComputedStyle(el).top)) < 1 : false)
       })
     }
     check()
@@ -95,8 +95,11 @@ export function MatchBar({
       // ниже lg — второй ряд шапки, как дни на главной (`.hdr-sub`): во всю ширину вплотную под шапкой, фон страницы и
       // черта снизу, когда прилипла (владелец: «смотри как некрасиво на мобильном выглядит» — плавающая плашка со
       // скруглением и тенью висела с зазорами, вокруг и под ней просвечивал текст страницы); от lg — плашкой, как была
-      className={`match-top page-enter sticky top-[65px] z-30 mb-4 border-b border-transparent bg-[#090c10] transition-[border-color] max-lg:-mx-4 max-lg:-mt-4 sm:max-lg:-mt-6 lg:-mt-1.5 lg:pt-1.5 lg:border-0 xl:top-[72px] xl:mb-2 xl:mt-0 xl:pt-0 ${
-        stuck ? 'max-lg:border-edge' : 'lg:bg-transparent'
+      // фон и черту ниже lg ставит CSS вместе с шапкой (`.match-top` в app/globals.css): наверху страницы — прозрачный, как
+      // шапка (иначе ряд был темнее шапки со светом сверху — владелец: «вижу разный фон у них»), после прокрутки — один
+      // сплошной цвет у шапки и ряда, черта — одна, под рядом
+      className={`match-top page-enter sticky top-[65px] z-30 mb-4 max-lg:-mx-4 max-lg:-mt-4 sm:max-lg:-mt-6 lg:-mt-1.5 lg:pt-1.5 xl:top-[72px] xl:mb-2 xl:mt-0 xl:pt-0 ${
+        stuck ? 'lg:bg-[#090c10]' : ''
       }`}
     >
       <div className="match-top-in flex min-h-[57.5px] items-center gap-3 px-4 py-2 lg:rounded-card lg:bg-panel-3 lg:shadow-[0_10px_30px_rgb(0_0_0/0.45)]">
