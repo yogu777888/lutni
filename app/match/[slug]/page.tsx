@@ -219,6 +219,15 @@ export default async function MatchPage({ params }: Props) {
           : null,
       })
     : null
+  // место в таблице (с 3-го тура) и форма — на табло под названиями команд
+  const rankOf = (id: number) => {
+    const row = ins.standings?.groups.flatMap((g) => g.rows).find((r) => r.teamId === id)
+    return row && row.played >= 3 ? row.rank : null
+  }
+  const heroCtx = {
+    home: { rank: rankOf(m.home.id), form: [...(ins.homeForm?.last5 ?? [])].reverse() },
+    away: { rank: rankOf(m.away.id), form: [...(ins.awayForm?.last5 ?? [])].reverse() },
+  }
   // «Выгодные ставки» до начала — уже в «Прогнозе tag.bet» с цифрами, в «В подборках» не повторяем
   const shownTags = scheduled && (verdict || pick) ? tags.filter((t) => t.slug !== 'value') : tags
 
@@ -270,6 +279,7 @@ export default async function MatchPage({ params }: Props) {
         line={heroLine}
         pair={<NavPair fallback={upOf(crumbs)} />}
         league={crumbs[1]}
+        ctx={heroCtx}
       />
 
       {/* на телефоне между блоками 12px, как на главной (владелец: «такое чувство что отступы между блоком больше стали?» — «да»: было 24–32) */}

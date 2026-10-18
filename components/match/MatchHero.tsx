@@ -7,6 +7,10 @@ import type { MatchFull } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
 import { Tick } from '../Live'
 import { scorers } from './EventsBlock'
+import { ClubStripe } from './ClubStripe'
+import type { Res } from '@/lib/stats'
+import { appNow, ymdInTz } from '@/lib/format'
+import { untilText } from '../shell/StateLine'
 
 /** Ячейка табло: шанс исхода, лучший коэффициент и честная цена; hot — платят больше честного. */
 export type BoardCell = {
@@ -40,6 +44,7 @@ export function MatchHero({
   back = null,
   pair = null,
   league = null,
+  ctx = null,
   children,
 }: {
   full: MatchFull
@@ -55,6 +60,8 @@ export function MatchHero({
   pair?: React.ReactNode
   /** турнир — на компьютере в строке с капсулой: «‹ › Ла Лига · 20-й тур · воскресенье, 4 октября» */
   league?: { href: string; label: string } | null
+  /** место в таблице (с 3-го тура) и форма — последние 5, свежий справа; под названием команды */
+  ctx?: Record<'home' | 'away', { rank: number | null; form: Res[] }> | null
   children?: React.ReactNode
 }) {
   const m = full.match
@@ -85,8 +92,20 @@ export function MatchHero({
       <span className={`mt-3 line-clamp-2 max-w-full hyphens-auto break-words font-semibold leading-tight tracking-[-0.02em] sm:mt-4 sm:text-[22px] ${phoneSize(t.name)}`}>
         {t.name}
       </span>
+      {/* место в таблице и форма — кто сильнее, видно ещё до прокрутки (вариант 2 из трёх картинок) */}
+      {ctx?.[k].rank ? <span className="mt-1 text-[13px] text-dim">{ctx[k].rank}-е место</span> : null}
+      {ctx?.[k].form.length ? (
+        <span className="mt-2 flex gap-1" title={`Последние ${ctx[k].form.length}: ${ctx[k].form.map((r) => (r === 'W' ? 'В' : r === 'D' ? 'Н' : 'П')).join(' ')} (свежий справа)`}>
+          {ctx[k].form.map((r, i) => (
+            <span
+              key={i}
+              className={`h-2 w-2 rounded-full ${r === 'W' ? 'bg-white/85' : r === 'D' ? 'bg-white/35' : 'ring-[1.5px] ring-inset ring-white/35'}`}
+            />
+          ))}
+        </span>
+      ) : null}
       {goals?.[k].length ? (
-        <ul className="mt-1.5 space-y-0.5 text-[13px] leading-snug text-dim">
+        <ul className="mt-2 space-y-0.5 text-[13px] leading-snug text-dim">
           {goals[k].map((g) => (
             <li key={g}>{g}</li>
           ))}
@@ -98,6 +117,7 @@ export function MatchHero({
   const big = 'num whitespace-nowrap text-[44px] font-semibold leading-none tracking-[-0.045em] sm:text-[68px]'
   return (
     <section id="match-hero" className="card page-enter-2 relative overflow-hidden px-5 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-6">
+      <ClubStripe id={m.id} ymd={ymdInTz(m.ts)} />
       {/* одна тихая строка по центру: турнир, тур, день; «‹ ›» — слева от неё на компьютере, на телефоне «назад» — полосой
           над блоком (`MatchBar`) */}
       <div className="relative flex min-h-8 items-center justify-center">
@@ -132,9 +152,22 @@ export function MatchHero({
                 <span className="mx-1 text-white/25 sm:mx-2">:</span>
                 <Tick v={m.score!.away} />
               </div>
-              <div className={`mt-2 text-[13px] font-semibold sm:text-[14px] ${live ? 'text-live' : 'text-dim'}`}>
-                {live && m.elapsed && m.statusCode !== 4 ? `${m.elapsed}′` : m.statusLabel}
-              </div>
+              {live ? (
+                <>
+                  {/* идёт — красная пилюля с минутой и полоса сыгранного времени (из 90) */}
+                  <span className="mt-3 inline-flex h-6 items-center gap-1.5 rounded-full bg-live/15 px-2.5 text-[13px] font-bold text-live">
+                    <span className="h-1.5 w-1.5 rounded-full bg-live" />
+                    {m.elapsed && m.statusCode !== 4 ? `${m.elapsed}′` : m.statusLabel}
+                  </span>
+                  {m.elapsed ? (
+                    <span aria-hidden className="mt-2.5 block h-1 w-20 overflow-hidden rounded-full bg-white/10 sm:w-28">
+                      <span className="block h-full rounded-full bg-live" style={{ width: `${Math.min(100, (m.elapsed / 90) * 100)}%` }} />
+                    </span>
+                  ) : null}
+                </>
+              ) : (
+                <div className="mt-2 text-[13px] font-semibold text-dim sm:text-[14px]">{m.statusLabel}</div>
+              )}
               {/* счёт первого тайма — только если после перерыва он уже другой; на телефоне колонка узкая — без него */}
               {m.scoreHT && m.score && (m.scoreHT.home !== m.score.home || m.scoreHT.away !== m.score.away) ? (
                 <div className="mt-1 text-[13px] text-mute max-sm:hidden">
@@ -147,7 +180,14 @@ export function MatchHero({
           ) : (
             <>
               <div className={big}>{formatTime(m.ts)}</div>
-              <div className="mt-2 text-[13px] text-dim sm:text-[14px]">{SITE.tzLabel.toLowerCase()}</div>
+              {/* до начала меньше суток — обратный отсчёт: «мск · через 1 ч 30 мин» */}
+              <div className="mt-2 text-[13px] text-dim sm:text-[14px]">
+                {SITE.tzLabel.toLowerCase()}
+                {/* отдельной строкой: в одну с «мск» она расширяла середину, и на телефоне названия обрезались («Гоу Эхед…») */}
+                {m.ts - appNow() > 0 && m.ts - appNow() < 86_400_000 ? (
+                  <span className="mt-0.5 block text-fg/80">{untilText(Math.round((m.ts - appNow()) / 60_000))}</span>
+                ) : null}
+              </div>
             </>
           )}
         </div>
