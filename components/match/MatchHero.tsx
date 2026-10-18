@@ -6,7 +6,6 @@ import { split100 } from '@/lib/verdict'
 import type { MatchFull } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
 import { Tick } from '../Live'
-import { FavStar } from '../FavStar'
 import { scorers } from './EventsBlock'
 
 /** Ячейка табло: шанс исхода, лучший коэффициент и честная цена; hot — платят больше честного. */
@@ -75,23 +74,19 @@ export function MatchHero({
   // уже проигравшим (владелец: «а блок матча как, если честно?», согласился)
   const lead =
     m.status === 'finished' && played && m.score!.home !== m.score!.away ? (m.score!.home > m.score!.away ? 'home' : 'away') : null
-  // команда: эмблема без подложки, название под ней (владелец: «блок матча супер некрасивый» — эмблема лежала в сером
-  // диске с ободком, на край налезал кружок со звёздочкой: три круга друг на друге; над эмблемой были метки-факты)
+  // команда — как в Apple Sports: эмблема без подложки, под ней название, под названием авторы голов; «в избранное» —
+  // звёздочкой у названия в «Форме команд» (владелец: «он все еще некрасивый и назвать его стильным и на уровне эппл ну
+  // вообще нельзя» — звёздочки у эмблем висели сбоку, серый диск с буквами и Oswald в счёте читались плакатом)
   const team = (t: typeof m.home, k: 'home' | 'away') => (
-    <div className={`flex min-w-0 flex-col items-center gap-2 text-center sm:gap-3 ${lead && lead !== k ? 'opacity-70' : ''}`}>
-      <span className="relative grid h-[var(--crest)] w-[var(--crest)] place-items-center [--crest:64px] sm:[--crest:96px]">
+    <div className={`flex min-w-0 flex-col items-center text-center transition-opacity ${lead && lead !== k ? 'opacity-55' : ''}`}>
+      <span className="grid h-[var(--crest)] w-[var(--crest)] place-items-center [--crest:56px] sm:[--crest:88px]">
         <TeamLogo name={t.name} src={t.logo} size="var(--crest)" />
-        {/* звёздочка «в избранное» — у нижнего внешнего угла эмблемы, без своего кружка: у названия она при узкой колонке
-            уходила за край табло («Реал Мадрид», «Deportivo Pereira») */}
-        <span className={`absolute -bottom-1.5 ${k === 'home' ? '-left-7' : '-right-7'}`}>
-          <FavStar id={t.id} name={t.name} logo={t.logo} compact />
-        </span>
       </span>
-      <span className={`line-clamp-2 max-w-full hyphens-auto break-words font-semibold leading-tight tracking-[-0.02em] sm:text-[26px] ${phoneSize(t.name)}`}>
+      <span className={`mt-3 line-clamp-2 max-w-full hyphens-auto break-words font-semibold leading-tight tracking-[-0.02em] sm:mt-4 sm:text-[22px] ${phoneSize(t.name)}`}>
         {t.name}
       </span>
       {goals?.[k].length ? (
-        <ul className="-mt-1.5 space-y-0.5 text-[13px] leading-snug text-dim sm:text-[13.5px]">
+        <ul className="mt-1.5 space-y-0.5 text-[13px] leading-snug text-dim">
           {goals[k].map((g) => (
             <li key={g}>{g}</li>
           ))}
@@ -99,20 +94,16 @@ export function MatchHero({
       ) : null}
     </div>
   )
+  // счёт и время — Onest с цифрами одной ширины, как SF у Apple (Oswald — узкий плакатный)
+  const big = 'num whitespace-nowrap text-[44px] font-semibold leading-none tracking-[-0.045em] sm:text-[68px]'
   return (
-    <section id="match-hero" className="card page-enter-2 relative overflow-hidden p-5 sm:p-7">
-      {/* без свечения цветами клубов — ровная карточка, как остальные блоки (владелец: «мне пока не нравится визуально
-          градиенты в нём»: на графите цвета клубов давали мутные пятна, без цветов — серую дымку) */}
-      <div className="relative">
-      {/* турнир — в крошках сверху (плашкой «Испания. Ла Лига» он стоял второй раз в 100px от них, а на телефоне плашка и
-          дата были двумя строками до счёта; владелец согласился), здесь — тур и день одной тихой строкой по центру, как
-          табло под ней; «идёт» — красной точкой у минуты */}
-      {/* «назад» чипом слева, тур и дата — по центру; на телефоне чип — строкой выше; на компьютере — строка-заголовок слева:
-          капсула «‹ ›», турнир, тур и дата (владелец: «как в эпл такие иконки назад вперед слева от заголовков» — «давай») */}
-      <div className="grid items-center gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-x-4 lg:flex lg:gap-x-3">
-        {back ? <div className="min-w-0 sm:col-start-1 sm:row-start-1 lg:hidden">{back}</div> : null}
-        {pair ? <div className="shrink-0 max-lg:hidden">{pair}</div> : null}
-        <p className="min-w-0 text-center text-[13px] text-dim sm:col-start-2 lg:text-left lg:text-[14px]">
+    <section id="match-hero" className="card page-enter-2 relative overflow-hidden px-5 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-6">
+      {/* одна тихая строка по центру: турнир, тур, день; «‹ ›» — слева от неё на компьютере, на телефоне «назад» — полосой
+          над блоком (`MatchBar`) */}
+      <div className="relative flex min-h-8 items-center justify-center">
+        {pair ? <div className="absolute left-0 top-1/2 -translate-y-1/2 max-lg:hidden">{pair}</div> : null}
+        {back ? <div className="absolute left-0 top-1/2 -translate-y-1/2 lg:hidden">{back}</div> : null}
+        <p className="min-w-0 text-center text-[13px] text-dim sm:text-[14px] lg:px-20">
           {league ? (
             <span className="max-lg:hidden">
               <Link href={league.href} className="font-medium text-fg/90 transition-colors hover:text-fg">
@@ -122,52 +113,47 @@ export function MatchHero({
             </span>
           ) : null}
           <span className={`inline-block first-letter:uppercase ${league ? 'lg:first-letter:normal-case' : ''}`}>
-            {[m.round, `${formatWeekdayLong(m.ts)}, ${formatDateLong(m.ts)}`].filter(Boolean).join(' · ')}
+            {/* на телефоне без года — иначе строка переносилась («4 / октября 2026») */}
+            {[m.round, `${formatWeekdayLong(m.ts)}, `].filter(Boolean).join(' · ')}
+            <span className="sm:hidden">{formatDateLong(m.ts).replace(/\s\d{4}$/, '')}</span>
+            <span className="max-sm:hidden">{formatDateLong(m.ts)}</span>
           </span>
         </p>
       </div>
 
-      {/* табло по центру, как в «Главных матчах»: хозяева слева, гости справа, в середине время или счёт */}
-      <div id="match-board" className={`${started ? 'mt-4 sm:mt-8' : 'mt-5 sm:mt-8'} grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 sm:gap-x-8 ${started ? 'items-start' : 'items-center'}`}>
+      {/* хозяева слева, гости справа, в середине счёт или время — на уровне эмблем */}
+      <div id="match-board" className="mt-6 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-x-3 sm:mt-8 sm:gap-x-10">
         {team(m.home, 'home')}
-        {/* после начала колонки команд — по верху (под названием разное число голов, эмблемы съезжали), счёт — на уровне эмблем */}
-        <div id="match-score" className={`text-center ${started ? 'pt-2.5 sm:pt-5' : ''}`}>
+        <div id="match-score" className="flex min-h-[56px] flex-col items-center justify-center text-center sm:min-h-[88px]">
           {played ? (
             <>
-              <div className="num display-num whitespace-nowrap text-[44px] font-semibold leading-none tracking-[-0.03em] sm:text-[76px]">
+              <div className={big}>
                 <Tick v={m.score!.home} />
-                <span className="mx-1.5 text-mute sm:mx-3">:</span>
+                <span className="mx-1 text-white/25 sm:mx-2">:</span>
                 <Tick v={m.score!.away} />
               </div>
-              <div className={`mt-2 flex items-center justify-center gap-1.5 text-[13px] font-medium sm:text-[14px] ${live ? 'text-fg' : 'text-dim'}`}>
-                {live ? <span className="h-1.5 w-1.5 rounded-full bg-live" /> : null}
-                {live && m.elapsed && m.statusCode !== 4 ? `${m.elapsed}-я минута` : m.statusLabel}
+              <div className={`mt-2 text-[13px] font-semibold sm:text-[14px] ${live ? 'text-live' : 'text-dim'}`}>
+                {live && m.elapsed && m.statusCode !== 4 ? `${m.elapsed}′` : m.statusLabel}
               </div>
-              {/* счёт первого тайма — только если после перерыва он уже другой: «1-й тайм 1:0» под «1:0» повторял счёт;
-                  на телефоне его нет — табло там ниже (владелец: «а может на мобильном убрать блок со счетом?» — «да» на
-                  компактное табло) */}
+              {/* счёт первого тайма — только если после перерыва он уже другой; на телефоне колонка узкая — без него */}
               {m.scoreHT && m.score && (m.scoreHT.home !== m.score.home || m.scoreHT.away !== m.score.away) ? (
-                <div className="mt-1 hidden text-[13px] text-mute sm:block">
+                <div className="mt-1 text-[13px] text-mute max-sm:hidden">
                   1-й тайм {m.scoreHT.home}:{m.scoreHT.away}
                 </div>
               ) : null}
-              {/* «Разбор за минуту» — под счётом и минутой (владелец: «а визуально блок матча как?» — внизу четыре строки
-                  по центру разной ширины складывались в «ёлочку»); на телефоне колонка узкая — там кнопка под табло */}
-              {story ? <div className="mt-4 hidden justify-center sm:flex">{story}</div> : null}
             </>
           ) : m.status !== 'scheduled' ? (
             <p className="text-[15px] font-semibold text-loss">{m.statusLabel}</p>
           ) : (
             <>
-              <div className="text-[13px] text-dim">Начало</div>
-              <div className="num display-num mt-1 text-[40px] font-semibold leading-none tracking-[-0.03em] sm:text-[68px]">{formatTime(m.ts)}</div>
-              <div className="mt-2 text-[13px] text-dim">{SITE.tzLabel.toLowerCase()}</div>
+              <div className={big}>{formatTime(m.ts)}</div>
+              <div className="mt-2 text-[13px] text-dim sm:text-[14px]">{SITE.tzLabel.toLowerCase()}</div>
             </>
           )}
         </div>
         {team(m.away, 'away')}
       </div>
-      {story ? <div className={`mt-4 flex justify-center sm:mt-6 ${played ? 'sm:hidden' : ''}`}>{story}</div> : null}
+      {story ? <div className="mt-6 flex justify-center">{story}</div> : null}
 
       {cells && started ? (
         // начался — под тонкой чертой одна полоса во всю ширину: слева оценка до матча, справа кэфы (разнесены по краям,
@@ -176,17 +162,17 @@ export function MatchHero({
         // линии, «Реклама · 18+» — под ячейками; узкая (1280 с панелями, телефон) — всё друг под другом. Выравнивание по
         // ячейкам, а не по середине правой части вместе с пометкой: иначе «До матча» стояло ниже кэфов (владелец: «сейчас как?»)
         // на телефоне — без черты, «До матча» строкой по центру сразу под «Разбором за минуту»
-        <div className="@container mt-3 sm:mt-6 sm:border-t sm:border-white/10 sm:pt-5">
-          <div className="grid gap-x-6 gap-y-3 @3xl:grid-cols-[minmax(0,1fr)_auto] @3xl:items-center">
+        <div className="mt-5">
+          <div className="flex flex-col items-center gap-3 text-center">
           {/* перенос — только между исходами, «·» — в конце строки: «Реал» и «Мадрид», «Ривер Плейт» и «61%» расходились */}
-          <p className="text-center text-[13px] text-dim sm:text-left sm:text-[13px]">
+          <p className="text-[13px] text-mute">
             До матча: <span className="whitespace-nowrap">«{m.home.name}» {n?.home}% ·</span> <span className="whitespace-nowrap">ничья {n?.draw}% ·</span>{' '}
             <span className="whitespace-nowrap">«{m.away.name}» {n?.away}%</span>
           </p>
           {/* у сыгранного ячеек нет: выглядели кнопками ставки, но никуда не вели, а кэфы до матча — те же проценты слева
               другими цифрами (7.05 · 4.70 · 1.45 ≈ 14% · 20% · 66%; владелец согласился) */}
           {cells.every((c) => c.odd) && !over ? (
-            <div id="match-odds" className="flex flex-wrap items-center gap-2 @3xl:justify-end">
+            <div id="match-odds" className="flex flex-wrap items-center justify-center gap-2">
               <span className="w-full text-[13px] leading-tight text-dim sm:mr-1 sm:w-auto">
                 Кэфы <span className="font-semibold text-fg">{line?.name ?? 'до матча'}</span>
                 {line?.live ? (
@@ -225,7 +211,7 @@ export function MatchHero({
           ) : null}
           {/* «Кэфы PARI ● сейчас» уже сказано слева от ячеек — под ними только пометка рекламы */}
           {line?.live && cells.every((c) => c.odd) ? (
-            <p className="-mt-1.5 text-[13px] text-mute @3xl:col-start-2 @3xl:text-right">Реклама · 18+</p>
+            <p className="-mt-1.5 text-[13px] text-mute">Реклама · 18+</p>
           ) : null}
           </div>
         </div>
@@ -314,14 +300,13 @@ export function MatchHero({
       ) : null}
 
       {full.venue || full.referee ? (
-        <p className="mt-2 text-[13px] text-mute">
+        <p className="mt-3 text-center text-[13px] text-mute">
           {full.venue ? `${full.venue.name}${full.venue.city ? `, ${full.venue.city}` : ''}` : ''}
           {full.venue && full.referee ? ' · ' : ''}
           {full.referee ? `судья ${full.referee}` : ''}
         </p>
       ) : null}
       {children}
-      </div>
     </section>
   )
 }

@@ -2,6 +2,7 @@ import { formatDayShort } from '@/lib/format'
 import type { TeamForm as TeamFormData } from '@/lib/stats'
 import type { Team } from '@/lib/types'
 import { FormStrip, type StripGame } from './FormStrip'
+import { FavStar } from '../FavStar'
 import { TeamLogo } from '../TeamLogo'
 
 /**
@@ -58,8 +59,11 @@ export function FormBlock({ home, away, homeForm, awayForm }: { home: Team; away
         <span className="flex min-w-0 items-center gap-2.5">
           <span className="shrink-0"><TeamLogo name={home.name} src={home.logo} size={32} /></span>
           <span className="line-clamp-2 break-words text-[16px] font-semibold leading-tight">{home.name}</span>
+          {/* «в избранное» — здесь, у названия команды (на табло звёздочки у эмблем были лишними) */}
+          <FavStar id={home.id} name={home.name} logo={home.logo} compact className="-ml-1" />
         </span>
         <span className="flex min-w-0 items-center gap-2">
+          <FavStar id={away.id} name={away.name} logo={away.logo} compact className="-mr-1" />
           <span className="line-clamp-2 break-words text-right text-[16px] font-semibold leading-tight">{away.name}</span>
           <span className="shrink-0"><TeamLogo name={away.name} src={away.logo} size={32} /></span>
         </span>
