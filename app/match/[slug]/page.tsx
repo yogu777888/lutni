@@ -302,30 +302,37 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {/* подборки матча — пилюлями-ссылками (владелец: «блок в подборках все еще какой-то кривоватый … и не совсем понятный»):
-              плитки с цифрами повторяли блоки страницы; факты — доводами в «Прогнозе» («а может оставить пилюли а факты
-              вынести красиво в прогноз?» — «да»), здесь — только в каких подборках матч, факт — в подсказке. Без карточки,
-              пилюли 32px сразу под заголовком (владелец: «по возможности пилюли в один ряд ставить … чтоб меньше места
-              занимало»): на телефоне — одним рядом с прокруткой вбок, от sm — переносом; до начала без «Выгодных ставок» */}
+          {/* подборки матча — вариант «А» (владелец выбрал из трёх картинок: «давай лучше пилюли сделаем вариант а»): строка —
+              пилюля с значком и названием подборки, под ней факт целиком 15px; команда в начале факта — эмблемой; вся строка —
+              ссылка на подборку, черта между строками; до начала без «Выгодных ставок» — эта ставка уже в «Прогнозе» */}
           {shownTags.length ? (
-            <section className="min-w-0">
-              <BlockTitle title="В подборках" />
-              <ul className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-9 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-7">
-                {shownTags.map((t) => (
-                  <li key={t.slug} className="shrink-0">
-                    <Link
-                      href={`/tag/${t.slug}`}
-                      prefetch={false}
-                      title={`${TAG_BY_SLUG.get(t.slug)?.hint ?? ''}${TAG_BY_SLUG.get(t.slug)?.hint ? ' · ' : ''}${t.short ?? t.reason}`}
-                      className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full bg-white/[0.08] pl-2.5 pr-3.5 text-[13px] font-medium transition-colors hover:bg-white/[0.14]"
-                    >
-                      <StorySymbol k={t.slug} tone="currentColor" className="h-3.5 w-3.5 shrink-0 text-dim" />
-                      {TAG_BY_SLUG.get(t.slug)?.title ?? t.slug}
-                    </Link>
-                  </li>
-                ))}
+            <Section outside title="В подборках" className="!py-1.5 sm:!py-2.5">
+              <ul className="divide-y divide-edge">
+                {shownTags.map((t) => {
+                  const fact = t.short ?? t.reason
+                  const side = [m.home, m.away].find((tm) => /^[:,]/.test(fact.slice(tm.name.length + 2)) && fact.startsWith(`«${tm.name}»`))
+                  const rest = side ? fact.slice(side.name.length + 2).replace(/^[:,]\s*/, '') : fact
+                  return (
+                    <li key={t.slug}>
+                      <Link href={`/tag/${t.slug}`} prefetch={false} title={TAG_BY_SLUG.get(t.slug)?.hint} className="group block py-3.5">
+                        <span className="inline-flex h-[30px] items-center gap-2 rounded-full bg-white/[0.07] pl-2.5 pr-3 text-[13px] font-semibold transition-colors group-hover:bg-white/[0.13]">
+                          <StorySymbol k={t.slug} tone="currentColor" className="h-3.5 w-3.5 shrink-0 text-dim" />
+                          {TAG_BY_SLUG.get(t.slug)?.title ?? t.slug}
+                        </span>
+                        <span className="mt-2 flex items-start gap-2 text-[15px] leading-snug">
+                          {side ? (
+                            <span className="mt-px shrink-0" title={`«${side.name}»`}>
+                              <TeamLogo name={side.name} src={side.logo ?? null} size={18} />
+                            </span>
+                          ) : null}
+                          <span className="min-w-0 first-letter:uppercase">{rest}</span>
+                        </span>
+                      </Link>
+                    </li>
+                  )
+                })}
               </ul>
-            </section>
+            </Section>
           ) : null}
 
           {x ? (

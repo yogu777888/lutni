@@ -138,7 +138,7 @@ function facts(tags: TagHit[], m: Match, pick: Pick | null) {
     .filter((t) => FACT_SLUGS.includes(t.slug))
     .map((t) => {
       const fact = t.short ?? t.reason
-      const side = [m.home, m.away].find((tm) => fact.startsWith(`«${tm.name}»`)) ?? null
+      const side = [m.home, m.away].find((tm) => /^[:,]/.test(fact.slice(tm.name.length + 2)) && fact.startsWith(`«${tm.name}»`)) ?? null
       const text = side ? fact.slice(side.name.length + 2).replace(/^[:,]\s*/, '') : fact
       return { slug: t.slug, side, text, mine: Boolean(pickTeam && fact.includes(`«${pickTeam}»`)) }
     })
