@@ -152,28 +152,13 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
   }, [])
 
   const { groups, matches, stats, totals, states, teams } = picks
-  // подпись подборки — её команды, как исполнители под плейлистом в YouTube Music («Барселона, Аякс, Брест и ещё 5»;
-  // владелец: «может в подборках справа писать в описании не сколько матчей будет а какие команды?» — «да»); у «Скоро
-  // начнутся» — время («через 30 мин»): смысл подборки в нём; число матчей и время — в подсказке
-  // названия — целиком, сколько влезает в строку панели (~25 знаков вместе с «и ещё N»): обрезанное «Райо Вальекано, Бр…»
-  // читалось хуже, чем «Райо Вальекано и ещё 6»
+  // подпись подборки — её команды, как исполнители под плейлистом в YouTube Music (владелец: «может в подборках справа
+  // писать в описании не сколько матчей будет а какие команды?» — «да»); у всех подборок, и у «Скоро начнутся»; без
+  // «и ещё N» — строка просто обрывается многоточием (владелец: «ты только название команды одной написал и мне кажется
+  // что писать цифру сколько еще не нужно?»); число матчей и время — в подсказке
   const teamLine = (k: string) => {
     const all = teams?.[k]
-    if (k === 'soon' || !all?.length) return null
-    const shown: string[] = []
-    for (const n of all) {
-      const len = [...shown, n].join(', ').length + (all.length > shown.length + 1 ? 8 : 0)
-      if (shown.length && len > 25) break
-      shown.push(n)
-    }
-    const more = all.length - shown.length
-    return (
-      <span className="flex min-w-0">
-        <span className="truncate">{shown.join(', ')}</span>
-        {/* «и ещё N» не обрезается — сжимается название, если одно длинное */}
-        {more ? <span className="shrink-0 whitespace-pre"> и ещё {more}</span> : null}
-      </span>
-    )
+    return all?.length ? all.join(', ') : null
   }
   const stateOf = (k: string, n: number) => (states[k] ? stateText({ total: n, ...states[k], soon: k === 'soon', ahead: true }) : '')
   // впереди ничего нет (все сыграны или идут) — подпись тише
@@ -285,7 +270,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                         <span className="min-w-0 flex-1 leading-tight">
                           <span className="block truncate text-[14.5px] font-medium">{g.label}</span>
                           {teamLine(g.key) ? (
-                            <span className={`mt-0.5 block text-[12.5px] ${done(g.key) ? 'text-mute/70' : 'text-mute'}`}>{teamLine(g.key)}</span>
+                            <span className={`mt-0.5 block truncate text-[12.5px] ${done(g.key) ? 'text-mute/70' : 'text-mute'}`}>{teamLine(g.key)}</span>
                           ) : states[g.key] ? (
                             <span className="mt-0.5 block truncate text-[12.5px] text-mute">
                               <StateLine total={totals[g.key] ?? g.items.length} {...states[g.key]} soon={g.key === 'soon'} ahead />
