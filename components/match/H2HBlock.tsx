@@ -41,7 +41,7 @@ export function H2HBlock({ h2h, home, away }: { h2h: H2H; home: Team; away: Team
           </p>
         </>
       ) : null}
-      <ul className={`divide-y divide-edge text-[13px] ${n >= 3 ? 'mt-3' : '-mt-2'}`}>
+      <ul className={`divide-y divide-edge text-[13px] ${n >= 3 ? 'mt-3 -mb-1.5' : '-my-1.5'}`}>
         {h2h.games.map((g) => (
           <li key={g.id} className="flex min-h-12 items-center gap-2 py-1.5">
             <span className="num w-[80px] shrink-0 text-[13px] text-mute">{formatDateShort(g.ts)}</span>
