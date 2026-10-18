@@ -1,6 +1,7 @@
 import { formatDayShort } from '@/lib/format'
 import type { Res, TeamForm as TeamFormData } from '@/lib/stats'
 import type { Team } from '@/lib/types'
+import { Segmented } from '../Segmented'
 import { TeamLogo } from '../TeamLogo'
 
 /**
@@ -26,57 +27,77 @@ export function ResBadge({ r, size = 'sm' }: { r: Res; size?: 'sm' | 'xs' }) {
   )
 }
 
-/**
- * Одна команда: цифры за последние матчи (до 10 — о выборке говорит подпись раздела) и 5 последних матчей, свежий
- * сверху. Значков формы в шапке нет: они шли старый → новый слева направо, а список — новый → старый сверху вниз, и
- * в значках было 5 матчей, в списке 6 — сверить было нельзя; та же форма — столбиком справа в списке.
- */
-function TeamForm({ team, form }: { team: Team; form: TeamFormData }) {
-  const stat = (label: string, value: string) => (
-    <div className="flex flex-col justify-between">
-      <dt className="text-[11px] leading-tight text-mute">{label}</dt>
-      <dd className="num mt-1 text-[15px] font-semibold">{value}</dd>
-    </div>
-  )
+/** Последние 5 матчей команды, свежий сверху: соперник, ниже дата и «дома / в гостях»; справа счёт и результат. */
+function Games({ form }: { form: TeamFormData }) {
   return (
-    <div>
-      <div className="flex items-center gap-2">
-        <TeamLogo name={team.name} src={team.logo} size={22} />
-        <span className="truncate font-semibold">{team.name}</span>
-      </div>
-      <dl className="mt-3 grid grid-cols-4 gap-2 text-center">
-        {stat('Забивает за\u00a0игру', form.gfAvg.toFixed(1))}
-        {stat('Пропускает за\u00a0игру', form.gaAvg.toFixed(1))}
-        {stat('3+ гола', `${Math.round(form.over25Rate * 100)}%`)}
-        {stat('Обе забили', `${Math.round(form.bttsRate * 100)}%`)}
-      </dl>
-      <ul className="mt-3 space-y-1">
-        {form.games.slice(0, 5).map((g) => (
-          <li key={g.id} className="flex items-center gap-2 text-[13px]">
-            <span className="num w-10 shrink-0 text-[11px] text-mute">{formatDayShort(g.ts)}</span>
+    <ul>
+      {form.games.slice(0, 5).map((g) => (
+        <li key={g.id} className="flex min-h-12 items-center gap-3 border-t border-edge py-1.5 first:border-t-0">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[15px]">{g.opponent.name}</div>
             {/* «Д / Г» новичку не расшифровать — словами */}
-            <span className="w-[52px] shrink-0 text-[11px] text-mute">{g.isHome ? 'дома' : 'в гостях'}</span>
-            <span className="min-w-0 flex-1 truncate">{g.opponent.name}</span>
-            <span className="num shrink-0 font-medium">
-              {g.gf}:{g.ga}
-            </span>
-            <ResBadge r={g.result} size="xs" />
-          </li>
-        ))}
-      </ul>
-    </div>
+            <div className="text-[13px] text-mute">
+              <span className="num">{formatDayShort(g.ts)}</span> · {g.isHome ? 'дома' : 'в гостях'}
+            </div>
+          </div>
+          <span className="num shrink-0 text-[15px] font-semibold">
+            {g.gf}:{g.ga}
+          </span>
+          <ResBadge r={g.result} />
+        </li>
+      ))}
+    </ul>
   )
 }
 
-/** Две колонки через черту, как статистика матча (были две плашки внутри карточки — «блок в блоке»); на телефоне — одна под другой. */
+/**
+ * Одна таблица на две команды, как список в iOS (владелец: «виджеты довольно грязно выглядят и тяжело читаются … куча
+ * мелкого текста»): сверху эмблемы, строки «Забивает за игру — 2.1 | 1.7» — каждая подпись один раз и одной строкой
+ * (было по четыре подписи 11px в две строки у каждой команды); последние матчи — сегментами «Ливерпуль | Арсенал»,
+ * пять строк вместо десяти. Значков формы в шапке нет: последние матчи — списком, свежий сверху.
+ */
 export function FormBlock({ home, away, homeForm, awayForm }: { home: Team; away: Team; homeForm: TeamFormData | null; awayForm: TeamFormData | null }) {
+  const GRID = 'grid grid-cols-[minmax(0,1fr)_72px_72px] items-center gap-x-2 sm:grid-cols-[minmax(0,1fr)_120px_120px]'
+  const v = (f: TeamFormData | null, get: (f: TeamFormData) => string) => <span className="num text-center text-[15px] font-semibold">{f ? get(f) : '—'}</span>
+  const row = (label: string, get: (f: TeamFormData) => string) => (
+    <div className={`${GRID} min-h-11 border-t border-edge py-1`}>
+      <span className="text-[14px] text-dim">{label}</span>
+      {v(homeForm, get)}
+      {v(awayForm, get)}
+    </div>
+  )
+  const head = (t: Team) => (
+    <span className="flex min-w-0 flex-col items-center gap-1 self-end" title={t.name}>
+      <TeamLogo name={t.name} src={t.logo} size={24} />
+      <span className="line-clamp-2 max-w-full break-words text-center text-[13px] leading-tight text-mute">{t.name}</span>
+    </span>
+  )
+  const tab = (t: Team) => (
+    <>
+      <TeamLogo name={t.name} src={t.logo} size={18} />
+      <span className="truncate">{t.name}</span>
+    </>
+  )
   return (
-    // grid-cols-1 — колонка не шире экрана: без неё на 360px длинное «Sarmiento Junin» и подписи цифр растягивали её на 1px
-    <div className="grid grid-cols-1 md:grid-cols-2">
-      <div className="md:pr-10">{homeForm ? <TeamForm team={home} form={homeForm} /> : <p className="text-sm text-dim">Нет данных о форме: {home.name}</p>}</div>
-      <div className="mt-5 border-t border-white/[0.08] pt-5 md:mt-0 md:border-l md:border-t-0 md:pl-10 md:pt-0">
-        {awayForm ? <TeamForm team={away} form={awayForm} /> : <p className="text-sm text-dim">Нет данных о форме: {away.name}</p>}
+    <div>
+      <div className={`${GRID} pb-2`}>
+        <span />
+        {head(home)}
+        {head(away)}
       </div>
+      {row('Забивает за\u00a0игру', (f) => f.gfAvg.toFixed(1))}
+      {row('Пропускает за\u00a0игру', (f) => f.gaAvg.toFixed(1))}
+      {row('3 гола и больше', (f) => `${Math.round(f.over25Rate * 100)}%`)}
+      {row('Обе забили', (f) => `${Math.round(f.bttsRate * 100)}%`)}
+
+      <h3 className="mb-3 mt-6 text-[15px] font-semibold">Последние матчи</h3>
+      <Segmented
+        label="Команда"
+        items={[
+          ...(homeForm ? [{ key: 'home', label: tab(home), content: <Games form={homeForm} /> }] : []),
+          ...(awayForm ? [{ key: 'away', label: tab(away), content: <Games form={awayForm} /> }] : []),
+        ]}
+      />
     </div>
   )
 }

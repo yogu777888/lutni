@@ -105,8 +105,10 @@ export function StandingsTable({
           </div>
         )
       })}
-      {zones.size ? (
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-dim">
+      {/* в куске таблицы на странице матча одна зона («Лига чемпионов») — без подписи: полоски у строк и так видно, ради
+          одной подписи под таблицей стояла пустая полоса; полностью — на странице лиги */}
+      {[...zones].filter((z) => ZONE[z]).length > (compact ? 1 : 0) ? (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-dim">
           {[...zones].filter((z) => ZONE[z]).map((z) => (
             <span key={z} className="flex items-center gap-1.5">
               <span className={`h-2.5 w-[3px] rounded-full ${ZONE[z]}`} />
