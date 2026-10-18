@@ -17,7 +17,7 @@ export function Sidebar({ values = [] }: { values?: ValueRow[] }) {
       {values.length ? <ValueBlock rows={values} card /> : null}
       <section className="card overflow-hidden">
         <BlockHead title="Где ставить" line />
-        <div className="divide-y divide-edge px-4 py-4 sm:px-5">
+        <div className="divide-y divide-edge px-4 py-1 sm:px-5">
           {PARTNERS.slice(0, 3).map((p) => (
             <PartnerCard key={p.slug} partner={p} placement="sidebar" />
           ))}

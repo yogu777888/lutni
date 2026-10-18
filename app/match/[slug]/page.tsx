@@ -541,13 +541,13 @@ export default async function MatchPage({ params }: Props) {
             {/* заголовок — над блоком, как у разделов страницы (`Section outside`) */}
             <BlockTitle title="Где поставить" />
             <div className="card overflow-hidden">
-              <div className="divide-y divide-edge px-5 py-4 sm:px-6">
+              <div className="divide-y divide-edge px-5 py-1 sm:px-7">
                 {PARTNERS.slice(0, 3).map((p, i) => (
                   <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} />
                 ))}
               </div>
               {/* легальных букмекеров 17, здесь — три: остальные — на странице «Букмекеры» */}
-              <BlockMore href="/bookmakers">Все букмекеры</BlockMore>
+              <BlockMore href="/bookmakers" className="!px-5 !py-3.5 sm:!px-7">Все букмекеры</BlockMore>
             </div>
           </section>
           {related.length ? (
@@ -563,7 +563,7 @@ export default async function MatchPage({ params }: Props) {
                   </div>
                 ))}
               </div>
-              <BlockMore href={listHref(matchDay, today)}>Все матчи дня</BlockMore>
+              <BlockMore href={listHref(matchDay, today)} className="!px-5 !py-3.5 sm:!px-7">Все матчи дня</BlockMore>
             </div>
             </section>
           ) : null}

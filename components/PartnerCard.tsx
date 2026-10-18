@@ -11,24 +11,28 @@ import { PartnerBadge } from './PartnerBadge'
  */
 export function PartnerCard({ partner, placement }: { partner: Partner; placement: Placement; rank?: number }) {
   const bonus = realBonus(partner)
+  // «Реклама · 18+» — второй строкой под названием, в той же колонке: кнопка стоит по центру всей строки (владелец: «кнопки
+  // на сайт как будто криво отцентрованы?» — пометка шла отдельной строкой под всей ссылкой, и кнопка висела выше середины);
+  // кнопка — 36px, жирнее, со стрелкой «↗» (уводит на сайт букмекера), при наведении — лаймом, как все переходы к букмекеру
   return (
-    <div className="py-3 first:pt-0 last:pb-0">
-      <a
-        href={goHref(partner, placement)}
-        target="_blank"
-        rel={SPONSORED_REL}
-        className="group grid grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-3"
-      >
-        <PartnerBadge partner={partner} size={34} />
-        <span className="min-w-0">
-          <span className="block truncate text-[15px] font-semibold">{partner.name}</span>
-          {bonus ? <span className="block truncate text-[13px] text-dim">{bonus}</span> : null}
-        </span>
-        <span className="inline-flex rounded-full bg-white/[0.08] px-3 py-1.5 text-[13px] font-medium text-fg transition-colors group-hover:bg-btn group-hover:text-btn-ink">
-          На сайт
-        </span>
-      </a>
-      <AdMark partner={partner} className="mt-1 pl-[46px]" />
-    </div>
+    <a
+      href={goHref(partner, placement)}
+      target="_blank"
+      rel={SPONSORED_REL}
+      className="group flex min-h-16 items-center gap-3 py-3"
+    >
+      <PartnerBadge partner={partner} size={40} />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[15px] font-semibold">{partner.name}</div>
+        {bonus ? <div className="truncate text-[13px] text-dim">{bonus}</div> : null}
+        <AdMark partner={partner} className="mt-0.5 !text-[12px]" />
+      </div>
+      <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white/[0.08] pl-4 pr-3 text-[14px] font-semibold text-fg transition-colors group-hover:bg-btn group-hover:text-btn-ink">
+        На сайт
+        <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M7 17 17 7M8 7h9v9" />
+        </svg>
+      </span>
+    </a>
   )
 }
