@@ -22,20 +22,36 @@ type Props = { params: Promise<{ slug: string }> }
 const ruDate = (ymd: string) =>
   new Date(`${ymd}T12:00:00Z`).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).replace(' г.', '')
 
-/** Таблица пополнения или вывода: от sm — колонками, на телефоне — строкой под способом (пять колонок в 390px не влезают). */
+/**
+ * Таблица пополнения или вывода: от sm — колонками одной ширины в обеих таблицах (`table-fixed`; суммы и комиссии не
+ * переносятся), на телефоне — строкой под способом. Срок у всех строк один — не колонкой, а подписью у заголовка
+ * («Зачисление — мгновенно»): колонка из восьми «Мгновенно» ничего не говорила.
+ */
 function PayTable({ title, timeLabel, rows }: { title: string; timeLabel: string; rows: PayRow[] }) {
   const v = (x?: string) => x || '—'
+  const one = rows[0]?.time && rows.every((r) => r.time === rows[0].time) ? rows[0].time : null
   return (
     <div>
-      <h3 className="px-4 pb-2 pt-4 text-[15px] font-semibold sm:px-5">{title}</h3>
-      <table className="hidden w-full text-left text-[14px] sm:table">
+      <h3 className="px-4 pb-2 pt-4 text-[15px] font-semibold sm:px-5">
+        {title}
+        {one ? <span className="font-normal text-dim"> · {timeLabel.toLowerCase()} — {one.toLowerCase()}</span> : null}
+      </h3>
+      <table className="hidden w-full table-fixed text-left text-[14px] sm:table">
+        <colgroup>
+          <col />
+          <col className="w-28" />
+          <col className="w-32" />
+          <col className="w-36" />
+          {/* без колонки срока — пустая той же ширины: иначе колонки «Пополнения» и «Вывода» стоят на разных местах */}
+          <col className="w-40" />
+        </colgroup>
         <thead className="text-[12px] text-mute">
           <tr className="border-b border-edge">
             <th className="py-2 pl-5 pr-3 font-medium">Способ</th>
             <th className="px-3 py-2 font-medium">Минимум</th>
             <th className="px-3 py-2 font-medium">Максимум</th>
             <th className="px-3 py-2 font-medium">Комиссия</th>
-            <th className="py-2 pl-3 pr-5 font-medium">{timeLabel}</th>
+            <th className="py-2 pl-3 pr-5 font-medium">{one ? null : timeLabel}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-edge">
@@ -45,10 +61,10 @@ function PayTable({ title, timeLabel, rows }: { title: string; timeLabel: string
                 {r.method}
                 {r.note ? <span className="mt-0.5 block text-[12.5px] font-normal leading-snug text-mute">{r.note}</span> : null}
               </td>
-              <td className="num px-3 py-2.5 text-fg/85">{v(r.min)}</td>
-              <td className="num px-3 py-2.5 text-fg/85">{v(r.max)}</td>
-              <td className="px-3 py-2.5 text-fg/85">{v(r.fee)}</td>
-              <td className="py-2.5 pl-3 pr-5 text-fg/85">{v(r.time)}</td>
+              <td className="num whitespace-nowrap px-3 py-2.5 text-fg/85">{v(r.min)}</td>
+              <td className="num whitespace-nowrap px-3 py-2.5 text-fg/85">{v(r.max)}</td>
+              <td className="whitespace-nowrap px-3 py-2.5 text-fg/85">{v(r.fee)}</td>
+              <td className="py-2.5 pl-3 pr-5 text-fg/85">{one ? null : v(r.time)}</td>
             </tr>
           ))}
         </tbody>
@@ -58,7 +74,7 @@ function PayTable({ title, timeLabel, rows }: { title: string; timeLabel: string
           <li key={r.method} className="px-4 py-2.5">
             <div className="text-[15px] font-medium">{r.method}</div>
             <div className="mt-0.5 text-[13px] text-dim">
-              {[r.min && `от ${r.min}`, r.max && `до ${r.max}`, r.fee, r.time].filter(Boolean).join(' · ') || '—'}
+              {[r.min && `от ${r.min}`, r.max && `до ${r.max}`, r.fee, !one && r.time].filter(Boolean).join(' · ') || '—'}
             </div>
             {r.note ? <div className="mt-0.5 text-[12.5px] leading-snug text-mute">{r.note}</div> : null}
           </li>
@@ -176,6 +192,9 @@ export default async function BookmakerPage({ params }: Props) {
     ...(f.minDeposit ? [['Минимальный депозит', f.minDeposit] as [string, React.ReactNode]] : []),
     ...(f.apps ? [['Приложение', f.apps] as [string, React.ReactNode]] : []),
     ...(f.verification ? [['Идентификация', f.verification] as [string, React.ReactNode]] : []),
+    // линии нет — строкой здесь, а не пустым блоком «Кэфы …» вторым на странице (владелец: «а как тебе визуально моя
+    // страница винлайн?»)
+    ...(day ? [] : [['Кэфы на tag.bet', <span key="k" className="text-dim">Пока не сравниваем — линии нет в наших данных. Коэффициенты — на сайте букмекера</span>] as [string, React.ReactNode]]),
   ]
   const checked = f.checked ? ruDate(f.checked) : null
   // «О компании» — как блок лицензии у legalbet: юрлицо, номер и дата лицензии; общая строка про ФНС и ЕЦУПИС — в шапке
@@ -272,9 +291,9 @@ export default async function BookmakerPage({ params }: Props) {
         {/* вместо выдуманных «Плюсов» и «Минусов» (владелец: «а страница букмекеров как?») — кэфы этого букмекера в
             ближайших матчах, теми же строками и с той же шапкой, что блок лиги на главной: ссылки на матч, кэфы — к
             букмекеру, лаймом — выгодный кэф */}
+        {day ? (
         <section id="kefy" className="card scroll-mt-24 overflow-hidden">
-          <BlockHead title={`Кэфы ${p.name}${day ? ` ${day.when}` : ''}`} aside={day ? `${pluralN(day.rows.length, ['матч', 'матча', 'матчей'])} · Реклама · 18+` : null} line={Boolean(day)} />
-          {day ? (
+          <BlockHead title={`Кэфы ${p.name} ${day.when}`} aside={`${pluralN(day.rows.length, ['матч', 'матча', 'матчей'])} · Реклама · 18+`} line />
             <>
               <div className="divide-y divide-edge">
                 {shown.map(({ item, line }) => (
@@ -304,12 +323,8 @@ export default async function BookmakerPage({ params }: Props) {
                 </Link>
               </div>
             </>
-          ) : (
-            <p className="max-w-[62ch] px-4 pb-5 text-[15px] leading-relaxed text-fg/85 sm:px-5">
-              Кэфы {p.name} на tag.bet пока не сравниваем: их линии нет в наших данных. Коэффициенты — на сайте букмекера.
-            </p>
-          )}
         </section>
+        ) : null}
 
         <section className="card overflow-hidden">
           <BlockHead title={bonus ? 'Как получить бонус' : 'Как зарегистрироваться'} />
@@ -322,7 +337,9 @@ export default async function BookmakerPage({ params }: Props) {
             ))}
           </ol>
           <p className="border-t border-edge px-4 py-3 text-[12px] leading-relaxed text-mute sm:px-5">
-            Информация носит справочный характер; условия бонусов устанавливает букмекер и может изменить их в любой момент. 18+.
+            {bonus
+              ? 'Информация носит справочный характер; условия бонусов устанавливает букмекер и может изменить их в любой момент. 18+.'
+              : 'Информация носит справочный характер; порядок регистрации устанавливает букмекер. 18+.'}
           </p>
         </section>
 
@@ -343,12 +360,19 @@ export default async function BookmakerPage({ params }: Props) {
             вопрос только при ответе, разметка FAQPage для поисковиков */}
         {faq.length ? (
           <section className="card overflow-hidden">
-            <BlockHead title="Вопросы и ответы" line />
-            <div className="divide-y divide-edge">
+            <BlockHead title="Вопросы и ответы" />
+            {/* раскрывашками: ответы во многом повторяют «Коротко», кассу и «О компании» — читатель видит вопросы, а текст
+                остаётся в коде страницы и в FAQPage для поисковиков */}
+            <div className="divide-y divide-edge border-t border-edge">
               {faq.map((x) => (
-                <div key={x.q} className="px-4 py-3.5 sm:px-5">
-                  <h3 className="text-[15px] font-semibold">{x.q}</h3>
-                  <p className="mt-1 max-w-[72ch] text-[14.5px] leading-relaxed text-fg/80">
+                <details key={x.q} className="group/faq">
+                  <summary className="flex items-center justify-between gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.03] sm:px-5">
+                    <h3 className="text-[15px] font-semibold">{x.q}</h3>
+                    <span aria-hidden className="text-mute transition-transform group-open/faq:rotate-180">
+                      ▾
+                    </span>
+                  </summary>
+                  <p className="-mt-1 max-w-[72ch] px-4 pb-4 text-[14.5px] leading-relaxed text-fg/80 sm:px-5">
                     {x.a}
                     {x.link ? (
                       <>
@@ -359,7 +383,7 @@ export default async function BookmakerPage({ params }: Props) {
                       </>
                     ) : null}
                   </p>
-                </div>
+                </details>
               ))}
             </div>
             <script
