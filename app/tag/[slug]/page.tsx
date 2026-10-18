@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { AdMark } from '@/components/AdMark'
 import { BlockHead } from '@/components/BlockHead'
 import { PageHead } from '@/components/PageHead'
+import { PageBar } from '@/components/PageBar'
 import { StorySymbol } from '@/components/story/StorySymbol'
 import { CtaLink } from '@/components/CtaLink'
 import { getPartner, primaryPartner } from '@/config/bookmakers'
@@ -171,6 +172,7 @@ export default async function TagPage({ params }: Props) {
     <>
       {/* вид главной (владелец: «а страница выгодно как?»): без подложки, шапка панелью вместо плаката Oswald 56px */}
       <span hidden className="bare-sub" />
+      {isValue ? null : <PageBar crumbs={[{ href: '/tags', label: 'Подборки' }, { href: `/tag/${t.slug}`, label: t.title }]} title={t.title} />}
       <div className="space-y-4 xl:space-y-2">
         {/* «Выгодные ставки» — пункт меню «Выгодно», страница верхнего уровня: без крошек и значка, как «Подборки», «Лиги»
             (владелец: «на странице выгодно есть хлебные крошки и иконка» — крошки «Подборки / …» спорили с меню) */}

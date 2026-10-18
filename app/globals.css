@@ -976,17 +976,18 @@ html[data-shell-rc] .shell-r-rail {
    видно что свой фон и даже немного зазор между фоном хедера») */
 @media (max-width: 1023.98px) {
   .hdr-sub,
-  .match-top {
+  .match-top,
+  .page-bar {
     border-bottom: 1px solid transparent;
     transition:
       background-color 0.3s,
       border-color 0.3s;
   }
-  body:has(.site-header[data-scrolled]) :is(.hdr-sub, .match-top) {
+  body:has(.site-header[data-scrolled]) :is(.hdr-sub, .match-top, .page-bar) {
     background-color: #090c10;
     border-bottom-color: var(--color-edge);
   }
-  body:has(.hdr-sub, .match-top) .site-header[data-scrolled] {
+  body:has(.hdr-sub, .match-top, .page-bar) .site-header[data-scrolled] {
     background-color: #090c10;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -1011,7 +1012,8 @@ html[data-shell-rc] .shell-r-rail {
     transition-duration: 0.25s;
     transition-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
   }
-  .match-top {
+  .match-top,
+  .page-bar {
     transition:
       transform 0.25s cubic-bezier(0.2, 0.7, 0.3, 1),
       background-color 0.3s,
@@ -1034,7 +1036,7 @@ html[data-shell-rc] .shell-r-rail {
     transform: translateY(calc(-100% - 66px));
   }
   /* мини-табло уходит вместе с шапкой (владелец: «имею ввиду чтоб оно скрывалось вместе с хедером») */
-  html[data-bars-hidden] .match-top {
+  html[data-bars-hidden] :is(.match-top, .page-bar) {
     transform: translateY(calc(-100% - 66px));
   }
   html[data-bars-hidden] .tabbar {
@@ -1046,6 +1048,7 @@ html[data-shell-rc] .shell-r-rail {
   .hdr-sub,
   .tabbar,
   .match-top,
+  .page-bar,
   .sticky-cta {
     transition: none;
   }

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { dayHeading } from '@/components/DayView'
+import { PageBar } from '@/components/PageBar'
 import { Coverage, Crests, Filters, MatchWhen, PickHead, STAGES, STAGE_LABEL, pickParam, stageOf, withParam, type StageKey } from '@/components/picks/Shared'
 import { featuredInfo, isFeatured } from '@/config/leagues'
 import { daySnaps, getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
@@ -84,6 +85,7 @@ export default async function OddsMovesPage({ params, searchParams }: Props) {
   return (
     <>
       <span hidden className="bare-sub" />
+      <PageBar crumbs={[{ href: '/matches', label: 'Матчи' }, ...(dayHref(date, today) === '/' ? [] : [{ href: dayHref(date, today), label: heading.title }]), { href: base, label: 'Движение коэффициентов' }]} title="Движение коэффициентов" />
       <PickHead ymd={date} today={today} date={heading.date} title="Движение коэффициентов" icon="pick-moves" section="odds"
         crumbs={[{ href: '/matches', label: 'Матчи' }, ...(dayHref(date, today) === '/' ? [] : [{ href: dayHref(date, today), label: heading.title }]), { href: base, label: 'Движение коэффициентов' }]}
         how={
