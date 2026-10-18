@@ -328,32 +328,44 @@ export default async function MatchPage({ params }: Props) {
             <Section outside title={scheduled ? 'Голы и счёт' : 'Голы и счёт до матча'}>
               {/* одна таблица строками «название — значение», как «Форма команд» (владелец: «в блоке голы и счет как то некрасиво
                   навалено всего» — полосы, черта, фраза с переносом и чипы счёта были четырьмя разными видами) */}
-              <dl className="-my-1.5">
+              {/* сверху одна крупная цифра, как счёт на табло, и голы команд полосой; шансы — с полосой под строкой (владелец:
+                  «просто сейчас реально настройки из айос напоминает» — ровные строки «название — число» во всех блоках) */}
+              {model ? (
+                <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 pb-5">
+                  <div className="flex items-end gap-3">
+                    <span className="display-num text-[52px] leading-[0.9] text-fg">{dec1(model.lambdas.home + model.lambdas.away)}</span>
+                    <span className="pb-0.5 text-[14px] leading-snug text-dim">
+                      гола ждём
+                      <br />в среднем
+                    </span>
+                  </div>
+                  <div className="w-full min-w-0 sm:w-auto sm:min-w-[260px] sm:flex-1 sm:max-w-[360px]">
+                    <div className="mb-2 flex items-center justify-between gap-3 text-[16px]">
+                      <span className="flex items-center gap-2" title={`«${m.home.name}»`}>
+                        <TeamLogo name={m.home.name} src={m.home.logo ?? null} size={24} />
+                        <span className={`num ${model.lambdas.home >= model.lambdas.away ? 'font-semibold text-fg' : 'text-dim'}`}>{dec1(model.lambdas.home)}</span>
+                      </span>
+                      <span className="text-[13px] text-mute">по командам</span>
+                      <span className="flex items-center gap-2" title={`«${m.away.name}»`}>
+                        <span className={`num ${model.lambdas.away >= model.lambdas.home ? 'font-semibold text-fg' : 'text-dim'}`}>{dec1(model.lambdas.away)}</span>
+                        <TeamLogo name={m.away.name} src={m.away.logo ?? null} size={24} />
+                      </span>
+                    </div>
+                    <div className="flex h-1.5 gap-0.5" aria-hidden>
+                      <div className={`h-full rounded-l-full ${model.lambdas.home >= model.lambdas.away ? 'bg-white/85' : 'bg-white/30'}`} style={{ width: `${(model.lambdas.home / (model.lambdas.home + model.lambdas.away || 1)) * 100}%` }} />
+                      <div className={`h-full flex-1 rounded-r-full ${model.lambdas.away >= model.lambdas.home ? 'bg-white/85' : 'bg-white/30'}`} />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              <dl className={model ? '-mb-3' : '-my-1.5'}>
                 {[
-                  over25 != null ? { k: '3 гола и больше', v: <span className="num font-semibold">{pct(over25)}</span> } : null,
-                  btts != null ? { k: 'Обе забьют', v: <span className="num font-semibold">{pct(btts)}</span> } : null,
-                  model ? { k: 'Голов в среднем', v: <span className="num font-semibold">{dec1(model.lambdas.home + model.lambdas.away)}</span> } : null,
-                  model
-                    ? {
-                        k: 'Голов ждём',
-                        v: (
-                          <span className="flex items-center gap-2">
-                            <span className="flex items-center gap-1.5" title={`«${m.home.name}»`}>
-                              <TeamLogo name={m.home.name} src={m.home.logo ?? null} size={20} />
-                              <span className="num font-semibold">{dec1(model.lambdas.home)}</span>
-                            </span>
-                            <span className="text-mute">·</span>
-                            <span className="flex items-center gap-1.5" title={`«${m.away.name}»`}>
-                              <TeamLogo name={m.away.name} src={m.away.logo ?? null} size={20} />
-                              <span className="num font-semibold">{dec1(model.lambdas.away)}</span>
-                            </span>
-                          </span>
-                        ),
-                      }
-                    : null,
+                  over25 != null ? { k: '3 гола и больше', v: <span className="num font-semibold">{pct(over25)}</span>, p: over25 } : null,
+                  btts != null ? { k: 'Обе забьют', v: <span className="num font-semibold">{pct(btts)}</span>, p: btts } : null,
                   model && scheduled
                     ? {
                         k: 'Вероятный счёт',
+                        p: null,
                         v: (
                           <span className="flex flex-wrap justify-end gap-x-3 gap-y-0.5">
                             {model.topScores.slice(0, 3).map((sc, i) => (
@@ -372,9 +384,16 @@ export default async function MatchPage({ params }: Props) {
                 ]
                   .filter((r) => r != null)
                   .map((r) => (
-                    <div key={r.k} className="flex min-h-11 items-center justify-between gap-4 border-t border-edge py-1.5 text-[15px] first:border-t-0">
-                      <dt className="shrink-0 whitespace-nowrap text-[14px] text-dim">{r.k}</dt>
-                      <dd className="text-right">{r.v}</dd>
+                    <div key={r.k} className={`border-t border-edge py-3 text-[16px] ${model ? '' : 'first:border-t-0'}`}>
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="shrink-0 whitespace-nowrap text-[14px] text-dim">{r.k}</dt>
+                        <dd className="text-right">{r.v}</dd>
+                      </div>
+                      {r.p != null ? (
+                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.09]" aria-hidden>
+                          <div className="h-full rounded-full bg-white/85" style={{ width: `${Math.round(r.p * 100)}%` }} />
+                        </div>
+                      ) : null}
                     </div>
                   ))}
               </dl>

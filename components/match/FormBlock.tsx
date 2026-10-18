@@ -18,11 +18,29 @@ export function FormBlock({ home, away, homeForm, awayForm }: { home: Team; away
     const a = awayForm ? get(awayForm) : null
     const tone = (me: number | null, them: number | null) =>
       me == null ? 'text-mute' : them == null || me === them || (lowerBetter ? me < them : me > them) ? 'font-semibold text-fg' : 'font-medium text-dim'
+    const better = (me: number | null, them: number | null) => me != null && them != null && me !== them && (lowerBetter ? me < them : me > them)
+    const eq = h != null && h === a
+    const bar = (good: boolean) => (eq ? 'bg-white/45' : good ? 'bg-white/85' : 'bg-white/30')
+    const total = (h ?? 0) + (a ?? 0) || 1
     return (
-      <div className="grid min-h-11 grid-cols-[56px_minmax(0,1fr)_56px] items-center gap-x-2 border-t border-edge py-1 text-[15px]">
-        <span className={`num ${tone(h, a)}`}>{h == null ? '—' : show(h)}</span>
-        <span className="truncate text-center text-[14px] text-dim">{label}</span>
-        <span className={`num text-right ${tone(a, h)}`}>{a == null ? '—' : show(a)}</span>
+      <div className="border-t border-edge py-3">
+        <div className="grid grid-cols-[56px_minmax(0,1fr)_56px] items-center gap-x-2 text-[16px]">
+          <span className={`num ${tone(h, a)}`}>{h == null ? '—' : show(h)}</span>
+          <span className="truncate text-center text-[14px] text-dim">{label}</span>
+          <span className={`num text-right ${tone(a, h)}`}>{a == null ? '—' : show(a)}</span>
+        </div>
+        {/* полоса сравнения, как в статистике «Сейчас в матче»: перевес видно раньше, чем прочитаны цифры (владелец:
+            «просто сейчас реально настройки из айос напоминает» — «да» на полосы и крупные цифры) */}
+        {h != null && a != null ? (
+          <div className="mt-2 flex h-1.5 gap-0.5" aria-hidden>
+            <div className="flex flex-1 justify-end overflow-hidden rounded-l-full bg-white/[0.09]">
+              <div className={`h-full rounded-l-full ${bar(better(h, a))}`} style={{ width: `${(h / total) * 100}%` }} />
+            </div>
+            <div className="flex-1 overflow-hidden rounded-r-full bg-white/[0.09]">
+              <div className={`h-full rounded-r-full ${bar(better(a, h))}`} style={{ width: `${(a / total) * 100}%` }} />
+            </div>
+          </div>
+        ) : null}
       </div>
     )
   }
@@ -37,13 +55,13 @@ export function FormBlock({ home, away, homeForm, awayForm }: { home: Team; away
   return (
     <div>
       <div className="flex items-center justify-between gap-3 pb-3">
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="shrink-0"><TeamLogo name={home.name} src={home.logo} size={24} /></span>
-          <span className="line-clamp-2 break-words text-[15px] font-semibold leading-tight">{home.name}</span>
+        <span className="flex min-w-0 items-center gap-2.5">
+          <span className="shrink-0"><TeamLogo name={home.name} src={home.logo} size={32} /></span>
+          <span className="line-clamp-2 break-words text-[16px] font-semibold leading-tight">{home.name}</span>
         </span>
         <span className="flex min-w-0 items-center gap-2">
-          <span className="line-clamp-2 break-words text-right text-[15px] font-semibold leading-tight">{away.name}</span>
-          <span className="shrink-0"><TeamLogo name={away.name} src={away.logo} size={24} /></span>
+          <span className="line-clamp-2 break-words text-right text-[16px] font-semibold leading-tight">{away.name}</span>
+          <span className="shrink-0"><TeamLogo name={away.name} src={away.logo} size={32} /></span>
         </span>
       </div>
       {row('Забивает за\u00a0игру', (f) => f.gfAvg, dec)}
