@@ -6,18 +6,32 @@ import type { Match } from '@/lib/types'
 import { outcomeText, split100, type Verdict } from '@/lib/verdict'
 import { AdMark } from '../AdMark'
 import { CtaLink } from '../CtaLink'
-import { VerdictRows } from './VerdictCard'
+import type { TagHit } from '@/lib/tags'
+import { StorySymbol } from '../story/StorySymbol'
+import { TeamLogo } from '../TeamLogo'
 
 /**
  * «Прогноз» — отдельный блок под табло до начала матча (владелец: «блок матча супер некрасивый» — вынесли из табло; потом
  * «и блок прогноза вот вообще сейчас не нравится» — «да»): вывод словами одной строкой; под ним полоса шансов трёх исходов
  * (самый вероятный — белым, остальные серым) и подписи под ней — хозяева слева, ничья по центру, гости справа (строкой
- * «66% … 20% … 14%» на телефоне разваливалось на две); голы и падение кэфа (`VerdictRows`); под чертой — ставка одной
+ * «66% … 20% … 14%» на телефоне разваливалось на две); доводы «почему так» — факты подборок (`facts`); под чертой — ставка одной
  * строкой: слева «Выгодная ставка» / «Наш выбор» и исход, справа крупно кэф и букмекер; ниже одна фраза вместо трёх строк
  * цифр («Честная цена — 1.51, PARI платит на 5,5% больше») и кнопка «Поставить в PARI» (кэф уже крупно рядом). Было:
  * «Явный фаворит — «X»» и тут же «Победа «X»» двумя заголовками, столбик «Честная цена / Кэф PARI / Выгода».
  */
-export function PredictBlock({ m, v, pick, probs }: { m: Match; v: Verdict | null; pick: Pick | null; probs: { home: number; draw: number; away: number } | null }) {
+export function PredictBlock({
+  m,
+  v,
+  pick,
+  probs,
+  tags = [],
+}: {
+  m: Match
+  v: Verdict | null
+  pick: Pick | null
+  probs: { home: number; draw: number; away: number } | null
+  tags?: TagHit[]
+}) {
   const n = probs ? split100(probs) : null
   const c = pick?.candidate
   const value = pick?.kind === 'value'
@@ -67,7 +81,24 @@ export function PredictBlock({ m, v, pick, probs }: { m: Match; v: Verdict | nul
           </div>
         </div>
       ) : null}
-      {v ? <VerdictRows v={v} className="mt-4" /> : null}
+      {facts(tags, m, pick).length ? (
+        // «Почему так» — факты подборок (владелец: «а может оставить пилюли а факты вынести красиво в прогноз?» — «да»):
+        // серии, дома, травмы, падение кэфа, форма аутсайдера, личные встречи; шансы исходов и голов здесь не повторяем —
+        // они на полосе и в «Голах и счёте»; команда в начале факта — эмблемой; до четырёх, сначала про команду ставки
+        <ul className="mt-5 space-y-2.5">
+          {facts(tags, m, pick).map((f) => (
+            <li key={f.slug} className="flex items-start gap-2.5 text-[15px] leading-snug">
+              <StorySymbol k={f.slug} tone="currentColor" className="mt-[3px] h-4 w-4 shrink-0 text-mute" />
+              {f.side ? (
+                <span className="mt-px shrink-0" title={`«${f.side.name}»`}>
+                  <TeamLogo name={f.side.name} src={f.side.logo ?? null} size={18} />
+                </span>
+              ) : null}
+              <span className="min-w-0 first-letter:uppercase">{f.text}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {c ? (
         <div className="mt-5 border-t border-edge pt-5">
           <div className="flex items-start justify-between gap-4">
@@ -95,4 +126,22 @@ export function PredictBlock({ m, v, pick, probs }: { m: Match; v: Verdict | nul
       ) : null}
     </div>
   )
+}
+
+/** Подборки-доводы для «Почему так»: без шансов исходов и голов (они на полосе и в «Голах и счёте») и без «Выгодно». */
+const FACT_SLUGS = ['progruz', 'seriya', 'krepost', 'andedog', 'kadry', 'h2h', 'top-match']
+
+function facts(tags: TagHit[], m: Match, pick: Pick | null) {
+  const key = pick?.candidate.key
+  const pickTeam = key === 'home' ? m.home.name : key === 'away' ? m.away.name : null
+  return tags
+    .filter((t) => FACT_SLUGS.includes(t.slug))
+    .map((t) => {
+      const fact = t.short ?? t.reason
+      const side = [m.home, m.away].find((tm) => fact.startsWith(`«${tm.name}»`)) ?? null
+      const text = side ? fact.slice(side.name.length + 2).replace(/^[:,]\s*/, '') : fact
+      return { slug: t.slug, side, text, mine: Boolean(pickTeam && fact.includes(`«${pickTeam}»`)) }
+    })
+    .sort((a, b) => Number(b.mine) - Number(a.mine))
+    .slice(0, 4)
 }

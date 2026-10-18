@@ -298,33 +298,34 @@ export default async function MatchPage({ params }: Props) {
               над фактом; факт — короткий (`short`), без повтора метки: «#кэф упал — Победа «Хетафе»: 7.42 → 6.37 (−14%)» */}
           {scheduled && (verdict || pick) ? (
             <Section outside title="Прогноз" note="Оценка tag.bet, а не гарантия. Ставки — это риск · 18+">
-              <PredictBlock m={m} v={verdict} pick={pick} probs={x} />
+              <PredictBlock m={m} v={verdict} pick={pick} probs={x} tags={tags} />
             </Section>
           ) : null}
 
-          {/* подборки матча — рядом пилюль-ссылок (владелец: «блок в подборках все еще какой-то кривоватый … и не совсем понятный»
-              — «да»): плитки с цифрами повторяли блоки страницы («Явный фаворит 80%» — «Прогноз», «Много голов 62%» — «Голы
-              и счёт», серии — «Форма», травмы — «Кадровые потери»), а без подписи «4», «6» были непонятны; смысл блока — в
-              каких подборках матч и куда перейти за похожими. Пилюля — значок и название, факт — в подсказке; до начала без
-              «Выгодных ставок» — эта ставка уже в «Прогнозе» */}
+          {/* подборки матча — пилюлями-ссылками (владелец: «блок в подборках все еще какой-то кривоватый … и не совсем понятный»):
+              плитки с цифрами повторяли блоки страницы; факты — доводами в «Прогнозе» («а может оставить пилюли а факты
+              вынести красиво в прогноз?» — «да»), здесь — только в каких подборках матч, факт — в подсказке. Без карточки,
+              пилюли 32px сразу под заголовком (владелец: «по возможности пилюли в один ряд ставить … чтоб меньше места
+              занимало»): на телефоне — одним рядом с прокруткой вбок, от sm — переносом; до начала без «Выгодных ставок» */}
           {shownTags.length ? (
-            <Section outside title="В подборках" note="По нажатию — другие матчи с тем же признаком.">
-              <ul className="flex flex-wrap gap-2">
+            <section className="min-w-0">
+              <BlockTitle title="В подборках" />
+              <ul className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-9 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-7">
                 {shownTags.map((t) => (
-                  <li key={t.slug}>
+                  <li key={t.slug} className="shrink-0">
                     <Link
                       href={`/tag/${t.slug}`}
                       prefetch={false}
                       title={`${TAG_BY_SLUG.get(t.slug)?.hint ?? ''}${TAG_BY_SLUG.get(t.slug)?.hint ? ' · ' : ''}${t.short ?? t.reason}`}
-                      className="inline-flex h-10 items-center gap-2 rounded-full bg-white/[0.07] pl-3 pr-4 text-[14px] font-medium transition-colors hover:bg-white/[0.13]"
+                      className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full bg-white/[0.08] pl-2.5 pr-3.5 text-[13px] font-medium transition-colors hover:bg-white/[0.14]"
                     >
-                      <StorySymbol k={t.slug} tone="currentColor" className="h-4 w-4 shrink-0 text-dim" />
+                      <StorySymbol k={t.slug} tone="currentColor" className="h-3.5 w-3.5 shrink-0 text-dim" />
                       {TAG_BY_SLUG.get(t.slug)?.title ?? t.slug}
                     </Link>
                   </li>
                 ))}
               </ul>
-            </Section>
+            </section>
           ) : null}
 
           {x ? (
