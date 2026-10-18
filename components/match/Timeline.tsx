@@ -118,23 +118,21 @@ export function Timeline({
 
   const tipAt = act == null || !w ? null : marks[act]
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4">
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3">
       {/* чьи ряды: подпись — на уровне ближнего к черте яруса; эмблема — одна на команду в блоке (владелец: «в формах
           команд есть лого, а тут нет»; до этого — «а сейчас не много логотипов?»: их было 10, над колонками статистики
           названия остались текстом) */}
-      <div className="relative max-w-[116px] text-[13px] leading-tight text-dim sm:max-w-[164px]" style={{ height }}>
-        <span className="invisible flex h-0 gap-1.5 overflow-hidden">
-          <span className="w-[22px] shrink-0" />
-          {home.name.length > away.name.length ? home.name : away.name}
-        </span>
+      {/* чьи ряды — эмблемами, без названий (владелец: «блок сейчас в матче … длинный»: названия съедали треть ширины
+          на телефоне; полное — в подсказке) */}
+      <div className="relative w-[22px]" style={{ height }}>
         {[home, away].map((t, i) => (
           <span
             key={i}
-            className="absolute left-0 right-0 flex -translate-y-1/2 items-center gap-1.5"
+            title={t.name}
+            className="absolute left-0 -translate-y-1/2"
             style={{ top: i ? half + NEAR + H / 2 : half - NEAR - H / 2 }}
           >
             <TeamLogo name={t.name} src={t.logo ?? null} size={22} />
-            <span className="min-w-0 truncate">{t.name}</span>
           </span>
         ))}
       </div>

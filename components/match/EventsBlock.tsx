@@ -2,6 +2,7 @@ import type { MatchEvent, StatPair } from '@/lib/types'
 import { visibleStats } from '@/lib/sstats/normalize'
 import { Hint } from './Hint'
 import { Timeline, type TimelineMark } from './Timeline'
+import { TeamLogo } from '../TeamLogo'
 
 type Side = { name: string; logo?: string | null }
 
@@ -88,8 +89,10 @@ export function EventsBlock({
   home: Side
   away: Side
 }) {
+  // на полосе — голы и красные (владелец: «блок сейчас в матче некрасивый очень и длинный» — жёлтые громоздились столбиком
+  // над голами; их число — в «Вся статистика»); счёт после гола считаем по всем голам
   const shown = events.filter((e) => e.kind !== 'sub' && e.kind !== 'other' && e.kind !== 'var')
-  const flow = withScore(shown, now == null ? score : null)
+  const flow = withScore(shown, now == null ? score : null).filter((e) => GOALS.has(e.kind) || e.kind === 'red')
   const end = Math.max(90, ...shown.map((e) => e.minute + (e.extra ?? 0)), now ?? 0)
   // подсказка значка: сверху — минута и что случилось, ниже — игрок и команда (у автогола — только игрок: поставщики
   // пишут его то за команду игрока, то за получившую гол; чей он — видно по ряду, где стоит плашка)
@@ -137,6 +140,9 @@ const HIDE = new Set(['totalPasses', 'goalkeeperSaves'])
 const ORDER = ['ballPossession', 'totalShots', 'shotsOnGoal', 'bigChances', 'expectedGoals', 'dangerousAttacks', 'cornerKicks', 'fouls', 'yellowCards', 'redCards', 'offsides']
 const rank = (key: string) => (ORDER.includes(key) ? ORDER.indexOf(key) : ORDER.length)
 
+/** Ключевые строки под владением — видны сразу; остальные — под «Вся статистика». */
+const KEY = ['totalShots', 'shotsOnGoal', 'bigChances', 'expectedGoals', 'cornerKicks']
+
 /**
  * Статистика по ходу матча — без цветов команд, как у Apple Sports: у каждой строки светлее та сторона, где больше
  * (лаймом были хозяева, а лайм у нас — «выгодно»). Дорожка под полосой видна (была 6% — полосы разной длины висели
@@ -153,53 +159,80 @@ export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home:
     .filter((s) => !HIDE.has(s.key))
     .sort((a, b) => rank(a.key) - rank(b.key))
   if (!stats.length) return <p className="text-sm text-dim">Статистика появится по ходу матча.</p>
-  const half = Math.ceil(stats.length / 2)
-  const cols = [stats.slice(0, half), stats.slice(half)].filter((c) => c.length)
+  // владение — главной строкой; ниже четыре ключевые; остальное — под «Вся статистика» (владелец: «блок сейчас в матче
+  // некрасивый очень и длинный» — восемь одинаковых строк «ёлочкой», офсайды наравне с ударами)
+  const poss = stats.find((s) => s.key === 'ballPossession')
+  const rest = stats.filter((s) => s !== poss)
+  const key = rest.filter((s) => KEY.includes(s.key)).slice(0, 4)
+  const more = rest.filter((s) => !key.includes(s))
   const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2))
   const bar = (more: boolean, eq: boolean) => (eq ? 'bg-white/45' : more ? 'bg-white/85' : 'bg-white/30')
-  return (
-    <div className="grid grid-cols-1 gap-y-3 md:grid-cols-2">
-      {cols.map((col, ci) => (
-        <div key={ci} className={ci ? 'md:border-l md:border-white/[0.08] md:pl-10' : cols.length > 1 ? 'md:pr-10' : ''}>
-          {/* на телефоне вторая колонка идёт сразу под первой — шапка у неё не нужна */}
-          <div className={`mb-2.5 justify-between gap-3 text-[13px] text-dim ${ci ? 'hidden md:flex' : 'flex'}`}>
-            <span className="min-w-0 truncate">{home.name}</span>
-            <span className="min-w-0 truncate text-right">{away.name}</span>
-          </div>
-          <ul className="space-y-3">
-            {col.map((s) => {
-              const total = s.home + s.away || 1
-              const eq = s.home === s.away
-              return (
-                <li key={s.key} className="relative">
-                  <div className="mb-1 flex justify-between text-[13px]">
-                    <span className={`num ${s.home > s.away ? 'font-semibold text-fg' : 'text-dim'}`}>
-                      {fmt(s.home)}
-                      {s.suffix ?? ''}
-                    </span>
-                    <span className="text-[13px] text-mute">
-                      {s.label}
-                      {HINT[s.key] ? <Hint title={s.label} text={HINT[s.key]} /> : null}
-                    </span>
-                    <span className={`num ${s.away > s.home ? 'font-semibold text-fg' : 'text-dim'}`}>
-                      {fmt(s.away)}
-                      {s.suffix ?? ''}
-                    </span>
-                  </div>
-                  <div className="flex h-1.5 gap-0.5">
-                    <div className="flex flex-1 justify-end overflow-hidden rounded-l-full bg-white/[0.09]">
-                      <div className={`h-full rounded-l-full ${bar(s.home > s.away, eq)}`} style={{ width: `${(s.home / total) * 100}%` }} />
-                    </div>
-                    <div className="flex-1 overflow-hidden rounded-r-full bg-white/[0.09]">
-                      <div className={`h-full rounded-r-full ${bar(s.away > s.home, eq)}`} style={{ width: `${(s.away / total) * 100}%` }} />
-                    </div>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
+  const row = (s: StatPair) => {
+    const total = s.home + s.away || 1
+    const eq = s.home === s.away
+    return (
+      <li key={s.key}>
+        <div className="flex items-baseline justify-between gap-3 text-[14px]">
+          <span className={`num ${s.home > s.away ? 'font-semibold text-fg' : 'text-dim'}`}>
+            {fmt(s.home)}
+            {s.suffix ?? ''}
+          </span>
+          <span className="truncate text-[13px] text-mute">
+            {s.label}
+            {HINT[s.key] ? <Hint title={s.label} text={HINT[s.key]} /> : null}
+          </span>
+          <span className={`num ${s.away > s.home ? 'font-semibold text-fg' : 'text-dim'}`}>
+            {fmt(s.away)}
+            {s.suffix ?? ''}
+          </span>
         </div>
-      ))}
+        <div className="mt-1.5 flex h-1 gap-0.5">
+          <div className="flex flex-1 justify-end overflow-hidden rounded-l-full bg-white/[0.08]">
+            <div className={`h-full rounded-l-full ${bar(s.home > s.away, eq)}`} style={{ width: `${(s.home / total) * 100}%` }} />
+          </div>
+          <div className="flex-1 overflow-hidden rounded-r-full bg-white/[0.08]">
+            <div className={`h-full rounded-r-full ${bar(s.away > s.home, eq)}`} style={{ width: `${(s.away / total) * 100}%` }} />
+          </div>
+        </div>
+      </li>
+    )
+  }
+  return (
+    <div>
+      {/* владение — крупно, с эмблемами по краям: заодно задаёт, чьи цифры слева и справа (строка названий не нужна) */}
+      {poss ? (
+        <div>
+          <div className="flex items-center gap-2.5">
+            <TeamLogo name={home.name} src={home.logo ?? null} size={24} />
+            <span className={`num text-[22px] font-bold tracking-[-0.02em] ${poss.home >= poss.away ? 'text-fg' : 'text-dim'}`}>{poss.home}%</span>
+            {/* «Владение», без «мячом»: на 360px подпись переносилась в две строки */}
+            <span className="flex-1 text-center text-[13px] text-mute">Владение</span>
+            <span className={`num text-[22px] font-bold tracking-[-0.02em] ${poss.away >= poss.home ? 'text-fg' : 'text-dim'}`}>{poss.away}%</span>
+            <TeamLogo name={away.name} src={away.logo ?? null} size={24} />
+          </div>
+          <div className="mt-2.5 flex h-2 gap-0.5" aria-hidden>
+            <div className={`h-full rounded-l-full ${bar(poss.home > poss.away, poss.home === poss.away)}`} style={{ width: `${poss.home}%` }} />
+            <div className={`h-full flex-1 rounded-r-full ${bar(poss.away > poss.home, poss.home === poss.away)}`} />
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-between gap-3 text-[13px] text-dim">
+          <span className="flex items-center gap-2"><TeamLogo name={home.name} src={home.logo ?? null} size={20} />{home.name}</span>
+          <span className="flex items-center gap-2">{away.name}<TeamLogo name={away.name} src={away.logo ?? null} size={20} /></span>
+        </div>
+      )}
+      <ul className="mt-5 grid gap-x-10 gap-y-4 md:grid-cols-2">{key.map(row)}</ul>
+      {more.length ? (
+        <details className="group mt-4 border-t border-edge">
+          <summary className="flex h-11 list-none items-center justify-between text-[14px] font-medium text-dim transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
+            Вся статистика
+            <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </summary>
+          <ul className="grid gap-x-10 gap-y-4 pb-1 pt-1 md:grid-cols-2">{more.map(row)}</ul>
+        </details>
+      ) : null}
     </div>
   )
 }
