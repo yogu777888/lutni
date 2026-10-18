@@ -76,8 +76,8 @@ export function MatchHero({
     m.status === 'finished' && played && m.score!.home !== m.score!.away ? (m.score!.home > m.score!.away ? 'home' : 'away') : null
   // команда, как в «Главных матчах»: эмблема на матовом круге, название под ней, над кругом — метка-факт
   const team = (t: typeof m.home, k: 'home' | 'away') => (
-    <div className={`flex min-w-0 flex-col items-center gap-3 text-center ${lead && lead !== k ? 'opacity-70' : ''}`}>
-      <span className="relative grid h-[var(--disc)] w-[var(--disc)] place-items-center rounded-full bg-white/[0.08] ring-1 ring-white/15 [--disc:68px] sm:[--disc:104px]">
+    <div className={`flex min-w-0 flex-col items-center gap-2 text-center sm:gap-3 ${lead && lead !== k ? 'opacity-70' : ''}`}>
+      <span className="relative grid h-[var(--disc)] w-[var(--disc)] place-items-center rounded-full bg-white/[0.08] ring-1 ring-white/15 [--disc:56px] sm:[--disc:104px]">
         {notes?.[k] && !started ? <HandNote text={notes[k]!} short={notes[k]!.length <= 12} /> : null}
         <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
         {/* звёздочка «в избранное» — в нижнем углу эмблемы, снаружи от счёта, как значок на аватарке: у названия она
@@ -121,10 +121,10 @@ export function MatchHero({
       </p>
 
       {/* табло по центру, как в «Главных матчах»: хозяева слева, гости справа, в середине время или счёт */}
-      <div id="match-board" className={`${started ? 'mt-6 sm:mt-8' : 'mt-12 sm:mt-14'} grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 sm:gap-x-8 ${started ? 'items-start' : 'items-center'}`}>
+      <div id="match-board" className={`${started ? 'mt-4 sm:mt-8' : 'mt-12 sm:mt-14'} grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 sm:gap-x-8 ${started ? 'items-start' : 'items-center'}`}>
         {team(m.home, 'home')}
         {/* после начала колонки команд — по верху (под названием разное число голов, эмблемы съезжали), счёт — на уровне эмблем */}
-        <div id="match-score" className={`text-center ${started ? 'pt-3 sm:pt-5' : ''}`}>
+        <div id="match-score" className={`text-center ${started ? 'pt-2.5 sm:pt-5' : ''}`}>
           {played ? (
             <>
               <div className="num display-num whitespace-nowrap text-[44px] font-semibold leading-none tracking-[-0.03em] sm:text-[76px]">
@@ -136,9 +136,11 @@ export function MatchHero({
                 {live ? <span className="h-1.5 w-1.5 rounded-full bg-live" /> : null}
                 {live && m.elapsed && m.statusCode !== 4 ? `${m.elapsed}-я минута` : m.statusLabel}
               </div>
-              {/* счёт первого тайма — только если после перерыва он уже другой: «1-й тайм 1:0» под «1:0» повторял счёт */}
+              {/* счёт первого тайма — только если после перерыва он уже другой: «1-й тайм 1:0» под «1:0» повторял счёт;
+                  на телефоне его нет — табло там ниже (владелец: «а может на мобильном убрать блок со счетом?» — «да» на
+                  компактное табло) */}
               {m.scoreHT && m.score && (m.scoreHT.home !== m.score.home || m.scoreHT.away !== m.score.away) ? (
-                <div className="mt-1 text-[12px] text-mute">
+                <div className="mt-1 hidden text-[12px] text-mute sm:block">
                   1-й тайм {m.scoreHT.home}:{m.scoreHT.away}
                 </div>
               ) : null}
@@ -158,7 +160,7 @@ export function MatchHero({
         </div>
         {team(m.away, 'away')}
       </div>
-      {story ? <div className={`mt-6 flex justify-center ${played ? 'sm:hidden' : ''}`}>{story}</div> : null}
+      {story ? <div className={`mt-4 flex justify-center sm:mt-6 ${played ? 'sm:hidden' : ''}`}>{story}</div> : null}
 
       {cells && started ? (
         // начался — под тонкой чертой одна полоса во всю ширину: слева оценка до матча, справа кэфы (разнесены по краям,
@@ -166,10 +168,11 @@ export function MatchHero({
         // сетка по ширине самой карточки (container query): широкая — «До матча» и строка ячеек в одном ряду и по одной
         // линии, «Реклама · 18+» — под ячейками; узкая (1280 с панелями, телефон) — всё друг под другом. Выравнивание по
         // ячейкам, а не по середине правой части вместе с пометкой: иначе «До матча» стояло ниже кэфов (владелец: «сейчас как?»)
-        <div className="@container mt-6 border-t border-white/10 pt-5">
+        // на телефоне — без черты, «До матча» строкой по центру сразу под «Разбором за минуту»
+        <div className="@container mt-3 sm:mt-6 sm:border-t sm:border-white/10 sm:pt-5">
           <div className="grid gap-x-6 gap-y-3 @3xl:grid-cols-[minmax(0,1fr)_auto] @3xl:items-center">
           {/* перенос — только между исходами, «·» — в конце строки: «Реал» и «Мадрид», «Ривер Плейт» и «61%» расходились */}
-          <p className="text-[13px] text-dim">
+          <p className="text-center text-[12px] text-dim sm:text-left sm:text-[13px]">
             До матча: <span className="whitespace-nowrap">«{m.home.name}» {n?.home}% ·</span> <span className="whitespace-nowrap">ничья {n?.draw}% ·</span>{' '}
             <span className="whitespace-nowrap">«{m.away.name}» {n?.away}%</span>
           </p>
