@@ -28,10 +28,11 @@ import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle
 import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
-import { appNow, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
+import { appNow, formatDateShort, formatTime, idFromSlug, pct, plural, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
-import { TAG_BY_SLUG } from '@/lib/tags'
+import { TAG_BY_SLUG, type TagHit } from '@/lib/tags'
+import { statFor } from '@/lib/story-groups'
 import type { Match } from '@/lib/types'
 import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
 
@@ -302,42 +303,38 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {/* подборки матча — строками, как «Подборки дня» в правой панели (владелец: «блок в подборках на странице матча сейчас
-              не нравится» — «да»: был текст столбиком без значков, черт и стрелок, «Барселона» в пяти строках из шести): значок
-              подборки в круге, название, факт серым, «›»; команда в начале факта — эмблемой; до начала без «Выгодных ставок» —
-              эта ставка с цифрами уже в «Прогнозе tag.bet»; от 2xl контейнера — две колонки, как «Другие матчи» */}
+          {/* подборки матча — плитками, как виджеты на iPhone (владелец: «блок в подборках некрасиво выглядит» — «да»; строки со
+              значками, текстом и шевроном выглядели меню настроек): сверху значок и название серым, крупно — главная цифра
+              подборки (`statFor`: «−12%», «62%», «4»), под ней — что это за цифра, с эмблемой команды, если речь о ней; нет
+              понятной цифры («Топ-матч», «50 на 50») — факт словами; вся плитка — ссылка; две в ряд, от @2xl — три; до
+              начала без «Выгодных ставок» — эта ставка с цифрами уже в «Прогнозе» */}
           {shownTags.length ? (
-            <Section outside title="В подборках" className="@container overflow-hidden !p-0">
-              <ul className="grid @2xl:grid-cols-2">
-                {shownTags.map((t, i) => {
-                  const fact = t.short ?? t.reason
-                  const side = [m.home, m.away].find((tm) => fact.startsWith(`«${tm.name}»`))
-                  const rest = side ? fact.slice(side.name.length + 2).replace(/^[:,]\s*/, '') : fact
+            <Section outside title="В подборках" className="@container">
+              <ul className="grid grid-cols-2 gap-2 @2xl:grid-cols-3">
+                {shownTags.map((t) => {
+                  const tile = tagTile(t, m)
                   return (
-                    <li key={t.slug} className={`border-edge @2xl:even:border-l ${i ? 'border-t' : ''} ${i === 1 ? '@2xl:border-t-0' : ''}`}>
+                    <li key={t.slug} className="min-w-0">
                       <Link
                         href={`/tag/${t.slug}`}
                         prefetch={false}
                         title={TAG_BY_SLUG.get(t.slug)?.hint}
-                        className="group flex min-h-14 items-center gap-3 px-5 py-2.5 transition-colors hover:bg-white/[0.02] sm:px-7"
+                        className="flex h-full flex-col rounded-tile bg-white/[0.05] p-3.5 transition-colors hover:bg-white/[0.09] sm:p-4"
                       >
-                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
-                          <StorySymbol k={t.slug} tone="currentColor" className="h-[18px] w-[18px]" />
+                        {/* название — до двух строк: на телефоне «Явный фаво…» обрезалось */}
+                        <span className="flex min-h-[2lh] items-start gap-1.5 text-[13px] font-medium leading-snug text-dim @2xl:min-h-0">
+                          <StorySymbol k={t.slug} tone="currentColor" className="mt-px h-4 w-4 shrink-0" />
+                          <span className="line-clamp-2 min-w-0">{TAG_BY_SLUG.get(t.slug)?.title ?? t.slug}</span>
                         </span>
-                        <span className="min-w-0 flex-1 leading-tight">
-                          <span className="block text-[15px] font-semibold">{TAG_BY_SLUG.get(t.slug)?.title ?? t.slug}</span>
-                          <span className="mt-1 flex items-center gap-1.5 text-[14px] text-dim">
-                            {side ? (
-                              <span className="shrink-0" title={`«${side.name}»`}>
-                                <TeamLogo name={side.name} src={side.logo ?? null} size={18} />
-                              </span>
-                            ) : null}
-                            <span className="min-w-0 first-letter:uppercase">{rest}</span>
-                          </span>
+                        {tile.big ? <span className="display-num mt-3 text-[36px] leading-none text-fg">{tile.big}</span> : null}
+                        <span className={`flex items-start gap-1.5 leading-snug ${tile.big ? 'mt-2 text-[13px] text-dim' : 'mt-3 text-[15px] text-fg'}`}>
+                          {tile.side ? (
+                            <span className="mt-px shrink-0" title={`«${tile.side.name}»`}>
+                              <TeamLogo name={tile.side.name} src={tile.side.logo ?? null} size={16} />
+                            </span>
+                          ) : null}
+                          <span className="min-w-0 first-letter:uppercase">{tile.caption}</span>
                         </span>
-                        <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 shrink-0 text-mute transition-colors group-hover:text-fg" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                          <path d="m9 6 6 6-6 6" />
-                        </svg>
                       </Link>
                     </li>
                   )
@@ -617,4 +614,37 @@ export default async function MatchPage({ params }: Props) {
       />
     </>
   )
+}
+
+/**
+ * Плитка подборки на странице матча: главная цифра (`statFor`) и подпись к ней. Команда в начале факта («Барселона»: …)
+ * уходит в эмблему; у голов и фаворита подпись своя («шанс 3 голов и больше»), у серий и травм — что считали.
+ */
+function tagTile(t: TagHit, m: Match): { big: string | null; caption: string; side: Match['home'] | null } {
+  const fact = t.short ?? t.reason
+  const side = [m.home, m.away].find((tm) => fact.startsWith(`«${tm.name}»`)) ?? null
+  const rest = side ? fact.slice(side.name.length + 2).replace(/^[:,]\s*/, '') : fact
+  const st = statFor(t.slug, t.reason)
+  // у травм — просто число («−4» рядом с «игрока пропустят матч» читалось минусом)
+  const big = /\d/.test(st) && t.slug !== 'top-match' ? (t.slug === 'kadry' ? st.replace(/^[−-]/, '') : st) : null
+  if (!big) return { big: null, caption: rest, side }
+  const n = Number(/\d+/.exec(st)?.[0] ?? 0)
+  const caption: Record<string, string> = {
+    'tb-2-5': 'шанс 3 голов и больше',
+    'tm-2-5': 'шанс не больше 2 голов',
+    'obe-zabyut': 'шанс, что забьют обе',
+    favorit: 'шанс победы',
+    kadry: n === 1 ? 'игрок пропустит матч' : `${plural(n, ['игрок', 'игрока', 'игроков'])} пропустят матч`,
+  }
+  return {
+    big,
+    side,
+    caption:
+      caption[t.slug] ??
+      (t.slug === 'progruz'
+        ? rest.replace(/\s*\([−-]\d+%\)\s*$/, '')
+        : t.slug === 'seriya' || t.slug === 'krepost'
+          ? rest.replace(new RegExp(`^${n}\\s+`), '')
+          : rest),
+  }
 }
