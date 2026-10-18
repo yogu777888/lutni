@@ -62,6 +62,14 @@ export type BookFacts = {
   licenseNo?: string
   /** Дата выдачи лицензии, «2009-07-29». */
   licenseDate?: string
+  /** «бессрочная». */
+  licenseTerm?: string
+  /** Юридический адрес. */
+  address?: string
+  inn?: string
+  ogrn?: string
+  /** Поддержка: телефон как пишут на сайте, почта, есть ли онлайн-чат. */
+  support?: { phone?: string; phoneNote?: string; email?: string; chat?: boolean }
   /** «100 ₽». */
   minDeposit?: string
   /** «iOS, Android». */
@@ -123,6 +131,19 @@ const SEEDS: PartnerSeed[] = [
     bonus: 'Бонус для новых клиентов',
     bonusNote: 'Актуальные условия — на сайте букмекера',
     license: 'Лицензия ФНС России, член ЕЦУПИС',
+    // реквизиты — прислал владелец (со страницы Winline на legalbet), ИНН и ОГРН — контрольные суммы сходятся;
+    // сверить с реестром ФНС и подвалом winline.ru
+    facts: {
+      checked: '2026-10-18',
+      legalEntity: 'ООО «Управляющая компания НКС»',
+      address: '123112, г. Москва, Пресненская набережная, д. 8, стр. 1, 11 этаж',
+      inn: '7714707736',
+      ogrn: '1077758954635',
+      licenseNo: '№ Л027-00108-77/00395482',
+      licenseDate: '2009-07-09',
+      licenseTerm: 'бессрочная',
+      support: { phone: '8 800 333-60-47', phoneNote: 'бесплатно по России, круглосуточно', email: 'support@winline.ru', chat: true },
+    },
   },
   {
     slug: 'betboom',

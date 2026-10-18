@@ -120,11 +120,38 @@ export default async function BookmakerPage({ params }: Props) {
   ]
   const checked = f.checked ? ruDate(f.checked) : null
   // «О компании» — как блок лицензии у legalbet: юрлицо, номер и дата лицензии; общая строка про ФНС и ЕЦУПИС — в шапке
-  const company: [string, string][] = [
-    ...(f.legalEntity ? [['Юрлицо', f.legalEntity] as [string, string]] : []),
-    ...(f.licenseNo ? [['Лицензия ФНС', `${f.licenseNo}${f.licenseDate ? ` от ${ruDate(f.licenseDate)}` : ''}`] as [string, string]] : []),
-    ...(f.legalEntity || f.licenseNo ? [['Учёт ставок', 'Член ЕЦУПИС'] as [string, string]] : []),
-    ...(f.legalEntity || f.licenseNo ? [['Официальный сайт', domain(p.site)] as [string, string]] : []),
+  const sup = f.support
+  const tel = sup?.phone ? `tel:${sup.phone.replace(/[^\d+]/g, '')}` : null
+  const company: [string, React.ReactNode][] = [
+    ...(f.legalEntity ? [['Юрлицо', f.legalEntity] as [string, React.ReactNode]] : []),
+    ...(f.address ? [['Адрес', f.address] as [string, React.ReactNode]] : []),
+    ...(f.inn || f.ogrn ? [['ИНН / ОГРН', <span key="r" className="num">{[f.inn, f.ogrn].filter(Boolean).join(' / ')}</span>] as [string, React.ReactNode]] : []),
+    ...(f.licenseNo
+      ? [['Лицензия ФНС', [f.licenseNo, f.licenseDate && `от ${ruDate(f.licenseDate)}`, f.licenseTerm].filter(Boolean).join(', ')] as [string, React.ReactNode]]
+      : []),
+    ...(f.legalEntity || f.licenseNo ? [['Учёт ставок', 'Член ЕЦУПИС'] as [string, React.ReactNode]] : []),
+    ...(f.legalEntity || f.licenseNo ? [['Официальный сайт', domain(p.site)] as [string, React.ReactNode]] : []),
+    ...(sup && (sup.phone || sup.email || sup.chat)
+      ? [[
+          'Поддержка',
+          <span key="s" className="flex flex-col gap-0.5">
+            {sup.phone && tel ? (
+              <span>
+                <a href={tel} className="num underline decoration-white/25 underline-offset-4 transition-colors hover:decoration-fg">
+                  {sup.phone}
+                </a>
+                {sup.phoneNote ? <span className="text-dim"> — {sup.phoneNote}</span> : null}
+              </span>
+            ) : null}
+            {sup.email ? (
+              <a href={`mailto:${sup.email}`} className="w-fit underline decoration-white/25 underline-offset-4 transition-colors hover:decoration-fg">
+                {sup.email}
+              </a>
+            ) : null}
+            {sup.chat ? <span className="text-dim">Онлайн-чат на сайте</span> : null}
+          </span>,
+        ] as [string, React.ReactNode]]
+      : []),
   ]
   const steps = [
     `Нажмите «${cta}» — откроется официальный сайт букмекера (${domain(p.site)}).`,
@@ -254,7 +281,7 @@ export default async function BookmakerPage({ params }: Props) {
 
         {company.length ? (
           <section className="card overflow-hidden">
-            <BlockHead title="О компании" line />
+            <BlockHead title="О компании" aside={checked ? `данные на ${checked}` : null} line />
             <dl className="divide-y divide-edge text-[15px]">
               {company.map(([k, val]) => (
                 <div key={k} className="grid gap-0.5 px-4 py-3 sm:grid-cols-[13rem_minmax(0,1fr)] sm:gap-4 sm:px-5">
