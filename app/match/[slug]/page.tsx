@@ -388,6 +388,8 @@ export default async function MatchPage({ params }: Props) {
             <Section
               outside
               title="Как менялись шансы"
+              // у графика свои поля под подписи — полей карточки меньше, чем у остальных блоков
+              className="!px-3 sm:!px-5"
               note={
                 <>
                   {chanceText ? <>{chanceText} </> : null}

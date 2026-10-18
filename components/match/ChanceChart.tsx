@@ -43,8 +43,10 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
   const lo = Math.max(0, Math.floor((Math.min(...vals) - 2) / step) * step)
   const hi = Math.min(100, Math.ceil((Math.max(...vals) + 2) / step) * step)
   const H = 240
-  const L = 50
-  const R = 150
+  // поля — по ширине подписей, а не с запасом (владелец: «по бокам большие отступы»): слева — самый длинный процент оси
+  // (14px, ~8,5px на знак), справа — самая длинная подпись «79% Барселона» (15px, ~8,6px на знак) и 10px до неё
+  const L = 10 + Math.max(...[0, 100].map((v) => `${v}%`.length)) * 8.5
+  const R = Math.min(170, 14 + Math.max(...series.map((sr) => `${sr.pts[sr.pts.length - 1]?.v ?? 0}% ${sr.label}`.length)) * 8.6)
   const T = 14
   const B = 28
   const x = (t: number) => L + ((t - t0) / (t1 - t0)) * (w - L - R)
