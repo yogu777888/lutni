@@ -40,6 +40,8 @@ export function StickyHide({ target, className, children }: { target: string; cl
     <div
       aria-hidden={off}
       inert={off}
+      // закрыта крестиком — место под неё в конце подвала больше не держим (app/globals.css)
+      data-closed={closed || undefined}
       onTouchStart={(e) => (y0.current = e.touches[0].clientY)}
       onTouchEnd={(e) => {
         if (y0.current != null && e.changedTouches[0].clientY - y0.current > 40) close()

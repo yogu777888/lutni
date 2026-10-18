@@ -44,7 +44,7 @@ export function Footer() {
   if (SITE.contactEmail) info.push([`mailto:${SITE.contactEmail}`, SITE.contactEmail])
   return (
     <footer className="xl:hidden">
-      <div className="mx-auto max-w-6xl px-4 pb-8">
+      <div className="mx-auto max-w-6xl px-4 pb-4">
         <div className="space-y-1.5 text-[12px] leading-snug text-mute">
           <p>
             <span className="font-semibold text-dim">18+</span> · Ставки — это риск. Не призыв делать ставки.

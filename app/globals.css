@@ -819,7 +819,8 @@ html[data-shell-rc] .shell-r-rail {
 /* нижняя плашка к букмекеру на телефоне (StickyCta) закрывает низ страницы — место под неё в конце подвала,
    а не пустотой перед ним (раньше main держал 112px снизу на всех страницах) */
 @media (max-width: 1023px) {
-  body:has(.sticky-cta) footer {
+  /* закрытая крестиком — без места (владелец: «снизу под футером на мобильном как будто отступ большеват?») */
+  body:has(.sticky-cta:not([data-closed])) footer {
     padding-bottom: 5rem;
   }
 }
