@@ -292,7 +292,8 @@ export function computeTags(input: TagInput): TagHit[] {
         'ravnye',
         1 - diff / 0.06,
         `Силы почти равны: шансы ${q(home)} — ${s.home}%, ${q(away)} — ${s.away}%, ничьей — ${s.draw}%`,
-        `${q(home)} ${s.home}% · ничья ${s.draw}% · ${q(away)} ${s.away}%`,
+        // словами, что значат числа (владелец: «факт из 50 на 50 не совсем понятен» — было «Райо» 35% · ничья 25% · «Реал» 40%)
+        `Шансы на победу почти равны: ${q(home)}\u00a0—\u00a0${s.home}%, ${q(away)}\u00a0—\u00a0${s.away}%`,
       )
     }
   }
