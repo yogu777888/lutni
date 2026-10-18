@@ -5,6 +5,9 @@ import { JsonLd } from './JsonLd'
 
 export type Crumb = { href: string; label: string }
 
+/** Раздел на шаг выше — куда ведёт «назад», если пришли не с сайта. */
+export const upOf = (items: Crumb[]): Crumb => (items.length > 1 ? items[items.length - 2] : items[0])
+
 /**
  * Крошки — от раздела, без общего «Матчи» в начале (владелец: «такое чувство что хлебные крошки на странице бк немного
  * неправильно написаны» — было «Матчи / Букмекеры / Winline», а «Букмекеры» не внутри «Матчей»). `back` — «←» в начале
@@ -46,7 +49,7 @@ export function Breadcrumbs({
     />
   )
   if (chip) {
-    const up = all.length > 1 ? all[all.length - 2] : all[0]
+    const up = upOf(all)
     return (
       <>
         <nav aria-label="Навигация" className={`flex min-w-0 ${className}`}>

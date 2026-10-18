@@ -1,4 +1,5 @@
-import { Breadcrumbs, type Crumb } from './Breadcrumbs'
+import { NavPair } from './BackButton'
+import { Breadcrumbs, upOf, type Crumb } from './Breadcrumbs'
 
 /**
  * Шапка страницы — одна на весь сайт (владелец: «на всех страницах разные по размеру заголовки? в букмекерах заголовок
@@ -26,9 +27,11 @@ export function PageHead({
     <section className="card min-w-0 px-4 py-4 sm:px-5">
       {/* «назад» — чипом «‹ Лиги» в углу блока, как в табло матча (владелец: «а можно как то красиво кнопки назад в блоке
           вставить?» — отдельная полоса с одним «Назад» над карточкой выглядела пусто) */}
-      {crumbs ? <Breadcrumbs items={crumbs} chip className="mb-3" /> : null}
+      {/* на компьютере — капсулой «‹ ›» слева от заголовка, как в Finder */}
+      {crumbs ? <Breadcrumbs items={crumbs} chip className="mb-3 lg:hidden" /> : null}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
+          {crumbs ? <NavPair fallback={upOf(crumbs)} className="mr-1 max-lg:hidden" /> : null}
           {lead ? <div className="shrink-0">{lead}</div> : null}
           <div className="min-w-0">
             <h1 className="h1-block text-[24px] leading-tight sm:text-[28px]">{title}</h1>

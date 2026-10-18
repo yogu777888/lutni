@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { SITE } from '@/config/site'
 import { formatTime, formatWeekdayLong, formatDateLong, ymdInTz } from '@/lib/format'
 import type { Pick } from '@/lib/model'
@@ -26,6 +27,8 @@ export function PredictHero({
   tint,
   story,
   back = null,
+  pair = null,
+  league = null,
 }: {
   m: Match
   v: Verdict | null
@@ -36,6 +39,10 @@ export function PredictHero({
   story: React.ReactNode
   /** «‹ Ла Лига» чипом в верхнем левом углу (`Breadcrumbs chip`) */
   back?: React.ReactNode
+  /** «‹ ›» капсулой на компьютере (`NavPair`) — вместо чипа `back` */
+  pair?: React.ReactNode
+  /** турнир — на компьютере в строке с капсулой: «‹ › Ла Лига · 20-й тур · воскресенье, 4 октября» */
+  league?: { href: string; label: string } | null
 }) {
   const ymd = ymdInTz(m.ts)
   const n = probs ? split100(probs) : null
@@ -60,11 +67,23 @@ export function PredictHero({
       <div className="relative">
         {/* турнир — в крошках над блоком (здесь он стоял второй раз, на телефоне турнир и дата — две строки); тур и день —
             одной тихой строкой по центру, как на табло после начала (`MatchHero`) */}
-        {/* «назад» чипом слева, тур и дата — по центру; на телефоне чип — строкой выше */}
-      <div className="grid items-center gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-x-4">
-        {back ? <div className="min-w-0 sm:col-start-1 sm:row-start-1">{back}</div> : null}
-        <p className="text-center text-[13px] text-dim first-letter:uppercase sm:col-start-2">
-          {[m.round, `${formatWeekdayLong(m.ts)}, ${formatDateLong(m.ts)}`].filter(Boolean).join(' · ')}
+        {/* «назад» чипом слева, тур и дата — по центру; на телефоне чип — строкой выше; на компьютере — строка-заголовок слева:
+          капсула «‹ ›», турнир, тур и дата (владелец: «как в эпл такие иконки назад вперед слева от заголовков» — «давай») */}
+      <div className="grid items-center gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-x-4 lg:flex lg:gap-x-3">
+        {back ? <div className="min-w-0 sm:col-start-1 sm:row-start-1 lg:hidden">{back}</div> : null}
+        {pair ? <div className="shrink-0 max-lg:hidden">{pair}</div> : null}
+        <p className="min-w-0 text-center text-[13px] text-dim sm:col-start-2 lg:text-left lg:text-[14px]">
+          {league ? (
+            <span className="max-lg:hidden">
+              <Link href={league.href} className="font-medium text-fg/90 transition-colors hover:text-fg">
+                {league.label}
+              </Link>
+              {' · '}
+            </span>
+          ) : null}
+          <span className={`inline-block first-letter:uppercase ${league ? 'lg:first-letter:normal-case' : ''}`}>
+            {[m.round, `${formatWeekdayLong(m.ts)}, ${formatDateLong(m.ts)}`].filter(Boolean).join(' · ')}
+          </span>
         </p>
       </div>
 

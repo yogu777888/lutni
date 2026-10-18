@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { SITE } from '@/config/site'
 import { SPONSORED_REL } from '@/lib/affiliate'
 import { formatDateLong, formatTime, formatWeekdayLong, ymdInTz } from '@/lib/format'
@@ -43,6 +44,8 @@ export function MatchHero({
   line = null,
   story = null,
   back = null,
+  pair = null,
+  league = null,
   children,
 }: {
   full: MatchFull
@@ -58,6 +61,10 @@ export function MatchHero({
   story?: React.ReactNode
   /** «‹ Ла Лига» чипом в верхнем левом углу (`Breadcrumbs chip`) */
   back?: React.ReactNode
+  /** «‹ ›» капсулой на компьютере (`NavPair`) — вместо чипа `back` */
+  pair?: React.ReactNode
+  /** турнир — на компьютере в строке с капсулой: «‹ › Ла Лига · 20-й тур · воскресенье, 4 октября» */
+  league?: { href: string; label: string } | null
   children?: React.ReactNode
 }) {
   const m = full.match
@@ -119,12 +126,24 @@ export function MatchHero({
       {/* турнир — в крошках сверху (плашкой «Испания. Ла Лига» он стоял второй раз в 100px от них, а на телефоне плашка и
           дата были двумя строками до счёта; владелец согласился), здесь — тур и день одной тихой строкой по центру, как
           табло под ней; «идёт» — красной точкой у минуты */}
-      {/* «назад» чипом слева, тур и дата — по центру; на телефоне чип — строкой выше */}
-      <div className="grid items-center gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-x-4">
-        {back ? <div className="min-w-0 sm:col-start-1 sm:row-start-1">{back}</div> : null}
-        <p className="text-center text-[13px] text-dim first-letter:uppercase sm:col-start-2">
-        {[m.round, `${formatWeekdayLong(m.ts)}, ${formatDateLong(m.ts)}`].filter(Boolean).join(' · ')}
-      </p>
+      {/* «назад» чипом слева, тур и дата — по центру; на телефоне чип — строкой выше; на компьютере — строка-заголовок слева:
+          капсула «‹ ›», турнир, тур и дата (владелец: «как в эпл такие иконки назад вперед слева от заголовков» — «давай») */}
+      <div className="grid items-center gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-x-4 lg:flex lg:gap-x-3">
+        {back ? <div className="min-w-0 sm:col-start-1 sm:row-start-1 lg:hidden">{back}</div> : null}
+        {pair ? <div className="shrink-0 max-lg:hidden">{pair}</div> : null}
+        <p className="min-w-0 text-center text-[13px] text-dim sm:col-start-2 lg:text-left lg:text-[14px]">
+          {league ? (
+            <span className="max-lg:hidden">
+              <Link href={league.href} className="font-medium text-fg/90 transition-colors hover:text-fg">
+                {league.label}
+              </Link>
+              {' · '}
+            </span>
+          ) : null}
+          <span className={`inline-block first-letter:uppercase ${league ? 'lg:first-letter:normal-case' : ''}`}>
+            {[m.round, `${formatWeekdayLong(m.ts)}, ${formatDateLong(m.ts)}`].filter(Boolean).join(' · ')}
+          </span>
+        </p>
       </div>
 
       {/* табло по центру, как в «Главных матчах»: хозяева слева, гости справа, в середине время или счёт */}

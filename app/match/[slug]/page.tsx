@@ -4,7 +4,8 @@ import { BlockMore } from '@/components/BlockMore'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
 import { MatchBar } from '@/components/match/MatchBar'
-import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { NavPair } from '@/components/BackButton'
+import { Breadcrumbs, upOf } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
 import { EventsBlock, StatsBars } from '@/components/match/EventsBlock'
 import { FormBlock } from '@/components/match/FormBlock'
@@ -231,6 +232,11 @@ export default async function MatchPage({ params }: Props) {
   const pickOffer = pick?.candidate.bestPartner
 
   const pair = `${m.home.name} — ${m.away.name}`
+  const crumbs = [
+    { href: '/matches', label: 'Матчи' },
+    { href: leagueHref(m.league), label: leagueTitle(m.league.name) },
+    { href: canonical, label: pair },
+  ]
   const h1 = m.status === 'finished' ? `${pair}: результат матча` : m.status === 'live' ? `${pair}: матч онлайн` : `Прогноз на матч ${pair}`
 
   return (
@@ -267,18 +273,10 @@ export default async function MatchPage({ params }: Props) {
           tags={tags}
           tint={tint ? distinctPair(tint) : null}
           story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null}
-          back={<Breadcrumbs chip className="" items={[
-            { href: '/matches', label: 'Матчи' },
-            { href: leagueHref(m.league), label: leagueTitle(m.league.name) },
-            { href: canonical, label: pair },
-          ]} />}
+          back={<Breadcrumbs chip className="" items={crumbs} />} pair={<NavPair fallback={upOf(crumbs)} />} league={crumbs[1]}
         />
       ) : (
-        <MatchHero full={full} cells={cells} books={cons.books} line={heroLine} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} back={<Breadcrumbs chip className="" items={[
-            { href: '/matches', label: 'Матчи' },
-            { href: leagueHref(m.league), label: leagueTitle(m.league.name) },
-            { href: canonical, label: pair },
-          ]} />} />
+        <MatchHero full={full} cells={cells} books={cons.books} line={heroLine} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} back={<Breadcrumbs chip className="" items={crumbs} />} pair={<NavPair fallback={upOf(crumbs)} />} league={crumbs[1]} />
       )}
 
       {/* на телефоне между блоками 12px, как на главной (владелец: «такое чувство что отступы между блоком больше стали?» — «да»: было 24–32) */}
