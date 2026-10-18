@@ -364,9 +364,18 @@ export default async function MatchPage({ params }: Props) {
           {chanceMoved ? (
             // справа — без «9 изменений»: число ничего не говорит и спорило с «почти не менялись», а на телефоне длинная
             // подпись сжимала заголовок в две строки
-            <Section outside title="Как менялись шансы" note="Линия — шансы из кэфов PARI без маржи букмекера, пунктир — оценка tag.bet.">
+            // вывод — под блоком вместе с пояснением, в карточке только график (владелец: «может вынести под блок этот текст?»)
+            <Section
+              outside
+              title="Как менялись шансы"
+              note={
+                <>
+                  {chanceText ? <>{chanceText} </> : null}
+                  Линия — шансы из кэфов PARI без маржи букмекера, пунктир — оценка tag.bet.
+                </>
+              }
+            >
               <ChanceChart series={chanceSeries} end={Math.min(m.ts, appNow())} />
-              <p className="mt-4 text-[15px] leading-relaxed text-dim">{chanceText}</p>
             </Section>
           ) : null}
 
