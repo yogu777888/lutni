@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation'
 import { AdMark } from '@/components/AdMark'
 import { BlockHead } from '@/components/BlockHead'
 import { PageHead } from '@/components/PageHead'
-import { PageBar } from '@/components/PageBar'
 import { CtaLink } from '@/components/CtaLink'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerBadge } from '@/components/PartnerBadge'
@@ -307,7 +306,6 @@ export default async function BookmakerPage({ params }: Props) {
       {/* от xl — без подложки центра, разделы — панелями через 8px, как на главной (владелец: «а визуально страница
           букмекеры как? относительно главной»; правила — .bare-sub в app/globals.css) */}
       <span hidden className="bare-sub" />
-      <PageBar crumbs={[{ href: '/bookmakers', label: 'Букмекеры' }, { href: `/bookmakers/${p.slug}`, label: p.name }]} title={p.name} />
       <div className="space-y-4 xl:space-y-2">
         {/* шапка — одной строкой: знак, название, лицензия и сайт, кнопка справа (~110px вместо ~280: карточка с градиентом
             и «БУКМЕКЕР PARI» Oswald 56px; «Кэфы PARI сегодня» начинались на середине экрана) */}

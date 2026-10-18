@@ -24,13 +24,12 @@ export function PageHead({
 }) {
   return (
     <section className="card min-w-0 px-4 py-4 sm:px-5">
-      {/* ниже lg «←» — в ряду под шапкой сайта (`PageBar`, его ставит сама страница первым в `main`), здесь — от lg */}
-      {crumbs ? <Breadcrumbs items={crumbs} back parentOnly className="mb-3 max-lg:hidden" /> : null}
+      {crumbs ? <Breadcrumbs items={crumbs} back parentOnly className="mb-3" /> : null}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {lead ? <div className="shrink-0">{lead}</div> : null}
           <div className="min-w-0">
-            <h1 data-page-title className="h1-block text-[24px] leading-tight sm:text-[28px]">{title}</h1>
+            <h1 className="h1-block text-[24px] leading-tight sm:text-[28px]">{title}</h1>
             {sub ? <div className="mt-1 max-w-[68ch] text-[14px] leading-snug text-dim">{sub}</div> : null}
           </div>
         </div>

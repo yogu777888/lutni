@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { dayHeading } from '@/components/DayView'
-import { PageBar } from '@/components/PageBar'
 import { Coverage, Crests, Filters, MatchWhen, PickHead, STAGES, STAGE_LABEL, pickParam, stageOf, withParam, type StageKey } from '@/components/picks/Shared'
 import { featuredInfo, isFeatured } from '@/config/leagues'
 import { daySnaps, getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
@@ -75,7 +74,6 @@ export default async function GoalsPage({ params, searchParams }: Props) {
   return (
     <>
       <span hidden className="bare-sub" />
-      <PageBar crumbs={[{ href: '/matches', label: 'Матчи' }, ...(dayHref(date, today) === '/' ? [] : [{ href: dayHref(date, today), label: heading.title }]), { href: base, label: 'Голевые матчи' }]} title="Голевые матчи" />
       <PickHead ymd={date} today={today} date={heading.date} title="Голевые матчи" icon="pick-goals" section="goals"
         crumbs={[{ href: '/matches', label: 'Матчи' }, ...(dayHref(date, today) === '/' ? [] : [{ href: dayHref(date, today), label: heading.title }]), { href: base, label: 'Голевые матчи' }]}
         how={
