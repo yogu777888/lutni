@@ -25,17 +25,11 @@ export function liveText(n: number) {
  * (ничего ещё не начиналось) / «идут все 4» / «все сыграны»; у «Скоро начнутся» — «через 30 мин». Слева важнее, что идёт
  * (турниры), справа (`ahead`) — что впереди (подборки).
  */
-export function StateLine({
-  total,
-  live,
-  next,
-  started,
-  pending,
-  same = false,
-  inMin = null,
-  soon = false,
-  ahead = false,
-}: {
+export function StateLine(props: StateProps) {
+  return <>{stateText(props)}</>
+}
+
+type StateProps = {
   total: number
   live: number
   next: string | null
@@ -48,12 +42,25 @@ export function StateLine({
   soon?: boolean
   /** подборки справа: впереди важнее, чем «идут» (идущие и так слева в «Сейчас в игре») */
   ahead?: boolean
-}) {
-  if (soon && next && !live && inMin != null && inMin <= 180) return <>{untilText(inMin)}</>
+}
+
+/** То же, что `StateLine`, строкой — для подсказок. */
+export function stateText({
+  total,
+  live,
+  next,
+  started,
+  pending,
+  same = false,
+  inMin = null,
+  soon = false,
+  ahead = false,
+}: StateProps) {
+  if (soon && next && !live && inMin != null && inMin <= 180) return untilText(inMin)
   // идут все — «идут все 4» / «идёт 1 матч»
-  if (live && live === total) return <>{total === 1 ? 'идёт 1 матч' : `идут все ${total}`}</>
+  if (live && live === total) return total === 1 ? 'идёт 1 матч' : `идут все ${total}`
   const rest = next ? (started ? `ещё ${matchesN(pending)} ${same ? 'в' : 'с'} ${next}` : `начало в ${next}`) : null
   const now = live ? liveText(live) : null
   const text = (ahead ? rest ?? now : now ?? rest) ?? (started ? 'все сыграны' : '')
-  return <>{text}</>
+  return text
 }

@@ -26,6 +26,8 @@ export type DayPicks = {
   totals: Record<string, number>
   /** что с матчами подборки сейчас — подпись под названием, как в левой панели: «8 матчей · 2 в игре» / «с 20:30» */
   states: Record<string, PickState>
+  /** команды подборки по порядку — подпись под названием, как исполнители у плейлиста */
+  teams: Record<string, string[]>
   /** «Выгодно сегодня» внизу панели — лучшие выгодные ставки дня (ещё не начались): сначала по линии PARI, не хватает —
    * у других легальных партнёров */
   values: ValueRow[]
@@ -80,7 +82,7 @@ export const dayPicks = cache(async (): Promise<DayPicks> => {
       })
     }
     const byId = new Map(matches.map((m) => [m.id, m]))
-    const out: DayPicks = { groups: [], matches: {}, stats: {}, totals: {}, values: [], states: {} }
+    const out: DayPicks = { groups: [], matches: {}, stats: {}, totals: {}, values: [], states: {}, teams: {} }
     // «Выгодно сегодня» — сначала по линии PARI (владелец: «а можно блок выгодно сегодня сделать только про пари?»): кэф PARI
     // выше честной цены (`summary.pari` в lib/data.ts). У PARI выгодное бывает примерно раз в два дня (замер на настоящем API,
     // 17–18 октября: 1 ставка PARI из 13 выгодных, остальные — Марафон), и блок почти всегда стоял пустым — поэтому, если у
@@ -142,6 +144,20 @@ export const dayPicks = cache(async (): Promise<DayPicks> => {
         same: new Set(pre.map((ts) => formatTime(ts))).size === 1,
         inMin: pre.length ? Math.round((Math.min(...pre) - appNow()) / 60_000) : null,
       }
+      // из каждого матча — одна команда: та, ради которой он в подборке (её название в поводе: фаворит, аутсайдер, команда
+      // с травмами, «Победа «X»» у кэфа); повод про обе (голы, «50 на 50») или без повода — хозяева; порядок — как в
+      // подборке (главные матчи первыми)
+      const names: string[] = []
+      for (const it of g.items) {
+        const m = byId.get(it.id)
+        if (!m) continue
+        const r = it.focus?.reason ?? ''
+        const h = r.indexOf(`«${m.home.name}»`)
+        const a = r.indexOf(`«${m.away.name}»`)
+        const name = a >= 0 && (h < 0 || a < h) ? m.away.name : m.home.name
+        if (!names.includes(name)) names.push(name)
+      }
+      out.teams[g.key] = names
       for (const it of list) {
         out.matches[it.id] ??= compactMatch(byId.get(it.id)!)
         // у «Топ дня» и «Скоро» у каждого матча своя причина — цифры разного смысла без подписи не читаются; там — только состояние
@@ -154,6 +170,6 @@ export const dayPicks = cache(async (): Promise<DayPicks> => {
     out.groups.sort((a, b) => Number(!out.states[a.key]?.pending) - Number(!out.states[b.key]?.pending))
     return out
   } catch {
-    return { groups: [], matches: {}, stats: {}, totals: {}, values: [], states: {} }
+    return { groups: [], matches: {}, stats: {}, totals: {}, values: [], states: {}, teams: {} }
   }
 })
