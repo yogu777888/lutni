@@ -33,7 +33,7 @@ export type StripGame = { id: number; date: string; opponent: string; score: str
  * длинный» — список из пяти матчей с переключателем команд был ~400px). Кто соперник и счёт — по наведению, нажатию
  * или фокусу: строкой под значками («01.10 · Вильярреал · 0:0 · дома»), `title` на телефоне не открывается.
  */
-export function FormStrip({ grid, home, away }: { grid: string; home: StripGame[] | null; away: StripGame[] | null }) {
+export function FormStrip({ home, away }: { home: StripGame[] | null; away: StripGame[] | null }) {
   const [act, setAct] = useState<StripGame | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -45,8 +45,8 @@ export function FormStrip({ grid, home, away }: { grid: string; home: StripGame[
     return () => removeEventListener('pointerdown', off)
   }, [act])
   const tip = (g: StripGame) => `${g.date} · ${g.opponent} · ${g.score} · ${g.home ? 'дома' : 'в гостях'}`
-  const cell = (games: StripGame[] | null) => (
-    <span className="flex justify-center gap-0.5">
+  const cell = (games: StripGame[] | null, right = false) => (
+    <span className={`flex gap-0.5 ${right ? 'justify-end' : ''}`}>
       {games
         ? games.map((g) => (
             <button
@@ -68,12 +68,17 @@ export function FormStrip({ grid, home, away }: { grid: string; home: StripGame[
   )
   return (
     <div ref={ref} className="border-t border-edge">
-      <div className={`${grid} min-h-11 py-1`}>
-        <span className="text-[14px] text-dim">Последние матчи</span>
+      {/* хозяева — от левого края, гости — от правого, подпись по центру, как строки сравнения выше */}
+      <div className="grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 py-1">
         {cell(home)}
-        {cell(away)}
+        <span className="truncate text-center text-[14px] text-dim">
+          {/* ниже 380px «Последние 5» не помещается между значками */}
+          <span className="max-[379px]:hidden">Последние 5</span>
+          <span className="min-[380px]:hidden">Форма</span>
+        </span>
+        {cell(away, true)}
       </div>
-      <p aria-live="polite" className={`pb-1 text-right text-[13px] text-dim ${act ? '' : 'invisible'}`}>
+      <p aria-live="polite" className={`pb-1 text-center text-[13px] text-dim ${act ? '' : 'invisible'}`}>
         {act ? tip(act) : '·'}
       </p>
     </div>
