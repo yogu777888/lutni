@@ -37,11 +37,14 @@ export function OddsTable({
   books,
   model,
   candidates,
+  part = 'all',
 }: {
   match: Match
   books: BookOdds[]
   model: ModelOutput | null
   candidates: Candidate[]
+  /** «table» — без пояснения, «note» — только пояснение: на странице матча оно под блоком, как в Настройках iPhone */
+  part?: 'all' | 'table' | 'note'
 }) {
   const cols = colsFor(match).filter((c) => books.some((b) => c.get(b)))
   const best = new Map(cols.map((c) => [c.key, Math.max(0, ...books.map((b) => c.get(b)?.value ?? 0))]))
@@ -67,6 +70,18 @@ export function OddsTable({
   }
   const anyValue = rows.some((b) => cols.some((c) => info(b, c).val))
   const anyBest = rows.some((b) => cols.some((c) => info(b, c).isBest))
+  // пояснение — только про то, что есть на экране (лайм, жирный); стрелки ▼▲ — в подписи раздела
+  const note = (
+    <>
+      {[anyValue ? 'Лаймом — кэф выше честной цены (по оценке tag.bet)' : '', anyBest ? 'белым жирным — лучший в колонке' : '']
+        .filter(Boolean)
+        .join(', ')
+        .replace(/^./, (ch) => ch.toUpperCase())}
+      {anyValue || anyBest ? '. ' : ''}
+      Кэфы меняются — проверяйте у букмекера. <span className="whitespace-nowrap">Реклама · 18+</span>
+    </>
+  )
+  if (part === 'note') return note
 
   /** Ячейка кэфа — общая для таблицы и карточек на телефоне. */
   const cell = (b: BookOdds, c: Col, partner: Partner | null | undefined) => {
@@ -235,15 +250,7 @@ export function OddsTable({
         </div>
       ) : null}
 
-      {/* пояснение — только про то, что есть на экране (лайм, жирный); стрелки ▼▲ — в подписи раздела */}
-      <p className="mt-4 text-[11px] text-mute">
-        {[anyValue ? 'Лаймом — кэф выше честной цены (по оценке tag.bet)' : '', anyBest ? 'белым жирным — лучший в колонке' : '']
-          .filter(Boolean)
-          .join(', ')
-          .replace(/^./, (ch) => ch.toUpperCase())}
-        {anyValue || anyBest ? '. ' : ''}
-        Кэфы меняются — проверяйте у букмекера. <span className="whitespace-nowrap">Реклама · 18+</span>
-      </p>
+      {part === 'all' ? <p className="mt-4 text-[11px] text-mute">{note}</p> : null}
     </div>
   )
 }

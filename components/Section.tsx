@@ -6,6 +6,7 @@ export function Section({
   className = '',
   plain = false,
   outside = false,
+  note,
 }: {
   title?: React.ReactNode
   id?: string
@@ -17,12 +18,15 @@ export function Section({
   /** заголовок над блоком, на фоне страницы, как разделы в Настройках iPhone (владелец: «как тебе идея заголовки вынести
    * из блоков как на айфоне?» — «давай», сначала страница матча): в блоке — только данные */
   outside?: boolean
+  /** пояснение под блоком (с `outside`): мелко серым на фоне страницы, как подписи под группами в Настройках iPhone */
+  note?: React.ReactNode
 }) {
   if (outside)
     return (
       <section id={id} className="min-w-0 scroll-mt-28">
         {title ? <BlockTitle title={title} aside={aside} /> : null}
         <div className={`card p-5 sm:p-7 ${className}`}>{children}</div>
+        {note ? <BlockNote>{note}</BlockNote> : null}
       </section>
     )
   return (
@@ -48,4 +52,9 @@ export function BlockTitle({ title, aside, className = '' }: { title: React.Reac
       {aside ? <div className="text-[12px] text-mute">{aside}</div> : null}
     </div>
   )
+}
+
+/** Пояснение под блоком: 12px серым, с отступом слева, как у заголовка над блоком (`BlockTitle`). */
+export function BlockNote({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <div className={`mt-2 px-1 text-[12px] leading-relaxed text-mute sm:px-2 ${className}`}>{children}</div>
 }

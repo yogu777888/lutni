@@ -17,7 +17,7 @@ import { ChanceRow } from '@/components/match/ProbBars'
 import { PredictHero } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerCard } from '@/components/PartnerCard'
-import { BlockTitle, Section } from '@/components/Section'
+import { BlockNote, BlockTitle, Section } from '@/components/Section'
 import { StandingsTable } from '@/components/StandingsTable'
 import { StickyCta } from '@/components/StickyCta'
 import { StoryButton } from '@/components/story/StoryButton'
@@ -364,11 +364,9 @@ export default async function MatchPage({ params }: Props) {
           {chanceMoved ? (
             // справа — без «9 изменений»: число ничего не говорит и спорило с «почти не менялись», а на телефоне длинная
             // подпись сжимала заголовок в две строки
-            <Section outside title="Как менялись шансы" aside="до матча · линия PARI">
+            <Section outside title="Как менялись шансы" aside="до матча · линия PARI" note="Линия — шансы из кэфов PARI без маржи букмекера, пунктир — оценка tag.bet.">
               <ChanceChart series={chanceSeries} end={Math.min(m.ts, appNow())} />
-              <p className="mt-3 text-[13.5px] leading-relaxed text-dim">
-                {chanceText} <span className="text-mute">Линия — шансы из кэфов PARI без маржи букмекера, пунктир — оценка tag.bet.</span>
-              </p>
+              <p className="mt-3 text-[13.5px] leading-relaxed text-dim">{chanceText}</p>
             </Section>
           ) : null}
 
@@ -382,8 +380,9 @@ export default async function MatchPage({ params }: Props) {
                   ? `${pluralN(legalBooks.length, ['букмекер', 'букмекера', 'букмекеров'])} с линией${hasMoves(legalBooks, m) ? ' · ▼▲ — изменение с открытия' : ''}`
                   : 'линии в нашей базе пока нет'
               }
+              note={<OddsTable part="note" match={m} books={legalBooks} model={model} candidates={candidates} />}
             >
-              <OddsTable match={m} books={legalBooks} model={model} candidates={candidates} />
+              <OddsTable part="table" match={m} books={legalBooks} model={model} candidates={candidates} />
             </Section>
           ) : null}
 
@@ -422,7 +421,7 @@ export default async function MatchPage({ params }: Props) {
               встречи» и «Кадровые потери», которые раньше шли сразу за ним; строка была ~150 знаков — глаз терял строку;
               после начала — «Перед матчем» («Обзор матча» обещал события, а в тексте расклад до матча); ширина строки — ~75 знаков */}
           {ins.preview.length ? (
-            <Section outside title={`${scheduled ? 'Прогноз на матч' : 'Перед матчем:'} ${pair}`}>
+            <Section outside title={`${scheduled ? 'Прогноз на матч' : 'Перед матчем:'} ${pair}`} note={disclaimer}>
               <div className="prose-ru max-w-[62ch] space-y-4">
                 {ins.preview.map((p) => (
                   <div key={p.title}>
@@ -431,12 +430,11 @@ export default async function MatchPage({ params }: Props) {
                   </div>
                 ))}
               </div>
-              <p className="mt-5 text-[11px] leading-relaxed text-mute">{disclaimer}</p>
             </Section>
           ) : null}
 
           {/* оговорка — последней строкой «Прогноза» (висела отдельным абзацем между карточками); прогноза нет — отдельно */}
-          {ins.preview.length ? null : <p className="text-[11px] leading-relaxed text-mute xl:px-2 xl:pt-2">{disclaimer}</p>}
+          {ins.preview.length ? null : <BlockNote className="!mt-0">{disclaimer}</BlockNote>}
         </div>
 
         <aside className="space-y-6 sm:space-y-8 lg:sticky lg:top-24 lg:self-start xl:static xl:space-y-6 2xl:sticky 2xl:top-[72px]">
