@@ -297,7 +297,7 @@ export default async function MatchPage({ params }: Props) {
               факты — ровной колонкой справа (каждая фраза начиналась сразу за своей меткой — «ёлочка»), на телефоне метка
               над фактом; факт — короткий (`short`), без повтора метки: «#кэф упал — Победа «Хетафе»: 7.42 → 6.37 (−14%)» */}
           {scheduled && (verdict || pick) ? (
-            <Section outside title="Прогноз tag.bet" note="Оценка tag.bet, а не гарантия. Ставки — это риск · 18+">
+            <Section outside title="Прогноз" note="Оценка tag.bet, а не гарантия. Ставки — это риск · 18+">
               <PredictBlock m={m} v={verdict} pick={pick} probs={x} />
             </Section>
           ) : null}
