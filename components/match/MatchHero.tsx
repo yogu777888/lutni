@@ -1,15 +1,12 @@
 import Link from 'next/link'
 import { SITE } from '@/config/site'
 import { SPONSORED_REL } from '@/lib/affiliate'
-import { formatDateLong, formatTime, formatWeekdayLong, ymdInTz } from '@/lib/format'
+import { formatDateLong, formatTime, formatWeekdayLong } from '@/lib/format'
 import { split100 } from '@/lib/verdict'
 import type { MatchFull } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
-import { HandNote } from '../FactChip'
-import type { HandNotes } from '@/lib/hand-notes'
 import { Tick } from '../Live'
 import { FavStar } from '../FavStar'
-import { ShellTint } from '../shell/tint'
 import { scorers } from './EventsBlock'
 
 /** Ячейка табло: шанс исхода, лучший коэффициент и честная цена; hot — платят больше честного. */
@@ -39,8 +36,6 @@ export function MatchHero({
   full,
   cells,
   books,
-  tint,
-  notes,
   line = null,
   story = null,
   back = null,
@@ -53,10 +48,6 @@ export function MatchHero({
   books: number
   /** чьи кэфы в ячейках и ссылка к нему (реклама); null — кэфы без ссылки (после начала матча) */
   line?: { name: string; href: string; live?: boolean } | null
-  /** цвета клубов — мягкое свечение за командами, как в «Главных матчах» */
-  tint?: { home: string; away: string } | null
-  /** метки-факты над эмблемами (lib/hand-notes.ts) */
-  notes?: HandNotes | null
   /** «Разбор за минуту» — под табло по центру */
   story?: React.ReactNode
   /** «‹ Ла Лига» чипом в верхнем левом углу (`Breadcrumbs chip`) */
@@ -84,16 +75,15 @@ export function MatchHero({
   // уже проигравшим (владелец: «а блок матча как, если честно?», согласился)
   const lead =
     m.status === 'finished' && played && m.score!.home !== m.score!.away ? (m.score!.home > m.score!.away ? 'home' : 'away') : null
-  // команда, как в «Главных матчах»: эмблема на матовом круге, название под ней, над кругом — метка-факт
+  // команда: эмблема без подложки, название под ней (владелец: «блок матча супер некрасивый» — эмблема лежала в сером
+  // диске с ободком, на край налезал кружок со звёздочкой: три круга друг на друге; над эмблемой были метки-факты)
   const team = (t: typeof m.home, k: 'home' | 'away') => (
     <div className={`flex min-w-0 flex-col items-center gap-2 text-center sm:gap-3 ${lead && lead !== k ? 'opacity-70' : ''}`}>
-      <span className="relative grid h-[var(--disc)] w-[var(--disc)] place-items-center rounded-full bg-white/[0.08] ring-1 ring-white/15 [--disc:56px] sm:[--disc:104px]">
-        {notes?.[k] && !started ? <HandNote text={notes[k]!} short={notes[k]!.length <= 12} /> : null}
-        <TeamLogo name={t.name} src={t.logo} size="calc(var(--disc) * 0.6)" />
-        {/* звёздочка «в избранное» — в нижнем углу эмблемы, снаружи от счёта, как значок на аватарке: у названия она
-            висела справа и при узкой колонке команды (телефон, 1280 с панелями) упиралась в край табло или уходила за
-            него («Реал Мадрид», «Deportivo Pereira»; владелец согласился) */}
-        <span className={`absolute -bottom-1 rounded-full bg-panel-2 ring-1 ring-white/10 ${k === 'home' ? '-left-1.5' : '-right-1.5'}`}>
+      <span className="relative grid h-[var(--crest)] w-[var(--crest)] place-items-center [--crest:64px] sm:[--crest:96px]">
+        <TeamLogo name={t.name} src={t.logo} size="var(--crest)" />
+        {/* звёздочка «в избранное» — у нижнего внешнего угла эмблемы, без своего кружка: у названия она при узкой колонке
+            уходила за край табло («Реал Мадрид», «Deportivo Pereira») */}
+        <span className={`absolute -bottom-1.5 ${k === 'home' ? '-left-7' : '-right-7'}`}>
           <FavStar id={t.id} name={t.name} logo={t.logo} compact />
         </span>
       </span>
@@ -111,17 +101,8 @@ export function MatchHero({
   )
   return (
     <section id="match-hero" className="card page-enter-2 relative overflow-hidden p-5 sm:p-7">
-      {/* от xl градиент центральной панели — в цветах этих клубов, как у Spotify — цветом обложки */}
-      <ShellTint id={m.id} ymd={ymdInTz(m.ts)} home={tint?.home} away={tint?.away} />
-      {tint ? (
-        <div
-          aria-hidden
-          className="hero-tint pointer-events-none absolute inset-0"
-          style={{
-            background: `radial-gradient(60% 120% at 0% 40%, color-mix(in oklab, ${tint.home} 20%, transparent), transparent 70%), radial-gradient(60% 120% at 100% 40%, color-mix(in oklab, ${tint.away} 20%, transparent), transparent 70%)`,
-          }}
-        />
-      ) : null}
+      {/* без свечения цветами клубов — ровная карточка, как остальные блоки (владелец: «мне пока не нравится визуально
+          градиенты в нём»: на графите цвета клубов давали мутные пятна, без цветов — серую дымку) */}
       <div className="relative">
       {/* турнир — в крошках сверху (плашкой «Испания. Ла Лига» он стоял второй раз в 100px от них, а на телефоне плашка и
           дата были двумя строками до счёта; владелец согласился), здесь — тур и день одной тихой строкой по центру, как
@@ -147,7 +128,7 @@ export function MatchHero({
       </div>
 
       {/* табло по центру, как в «Главных матчах»: хозяева слева, гости справа, в середине время или счёт */}
-      <div id="match-board" className={`${started ? 'mt-4 sm:mt-8' : 'mt-12 sm:mt-14'} grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 sm:gap-x-8 ${started ? 'items-start' : 'items-center'}`}>
+      <div id="match-board" className={`${started ? 'mt-4 sm:mt-8' : 'mt-5 sm:mt-8'} grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 sm:gap-x-8 ${started ? 'items-start' : 'items-center'}`}>
         {team(m.home, 'home')}
         {/* после начала колонки команд — по верху (под названием разное число голов, эмблемы съезжали), счёт — на уровне эмблем */}
         <div id="match-score" className={`text-center ${started ? 'pt-2.5 sm:pt-5' : ''}`}>

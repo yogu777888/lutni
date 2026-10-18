@@ -13,7 +13,7 @@ import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { hasMoves, OddsTable } from '@/components/match/OddsTable'
-import { PredictHero } from '@/components/match/PredictHero'
+import { PredictBlock } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerCard } from '@/components/PartnerCard'
 import { BlockNote, BlockTitle, Section } from '@/components/Section'
@@ -27,8 +27,6 @@ import { goHref } from '@/lib/affiliate'
 import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle } from '@/lib/data'
 import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
-import { distinctPair, matchColors } from '@/lib/team-colors'
-import { handNotes } from '@/lib/hand-notes'
 import { leagueTitle } from '@/lib/flags'
 import { appNow, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
@@ -89,8 +87,6 @@ export default async function MatchPage({ params }: Props) {
   // нельзя, а строка без ссылки — реклама конкурента; в честной цене (консенсус) они по-прежнему участвуют
   const legalBooks = books.filter((b) => partnerForApiBookmaker(b.bookmakerId, b.bookmakerName))
   // цвета клубов для свечения за командами (не дольше 1,5 с) и метки-факты над эмблемами — как в «Главных матчах»
-  const tint = await Promise.race([matchColors(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))])
-  const notes = handNotes({ homeId: m.home.id, awayId: m.away.id, standings: ins.standings, homeForm: ins.homeForm, awayForm: ins.awayForm })
   // история доматчевой линии PARI (легальный букмекер): ждём не дольше 2 с, иначе — без графика
   const pari = await Promise.race([getPariHistory(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 2000))])
   // идёт матч — на табло кэфы PARI по ходу матча (доматчевые там уже история, поставить по ним нельзя)
@@ -265,21 +261,17 @@ export default async function MatchPage({ params }: Props) {
       {/* идёт матч — счёт, минута и live-кэфы обновляются сами */}
       {m.status === 'live' || m.status === 'suspended' ? <LiveRefresh /> : null}
 
-      {/* до начала — «Прогноз tag.bet» первым блоком (строка матча, вывод, оценка, ставка); после — табло со счётом */}
-      {scheduled && (verdict || pick) ? (
-        <PredictHero
-          m={m}
-          v={verdict}
-          pick={pick}
-          probs={x}
-          tags={tags}
-          tint={tint ? distinctPair(tint) : null}
-          story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null}
-          pair={<NavPair fallback={upOf(crumbs)} />} league={crumbs[1]}
-        />
-      ) : (
-        <MatchHero full={full} cells={cells} books={cons.books} line={heroLine} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} pair={<NavPair fallback={upOf(crumbs)} />} league={crumbs[1]} />
-      )}
+      {/* табло — одно на все состояния: эмблемы, время или счёт, «Разбор за минуту»; до начала прогноз — отдельным блоком ниже
+          (владелец: «блок матча супер некрасивый» — «да»; был первым блоком «Прогноз tag.bet» с табло внутри) */}
+      <MatchHero
+        full={full}
+        cells={scheduled && (verdict || pick) ? null : cells}
+        books={cons.books}
+        line={heroLine}
+        story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null}
+        pair={<NavPair fallback={upOf(crumbs)} />}
+        league={crumbs[1]}
+      />
 
       {/* на телефоне между блоками 12px, как на главной (владелец: «такое чувство что отступы между блоком больше стали?» — «да»: было 24–32) */}
       <div className="mt-6 grid gap-6 sm:mt-8 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:mt-6 xl:grid-cols-1 xl:gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -305,7 +297,14 @@ export default async function MatchPage({ params }: Props) {
               в меню, правой панели и в блоке до начала («Теги» — наше внутреннее слово); метки — колонкой одной ширины,
               факты — ровной колонкой справа (каждая фраза начиналась сразу за своей меткой — «ёлочка»), на телефоне метка
               над фактом; факт — короткий (`short`), без повтора метки: «#кэф упал — Победа «Хетафе»: 7.42 → 6.37 (−14%)» */}
-          {!scheduled && tags.length ? (
+          {scheduled && (verdict || pick) ? (
+            <Section outside title="Прогноз tag.bet" note="Оценка tag.bet, а не гарантия. Ставки — это риск · 18+">
+              <PredictBlock m={m} v={verdict} pick={pick} probs={x} />
+            </Section>
+          ) : null}
+
+          {/* до начала подборки были чипами «#выгодно» внизу табло — теперь здесь же, как после начала */}
+          {tags.length ? (
             <Section outside title="В подборках">
               <ul className="grid gap-y-4 sm:grid-cols-[max-content_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-3">
                 {tags.map((t) => (
