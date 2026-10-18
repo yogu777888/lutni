@@ -20,7 +20,6 @@ import { BlockNote, BlockTitle, Section } from '@/components/Section'
 import { TeamLogo } from '@/components/TeamLogo'
 import { StandingsTable } from '@/components/StandingsTable'
 import { StickyCta } from '@/components/StickyCta'
-import { StoryButton } from '@/components/story/StoryButton'
 import { PARTNERS, partnerForApiBookmaker, primaryPartner } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
@@ -31,7 +30,6 @@ import { leagueTitle } from '@/lib/flags'
 import { appNow, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
-import { buildStory } from '@/lib/story'
 import { TAG_BY_SLUG } from '@/lib/tags'
 import type { Match } from '@/lib/types'
 import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
@@ -221,7 +219,6 @@ export default async function MatchPage({ params }: Props) {
       })
     : null
 
-  const hasStory = buildStory(ins) !== null
   const partner = pick?.candidate.bestPartner?.partner ?? primaryPartner()
   const pickOffer = pick?.candidate.bestPartner
 
@@ -268,7 +265,6 @@ export default async function MatchPage({ params }: Props) {
         cells={scheduled && (verdict || pick) ? null : cells}
         books={cons.books}
         line={heroLine}
-        story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null}
         pair={<NavPair fallback={upOf(crumbs)} />}
         league={crumbs[1]}
       />
