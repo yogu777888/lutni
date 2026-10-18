@@ -452,14 +452,33 @@ export default async function MatchPage({ params }: Props) {
               после начала — «Перед матчем» («Обзор матча» обещал события, а в тексте расклад до матча); ширина строки — ~75 знаков */}
           {ins.preview.length ? (
             <Section outside title={`${scheduled ? 'Прогноз на матч' : 'Перед матчем:'} ${pair}`} note={disclaimer}>
-              <div className="prose-ru max-w-[62ch] space-y-4">
-                {ins.preview.map((p) => (
-                  <div key={p.title}>
-                    <h3 className="mb-1 text-[14px] font-semibold">{p.title}</h3>
-                    <p className="text-[15px]">{p.text}</p>
+              {/* владелец: «блок прогноз на матч длинный и скучный» — «да»: сверху крупно сам прогноз (до начала — «Прогноз»,
+                  после — «О матче»), остальные части — строками-раскрывашками с шевроном, как вопросы на странице букмекера;
+                  текст целиком остаётся в коде страницы — он нужен поисковикам по запросу «прогноз на матч X — Y» */}
+              {(() => {
+                const lead = ins.preview.find((p) => p.title === 'Прогноз') ?? ins.preview[0]
+                const rest = ins.preview.filter((p) => p !== lead)
+                return (
+                  <div className="prose-ru">
+                    <p className="max-w-[62ch] text-[16px] leading-relaxed text-fg">{lead.text}</p>
+                    {rest.length ? (
+                      <div className="-mb-2 mt-4">
+                        {rest.map((p) => (
+                          <details key={p.title} className="group border-t border-edge">
+                            <summary className="flex min-h-12 list-none items-center justify-between gap-3 py-2 text-[15px] font-medium [&::-webkit-details-marker]:hidden">
+                              {p.title}
+                              <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-mute transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                <path d="M9.5 6l6 6-6 6" />
+                              </svg>
+                            </summary>
+                            <p className="max-w-[62ch] pb-4 text-[15px] leading-relaxed text-dim">{p.text}</p>
+                          </details>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
-                ))}
-              </div>
+                )
+              })()}
             </Section>
           ) : null}
 
