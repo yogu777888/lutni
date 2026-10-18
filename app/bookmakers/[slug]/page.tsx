@@ -40,7 +40,7 @@ const PAY_LOGOS: [RegExp, string, string][] = [
   [/МТС/, 'mts', 'МТС'],
   [/МегаФон/i, 'megafon', 'МегаФон'],
   [/Билайн/i, 'beeline', 'Билайн'],
-  // t2 — без значка: в архиве старый знак TELE2, новый пришлёт владелец (положить public/pay/t2.png и вернуть строку)
+  [/\bt2\b|Tele2|Теле2/i, 't2', 't2'],
   [/ЮMoney|YooMoney/i, 'yoomoney', 'ЮMoney'],
   [/Банковский перевод/i, 'bank', 'Банковский перевод'],
 ]
@@ -52,7 +52,7 @@ const payName = (method: string) => (payLogos(method).length > 1 ? method.replac
 // (сплошные буквы тяжелее); у карты три знака в одной плашке
 const LOGO_PX: Record<string, number> = {
   mir: 14, visa: 13, mastercard: 20, 'mir-pay': 22, sberpay: 18, sbp: 19, cupis: 12.5, mts: 16, megafon: 11.5,
-  beeline: 12, yoomoney: 12.5, bank: 21,
+  beeline: 12, t2: 17, yoomoney: 12.5, bank: 21,
 }
 const LOGO_PX_MULTI: Record<string, number> = { mir: 9, visa: 8.5, mastercard: 12 }
 
