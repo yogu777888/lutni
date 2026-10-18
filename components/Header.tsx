@@ -36,18 +36,21 @@ export function Header() {
             // с подписью» — снаружи серый текст, рамка 18+ и кнопка были тремя разными элементами): видимая пометка в самой
             // рекламе (ст. 18.1), erid — в ссылке; рекламодатель и erid — подсказкой при наведении (на компьютере) и строкой
             // «Реклама: …» в подвале (на телефоне). Формат сверить с ОРД партнёрки.
-            <span className="group/ad relative flex">
+            // ниже lg «Бонуса» нет (владелец: «а может вообще ее убрать так как у меня на странице матча появляется снизу
+            // попап?» — «да»): шапка — надпись и лупа; к букмекеру на телефоне ведут кэфы в строках, «Выгодно сегодня»,
+            // «Где ставить», на матче — нижняя плашка и кнопка в «Прогнозе»; на компьютере попапа нет — кнопка осталась
+            <span className="group/ad relative hidden lg:flex">
               <CtaLink
                 href={goHref(partner, 'header')}
                 size="sm"
-                className="cta-shine !h-9 !gap-0 flex-col rounded-ctl px-3.5 leading-none lg:!h-10 lg:px-4"
+                className="cta-shine !h-10 !gap-0 flex-col rounded-ctl px-4 leading-none"
                 describedBy="hdr-ad"
               >
                 {/* с именем букмекера от xl: «Бонус» без имени — реклама «неизвестно чего»; ниже xl места нет */}
-                <span className="text-[13.5px] lg:text-[14px]">
+                <span className="text-[14px]">
                   Бонус<span className="hidden xl:inline"> в {partner.name}</span>
                 </span>
-                <span className="mt-[2px] text-[10px] font-semibold opacity-70 lg:mt-[3px]">Реклама · 18+</span>
+                <span className="mt-[3px] text-[10px] font-semibold opacity-70">Реклама · 18+</span>
               </CtaLink>
               <span
                 id="hdr-ad"

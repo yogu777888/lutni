@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-const KEY = 'tb-cta-closed'
+/** закрыта на этом матче: `tb-cta-closed:<адрес страницы>` */
+const key = () => `tb-cta-closed:${location.pathname}`
 
 /**
  * Обёртка нижней плашки: пока кнопка в `target` (кнопка ставки в первом блоке) видна целиком, плашка уезжает вниз.
@@ -10,9 +11,10 @@ const KEY = 'tb-cta-closed'
  * 16px, и на первом экране кнопки не оставалось вовсе. Отдельно от `StickyCta`: та — серверная и получает партнёра
  * целиком (в нём RegExp — в клиентский компонент его не передать).
  *
- * Крестик слева внутри плашки и свайп вниз закрывают плашку до конца сессии — на всех матчах (владелец: «над попапом
- * снизу … сверху справа надо крестик сделать?» — «да»; закрытие на одном матче раздражало бы на следующем); после
- * перезапуска браузера плашка возвращается (sessionStorage).
+ * Крестик слева внутри плашки и свайп вниз закрывают плашку только на этом матче до конца сессии (владелец: «над попапом
+ * снизу … сверху справа надо крестик сделать?» — «да»; сначала закрывалась на всех матчах — владелец: «после того как я
+ * его закрыл и он вообще перестал появляться», а «Бонуса» в шапке на телефоне больше нет, и плашка — главный путь к
+ * букмекеру на матче); на другом матче — снова видна.
  */
 export function StickyHide({ target, className, children }: { target: string; className: string; children: React.ReactNode }) {
   const [hide, setHide] = useState(false)
@@ -20,7 +22,7 @@ export function StickyHide({ target, className, children }: { target: string; cl
   const y0 = useRef<number | null>(null)
   useEffect(() => {
     try {
-      if (sessionStorage.getItem(KEY)) setClosed(true)
+      setClosed(Boolean(sessionStorage.getItem(key())))
     } catch {}
     const box = document.getElementById(target)
     const el = box?.querySelector('a') ?? box
@@ -32,7 +34,7 @@ export function StickyHide({ target, className, children }: { target: string; cl
   const close = () => {
     setClosed(true)
     try {
-      sessionStorage.setItem(KEY, '1')
+      sessionStorage.setItem(key(), '1')
     } catch {}
   }
   const off = hide || closed
