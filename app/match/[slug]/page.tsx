@@ -18,6 +18,7 @@ import { MatchRow } from '@/components/MatchRow'
 import { PartnerCard } from '@/components/PartnerCard'
 import { BlockNote, BlockTitle, Section } from '@/components/Section'
 import { TeamLogo } from '@/components/TeamLogo'
+import { StorySymbol } from '@/components/story/StorySymbol'
 import { StandingsTable } from '@/components/StandingsTable'
 import { StickyCta } from '@/components/StickyCta'
 import { PARTNERS, partnerForApiBookmaker, primaryPartner } from '@/config/bookmakers'
@@ -218,6 +219,8 @@ export default async function MatchPage({ params }: Props) {
           : null,
       })
     : null
+  // «Выгодные ставки» до начала — уже в «Прогнозе tag.bet» с цифрами, в «В подборках» не повторяем
+  const shownTags = scheduled && (verdict || pick) ? tags.filter((t) => t.slug !== 'value') : tags
 
   const partner = pick?.candidate.bestPartner?.partner ?? primaryPartner()
   const pickOffer = pick?.candidate.bestPartner
@@ -299,18 +302,46 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {/* до начала подборки были чипами «#выгодно» внизу табло — теперь здесь же, как после начала */}
-          {tags.length ? (
-            <Section outside title="В подборках">
-              <ul className="grid gap-y-4 sm:grid-cols-[max-content_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-3">
-                {tags.map((t) => (
-                  <li key={t.slug} className="flex flex-col items-start gap-1.5 sm:col-span-2 sm:grid sm:grid-cols-subgrid sm:gap-x-6">
-                    <Link href={`/tag/${t.slug}`} prefetch={false} title={TAG_BY_SLUG.get(t.slug)?.hint} className="text-[15px] font-semibold transition-colors hover:text-dim">
-                      {TAG_BY_SLUG.get(t.slug)?.title ?? t.slug}
-                    </Link>
-                    <p className="text-[14px] leading-relaxed text-dim sm:pt-px">{t.short ?? t.reason}</p>
-                  </li>
-                ))}
+          {/* подборки матча — строками, как «Подборки дня» в правой панели (владелец: «блок в подборках на странице матча сейчас
+              не нравится» — «да»: был текст столбиком без значков, черт и стрелок, «Барселона» в пяти строках из шести): значок
+              подборки в круге, название, факт серым, «›»; команда в начале факта — эмблемой; до начала без «Выгодных ставок» —
+              эта ставка с цифрами уже в «Прогнозе tag.bet»; от 2xl контейнера — две колонки, как «Другие матчи» */}
+          {shownTags.length ? (
+            <Section outside title="В подборках" className="@container overflow-hidden !p-0">
+              <ul className="grid @2xl:grid-cols-2">
+                {shownTags.map((t, i) => {
+                  const fact = t.short ?? t.reason
+                  const side = [m.home, m.away].find((tm) => fact.startsWith(`«${tm.name}»`))
+                  const rest = side ? fact.slice(side.name.length + 2).replace(/^[:,]\s*/, '') : fact
+                  return (
+                    <li key={t.slug} className={`border-edge @2xl:even:border-l ${i ? 'border-t' : ''} ${i === 1 ? '@2xl:border-t-0' : ''}`}>
+                      <Link
+                        href={`/tag/${t.slug}`}
+                        prefetch={false}
+                        title={TAG_BY_SLUG.get(t.slug)?.hint}
+                        className="group flex min-h-14 items-center gap-3 px-5 py-2.5 transition-colors hover:bg-white/[0.02] sm:px-7"
+                      >
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
+                          <StorySymbol k={t.slug} tone="currentColor" className="h-[18px] w-[18px]" />
+                        </span>
+                        <span className="min-w-0 flex-1 leading-tight">
+                          <span className="block text-[15px] font-semibold">{TAG_BY_SLUG.get(t.slug)?.title ?? t.slug}</span>
+                          <span className="mt-1 flex items-center gap-1.5 text-[14px] text-dim">
+                            {side ? (
+                              <span className="shrink-0" title={`«${side.name}»`}>
+                                <TeamLogo name={side.name} src={side.logo ?? null} size={18} />
+                              </span>
+                            ) : null}
+                            <span className="min-w-0 first-letter:uppercase">{rest}</span>
+                          </span>
+                        </span>
+                        <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 shrink-0 text-mute transition-colors group-hover:text-fg" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m9 6 6 6-6 6" />
+                        </svg>
+                      </Link>
+                    </li>
+                  )
+                })}
               </ul>
             </Section>
           ) : null}
