@@ -70,7 +70,7 @@ export function DateTabs({
               // была единственным лаймом на экране не про ставку и спорила с выгодными кэфами; «вы здесь» — везде одного цвета
               className={
                 chips
-                  ? `inline-flex shrink-0 items-center font-medium transition-colors max-lg:h-8 max-lg:rounded-full max-lg:px-3.5 max-lg:text-[14px] lg:h-9 lg:border-b-2 lg:text-[15px] ${
+                  ? `inline-flex shrink-0 items-center font-medium transition-colors max-lg:h-[30px] max-lg:rounded-full max-lg:px-3.5 max-lg:text-[14px] lg:h-9 lg:border-b-2 lg:text-[15px] ${
                       on ? 'max-lg:bg-fg max-lg:text-ink lg:border-fg lg:text-fg' : 'max-lg:bg-white/[0.08] max-lg:text-fg/85 lg:border-transparent lg:text-dim lg:hover:text-fg'
                     }`
                   : `inline-flex h-9 shrink-0 items-center border-b-2 text-[15px] font-medium transition-colors ${

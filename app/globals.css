@@ -1026,12 +1026,13 @@ html[data-shell-rc] .shell-r-rail {
   html[data-bars-hidden] .site-header {
     transform: translateY(-100%);
   }
+  /* 54px — шапка ниже lg (52px и черта) и 1px запаса; от lg ряд не уходит (там своя раскладка) */
   html[data-bars-hidden] .hdr-sub {
-    transform: translateY(calc(-100% - 66px));
+    transform: translateY(calc(-100% - 54px));
   }
   /* мини-табло уходит вместе с шапкой (владелец: «имею ввиду чтоб оно скрывалось вместе с хедером») */
   html[data-bars-hidden] .match-top {
-    transform: translateY(calc(-100% - 66px));
+    transform: translateY(calc(-100% - 54px));
   }
   html[data-bars-hidden] .tabbar {
     transform: translateY(calc(100% + 56px));

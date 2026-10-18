@@ -249,7 +249,7 @@ export async function DayView({
             хедер сделал?»): без своей плашки, липкий вплотную под шапкой, при прокрутке — то же стекло, что у шапки, и одна
             черта снизу (`.hdr-sub` в app/globals.css); lg–xl — плашкой цвета панели, липкой под шапкой; от xl — правила
             .bare-panel в app/globals.css */}
-        <div className="bare-panel hdr-sub max-lg:sticky max-lg:top-[65px] max-lg:z-30 max-lg:-mx-4 lg:max-xl:sticky lg:max-xl:top-[65px] lg:max-xl:z-30 lg:max-xl:bg-[#090c10] lg:max-xl:pb-2">
+        <div className="bare-panel hdr-sub max-lg:sticky max-lg:top-[53px] max-lg:z-30 max-lg:-mx-4 lg:max-xl:sticky lg:max-xl:top-[65px] lg:max-xl:z-30 lg:max-xl:bg-[#090c10] lg:max-xl:pb-2">
         {listHead ? (
           // заголовок — как у полок выше: одна схема на всю страницу
           <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
@@ -258,7 +258,7 @@ export async function DayView({
         {/* на телефоне дни и порядок — одной строкой: порядок значками (список / часы) слева (владелец: «может сортировку по времени
             влево перенести?»), дни листаются вбок до края экрана */}
         <div
-          className={`flex items-center justify-between gap-x-3 gap-y-3 max-lg:py-2 max-lg:pl-4 max-lg:pr-0 lg:flex-wrap lg:gap-x-6 lg:max-xl:rounded-card lg:max-xl:bg-panel lg:max-xl:py-1.5 lg:max-xl:pl-4 lg:max-xl:pr-1.5 lg:max-xl:shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${listHead ? 'mt-5' : ''}`}
+          className={`flex items-center justify-between gap-x-3 gap-y-3 max-lg:py-[5px] max-lg:pl-4 max-lg:pr-0 lg:flex-wrap lg:gap-x-6 lg:max-xl:rounded-card lg:max-xl:bg-panel lg:max-xl:py-1.5 lg:max-xl:pl-4 lg:max-xl:pr-1.5 lg:max-xl:shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${listHead ? 'mt-5' : ''}`}
         >
           <div className="min-w-0 flex-1 lg:w-auto lg:flex-none">
             <DateTabs
@@ -287,7 +287,7 @@ export async function DayView({
                     scroll={false}
                     title={`${cur[1]} · нажмите — ${other[1].toLowerCase()}`}
                     aria-label={`Порядок: ${cur[1].toLowerCase()}. Показать ${other[1].toLowerCase()}`}
-                    className="order-first grid h-8 w-11 shrink-0 place-items-center rounded-full bg-white/[0.08] text-fg/85 transition-colors active:bg-white/[0.14] lg:hidden"
+                    className="order-first grid h-[30px] w-11 shrink-0 place-items-center rounded-full bg-white/[0.08] text-fg/85 transition-colors active:bg-white/[0.14] lg:hidden"
                   >
                     <SortIcon k={cur[0]} />
                   </Link>

@@ -30,7 +30,7 @@ export function DatePicker({ active, today, min, max, hash = '', section, chips 
         onClick={open}
         // `chips` — ниже lg чипом, как дни рядом (ряд шапки на главной)
         className={`inline-flex h-9 items-center gap-1.5 border-b-2 border-transparent text-[15px] font-medium text-dim transition-colors hover:text-fg ${
-          chips ? 'max-lg:h-8 max-lg:rounded-full max-lg:border-0 max-lg:bg-white/[0.08] max-lg:px-3 max-lg:text-[14px] max-lg:text-fg/85' : ''
+          chips ? 'max-lg:h-[30px] max-lg:rounded-full max-lg:border-0 max-lg:bg-white/[0.08] max-lg:px-3 max-lg:text-[14px] max-lg:text-fg/85' : ''
         }`}
         aria-label="Выбрать дату"
         title="Выбрать дату"

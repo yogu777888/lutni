@@ -33,8 +33,8 @@ export function TopBar({ fallback, title }: { fallback: { href: string; label: s
     }
   }, [])
   return (
-    <div ref={ref} className="hdr-sub sticky top-[65px] z-30 -mx-4 -mt-4 mb-2 sm:-mt-6 lg:hidden">
-      <div className="grid h-12 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-4">
+    <div ref={ref} className="hdr-sub sticky top-[53px] z-30 -mx-4 -mt-4 mb-2 sm:-mt-6 lg:hidden">
+      <div className="grid h-10 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-4">
         <div className="min-w-0">
           <BackLabel fallback={fallback} bar />
         </div>
