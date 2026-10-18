@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import type { Standings } from '@/lib/types'
 import { TeamLogo } from './TeamLogo'
+import { ZoneRank } from './ZoneRank'
 
 /**
  * Зоны — оттенками белого, вылет — красным (владелец: «а турнирная таблица как?»): оранжевая «Лига Европы» спорила
@@ -50,6 +51,51 @@ export function StandingsTable({
             </td>
           </tr>
         )
+        if (compact)
+          // на странице матча — словами и без легенды (владелец: «блок турнирная таблица тоже какойто не очень» — «да»):
+          // «Игры · Разница · Очки» вместо «И · М · О» и «36:13», зона — цветом кружка с местом (`ZoneRank`, что за зона —
+          // по нажатию) вместо полоски у края и легенды под таблицей; цифры — по правому краю, команды матча — жирным; на телефоне без «Игр» — иначе «Барс…»
+          return (
+            <div key={gi}>
+              {g.name && standings.groups.length > 1 ? <h3 className="mb-2 text-[13px] font-medium text-dim">{g.name}</h3> : null}
+              <div className="grid grid-cols-[28px_minmax(0,1fr)_60px_40px] items-center gap-x-2 pb-2 text-[13px] text-mute sm:grid-cols-[28px_minmax(0,1fr)_64px_72px_56px]">
+                <span className="text-center">#</span>
+                <span>Команда</span>
+                <span className="text-right max-sm:hidden">Игры</span>
+                <span className="text-right">Разница</span>
+                <span className="text-right">Очки</span>
+              </div>
+              {shown.length && shown[0].i > 0 ? <Dots /> : null}
+              {shown.map(({ r, i }, k) => {
+                const hl = highlight.includes(r.teamId)
+                const prev = k ? shown[k - 1].i : i
+                const diff = r.goalsFor - r.goalsAgainst
+                return (
+                  <Fragment key={r.teamId}>
+                    {i - prev > 1 ? <Dots /> : null}
+                    <div
+                      title={`Мячи ${r.goalsFor}:${r.goalsAgainst}`}
+                      className={`-mx-2 grid min-h-11 grid-cols-[28px_minmax(0,1fr)_60px_40px] items-center gap-x-2 border-t border-edge px-2 text-[15px] sm:grid-cols-[28px_minmax(0,1fr)_64px_72px_56px] ${hl ? 'bg-white/[0.05]' : ''}`}
+                    >
+                      <span className="flex justify-center">
+                        <ZoneRank rank={r.rank} zone={r.zone} />
+                      </span>
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="shrink-0">
+                          <TeamLogo name={r.team} src={r.logo} size={20} />
+                        </span>
+                        <span className={`line-clamp-2 break-words leading-tight ${hl ? 'font-semibold text-fg' : 'text-fg/90'}`}>{r.team}</span>
+                      </span>
+                      <span className="num text-right text-dim max-sm:hidden">{r.played}</span>
+                      <span className="num text-right text-dim">{diff > 0 ? `+${diff}` : diff < 0 ? `−${-diff}` : '0'}</span>
+                      <span className="num text-right font-semibold">{r.points}</span>
+                    </div>
+                  </Fragment>
+                )
+              })}
+              {shown.length && shown[shown.length - 1].i < last ? <Dots /> : null}
+            </div>
+          )
         return (
           <div key={gi}>
             {g.name && standings.groups.length > 1 ? <h3 className="mb-2 text-[13px] font-medium text-dim">{g.name}</h3> : null}
@@ -105,9 +151,8 @@ export function StandingsTable({
           </div>
         )
       })}
-      {/* в куске таблицы на странице матча одна зона («Лига чемпионов») — без подписи: полоски у строк и так видно, ради
-          одной подписи под таблицей стояла пустая полоса; полностью — на странице лиги */}
-      {[...zones].filter((z) => ZONE[z]).length > (compact ? 1 : 0) ? (
+      {/* легенда — только у полной таблицы (страница лиги); на странице матча зона — цветом кружка с местом */}
+      {!compact && [...zones].filter((z) => ZONE[z]).length ? (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-dim">
           {[...zones].filter((z) => ZONE[z]).map((z) => (
             <span key={z} className="flex items-center gap-1.5">
@@ -117,6 +162,15 @@ export function StandingsTable({
           ))}
         </div>
       ) : null}
+    </div>
+  )
+}
+
+/** Пропуск в куске таблицы — строкой «···» (номера иначе прыгали с 4 на 17). */
+function Dots() {
+  return (
+    <div aria-hidden className="border-t border-edge py-0.5 text-center text-[13px] leading-none tracking-[0.3em] text-mute">
+      ···
     </div>
   )
 }
