@@ -289,7 +289,7 @@ export default async function MatchPage({ params }: Props) {
             // в игре — «Сейчас в матче»: эти цифры учитывают счёт и ход игры; доматчевые блоки ниже подписаны «До матча»
             <Section outside title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'}>
               {/* сверху — полоса матча 0′–90′ во всю ширину, ниже — статистика в две колонки */}
-              <div className="space-y-6">
+              <div className="space-y-6 [&>*+*]:border-t [&>*+*]:border-edge [&>*+*]:pt-5">
                 <EventsBlock
                   events={full.events}
                   score={m.score ?? null}

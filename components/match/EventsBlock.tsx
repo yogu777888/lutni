@@ -1,8 +1,8 @@
 import type { MatchEvent, StatPair } from '@/lib/types'
 import { visibleStats } from '@/lib/sstats/normalize'
 import { Hint } from './Hint'
-import { Timeline, type TimelineMark } from './Timeline'
 import { TeamLogo } from '../TeamLogo'
+import { NavIcon } from '../NavIcon'
 
 type Side = { name: string; logo?: string | null }
 
@@ -70,61 +70,80 @@ export function scorers(events: MatchEvent[], final: { home: number; away: numbe
 const minuteText = (e: MatchEvent) => `${e.minute}${e.extra ? `+${e.extra}` : ''}′`
 
 /**
- * Ход матча (владелец: «сейчас в матче как?», согласился): полоса 0′–90′ во всю ширину (`Timeline`) — хозяева над
- * чертой, гости под ней; гол — плашкой со счётом после него, карточки — цветом карточки, при наведении — минута,
- * игрок и счёт. Строки голов под полосой («16′ 1:0 B. Schmidt») больше нет: авторы и минуты — под названиями команд
- * на табло, счёт после гола — в плашке; так гол показан один раз, а не три.
+ * События матча — списком, как «Ход игры» в Apple Sports (владелец: «все равно он некрасивый и недоделанный какой-то? эппл
+ * бы так не сделал»; была полоса 0′–90′ с плашками — диаграмма, а не табло): строка — минута по центру, событие хозяев
+ * слева, гостей справа; гол — мяч, игрок и счёт после гола, красная — карточка и игрок; между таймами — черта «Перерыв».
+ * Жёлтые не показываем — их число в статистике ниже; замены и VAR — тоже нет.
  */
 export function EventsBlock({
   events,
   score,
   now,
-  home,
-  away,
 }: {
   events: MatchEvent[]
   score: { home: number; away: number } | null
-  /** минута идущего матча (до неё — прошедшая часть полосы); null — матч окончен */
+  /** минута идущего матча; null — матч окончен */
   now: number | null
-  home: Side
-  away: Side
+  home?: Side
+  away?: Side
 }) {
-  // на полосе — голы и красные (владелец: «блок сейчас в матче некрасивый очень и длинный» — жёлтые громоздились столбиком
-  // над голами; их число — в «Вся статистика»); счёт после гола считаем по всем голам
   const shown = events.filter((e) => e.kind !== 'sub' && e.kind !== 'other' && e.kind !== 'var')
-  const flow = withScore(shown, now == null ? score : null).filter((e) => GOALS.has(e.kind) || e.kind === 'red')
-  const end = Math.max(90, ...shown.map((e) => e.minute + (e.extra ?? 0)), now ?? 0)
-  // подсказка значка: сверху — минута и что случилось, ниже — игрок и команда (у автогола — только игрок: поставщики
-  // пишут его то за команду игрока, то за получившую гол; чей он — видно по ряду, где стоит плашка)
-  const what = (e: Flow) => {
-    const sc = e.score ? ` ${e.score}` : ''
-    if (e.kind === 'goal') return `Гол${sc}`
-    if (e.kind === 'penalty') return `Гол с пенальти${sc}`
-    if (e.kind === 'own-goal') return `Автогол${sc}`
-    if (e.kind === 'missed-penalty') return 'Незабитый пенальти'
-    return e.kind === 'red' ? 'Красная карточка' : 'Жёлтая карточка'
-  }
-  const who = (e: Flow) => [e.player, e.kind === 'own-goal' ? '' : e.side === 'home' ? home.name : away.name].filter(Boolean).join(' · ')
+  const flow = withScore(shown, now == null ? score : null).filter((e) => GOALS.has(e.kind) || e.kind === 'red' || e.kind === 'missed-penalty')
+  if (!flow.length) return null
+  // сторона гола — по изменению счёта (так учтён и автогол), как в `scorers`
   let h = 0
-  const marks: TimelineMark[] = flow.map((e) => {
-    const goal = GOALS.has(e.kind)
-    // плашка гола — в ряду команды, которой он засчитан (автогол — по изменению счёта, как в `scorers`)
+  const rows = flow.map((e) => {
     let side = e.side
-    if (goal && e.score) {
+    if (GOALS.has(e.kind) && e.score) {
       const nh = Number(e.score.split(':')[0])
       side = nh > h ? 'home' : 'away'
       h = nh
     }
-    return {
-      kind: goal ? 'goal' : e.kind === 'yellow' ? 'yellow' : e.kind === 'red' ? 'red' : 'miss',
-      side,
-      at: e.minute + (e.extra ?? 0),
-      label: goal ? e.score : null,
-      head: `${minuteText(e)} · ${what(e)}`,
-      sub: who(e),
-    }
+    return { e, side }
   })
-  return <Timeline marks={marks} end={end} now={now} home={home} away={away} />
+  const firstSecond = rows.findIndex((r) => r.e.minute > 45)
+  const icon = (e: Flow) =>
+    GOALS.has(e.kind) ? (
+      // мяч — тот же значок, что «Матчи» в нижнем меню (Phosphor)
+      <NavIcon href="/" on size={18} className="shrink-0 text-fg" />
+    ) : e.kind === 'red' ? (
+      <span aria-hidden className="h-4 w-3 shrink-0 rounded-[2px] bg-[#ff453a]" />
+    ) : (
+      <span aria-hidden className="h-4 w-4 shrink-0 rounded-full ring-[1.5px] ring-inset ring-mute" />
+    )
+  const label = (e: Flow) =>
+    e.kind === 'own-goal' ? 'автогол' : e.kind === 'penalty' ? 'пенальти' : e.kind === 'missed-penalty' ? 'незабитый пенальти' : e.kind === 'red' ? 'удаление' : null
+  const cell = (e: Flow, right: boolean) => (
+    <div className={`flex min-w-0 items-center gap-2 ${right ? 'justify-start' : 'flex-row-reverse justify-start text-right'}`}>
+      {icon(e)}
+      <div className="min-w-0">
+        <div className="truncate text-[15px] font-medium leading-tight">{e.player || (GOALS.has(e.kind) ? 'Гол' : 'Карточка')}</div>
+        {label(e) || e.score ? (
+          <div className="text-[13px] leading-tight text-dim">{[e.score, label(e)].filter(Boolean).join(' · ')}</div>
+        ) : null}
+      </div>
+    </div>
+  )
+  return (
+    <ul className="mx-auto -my-1 max-w-xl">
+      {rows.map(({ e, side }, i) => (
+        <li key={i}>
+          {i === firstSecond && firstSecond > 0 ? (
+            <div className="my-1.5 flex items-center gap-3 text-[12px] text-mute">
+              <span className="h-px flex-1 bg-edge" />
+              Перерыв
+              <span className="h-px flex-1 bg-edge" />
+            </div>
+          ) : null}
+          <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_3.25rem_minmax(0,1fr)] items-center gap-2 py-1">
+            <div>{side === 'home' ? cell(e, false) : null}</div>
+            <div className="num text-center text-[13px] font-semibold text-dim">{minuteText(e)}</div>
+            <div>{side === 'away' ? cell(e, true) : null}</div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 /**
@@ -139,9 +158,6 @@ const HIDE = new Set(['totalPasses', 'goalkeeperSaves'])
  */
 const ORDER = ['ballPossession', 'totalShots', 'shotsOnGoal', 'bigChances', 'expectedGoals', 'dangerousAttacks', 'cornerKicks', 'fouls', 'yellowCards', 'redCards', 'offsides']
 const rank = (key: string) => (ORDER.includes(key) ? ORDER.indexOf(key) : ORDER.length)
-
-/** Ключевые строки под владением — видны сразу; остальные — под «Вся статистика». */
-const KEY = ['totalShots', 'shotsOnGoal', 'bigChances', 'expectedGoals', 'cornerKicks']
 
 /**
  * Статистика по ходу матча — без цветов команд, как у Apple Sports: у каждой строки светлее та сторона, где больше
@@ -159,80 +175,42 @@ export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home:
     .filter((s) => !HIDE.has(s.key))
     .sort((a, b) => rank(a.key) - rank(b.key))
   if (!stats.length) return <p className="text-sm text-dim">Статистика появится по ходу матча.</p>
-  // владение — главной строкой; ниже четыре ключевые; остальное — под «Вся статистика» (владелец: «блок сейчас в матче
-  // некрасивый очень и длинный» — восемь одинаковых строк «ёлочкой», офсайды наравне с ударами)
-  const poss = stats.find((s) => s.key === 'ballPossession')
-  const rest = stats.filter((s) => s !== poss)
-  const key = rest.filter((s) => KEY.includes(s.key)).slice(0, 4)
-  const more = rest.filter((s) => !key.includes(s))
   const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2))
-  const bar = (more: boolean, eq: boolean) => (eq ? 'bg-white/45' : more ? 'bg-white/85' : 'bg-white/30')
-  const row = (s: StatPair) => {
-    const total = s.home + s.away || 1
-    const eq = s.home === s.away
-    return (
-      <li key={s.key}>
-        <div className="flex items-baseline justify-between gap-3 text-[14px]">
-          <span className={`num ${s.home > s.away ? 'font-semibold text-fg' : 'text-dim'}`}>
-            {fmt(s.home)}
-            {s.suffix ?? ''}
-          </span>
-          <span className="truncate text-[13px] text-mute">
-            {s.label}
-            {HINT[s.key] ? <Hint title={s.label} text={HINT[s.key]} /> : null}
-          </span>
-          <span className={`num ${s.away > s.home ? 'font-semibold text-fg' : 'text-dim'}`}>
-            {fmt(s.away)}
-            {s.suffix ?? ''}
-          </span>
-        </div>
-        <div className="mt-1.5 flex h-1 gap-0.5">
-          <div className="flex flex-1 justify-end overflow-hidden rounded-l-full bg-white/[0.08]">
-            <div className={`h-full rounded-l-full ${bar(s.home > s.away, eq)}`} style={{ width: `${(s.home / total) * 100}%` }} />
-          </div>
-          <div className="flex-1 overflow-hidden rounded-r-full bg-white/[0.08]">
-            <div className={`h-full rounded-r-full ${bar(s.away > s.home, eq)}`} style={{ width: `${(s.away / total) * 100}%` }} />
-          </div>
-        </div>
-      </li>
+  // без полос, как «Статистика команд» в Apple Sports (владелец: «эппл бы так не сделал»): у кого больше — цифра в белой
+  // пилюле, у другого — серым; равные — обе белым текстом без пилюли
+  const val = (v: number, other: number, suffix = '') =>
+    v > other ? (
+      <span className="num inline-flex h-7 min-w-11 items-center justify-center rounded-full bg-white px-2.5 text-[15px] font-semibold text-ink">
+        {fmt(v)}
+        {suffix}
+      </span>
+    ) : (
+      <span className={`num inline-flex h-7 min-w-11 items-center justify-center px-2.5 text-[15px] ${v === other ? 'font-semibold text-fg' : 'text-dim'}`}>
+        {fmt(v)}
+        {suffix}
+      </span>
     )
-  }
   return (
-    <div>
-      {/* владение — крупно, с эмблемами по краям: заодно задаёт, чьи цифры слева и справа (строка названий не нужна) */}
-      {poss ? (
-        <div>
-          <div className="flex items-center gap-2.5">
-            <TeamLogo name={home.name} src={home.logo ?? null} size={24} />
-            <span className={`num text-[22px] font-bold tracking-[-0.02em] ${poss.home >= poss.away ? 'text-fg' : 'text-dim'}`}>{poss.home}%</span>
-            {/* «Владение», без «мячом»: на 360px подпись переносилась в две строки */}
-            <span className="flex-1 text-center text-[13px] text-mute">Владение</span>
-            <span className={`num text-[22px] font-bold tracking-[-0.02em] ${poss.away >= poss.home ? 'text-fg' : 'text-dim'}`}>{poss.away}%</span>
-            <TeamLogo name={away.name} src={away.logo ?? null} size={24} />
-          </div>
-          <div className="mt-2.5 flex h-2 gap-0.5" aria-hidden>
-            <div className={`h-full rounded-l-full ${bar(poss.home > poss.away, poss.home === poss.away)}`} style={{ width: `${poss.home}%` }} />
-            <div className={`h-full flex-1 rounded-r-full ${bar(poss.away > poss.home, poss.home === poss.away)}`} />
-          </div>
-        </div>
-      ) : (
-        <div className="flex justify-between gap-3 text-[13px] text-dim">
-          <span className="flex items-center gap-2"><TeamLogo name={home.name} src={home.logo ?? null} size={20} />{home.name}</span>
-          <span className="flex items-center gap-2">{away.name}<TeamLogo name={away.name} src={away.logo ?? null} size={20} /></span>
-        </div>
-      )}
-      <ul className="mt-5 grid gap-x-10 gap-y-4 md:grid-cols-2">{key.map(row)}</ul>
-      {more.length ? (
-        <details className="group mt-4 border-t border-edge">
-          <summary className="flex h-11 list-none items-center justify-between text-[14px] font-medium text-dim transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
-            Вся статистика
-            <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </summary>
-          <ul className="grid gap-x-10 gap-y-4 pb-1 pt-1 md:grid-cols-2">{more.map(row)}</ul>
-        </details>
-      ) : null}
+    // одной колонкой по центру (в две колонки на компьютере путалось, чьи цифры где)
+    <div className="mx-auto max-w-xl">
+      {/* чьи цифры — эмблемами над колонками */}
+      <div className="mb-1 flex items-center justify-between px-1.5">
+        <TeamLogo name={home.name} src={home.logo ?? null} size={26} />
+        <span className="text-[13px] text-mute">Статистика</span>
+        <TeamLogo name={away.name} src={away.logo ?? null} size={26} />
+      </div>
+      <ul>
+        {stats.map((s) => (
+          <li key={s.key} className="grid min-h-10 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+            {val(s.home, s.away, s.suffix)}
+            <span className="truncate text-center text-[14px] text-dim">
+              {s.label}
+              {HINT[s.key] ? <Hint title={s.label} text={HINT[s.key]} /> : null}
+            </span>
+            {val(s.away, s.home, s.suffix)}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
