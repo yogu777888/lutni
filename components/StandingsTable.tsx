@@ -18,7 +18,8 @@ const ZONE: Record<string, string> = {
 }
 
 /**
- * Таблица турнира. compact (страница матча) — только строки вокруг команд матча (±2), пропуски — строкой «···»: без неё
+ * Таблица турнира. compact (страница матча) — только строки вокруг команд матча (±1: владелец — «может оставить 1
+ * сверху команду одну снизу чтоб блок не такой длинный был?»), пропуски — строкой «···»: без неё
  * номера прыгали с 4 на 17, а таблица выглядела сплошной. На телефоне — «#», команда, «И», «М», «О» без прокрутки вбок
  * (очки уезжали за край), «В / Н / П» — от sm; номер — колонкой под две цифры, по правому краю («15» налезало на эмблему).
  */
@@ -39,7 +40,7 @@ export function StandingsTable({
         if (compact && g.rows.length > 10 && highlight.length) {
           const idx = g.rows.map((r, i) => (highlight.includes(r.teamId) ? i : -1)).filter((i) => i >= 0)
           const keep = new Set<number>()
-          for (const i of idx) for (let k = i - 2; k <= i + 2; k++) if (k >= 0 && k < g.rows.length) keep.add(k)
+          for (const i of idx) for (let k = i - 1; k <= i + 1; k++) if (k >= 0 && k < g.rows.length) keep.add(k)
           shown = shown.filter(({ i }) => keep.has(i))
         }
         shown.forEach(({ r }) => r.zone && zones.add(r.zone))
