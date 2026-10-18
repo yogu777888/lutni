@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { formatTime, pluralN } from '@/lib/format'
 import { isLive } from '@/lib/rank'
 import type { Match } from '@/lib/types'
-import type { Crumb } from '../Breadcrumbs'
 import { DateTabs } from '../DateTabs'
 import { PageHead } from '../PageHead'
 import { TeamLogo } from '../TeamLogo'
@@ -61,7 +60,6 @@ export function PickHead({
   how,
   children,
   section,
-  crumbs,
 }: {
   ymd: string
   today: string
@@ -72,11 +70,9 @@ export function PickHead({
   how?: React.ReactNode
   children: React.ReactNode
   section: string
-  crumbs: Crumb[]
 }) {
   return (
     <PageHead
-      crumbs={crumbs}
       lead={
         <span
           aria-hidden

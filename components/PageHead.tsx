@@ -1,4 +1,18 @@
 import { Breadcrumbs, type Crumb } from './Breadcrumbs'
+import { PageBar } from './PageBar'
+
+/**
+ * Верхняя панель вложенной страницы: «← Раздел», при прокрутке — название (`PageBar`). Ставится первой на странице,
+ * до `PageHead`; `crumbs` — полная цепочка (на экране — только раздел выше, поисковикам — BreadcrumbList).
+ */
+export function PageTop({ crumbs, title }: { crumbs: Crumb[]; title: string }) {
+  const parent = crumbs[crumbs.length - 2] ?? crumbs[0]
+  return (
+    <PageBar back={parent.href} title={title}>
+      <Breadcrumbs className="min-w-0 text-[13px]" parentOnly items={crumbs} />
+    </PageBar>
+  )
+}
 
 /**
  * Шапка страницы — одна на весь сайт (владелец: «на всех страницах разные по размеру заголовки? в букмекерах заголовок
@@ -9,14 +23,12 @@ import { Breadcrumbs, type Crumb } from './Breadcrumbs'
  */
 export function PageHead({
   title,
-  crumbs,
   lead,
   sub,
   aside,
   children,
 }: {
   title: React.ReactNode
-  crumbs?: Crumb[]
   lead?: React.ReactNode
   sub?: React.ReactNode
   aside?: React.ReactNode
@@ -24,12 +36,11 @@ export function PageHead({
 }) {
   return (
     <section className="card min-w-0 px-4 py-4 sm:px-5">
-      {crumbs ? <Breadcrumbs items={crumbs} back parentOnly className="mb-3" /> : null}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {lead ? <div className="shrink-0">{lead}</div> : null}
           <div className="min-w-0">
-            <h1 className="h1-block text-[24px] leading-tight sm:text-[28px]">{title}</h1>
+            <h1 data-page-title className="h1-block text-[24px] leading-tight sm:text-[28px]">{title}</h1>
             {sub ? <div className="mt-1 max-w-[68ch] text-[14px] leading-snug text-dim">{sub}</div> : null}
           </div>
         </div>
