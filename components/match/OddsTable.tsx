@@ -7,7 +7,6 @@ import type { Match } from '@/lib/types'
 import { pluralN } from '@/lib/format'
 import { BlockMore } from '../BlockMore'
 import { PartnerBadge } from '../PartnerBadge'
-import { TeamLogo } from '../TeamLogo'
 
 type Col = { key: string; label: string; title?: string; get: (b: BookOdds) => Quote | undefined }
 
@@ -30,7 +29,7 @@ function partnerOrder(b: BookOdds) {
  * Сравнение коэффициентов: выгодные (выше честной цены) — лаймом, лучший в колонке — белым жирным (только при трёх
  * букмекерах и больше: при двух жирной была половина таблицы — «шахматка»), кэф партнёра — ссылка к нему (через /go
  * с subid); остальные легальные — строкой «Ещё N легальных букмекеров →». Пояснение — только про то, что есть на экране.
- * Строки «букмекер — три кэфа» на всех ширинах, исход и голы — двумя частями со своей шапкой.
+ * Строки — исходы словами, колонки — букмекеры и «Честная» (одна шапка с логотипами).
  * Показывается только до начала матча (после — кэфы «сейчас» на табло, по доматчевым не поставить).
  */
 export function OddsTable({
@@ -93,7 +92,7 @@ export function OddsTable({
       // число без плашки, как цифры в «Форме команд»; плашка — только у выгодного, лаймом (владелец: «Коэффициенты
       // букмекеров тоже некрасивый» — девять серых ячеек давали сетку коробочек); лучший в колонке — жирным
       <span
-        className={`num inline-flex h-8 min-w-[58px] items-center justify-center rounded-full px-2 text-[15px] ${
+        className={`num inline-flex h-8 min-w-[52px] items-center justify-center rounded-full px-1.5 text-[15px] ${
           val ? 'bg-acid font-semibold text-acid-ink' : isBest ? 'font-semibold text-fg' : 'font-medium text-fg/90'
         }`}
         title={
@@ -123,63 +122,49 @@ export function OddsTable({
     return p ? (1 / p).toFixed(2) : '—'
   }
 
-  // одна строка подписей на таблицу и строки «букмекер — три кэфа», как список в iOS (владелец: «виджеты довольно грязно
-  // выглядят … куча мелкого текста в блоке» — подписи исходов повторялись у каждого букмекера и у «Честной цены», 18
-  // подписей на 18 чисел); голы — вторым сегментом «Исход | Голы», а не вторым рядом чисел; кнопки «Ставка» нет — к
-  // букмекеру ведёт сам кэф
-  const GRID = 'grid grid-cols-[minmax(0,1fr)_repeat(3,62px)] items-center gap-x-1.5 sm:grid-cols-[minmax(0,1fr)_repeat(3,88px)]'
-  const table = (group: Col[], title: string) => (
-    <div className="text-[15px]">
-      {/* шапка одной ровной строкой: у исходов матча — эмблемы команд и «Ничья» (названия переносились «Райо / Вальекано»),
-          полное название — в подсказке */}
-      <div className={`${GRID} !items-end pb-2 text-[13px] leading-tight text-mute`}>
-        <span className="text-[15px] font-semibold text-fg">{title}</span>
-        {group.map((c) => {
-          const t = c.key === 'home' ? match.home : c.key === 'away' ? match.away : null
-          return (
-            <span key={c.key} title={c.title ?? c.label} className="flex min-h-6 items-center justify-center text-center">
-              {t ? <TeamLogo name={t.name} src={t.logo ?? null} size={24} /> : c.label}
-              {t ? <span className="sr-only">{t.name}</span> : null}
-            </span>
-          )
-        })}
-      </div>
-      {rows.map((b) => {
-        const partner = partnerForApiBookmaker(b.bookmakerId, b.bookmakerName)
-        return (
-          <div key={`${b.bookmakerId}-${b.bookmakerName}`} className={`${GRID} min-h-12 border-t border-edge py-2`}>
-            <span className="flex min-w-0 items-center gap-2.5">
-              {partner ? <PartnerBadge partner={partner} size={24} /> : null}
-              <span className="truncate font-medium">{partner?.name ?? b.bookmakerName}</span>
-            </span>
-            {group.map((c) => (
-              <span key={c.key} className="text-center">
-                {cell(b, c, partner)}
-              </span>
-            ))}
-          </div>
-        )
-      })}
-      {model ? (
-        <div className={`${GRID} min-h-12 border-t border-edge py-2 text-dim`} title="Сколько стоит исход по оценке tag.bet — без маржи букмекера">
-          <span className="truncate">Честная цена</span>
-          {group.map((c) => (
-            <span key={c.key} className="num text-center">
-              {fair(c)}
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  )
-  const x12 = cols.filter((c) => ['home', 'draw', 'away'].includes(c.key))
-  const goals = cols.filter((c) => !['home', 'draw', 'away'].includes(c.key))
+  // таблица перевёрнута: строки — исходы словами, колонки — букмекеры и «Честная» (владелец: «как будто вытянутый блок
+  // получился» — двумя частями «Исход» и «Голы» со своими шапками и «Честной ценой» выходило ~520px на телефоне); одна
+  // шапка с логотипами, строку легко сравнить: кэф букмекера рядом с честной ценой
+  const colW = 'clamp(54px, 15vw, 96px)'
+  const grid = { gridTemplateColumns: `minmax(0,1fr) repeat(${rows.length + (model ? 1 : 0)}, ${colW})` }
+  const partners = rows.map((b) => ({ b, partner: partnerForApiBookmaker(b.bookmakerId, b.bookmakerName) }))
 
   return (
     <div>
-      {/* исход и голы — двумя частями одной карточки, у каждой своя шапка (переключатель «Исход | Голы» висел сам по себе) */}
-      {rows.length && x12.length ? table(x12, 'Исход') : null}
-      {rows.length && goals.length ? <div className={x12.length ? 'mt-6' : ''}>{table(goals, 'Голы')}</div> : null}
+      {rows.length ? (
+        <div className="text-[15px]">
+          <div className="grid items-end gap-x-1 pb-2" style={grid}>
+            <span />
+            {partners.map(({ b, partner }) => (
+              <span key={`${b.bookmakerId}-${b.bookmakerName}`} title={partner?.name ?? b.bookmakerName} className="flex flex-col items-center gap-1 text-center">
+                {partner ? <PartnerBadge partner={partner} size={24} /> : null}
+                {/* ниже 380px — только логотип: «Мараф…» обрезалось */}
+                <span className="max-w-full truncate text-[13px] text-mute max-[379px]:sr-only">{partner?.name ?? b.bookmakerName}</span>
+              </span>
+            ))}
+            {model ? (
+              <span className="text-center text-[13px] leading-tight text-mute" title="Сколько стоит исход по оценке tag.bet — без маржи букмекера">
+                Честная
+              </span>
+            ) : null}
+          </div>
+          {cols.map((c) => (
+            <div key={c.key} className="grid min-h-12 items-center gap-x-1 border-t border-edge py-1.5" style={grid}>
+              {/* на телефоне — коротко («Райо Вальекано», «3+ гола»): «Победа «Райо…»» обрезалось */}
+              <span className="line-clamp-2 break-words pr-2 text-[14px] leading-tight text-dim">
+                <span className="sm:hidden">{c.label}</span>
+                <span className="max-sm:hidden">{c.title ?? c.label}</span>
+              </span>
+              {partners.map(({ b, partner }) => (
+                <span key={`${b.bookmakerId}-${b.bookmakerName}`} className="text-center">
+                  {cell(b, c, partner)}
+                </span>
+              ))}
+              {model ? <span className="num text-center text-dim">{fair(c)}</span> : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {others.length ? (
         // остальные легальные — одной строкой внизу блока (чипы в три строки были ярче самой таблицы)
