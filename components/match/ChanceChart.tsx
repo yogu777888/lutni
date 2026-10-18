@@ -43,8 +43,8 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
   const lo = Math.max(0, Math.floor((Math.min(...vals) - 2) / step) * step)
   const hi = Math.min(100, Math.ceil((Math.max(...vals) + 2) / step) * step)
   const H = 240
-  const L = 48
-  const R = 132
+  const L = 50
+  const R = 150
   const T = 14
   const B = 28
   const x = (t: number) => L + ((t - t0) / (t1 - t0)) * (w - L - R)
@@ -74,7 +74,7 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
     .map((s) => ({ s, last: s.pts[s.pts.length - 1], y: y(s.pts[s.pts.length - 1]?.v ?? 0) }))
     .filter((l) => l.last)
     .sort((a, b) => a.y - b.y)
-  const GAP = 20
+  const GAP = 22
   for (let i = 1; i < labels.length; i++) labels[i].y = Math.max(labels[i].y, labels[i - 1].y + GAP)
   const over = labels.length ? labels[labels.length - 1].y - (H - B - 8) : 0
   if (over > 0) for (const l of labels) l.y -= over
@@ -100,16 +100,16 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
         {ticks.map((v) => (
           <g key={v}>
             <line x1={L} x2={w - R} y1={y(v)} y2={y(v)} stroke="currentColor" className="text-edge" />
-            <text x={L - 8} y={y(v)} textAnchor="end" dominantBaseline="central" className="num fill-mute text-[13px]">
+            <text x={L - 8} y={y(v)} textAnchor="end" dominantBaseline="central" className="num fill-mute text-[14px]">
               {v}%
             </text>
           </g>
         ))}
         {/* на узком экране — «27.09», иначе две полные даты наезжают друг на друга */}
-        <text x={L} y={H - 6} className="fill-mute text-[13px]">
+        <text x={L} y={H - 6} className="fill-mute text-[14px]">
           {w < 520 ? formatDayShort(t0) : fmt(t0)}
         </text>
-        <text x={w - R} y={H - 6} textAnchor="end" className="fill-mute text-[13px]">
+        <text x={w - R} y={H - 6} textAnchor="end" className="fill-mute text-[14px]">
           {w < 520 ? formatDayShort(t1) : fmt(t1)}
         </text>
         {/* оценка tag.bet — пунктир цвета исхода, тише линии */}
@@ -124,7 +124,7 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
         {labels.map(({ s, last, y: ly }) => (
           <g key={s.key}>
             <circle cx={w - R} cy={y(last.v)} r={4} fill={s.color} stroke="var(--color-panel-2)" strokeWidth={2} />
-            <text x={w - R + 10} y={ly} dominantBaseline="central" className="fill-fg text-[13px]">
+            <text x={w - R + 10} y={ly} dominantBaseline="central" className="fill-fg text-[15px]">
               <tspan className="num font-semibold">{last.v}%</tspan>
               <tspan className="fill-dim"> {s.label}</tspan>
             </text>

@@ -366,7 +366,7 @@ export default async function MatchPage({ params }: Props) {
             // подпись сжимала заголовок в две строки
             <Section outside title="Как менялись шансы" note="Линия — шансы из кэфов PARI без маржи букмекера, пунктир — оценка tag.bet.">
               <ChanceChart series={chanceSeries} end={Math.min(m.ts, appNow())} />
-              <p className="mt-3 text-[13.5px] leading-relaxed text-dim">{chanceText}</p>
+              <p className="mt-4 text-[15px] leading-relaxed text-dim">{chanceText}</p>
             </Section>
           ) : null}
 
