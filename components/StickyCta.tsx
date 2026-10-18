@@ -12,20 +12,23 @@ export function StickyCta({ partner, href, title, subtitle, action }: { partner:
   return (
     <StickyHide
       target="pick-cta"
-      // над нижним меню (`TabBar`, место — `--tabbar`): плавающей плашкой тем же стеклом
-      className="sticky-cta fixed inset-x-3 bottom-[var(--tabbar)] z-40 mx-auto max-w-md rounded-card bg-[#151b22]/80 px-3 py-2.5 shadow-[0_12px_40px_rgb(0_0_0/0.5),inset_0_0_0_1px_rgb(255_255_255/0.09)] backdrop-blur-xl backdrop-saturate-150 lg:hidden"
+      // над нижним меню (`TabBar`, место — `--tabbar`): той же капсулой — та же ширина и поля от краёв (`inset-x-4`,
+      // от 380px `inset-x-5`, не шире 360px), то же стекло и скругление (владелец: «нижний попап имеет другое скругление?
+      // и кнопка ставка не совпадает со скруглением попапа»: была карточка 20px шире меню, а кнопка внутри — капсулой);
+      // высота 56px, кнопка 40px с отступом 8px — её скругление вложено в скругление плашки (28 = 20 + 8)
+      className="sticky-cta fixed inset-x-4 bottom-[var(--tabbar)] z-40 mx-auto max-w-[360px] rounded-full bg-[#151b22]/90 py-2 pl-3 pr-2 shadow-[0_12px_40px_rgb(0_0_0/0.55),inset_0_0_0_1px_rgb(255_255_255/0.09),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl backdrop-saturate-150 min-[380px]:inset-x-5 lg:hidden"
     >
-      <a href={href} target="_blank" rel={SPONSORED_REL} className="flex items-center gap-3">
-        <PartnerBadge partner={partner} size={36} />
+      <a href={href} target="_blank" rel={SPONSORED_REL} className="flex items-center gap-2.5">
+        <PartnerBadge partner={partner} size={32} />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[14px] font-semibold">{title}</span>
+          <span className="block truncate text-[13.5px] font-semibold leading-tight">{title}</span>
           {/* «Реклама · 18+» не обрезается никогда (пометка обязательна) — сжимается только тип ставки и букмекер */}
-          <span className="flex min-w-0 text-[12px] text-mute">
+          <span className="mt-0.5 flex min-w-0 text-[12px] leading-tight text-mute">
             <span className="truncate">{subtitle}</span>
             <span className="shrink-0 whitespace-nowrap">&nbsp;· Реклама · 18+</span>
           </span>
         </span>
-        <span className="shrink-0 rounded-full bg-btn px-5 py-2.5 text-sm font-semibold text-btn-ink">{action}</span>
+        <span className="inline-flex h-10 shrink-0 items-center rounded-full bg-btn px-4 text-[14px] font-semibold text-btn-ink">{action}</span>
       </a>
     </StickyHide>
   )

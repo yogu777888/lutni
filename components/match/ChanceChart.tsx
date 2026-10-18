@@ -46,7 +46,10 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
   // поля — по ширине подписей, а не с запасом (владелец: «по бокам большие отступы»): слева — самый длинный процент оси
   // (14px, ~8,5px на знак), справа — самая длинная подпись «79% Барселона» (15px, ~8,6px на знак) и 10px до неё
   const L = 10 + Math.max(...[0, 100].map((v) => `${v}%`.length)) * 8.5
-  const R = Math.min(170, 14 + Math.max(...series.map((sr) => `${sr.pts[sr.pts.length - 1]?.v ?? 0}% ${sr.label}`.length)) * 8.6)
+  // подпись у края — короткая: длинное название из нескольких слов — первым словом («Фортуна Ситтард» → «Фортуна»; на
+  // 390px «14% Фортуна Ситтард» обрезалось краем), полное — в подсказке и для экранного диктора
+  const edge = (l: string) => (l.length > 12 && l.includes(' ') ? l.split(' ')[0] : l)
+  const R = Math.min(170, 14 + Math.max(...series.map((sr) => `${sr.pts[sr.pts.length - 1]?.v ?? 0}% ${edge(sr.label)}`.length)) * 8.6)
   const T = 14
   const B = 28
   const x = (t: number) => L + ((t - t0) / (t1 - t0)) * (w - L - R)
@@ -128,7 +131,7 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
             <circle cx={w - R} cy={y(last.v)} r={4} fill={s.color} stroke="var(--color-panel-2)" strokeWidth={2} />
             <text x={w - R + 10} y={ly} dominantBaseline="central" className="fill-fg text-[15px]">
               <tspan className="num font-semibold">{last.v}%</tspan>
-              <tspan className="fill-dim"> {s.label}</tspan>
+              <tspan className="fill-dim"> {edge(s.label)}</tspan>
             </text>
           </g>
         ))}
