@@ -40,22 +40,28 @@ const PAY_LOGOS: [RegExp, string, string][] = [
   [/МТС/, 'mts', 'МТС'],
   [/МегаФон/i, 'megafon', 'МегаФон'],
   [/Билайн/i, 'beeline', 'Билайн'],
-  [/\b(t2|Tele2|Теле2)\b/i, 'tele2', 't2'],
+  // t2 — без значка: в архиве старый знак TELE2, новый пришлёт владелец (положить public/pay/t2.png и вернуть строку)
   [/ЮMoney|YooMoney/i, 'yoomoney', 'ЮMoney'],
   [/Банковский перевод/i, 'bank', 'Банковский перевод'],
 ]
 const payLogos = (method: string) => PAY_LOGOS.filter(([re]) => re.test(method))
 // «Банковская карта (МИР, Visa, Mastercard)» → «Банковская карта»: системы видно по значкам; полное — подсказкой и в alt
 const payName = (method: string) => (payLogos(method).length > 1 ? method.replace(/ \(.*\)$/, '') : method)
-// высота знака в плашке: Visa — сплошные буквы во всю высоту, Mastercard — круги с мелкой надписью; на глаз — одного
-// размера; у карты три знака в одной плашке — мельче
-const LOGO_H: Record<string, string> = { visa: 'h-3', mastercard: 'h-[18px]', sberpay: 'h-6', sbp: 'h-6', bank: 'h-5' }
-const LOGO_H_MULTI: Record<string, string> = { mastercard: 'h-3 sm:h-[15px]' }
+// высота знака в плашке, px — на глаз одной площади, а не одной высоты (владелец: «красиво?» — широкие «билайн»,
+// «МегаФон», «Кошелёк» при одной высоте выходили крупнее «МТС» и SberPay): ~ √(720 / пропорция), Visa — чуть меньше
+// (сплошные буквы тяжелее); у карты три знака в одной плашке
+const LOGO_PX: Record<string, number> = {
+  mir: 14, visa: 13, mastercard: 20, 'mir-pay': 22, sberpay: 18, sbp: 19, cupis: 12.5, mts: 16, megafon: 11.5,
+  beeline: 12, yoomoney: 12.5, bank: 21,
+}
+const LOGO_PX_MULTI: Record<string, number> = { mir: 9, visa: 8.5, mastercard: 12 }
 
+/** Одна плашка одной ширины на строку (96×28): светло-серая, а не белая — девять белых прямоугольников были самым ярким
+ * на странице; знаки — с прозрачным фоном (белое, связанное с краем, вырезано), внутренний белый остаётся. */
 function PayLogos({ method }: { method: string }) {
   const list = payLogos(method)
   return (
-    <span className="flex h-8 w-[88px] shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md bg-white px-1.5 empty:bg-transparent sm:w-[104px]">
+    <span className="flex h-7 w-24 shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md bg-[#e6e9ed] px-1.5 empty:bg-transparent">
       {list.map(([, key, alt]) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -63,7 +69,8 @@ function PayLogos({ method }: { method: string }) {
           src={`/pay/${key}.png`}
           alt={alt}
           loading="lazy"
-          className={`${list.length > 1 ? (LOGO_H_MULTI[key] ?? 'h-2 sm:h-2.5') : (LOGO_H[key] ?? 'h-4')} w-auto max-w-[84px] min-w-0 object-contain`}
+          style={{ height: (list.length > 1 ? LOGO_PX_MULTI[key] : LOGO_PX[key]) ?? 16 }}
+          className="w-auto max-w-[72px] min-w-0 object-contain"
         />
       ))}
     </span>
