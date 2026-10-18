@@ -13,11 +13,11 @@ const RES: Record<Res, { label: string; cls: string }> = {
   L: { label: 'П', cls: 'text-mute ring-1 ring-inset ring-white/15' },
 }
 
-export function ResBadge({ r, size = 'sm' }: { r: Res; size?: 'sm' | 'xs' }) {
+export function ResBadge({ r, size = 'sm' }: { r: Res; size?: 'md' | 'sm' | 'xs' }) {
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-[6px] font-semibold ${RES[r].cls} ${
-        size === 'sm' ? 'h-6 w-6 text-[11px]' : 'h-5 w-5 text-[10px]'
+      className={`inline-flex items-center justify-center font-semibold ${RES[r].cls} ${
+        size === 'md' ? 'h-6 w-6 rounded-full text-[12px]' : size === 'sm' ? 'h-6 w-6 rounded-[6px] text-[11px]' : 'h-5 w-5 rounded-[6px] text-[10px]'
       }`}
       title={r === 'W' ? 'Победа' : r === 'D' ? 'Ничья' : 'Поражение'}
     >
@@ -29,6 +29,10 @@ export function ResBadge({ r, size = 'sm' }: { r: Res; size?: 'sm' | 'xs' }) {
 export type StripGame = { id: number; date: string; opponent: string; score: string; home: boolean; result: Res }
 
 /**
+ * Подпись «Последние 5 матчей» по центру, под ней значки кружками 24px — хозяева от левого края, гости от правого
+ * (владелец: «снизу какой то большой отступ и некрасиво выглядит статистика прошлых матчей»: квадратики 20px трёх
+ * разных видов терялись, а под ними держали пустую строку под подсказку). Подсказка — всплывает над значками, места
+ * не занимает. Ниже — история.
  * Строка «Последние 5» в «Форме команд»: значки В/Н/П обеих команд, свежий справа (владелец: «блок форма команд
  * длинный» — список из пяти матчей с переключателем команд был ~400px). Кто соперник и счёт — по наведению, нажатию
  * или фокусу: строкой под значками («01.10 · Вильярреал · 0:0 · дома»), `title` на телефоне не открывается.
@@ -46,7 +50,7 @@ export function FormStrip({ home, away }: { home: StripGame[] | null; away: Stri
   }, [act])
   const tip = (g: StripGame) => `${g.date} · ${g.opponent} · ${g.score} · ${g.home ? 'дома' : 'в гостях'}`
   const cell = (games: StripGame[] | null, right = false) => (
-    <span className={`flex gap-0.5 ${right ? 'justify-end' : ''}`}>
+    <span className={`flex gap-1 ${right ? 'justify-end' : ''}`}>
       {games
         ? games.map((g) => (
             <button
@@ -58,28 +62,28 @@ export function FormStrip({ home, away }: { home: StripGame[] | null; away: Stri
               onFocus={() => setAct(g)}
               onBlur={() => setAct(null)}
               onClick={() => setAct(g)}
-              className={`rounded-[6px] transition-opacity ${act && act.id !== g.id ? 'opacity-50' : ''}`}
+              className={`rounded-full transition-opacity ${act && act.id !== g.id ? 'opacity-40' : ''}`}
             >
-              <ResBadge r={g.result} size="xs" />
+              <ResBadge r={g.result} size="md" />
             </button>
           ))
         : <span className="text-mute">—</span>}
     </span>
   )
   return (
-    <div ref={ref} className="border-t border-edge">
-      {/* хозяева — от левого края, гости — от правого, подпись по центру, как строки сравнения выше */}
-      <div className="grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 py-1">
+    <div ref={ref} className="relative border-t border-edge pt-3">
+      <p className="mb-2.5 text-center text-[14px] text-dim">Последние 5 матчей</p>
+      <div className="flex items-center justify-between gap-4">
         {cell(home)}
-        <span className="truncate text-center text-[14px] text-dim">
-          {/* ниже 380px «Последние 5» не помещается между значками */}
-          <span className="max-[379px]:hidden">Последние 5</span>
-          <span className="min-[380px]:hidden">Форма</span>
-        </span>
         {cell(away, true)}
       </div>
-      <p aria-live="polite" className={`pb-1 text-center text-[13px] text-dim ${act ? '' : 'invisible'}`}>
-        {act ? tip(act) : '·'}
+      {act ? (
+        <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 w-max max-w-full -translate-x-1/2 rounded-tile bg-panel-3 px-3 py-1.5 text-center text-[13px] text-fg shadow-lg">
+          {tip(act)}
+        </div>
+      ) : null}
+      <p aria-live="polite" className="sr-only">
+        {act ? tip(act) : ''}
       </p>
     </div>
   )
