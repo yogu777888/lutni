@@ -133,7 +133,7 @@ export function OddsTable({
     <div>
       {rows.length ? (
         <div className="text-[15px]">
-          <div className="grid items-end gap-x-1 pb-2" style={grid}>
+          <div className="grid items-start gap-x-1 pb-2" style={grid}>
             <span />
             {partners.map(({ b, partner }) => (
               <span key={`${b.bookmakerId}-${b.bookmakerName}`} title={partner?.name ?? b.bookmakerName} className="flex flex-col items-center gap-1 text-center">
@@ -143,8 +143,20 @@ export function OddsTable({
               </span>
             ))}
             {model ? (
-              <span className="text-center text-[13px] leading-tight text-mute" title="Сколько стоит исход по оценке tag.bet — без маржи букмекера">
-                Честная
+              // наш знак, как логотипы букмекеров рядом (владелец: «а может в честно лого типа мой фавикон вставить?»); подпись
+              // «Честная» видна всегда — без неё колонку не понять
+              <span className="flex flex-col items-center gap-1 text-center" title="Честная цена tag.bet — сколько стоит исход по нашей оценке, без маржи букмекера">
+                {/* eslint-disable-next-line @next/next/no-img-element -- маленький SVG */}
+                <img
+                  src="/brand/icon.svg"
+                  alt=""
+                  aria-hidden
+                  width={24}
+                  height={24}
+                  className="inline-block shrink-0 outline outline-1 -outline-offset-1 outline-white/10"
+                  style={{ width: 24, height: 24, borderRadius: 6 }}
+                />
+                <span className="text-[13px] text-mute">Честная</span>
               </span>
             ) : null}
           </div>
