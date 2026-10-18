@@ -22,9 +22,9 @@ export function PartnerCard({ partner, placement }: { partner: Partner; placemen
         <PartnerBadge partner={partner} size={34} />
         <span className="min-w-0">
           <span className="block truncate text-[15px] font-semibold">{partner.name}</span>
-          {bonus ? <span className="block truncate text-[12px] text-dim">{bonus}</span> : null}
+          {bonus ? <span className="block truncate text-[13px] text-dim">{bonus}</span> : null}
         </span>
-        <span className="inline-flex rounded-full bg-white/[0.08] px-3 py-1.5 text-[12px] font-medium text-fg transition-colors group-hover:bg-btn group-hover:text-btn-ink">
+        <span className="inline-flex rounded-full bg-white/[0.08] px-3 py-1.5 text-[13px] font-medium text-fg transition-colors group-hover:bg-btn group-hover:text-btn-ink">
           На сайт
         </span>
       </a>

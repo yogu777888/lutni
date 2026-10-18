@@ -43,7 +43,7 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
   const lo = Math.max(0, Math.floor((Math.min(...vals) - 2) / step) * step)
   const hi = Math.min(100, Math.ceil((Math.max(...vals) + 2) / step) * step)
   const H = 240
-  const L = 40
+  const L = 48
   const R = 132
   const T = 14
   const B = 28
@@ -100,16 +100,16 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
         {ticks.map((v) => (
           <g key={v}>
             <line x1={L} x2={w - R} y1={y(v)} y2={y(v)} stroke="currentColor" className="text-edge" />
-            <text x={L - 8} y={y(v)} textAnchor="end" dominantBaseline="central" className="num fill-mute text-[11px]">
+            <text x={L - 8} y={y(v)} textAnchor="end" dominantBaseline="central" className="num fill-mute text-[13px]">
               {v}%
             </text>
           </g>
         ))}
         {/* на узком экране — «27.09», иначе две полные даты наезжают друг на друга */}
-        <text x={L} y={H - 6} className="fill-mute text-[11px]">
+        <text x={L} y={H - 6} className="fill-mute text-[13px]">
           {w < 520 ? formatDayShort(t0) : fmt(t0)}
         </text>
-        <text x={w - R} y={H - 6} textAnchor="end" className="fill-mute text-[11px]">
+        <text x={w - R} y={H - 6} textAnchor="end" className="fill-mute text-[13px]">
           {w < 520 ? formatDayShort(t1) : fmt(t1)}
         </text>
         {/* оценка tag.bet — пунктир цвета исхода, тише линии */}
@@ -124,7 +124,7 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
         {labels.map(({ s, last, y: ly }) => (
           <g key={s.key}>
             <circle cx={w - R} cy={y(last.v)} r={4} fill={s.color} stroke="var(--color-panel-2)" strokeWidth={2} />
-            <text x={w - R + 10} y={ly} dominantBaseline="central" className="fill-fg text-[12px]">
+            <text x={w - R + 10} y={ly} dominantBaseline="central" className="fill-fg text-[13px]">
               <tspan className="num font-semibold">{last.v}%</tspan>
               <tspan className="fill-dim"> {s.label}</tspan>
             </text>
@@ -134,7 +134,7 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
       </svg>
       {hover != null && hoverT != null ? (
         <div
-          className="pointer-events-none absolute top-1 z-10 rounded-ctl border border-edge bg-panel-2 px-3 py-2 text-[12.5px] shadow-[0_8px_24px_rgb(0_0_0/0.3)]"
+          className="pointer-events-none absolute top-1 z-10 rounded-ctl border border-edge bg-panel-2 px-3 py-2 text-[13px] shadow-[0_8px_24px_rgb(0_0_0/0.3)]"
           style={{ left: Math.min(hover + 12, w - 230) }}
         >
           <div className="mb-1 text-mute">{fmt(hoverT)}</div>

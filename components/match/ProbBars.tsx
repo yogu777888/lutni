@@ -22,7 +22,7 @@ export function X12Bar({
   ]
   return (
     <div>
-      <div className="mb-2 grid grid-cols-3 gap-2 text-[12px]">
+      <div className="mb-2 grid grid-cols-3 gap-2 text-[13px]">
         {seg.map((s, i) => (
           <div key={s.key} className={`min-w-0 ${i === 1 ? 'text-center' : i === 2 ? 'text-right' : ''}`}>
             <div className="num text-[22px] font-semibold leading-none tracking-tight">{pct(s.p)}</div>

@@ -30,7 +30,7 @@ import { LiveRefresh } from '@/components/Live'
 import { distinctPair, matchColors } from '@/lib/team-colors'
 import { handNotes } from '@/lib/hand-notes'
 import { leagueTitle } from '@/lib/flags'
-import { appNow, formatDateShort, formatDayMonth, formatTime, idFromSlug, pct, pluralN, ymdInTz } from '@/lib/format'
+import { appNow, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
 import { buildStory } from '@/lib/story'
@@ -158,7 +158,6 @@ export default async function MatchPage({ params }: Props) {
   })()
   const disclaimer =
     'Прогноз и вероятности рассчитаны автоматически по данным букмекерских линий и статистике и не гарантируют результат. 18+. Ставьте только ту сумму, потерю которой готовы принять.'
-  const formN = Math.max(ins.homeForm?.games.length ?? 0, ins.awayForm?.games.length ?? 0)
   const over25 = model?.over['2.5'] ?? cons.over['2.5']
   const btts = model?.btts ?? cons.btts
 
@@ -177,7 +176,6 @@ export default async function MatchPage({ params }: Props) {
     .slice(0, 6)
   const matchDay = ymdInTz(m.ts)
   const today = ymdInTz(appNow())
-  const relatedNote = `${related.every((o) => o.league.id === m.league.id) ? `${leagueTitle(m.league.name)} · ` : ''}${matchDay === today ? 'сегодня' : formatDayMonth(m.ts)}`
 
   // табло матча: шанс, кэф и честная цена. Кэфы — одной линии одного легального партнёра, с его именем и ссылкой к нему
   // (как в строках списка): раньше три ячейки собирались у разных букмекеров под подписью «Кэф букмекера». Партнёр —
@@ -287,7 +285,7 @@ export default async function MatchPage({ params }: Props) {
         <div className="min-w-0 space-y-6 sm:space-y-8 xl:space-y-6">
           {!scheduled && (full.events.length || full.stats.length) ? (
             // в игре — «Сейчас в матче»: эти цифры учитывают счёт и ход игры; доматчевые блоки ниже подписаны «До матча»
-            <Section outside title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'} aside={m.status === 'live' ? 'обновляется каждые 30 с' : 'итог'}>
+            <Section outside title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'}>
               {/* сверху — полоса матча 0′–90′ во всю ширину, ниже — статистика в две колонки */}
               <div className="space-y-6">
                 <EventsBlock
@@ -307,10 +305,10 @@ export default async function MatchPage({ params }: Props) {
               факты — ровной колонкой справа (каждая фраза начиналась сразу за своей меткой — «ёлочка»), на телефоне метка
               над фактом; факт — короткий (`short`), без повтора метки: «#кэф упал — Победа «Хетафе»: 7.42 → 6.37 (−14%)» */}
           {!scheduled && tags.length ? (
-            <Section outside title="В подборках" aside="до матча">
+            <Section outside title="В подборках">
               <ul className="grid gap-y-4 sm:grid-cols-[max-content_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-3">
                 {tags.map((t) => (
-                  <li key={t.slug} className="flex flex-col items-start gap-1.5 sm:col-span-2 sm:grid sm:grid-cols-subgrid">
+                  <li key={t.slug} className="flex flex-col items-start gap-1.5 sm:col-span-2 sm:grid sm:grid-cols-subgrid sm:gap-x-6">
                     <Link href={`/tag/${t.slug}`} prefetch={false} title={TAG_BY_SLUG.get(t.slug)?.hint} className="text-[15px] font-semibold transition-colors hover:text-dim">
                       {TAG_BY_SLUG.get(t.slug)?.title ?? t.slug}
                     </Link>
@@ -326,7 +324,7 @@ export default async function MatchPage({ params }: Props) {
             // чьи голы — названиями («1.95 : 0.85» читалось счётом с дробями), без плашек внутри карточки и без
             // «рейтинга силы» (1684 / 1478 новичку ничего не говорят); «Вероятный счёт» — только до начала: на 59′
             // при 1:0 «1:1 — 10%» читалось как прогноз сейчас
-            <Section outside title="Голы и счёт" aside={scheduled ? 'оценка tag.bet' : 'до матча · оценка tag.bet'}>
+            <Section outside title={scheduled ? 'Голы и счёт' : 'Голы и счёт до матча'}>
               <div className="space-y-5">
                 {over25 != null || btts != null ? (
                   <ul className="grid gap-x-10 gap-y-4 md:grid-cols-2">
@@ -349,7 +347,7 @@ export default async function MatchPage({ params }: Props) {
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {model.topScores.slice(0, 4).map((s) => (
                             <span key={`${s.home}-${s.away}`} className="num rounded-full bg-white/[0.06] px-2.5 py-1 text-[13px] font-semibold">
-                              {s.home}:{s.away} <span className="text-[11px] font-normal text-dim">{pct(s.p)}</span>
+                              {s.home}:{s.away} <span className="text-[13px] font-normal text-dim">{pct(s.p)}</span>
                             </span>
                           ))}
                         </div>
@@ -364,7 +362,7 @@ export default async function MatchPage({ params }: Props) {
           {chanceMoved ? (
             // справа — без «9 изменений»: число ничего не говорит и спорило с «почти не менялись», а на телефоне длинная
             // подпись сжимала заголовок в две строки
-            <Section outside title="Как менялись шансы" aside="до матча · линия PARI" note="Линия — шансы из кэфов PARI без маржи букмекера, пунктир — оценка tag.bet.">
+            <Section outside title="Как менялись шансы" note="Линия — шансы из кэфов PARI без маржи букмекера, пунктир — оценка tag.bet.">
               <ChanceChart series={chanceSeries} end={Math.min(m.ts, appNow())} />
               <p className="mt-3 text-[13.5px] leading-relaxed text-dim">{chanceText}</p>
             </Section>
@@ -375,12 +373,12 @@ export default async function MatchPage({ params }: Props) {
           {scheduled ? (
             <Section outside
               title="Коэффициенты букмекеров"
-              aside={
-                legalBooks.length
-                  ? `${pluralN(legalBooks.length, ['букмекер', 'букмекера', 'букмекеров'])} с линией${hasMoves(legalBooks, m) ? ' · ▼▲ — изменение с открытия' : ''}`
-                  : 'линии в нашей базе пока нет'
+              note={
+                <>
+                  {hasMoves(legalBooks, m) ? '▼▲ — изменение с открытия линии. ' : ''}
+                  <OddsTable part="note" match={m} books={legalBooks} model={model} candidates={candidates} />
+                </>
               }
-              note={<OddsTable part="note" match={m} books={legalBooks} model={model} candidates={candidates} />}
             >
               <OddsTable part="table" match={m} books={legalBooks} model={model} candidates={candidates} />
             </Section>
@@ -388,7 +386,7 @@ export default async function MatchPage({ params }: Props) {
 
           {ins.homeForm || ins.awayForm ? (
             // цифры — по последним (до 10) матчам: выборку называем числом (было «последние матчи», а в карточке — три разные выборки)
-            <Section outside title="Форма команд" aside={formN > 1 ? `последние ${pluralN(formN, ['матч', 'матча', 'матчей'])}` : 'последний матч'}>
+            <Section outside title="Форма команд">
               <FormBlock home={m.home} away={m.away} homeForm={ins.homeForm} awayForm={ins.awayForm} />
             </Section>
           ) : null}
@@ -397,7 +395,6 @@ export default async function MatchPage({ params }: Props) {
             // сколько встреч — сразу, как в «Форме команд»
             <Section outside
               title="Личные встречи"
-              aside={`${ins.h2h.games.length >= 3 ? 'последние ' : ''}${pluralN(ins.h2h.games.length, ['встреча', 'встречи', 'встреч'])}`}
             >
               <H2HBlock h2h={ins.h2h} home={m.home} away={m.away} />
             </Section>
@@ -455,7 +452,7 @@ export default async function MatchPage({ params }: Props) {
             // какие это матчи — справа от заголовка; широкий блок (от xl до 2xl он уходит под основную колонку на всю ширину)
             // — две колонки, иначе название слева и счёт в 1500px справа; внизу — весь список дня
             <section>
-              <BlockTitle title="Другие матчи" aside={relatedNote} />
+              <BlockTitle title="Другие матчи" />
               <div className="@container card overflow-hidden">
               <div className="grid @2xl:grid-cols-2">
                 {related.map((o, i) => (

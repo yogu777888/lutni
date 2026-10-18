@@ -36,7 +36,7 @@ export function Section({
         // не влезают в строку (телефон) — подпись справа уходит под заголовок, а не сжимает его в две строки
         <div className={`${plain ? 'mb-3' : 'mb-5'} flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1`}>
           <h2 className={plain ? 'text-[20px] font-bold tracking-tight' : 'h2 text-[20px] font-bold tracking-[-0.02em] sm:text-[22px]'}>{title}</h2>
-          {aside ? <div className="text-[12px] text-mute">{aside}</div> : null}
+          {aside ? <div className="text-[13px] text-mute">{aside}</div> : null}
         </div>
       ) : null}
       {children}
@@ -49,12 +49,12 @@ export function BlockTitle({ title, aside, className = '' }: { title: React.Reac
   return (
     <div className={`mb-2.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-1 sm:px-2 ${className}`}>
       <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">{title}</h2>
-      {aside ? <div className="text-[12px] text-mute">{aside}</div> : null}
+      {aside ? <div className="text-[13px] text-mute">{aside}</div> : null}
     </div>
   )
 }
 
 /** Пояснение под блоком: 12px серым, с отступом слева, как у заголовка над блоком (`BlockTitle`). */
 export function BlockNote({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`mt-2 px-1 text-[12px] leading-relaxed text-mute sm:px-2 ${className}`}>{children}</div>
+  return <div className={`mt-2 px-1 text-[13px] leading-relaxed text-mute sm:px-2 ${className}`}>{children}</div>
 }

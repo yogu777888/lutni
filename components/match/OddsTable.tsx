@@ -186,7 +186,7 @@ export function OddsTable({
         </BlockMore>
       ) : null}
 
-      {part === 'all' ? <p className="mt-4 text-[12px] text-mute">{note}</p> : null}
+      {part === 'all' ? <p className="mt-4 text-[13px] text-mute">{note}</p> : null}
     </div>
   )
 }

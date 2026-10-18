@@ -52,11 +52,11 @@ export function StandingsTable({
         )
         return (
           <div key={gi}>
-            {g.name && standings.groups.length > 1 ? <h3 className="mb-2 text-[12px] font-medium text-dim">{g.name}</h3> : null}
+            {g.name && standings.groups.length > 1 ? <h3 className="mb-2 text-[13px] font-medium text-dim">{g.name}</h3> : null}
             <div className="-mx-4 sm:mx-0">
               <table className="w-full text-[13px]">
                 <thead>
-                  <tr className="text-[11px] font-medium text-mute">
+                  <tr className="text-[13px] font-medium text-mute">
                     <th className="w-11 py-1.5 pl-4 pr-2 text-right sm:w-9 sm:pl-1">#</th>
                     <th className="py-1.5 text-left">Команда</th>
                     <th className="w-8 py-1.5 text-center" title="Игры">И</th>
@@ -108,7 +108,7 @@ export function StandingsTable({
       {/* в куске таблицы на странице матча одна зона («Лига чемпионов») — без подписи: полоски у строк и так видно, ради
           одной подписи под таблицей стояла пустая полоса; полностью — на странице лиги */}
       {[...zones].filter((z) => ZONE[z]).length > (compact ? 1 : 0) ? (
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-dim">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-dim">
           {[...zones].filter((z) => ZONE[z]).map((z) => (
             <span key={z} className="flex items-center gap-1.5">
               <span className={`h-2.5 w-[3px] rounded-full ${ZONE[z]}`} />

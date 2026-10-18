@@ -92,7 +92,7 @@ export function PredictHero({
           {team(m.home)}
           <span id="match-score" className="text-center leading-none">
             <span className="num display-num block text-[30px] font-semibold sm:text-[36px]">{formatTime(m.ts)}</span>
-            <span className="mt-1 block text-[11px] text-mute">{SITE.tzLabel.toLowerCase()}</span>
+            <span className="mt-1 block text-[13px] text-mute">{SITE.tzLabel.toLowerCase()}</span>
           </span>
           {team(m.away, true)}
         </div>

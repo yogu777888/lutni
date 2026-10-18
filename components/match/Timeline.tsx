@@ -25,13 +25,13 @@ const widthOf = (m: TimelineMark) => (m.kind === 'goal' ? 12 + (m.label ?? 'го
 function Mark({ m }: { m: TimelineMark }) {
   if (m.kind === 'goal')
     return (
-      <span className="num grid h-5 min-w-5 place-items-center rounded-full bg-fg px-1.5 text-[11px] font-semibold leading-none text-ink">
+      <span className="num grid h-5 min-w-5 place-items-center rounded-full bg-fg px-1.5 text-[13px] font-semibold leading-none text-ink">
         {m.label ?? 'гол'}
       </span>
     )
   if (m.kind === 'red') return <span className="block h-4 w-3 rounded-xs bg-[#ff4d4f]" />
   if (m.kind === 'yellow') return <span className="block h-4 w-3 rounded-xs bg-[#f5c518]" />
-  return <span className="grid h-5 w-5 place-items-center rounded-full bg-white/15 text-[11px] text-dim">✕</span>
+  return <span className="grid h-5 w-5 place-items-center rounded-full bg-white/15 text-[13px] text-dim">✕</span>
 }
 
 /**
@@ -122,7 +122,7 @@ export function Timeline({
       {/* чьи ряды: подпись — на уровне ближнего к черте яруса; эмблема — одна на команду в блоке (владелец: «в формах
           команд есть лого, а тут нет»; до этого — «а сейчас не много логотипов?»: их было 10, над колонками статистики
           названия остались текстом) */}
-      <div className="relative max-w-[116px] text-[12px] leading-tight text-dim sm:max-w-[164px]" style={{ height }}>
+      <div className="relative max-w-[116px] text-[13px] leading-tight text-dim sm:max-w-[164px]" style={{ height }}>
         <span className="invisible flex h-0 gap-1.5 overflow-hidden">
           <span className="w-[22px] shrink-0" />
           {home.name.length > away.name.length ? home.name : away.name}
@@ -178,7 +178,7 @@ export function Timeline({
           {tipAt && act != null ? (
             <div
               role="tooltip"
-              className={`pointer-events-none absolute z-20 w-max max-w-[240px] rounded-ctl border border-edge bg-panel-2 px-3 py-2 text-[12.5px] leading-snug shadow-[0_8px_24px_rgb(0_0_0/0.3)] ${
+              className={`pointer-events-none absolute z-20 w-max max-w-[240px] rounded-ctl border border-edge bg-panel-2 px-3 py-2 text-[13px] leading-snug shadow-[0_8px_24px_rgb(0_0_0/0.3)] ${
                 center(tipAt) > w / 3 && center(tipAt) < (w * 2) / 3 ? '-translate-x-1/2' : ''
               }`}
               style={{
@@ -197,7 +197,7 @@ export function Timeline({
             </div>
           ) : null}
         </div>
-        <div className="relative mt-1.5 h-4 text-[11px] text-mute">
+        <div className="relative mt-1.5 h-4 text-[13px] text-mute">
           <span className="absolute left-0">0′</span>
           <span className="absolute -translate-x-1/2" style={{ left: `${pct(45)}%` }}>
             45′

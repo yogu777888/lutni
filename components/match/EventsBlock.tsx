@@ -162,7 +162,7 @@ export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home:
       {cols.map((col, ci) => (
         <div key={ci} className={ci ? 'md:border-l md:border-white/[0.08] md:pl-10' : cols.length > 1 ? 'md:pr-10' : ''}>
           {/* на телефоне вторая колонка идёт сразу под первой — шапка у неё не нужна */}
-          <div className={`mb-2.5 justify-between gap-3 text-[12px] text-dim ${ci ? 'hidden md:flex' : 'flex'}`}>
+          <div className={`mb-2.5 justify-between gap-3 text-[13px] text-dim ${ci ? 'hidden md:flex' : 'flex'}`}>
             <span className="min-w-0 truncate">{home.name}</span>
             <span className="min-w-0 truncate text-right">{away.name}</span>
           </div>
@@ -177,7 +177,7 @@ export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home:
                       {fmt(s.home)}
                       {s.suffix ?? ''}
                     </span>
-                    <span className="text-xs text-mute">
+                    <span className="text-[13px] text-mute">
                       {s.label}
                       {HINT[s.key] ? <Hint title={s.label} text={HINT[s.key]} /> : null}
                     </span>

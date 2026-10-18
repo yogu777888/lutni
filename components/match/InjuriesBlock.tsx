@@ -14,19 +14,19 @@ export function InjuriesBlock({ injuries, home, away }: { injuries: Injury[]; ho
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
               <TeamLogo name={t.name} src={t.logo} size={18} />
               {t.name}
-              <span className="num ml-auto text-xs font-semibold text-dim">{list.length}</span>
+              <span className="num ml-auto text-[13px] font-semibold text-dim">{list.length}</span>
             </div>
             {list.length ? (
               <ul className="space-y-1 text-[13px]">
                 {list.map((i, k) => (
                   <li key={k} className="flex justify-between gap-2 rounded-tile bg-white/[0.04] px-3 py-2">
                     <span className="truncate font-medium">{i.player}</span>
-                    <span className="shrink-0 text-xs text-dim">{i.reason}</span>
+                    <span className="shrink-0 text-[13px] text-dim">{i.reason}</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-dim">Потерь нет</p>
+              <p className="text-[13px] text-dim">Потерь нет</p>
             )}
           </div>
         )
