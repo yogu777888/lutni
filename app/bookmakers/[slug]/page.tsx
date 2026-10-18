@@ -41,7 +41,10 @@ function PayTable({ title, timeLabel, rows }: { title: string; timeLabel: string
         <tbody className="divide-y divide-edge">
           {rows.map((r) => (
             <tr key={r.method}>
-              <td className="py-2.5 pl-5 pr-3 font-medium">{r.method}</td>
+              <td className="py-2.5 pl-5 pr-3 font-medium">
+                {r.method}
+                {r.note ? <span className="mt-0.5 block text-[12.5px] font-normal leading-snug text-mute">{r.note}</span> : null}
+              </td>
               <td className="num px-3 py-2.5 text-fg/85">{v(r.min)}</td>
               <td className="num px-3 py-2.5 text-fg/85">{v(r.max)}</td>
               <td className="px-3 py-2.5 text-fg/85">{v(r.fee)}</td>
@@ -57,6 +60,7 @@ function PayTable({ title, timeLabel, rows }: { title: string; timeLabel: string
             <div className="mt-0.5 text-[13px] text-dim">
               {[r.min && `от ${r.min}`, r.max && `до ${r.max}`, r.fee, r.time].filter(Boolean).join(' · ') || '—'}
             </div>
+            {r.note ? <div className="mt-0.5 text-[12.5px] leading-snug text-mute">{r.note}</div> : null}
           </li>
         ))}
       </ul>
