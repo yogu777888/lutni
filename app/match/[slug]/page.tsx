@@ -283,8 +283,9 @@ export default async function MatchPage({ params }: Props) {
         <MatchHero full={full} cells={cells} books={cons.books} line={heroLine} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} />
       )}
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:mt-2 xl:grid-cols-1 xl:gap-2 2xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0 space-y-6 xl:space-y-2">
+      {/* на телефоне между блоками 12px, как на главной (владелец: «такое чувство что отступы между блоком больше стали?» — «да»: было 24–32) */}
+      <div className="mt-3 grid gap-3 sm:mt-8 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:mt-2 xl:grid-cols-1 xl:gap-2 2xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-3 sm:space-y-6 xl:space-y-2">
           {!scheduled && (full.events.length || full.stats.length) ? (
             // в игре — «Сейчас в матче»: эти цифры учитывают счёт и ход игры; доматчевые блоки ниже подписаны «До матча»
             <Section title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'} aside={m.status === 'live' ? 'обновляется каждые 30 с' : 'итог'}>
@@ -439,7 +440,7 @@ export default async function MatchPage({ params }: Props) {
           {ins.preview.length ? null : <p className="text-[11px] leading-relaxed text-mute xl:px-2 xl:pt-2">{disclaimer}</p>}
         </div>
 
-        <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start xl:static xl:space-y-2 2xl:sticky 2xl:top-[72px]">
+        <aside className="space-y-3 sm:space-y-5 lg:sticky lg:top-24 lg:self-start xl:static xl:space-y-2 2xl:sticky 2xl:top-[72px]">
           <section className="card overflow-hidden">
             <div className="p-6">
               {/* заголовки — один вид на всей странице (как у Section), без мелких заглавных */}
