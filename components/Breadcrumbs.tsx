@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { SITE } from '@/config/site'
-import { BackButton } from './BackButton'
+import { BackButton, BackLabel } from './BackButton'
 import { JsonLd } from './JsonLd'
 
 export type Crumb = { href: string; label: string }
@@ -35,7 +35,9 @@ export function Breadcrumbs({
         {shown.map((c, i) => (
           <span key={`${i}:${c.href}`} className="flex items-center gap-1.5">
             {i > 0 ? <span className="text-mute">/</span> : null}
-            {parentOnly || i < all.length - 1 ? (
+            {parentOnly ? (
+              <BackLabel fallback={c} />
+            ) : i < all.length - 1 ? (
               <Link href={c.href} className="transition-colors hover:text-fg">
                 {c.label}
               </Link>
