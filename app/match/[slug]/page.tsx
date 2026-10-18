@@ -28,11 +28,10 @@ import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle
 import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
-import { appNow, formatDateShort, formatTime, idFromSlug, pct, plural, ymdInTz } from '@/lib/format'
+import { appNow, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
-import { TAG_BY_SLUG, type TagHit } from '@/lib/tags'
-import { statFor } from '@/lib/story-groups'
+import { TAG_BY_SLUG } from '@/lib/tags'
 import type { Match } from '@/lib/types'
 import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
 
@@ -303,42 +302,27 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {/* подборки матча — плитками, как виджеты на iPhone (владелец: «блок в подборках некрасиво выглядит» — «да»; строки со
-              значками, текстом и шевроном выглядели меню настроек): сверху значок и название серым, крупно — главная цифра
-              подборки (`statFor`: «−12%», «62%», «4»), под ней — что это за цифра, с эмблемой команды, если речь о ней; нет
-              понятной цифры («Топ-матч», «50 на 50») — факт словами; вся плитка — ссылка; две в ряд, от @2xl — три; до
-              начала без «Выгодных ставок» — эта ставка с цифрами уже в «Прогнозе» */}
+          {/* подборки матча — рядом пилюль-ссылок (владелец: «блок в подборках все еще какой-то кривоватый … и не совсем понятный»
+              — «да»): плитки с цифрами повторяли блоки страницы («Явный фаворит 80%» — «Прогноз», «Много голов 62%» — «Голы
+              и счёт», серии — «Форма», травмы — «Кадровые потери»), а без подписи «4», «6» были непонятны; смысл блока — в
+              каких подборках матч и куда перейти за похожими. Пилюля — значок и название, факт — в подсказке; до начала без
+              «Выгодных ставок» — эта ставка уже в «Прогнозе» */}
           {shownTags.length ? (
-            <Section outside title="В подборках" className="@container">
-              <ul className="grid grid-cols-2 gap-2 @2xl:grid-cols-3">
-                {shownTags.map((t) => {
-                  const tile = tagTile(t, m)
-                  return (
-                    <li key={t.slug} className="min-w-0">
-                      <Link
-                        href={`/tag/${t.slug}`}
-                        prefetch={false}
-                        title={TAG_BY_SLUG.get(t.slug)?.hint}
-                        className="flex h-full flex-col rounded-tile bg-white/[0.05] p-3.5 transition-colors hover:bg-white/[0.09] sm:p-4"
-                      >
-                        {/* название — до двух строк: на телефоне «Явный фаво…» обрезалось */}
-                        <span className="flex min-h-[2lh] items-start gap-1.5 text-[13px] font-medium leading-snug text-dim @2xl:min-h-0">
-                          <StorySymbol k={t.slug} tone="currentColor" className="mt-px h-4 w-4 shrink-0" />
-                          <span className="line-clamp-2 min-w-0">{TAG_BY_SLUG.get(t.slug)?.title ?? t.slug}</span>
-                        </span>
-                        {tile.big ? <span className="display-num mt-3 text-[36px] leading-none text-fg">{tile.big}</span> : null}
-                        <span className={`flex items-start gap-1.5 leading-snug ${tile.big ? 'mt-2 text-[13px] text-dim' : 'mt-3 text-[15px] text-fg'}`}>
-                          {tile.side ? (
-                            <span className="mt-px shrink-0" title={`«${tile.side.name}»`}>
-                              <TeamLogo name={tile.side.name} src={tile.side.logo ?? null} size={16} />
-                            </span>
-                          ) : null}
-                          <span className="min-w-0 first-letter:uppercase">{tile.caption}</span>
-                        </span>
-                      </Link>
-                    </li>
-                  )
-                })}
+            <Section outside title="В подборках" note="По нажатию — другие матчи с тем же признаком.">
+              <ul className="flex flex-wrap gap-2">
+                {shownTags.map((t) => (
+                  <li key={t.slug}>
+                    <Link
+                      href={`/tag/${t.slug}`}
+                      prefetch={false}
+                      title={`${TAG_BY_SLUG.get(t.slug)?.hint ?? ''}${TAG_BY_SLUG.get(t.slug)?.hint ? ' · ' : ''}${t.short ?? t.reason}`}
+                      className="inline-flex h-10 items-center gap-2 rounded-full bg-white/[0.07] pl-3 pr-4 text-[14px] font-medium transition-colors hover:bg-white/[0.13]"
+                    >
+                      <StorySymbol k={t.slug} tone="currentColor" className="h-4 w-4 shrink-0 text-dim" />
+                      {TAG_BY_SLUG.get(t.slug)?.title ?? t.slug}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </Section>
           ) : null}
@@ -614,37 +598,4 @@ export default async function MatchPage({ params }: Props) {
       />
     </>
   )
-}
-
-/**
- * Плитка подборки на странице матча: главная цифра (`statFor`) и подпись к ней. Команда в начале факта («Барселона»: …)
- * уходит в эмблему; у голов и фаворита подпись своя («шанс 3 голов и больше»), у серий и травм — что считали.
- */
-function tagTile(t: TagHit, m: Match): { big: string | null; caption: string; side: Match['home'] | null } {
-  const fact = t.short ?? t.reason
-  const side = [m.home, m.away].find((tm) => fact.startsWith(`«${tm.name}»`)) ?? null
-  const rest = side ? fact.slice(side.name.length + 2).replace(/^[:,]\s*/, '') : fact
-  const st = statFor(t.slug, t.reason)
-  // у травм — просто число («−4» рядом с «игрока пропустят матч» читалось минусом)
-  const big = /\d/.test(st) && t.slug !== 'top-match' ? (t.slug === 'kadry' ? st.replace(/^[−-]/, '') : st) : null
-  if (!big) return { big: null, caption: rest, side }
-  const n = Number(/\d+/.exec(st)?.[0] ?? 0)
-  const caption: Record<string, string> = {
-    'tb-2-5': 'шанс 3 голов и больше',
-    'tm-2-5': 'шанс не больше 2 голов',
-    'obe-zabyut': 'шанс, что забьют обе',
-    favorit: 'шанс победы',
-    kadry: n === 1 ? 'игрок пропустит матч' : `${plural(n, ['игрок', 'игрока', 'игроков'])} пропустят матч`,
-  }
-  return {
-    big,
-    side,
-    caption:
-      caption[t.slug] ??
-      (t.slug === 'progruz'
-        ? rest.replace(/\s*\([−-]\d+%\)\s*$/, '')
-        : t.slug === 'seriya' || t.slug === 'krepost'
-          ? rest.replace(new RegExp(`^${n}\\s+`), '')
-          : rest),
-  }
 }
