@@ -7,7 +7,6 @@ import type { Match } from '@/lib/types'
 import { pluralN } from '@/lib/format'
 import { BlockMore } from '../BlockMore'
 import { PartnerBadge } from '../PartnerBadge'
-import { SegPanel } from '../Segmented'
 import { TeamLogo } from '../TeamLogo'
 
 type Col = { key: string; label: string; title?: string; get: (b: BookOdds) => Quote | undefined }
@@ -31,7 +30,7 @@ function partnerOrder(b: BookOdds) {
  * Сравнение коэффициентов: выгодные (выше честной цены) — лаймом, лучший в колонке — белым жирным (только при трёх
  * букмекерах и больше: при двух жирной была половина таблицы — «шахматка»), кэф партнёра — ссылка к нему (через /go
  * с subid); остальные легальные — строкой «Ещё N легальных букмекеров →». Пояснение — только про то, что есть на экране.
- * Строки «букмекер — три кэфа» на всех ширинах, рынки — сегментами «Исход | Голы».
+ * Строки «букмекер — три кэфа» на всех ширинах, исход и голы — двумя частями со своей шапкой.
  * Показывается только до начала матча (после — кэфы «сейчас» на табло, по доматчевым не поставить).
  */
 export function OddsTable({
@@ -91,9 +90,11 @@ export function OddsTable({
     const chip = (
       // ячейкой, как кэфы в строках главной (владелец: «блок Коэффициенты букмекеров некрасивый» — числа висели в воздухе,
       // и было не понять, что на них можно нажать): серая плашка, выгодный — лаймом, лучший в колонке — жирным
+      // число без плашки, как цифры в «Форме команд»; плашка — только у выгодного, лаймом (владелец: «Коэффициенты
+      // букмекеров тоже некрасивый» — девять серых ячеек давали сетку коробочек); лучший в колонке — жирным
       <span
-        className={`num flex h-9 w-full items-center justify-center rounded-ctl text-[15px] transition-colors ${
-          val ? 'bg-acid font-semibold text-acid-ink' : `bg-white/[0.06] ${isBest ? 'font-semibold text-fg' : 'font-medium text-fg/90'}`
+        className={`num inline-flex h-8 min-w-[58px] items-center justify-center rounded-full px-2 text-[15px] ${
+          val ? 'bg-acid font-semibold text-acid-ink' : isBest ? 'font-semibold text-fg' : 'font-medium text-fg/90'
         }`}
         title={
           [`${c.title ?? c.label}: ${formatOdd(q.value)}`, val && p ? `выгодно — выше честной цены ${(1 / p).toFixed(2)}` : '', isBest ? 'лучший кэф' : '', q.opening ? `открытие ${q.opening.toFixed(2)}` : '']
@@ -110,7 +111,7 @@ export function OddsTable({
       </span>
     )
     return partner && open ? (
-      <a href={goHref(partner, 'odds-table', match.id)} target="_blank" rel={SPONSORED_REL} className="block rounded-ctl hover:[&>span]:brightness-125">
+      <a href={goHref(partner, 'odds-table', match.id)} target="_blank" rel={SPONSORED_REL} className="inline-block rounded-full transition-colors hover:bg-white/[0.08]">
         {chip}
       </a>
     ) : (
@@ -127,12 +128,12 @@ export function OddsTable({
   // подписей на 18 чисел); голы — вторым сегментом «Исход | Голы», а не вторым рядом чисел; кнопки «Ставка» нет — к
   // букмекеру ведёт сам кэф
   const GRID = 'grid grid-cols-[minmax(0,1fr)_repeat(3,62px)] items-center gap-x-1.5 sm:grid-cols-[minmax(0,1fr)_repeat(3,88px)]'
-  const table = (group: Col[]) => (
+  const table = (group: Col[], title: string) => (
     <div className="text-[15px]">
       {/* шапка одной ровной строкой: у исходов матча — эмблемы команд и «Ничья» (названия переносились «Райо / Вальекано»),
           полное название — в подсказке */}
       <div className={`${GRID} !items-end pb-2 text-[13px] leading-tight text-mute`}>
-        <span />
+        <span className="text-[15px] font-semibold text-fg">{title}</span>
         {group.map((c) => {
           const t = c.key === 'home' ? match.home : c.key === 'away' ? match.away : null
           return (
@@ -176,17 +177,9 @@ export function OddsTable({
 
   return (
     <div>
-      {/* рынки — сегментами «Исход | Голы» в строке заголовка (`SegTabs` у `Section` на странице матча) */}
-      {rows.length && x12.length ? (
-        <SegPanel k="x12" first>
-          {table(x12)}
-        </SegPanel>
-      ) : null}
-      {rows.length && goals.length ? (
-        <SegPanel k="goals" first={!x12.length}>
-          {table(goals)}
-        </SegPanel>
-      ) : null}
+      {/* исход и голы — двумя частями одной карточки, у каждой своя шапка (переключатель «Исход | Голы» висел сам по себе) */}
+      {rows.length && x12.length ? table(x12, 'Исход') : null}
+      {rows.length && goals.length ? <div className={x12.length ? 'mt-6' : ''}>{table(goals, 'Голы')}</div> : null}
 
       {others.length ? (
         // остальные легальные — одной строкой внизу блока (чипы в три строки были ярче самой таблицы)
@@ -210,8 +203,3 @@ export function hasMoves(books: BookOdds[], match: Match) {
   )
 }
 
-/** Какие рынки есть в таблице — для переключателя «Исход | Голы» над блоком. */
-export function oddsMarkets(match: Match, books: BookOdds[]) {
-  const cols = colsFor(match).filter((c) => books.some((b) => c.get(b)))
-  return { x12: cols.some((c) => ['home', 'draw', 'away'].includes(c.key)), goals: cols.some((c) => !['home', 'draw', 'away'].includes(c.key)) }
-}
