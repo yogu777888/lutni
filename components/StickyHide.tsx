@@ -10,7 +10,7 @@ const KEY = 'tb-cta-closed'
  * 16px, и на первом экране кнопки не оставалось вовсе. Отдельно от `StickyCta`: та — серверная и получает партнёра
  * целиком (в нём RegExp — в клиентский компонент его не передать).
  *
- * Крестик в правом верхнем углу и свайп вниз закрывают плашку до конца сессии — на всех матчах (владелец: «над попапом
+ * Крестик слева внутри плашки и свайп вниз закрывают плашку до конца сессии — на всех матчах (владелец: «над попапом
  * снизу … сверху справа надо крестик сделать?» — «да»; закрытие на одном матче раздражало бы на следующем); после
  * перезапуска браузера плашка возвращается (sessionStorage).
  */
@@ -47,21 +47,16 @@ export function StickyHide({ target, className, children }: { target: string; cl
       }}
       className={`${className} transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none ${off ? 'pointer-events-none translate-y-4 opacity-0' : ''}`}
     >
-      {children}
-      {/* кружок 24px наполовину над краем плашки; нажимается 36px вокруг — до кнопки «Ставка» не достаёт */}
-      <button
-        type="button"
-        aria-label="Скрыть"
-        title="Скрыть"
-        onClick={close}
-        className="absolute -right-2 -top-[18px] grid h-9 w-9 place-items-center"
-      >
-        <span className="grid h-6 w-6 place-items-center rounded-full bg-[#2a333d] text-dim shadow-[0_2px_8px_rgb(0_0_0/0.4),inset_0_0_0_1px_rgb(255_255_255/0.1)]">
-          <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" aria-hidden>
+      {/* крестик — внутри плашки слева, тонкий, без кружка (владелец: «как то она не очень выглядит» — кружок с тенью
+          торчал над стеклом отдельной деталью); от «Ставки» справа — далеко, случайно не нажать */}
+      <div className="flex items-center gap-1">
+        <button type="button" aria-label="Скрыть" title="Скрыть" onClick={close} className="-my-1 -ml-1.5 grid h-9 w-7 shrink-0 place-items-center text-mute transition-colors hover:text-fg">
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
-        </span>
-      </button>
+        </button>
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
     </div>
   )
 }
