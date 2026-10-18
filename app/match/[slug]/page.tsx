@@ -14,11 +14,11 @@ import { InjuriesBlock } from '@/components/match/InjuriesBlock'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { hasMoves, oddsMarkets, OddsTable } from '@/components/match/OddsTable'
 import { SegRoot, SegTabs } from '@/components/Segmented'
-import { ChanceRow } from '@/components/match/ProbBars'
 import { PredictHero } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerCard } from '@/components/PartnerCard'
 import { BlockNote, BlockTitle, Section } from '@/components/Section'
+import { TeamLogo } from '@/components/TeamLogo'
 import { StandingsTable } from '@/components/StandingsTable'
 import { StickyCta } from '@/components/StickyCta'
 import { StoryButton } from '@/components/story/StoryButton'
@@ -232,6 +232,7 @@ export default async function MatchPage({ params }: Props) {
 
   const pair = `${m.home.name} — ${m.away.name}`
   const markets = oddsMarkets(m, legalBooks)
+  const dec1 = (n: number) => n.toFixed(1).replace('.', ',')
   const crumbs = [
     { href: '/matches', label: 'Матчи' },
     { href: leagueHref(m.league), label: leagueTitle(m.league.name) },
@@ -327,37 +328,58 @@ export default async function MatchPage({ params }: Props) {
             // «рейтинга силы» (1684 / 1478 новичку ничего не говорят); «Вероятный счёт» — только до начала: на 59′
             // при 1:0 «1:1 — 10%» читалось как прогноз сейчас
             <Section outside title={scheduled ? 'Голы и счёт' : 'Голы и счёт до матча'}>
-              <div className="space-y-5">
-                {over25 != null || btts != null ? (
-                  <ul className="grid gap-x-10 gap-y-4 md:grid-cols-2">
-                    {over25 != null ? <ChanceRow label="3 гола и больше" p={over25} /> : null}
-                    {btts != null ? <ChanceRow label="Обе забьют" p={btts} /> : null}
-                  </ul>
-                ) : null}
-                {model ? (
-                  <div className="grid gap-x-10 gap-y-4 border-t border-white/[0.06] pt-4 md:grid-cols-2">
-                    <div>
-                      <div className="text-[13px] text-dim">Сколько голов ждём</div>
-                      <div className="mt-1.5 text-[15px] text-fg/90">
-                        «{m.home.name}» — <b className="num font-semibold text-fg">{model.lambdas.home.toFixed(2)}</b>, «{m.away.name}» —{' '}
-                        <b className="num font-semibold text-fg">{model.lambdas.away.toFixed(2)}</b>
-                      </div>
-                    </div>
-                    {scheduled ? (
-                      <div>
-                        <div className="text-[13px] text-dim">Вероятный счёт</div>
-                        <div className="mt-1.5 flex flex-wrap gap-1.5">
-                          {model.topScores.slice(0, 4).map((s) => (
-                            <span key={`${s.home}-${s.away}`} className="num rounded-full bg-white/[0.06] px-2.5 py-1 text-[13px] font-semibold">
-                              {s.home}:{s.away} <span className="text-[13px] font-normal text-dim">{pct(s.p)}</span>
+              {/* одна таблица строками «название — значение», как «Форма команд» (владелец: «в блоке голы и счет как то некрасиво
+                  навалено всего» — полосы, черта, фраза с переносом и чипы счёта были четырьмя разными видами) */}
+              <dl className="-my-1.5">
+                {[
+                  over25 != null ? { k: '3 гола и больше', v: <span className="num font-semibold">{pct(over25)}</span> } : null,
+                  btts != null ? { k: 'Обе забьют', v: <span className="num font-semibold">{pct(btts)}</span> } : null,
+                  model ? { k: 'Голов в среднем', v: <span className="num font-semibold">{dec1(model.lambdas.home + model.lambdas.away)}</span> } : null,
+                  model
+                    ? {
+                        k: 'Голов ждём',
+                        v: (
+                          <span className="flex items-center gap-2">
+                            <span className="flex items-center gap-1.5" title={`«${m.home.name}»`}>
+                              <TeamLogo name={m.home.name} src={m.home.logo ?? null} size={20} />
+                              <span className="num font-semibold">{dec1(model.lambdas.home)}</span>
                             </span>
-                          ))}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
+                            <span className="text-mute">·</span>
+                            <span className="flex items-center gap-1.5" title={`«${m.away.name}»`}>
+                              <TeamLogo name={m.away.name} src={m.away.logo ?? null} size={20} />
+                              <span className="num font-semibold">{dec1(model.lambdas.away)}</span>
+                            </span>
+                          </span>
+                        ),
+                      }
+                    : null,
+                  model && scheduled
+                    ? {
+                        k: 'Вероятный счёт',
+                        v: (
+                          <span className="flex flex-wrap justify-end gap-x-3 gap-y-0.5">
+                            {model.topScores.slice(0, 3).map((sc, i) => (
+                              // ниже 380px — два счёта: с третьим строка переносилась
+                              <span key={`${sc.home}-${sc.away}`} className={`num whitespace-nowrap ${i === 2 ? 'max-[379px]:hidden' : ''}`}>
+                                <b className="font-semibold">
+                                  {sc.home}:{sc.away}
+                                </b>{' '}
+                                <span className="text-dim">{pct(sc.p)}</span>
+                              </span>
+                            ))}
+                          </span>
+                        ),
+                      }
+                    : null,
+                ]
+                  .filter((r) => r != null)
+                  .map((r) => (
+                    <div key={r.k} className="flex min-h-11 items-center justify-between gap-4 border-t border-edge py-1.5 text-[15px] first:border-t-0">
+                      <dt className="shrink-0 whitespace-nowrap text-[14px] text-dim">{r.k}</dt>
+                      <dd className="text-right">{r.v}</dd>
+                    </div>
+                  ))}
+              </dl>
             </Section>
           ) : null}
 
