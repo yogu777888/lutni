@@ -18,7 +18,7 @@ export function TabBar() {
   return (
     <nav
       aria-label="Основное меню"
-      className="tabbar fixed inset-x-4 bottom-[max(env(safe-area-inset-bottom),16px)] z-40 mx-auto grid h-[54px] max-w-[360px] grid-cols-5 min-[380px]:inset-x-5 rounded-full bg-[#151b22]/90 px-1 shadow-[0_12px_40px_rgb(0_0_0/0.55),inset_0_0_0_1px_rgb(255_255_255/0.09),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl backdrop-saturate-150 lg:hidden"
+      className="tabbar fixed inset-x-4 bottom-[max(env(safe-area-inset-bottom),16px)] z-40 mx-auto grid h-[50px] max-w-[360px] grid-cols-5 min-[380px]:inset-x-5 rounded-full bg-[#151b22]/90 px-1 shadow-[0_12px_40px_rgb(0_0_0/0.55),inset_0_0_0_1px_rgb(255_255_255/0.09),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl backdrop-saturate-150 lg:hidden"
     >
       {NAV.map((n) => {
         const on = n.href === active
