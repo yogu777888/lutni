@@ -116,7 +116,8 @@ export function MatchBar({
           <div
             aria-hidden={!show}
             inert={!show}
-            className={`absolute inset-0 flex items-center gap-3 max-md:pr-11 ${swap} ${show ? 'opacity-100' : 'pointer-events-none translate-y-1 opacity-0'}`}
+            // с минутой под счётом ниже lg всё поднимаем на 3px: иначе минута почти касалась черты снизу ряда
+            className={`absolute inset-0 flex items-center gap-3 max-md:pr-11 ${minute ? 'max-lg:pb-1.5' : ''} ${swap} ${show ? 'opacity-100' : 'pointer-events-none translate-y-1 opacity-0'}`}
           >
             {/* счёт одной группой вплотную — «эмблема Бетис 1:0 Хетафе эмблема» сразу после «←», на месте крошек (владелец:
                 «как тебе хлебные крошки и то, что потом появляется?» — по сетке во всю ширину названия прилипали к краям, между
