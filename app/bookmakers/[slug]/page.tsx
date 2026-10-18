@@ -24,8 +24,10 @@ const ruDate = (ymd: string) =>
 
 /**
  * Логотипы способов оплаты (владелец прислал архив «платежки»): `public/pay/<ключ>.png` — по названию способа, чтобы у
- * следующих букмекеров они появились сами. На белой плашке: половина знаков (Visa, Билайн, ЮMoney, t2) — тёмные и на
- * графите не видны. «ЦУПИС Pay» — без значка (его в архиве нет).
+ * следующих букмекеров они появились сами. Одна белая плашка одной ширины на строку, колонкой слева от названия, как у
+ * legalbet и «Рейтинга букмекеров» (владелец: «как то некрасиво выглядит?» — плашки разной ширины справа от названия
+ * стояли лесенкой, у карты — три отдельных); белая — половина знаков (Visa, Билайн, ЮMoney, t2) тёмные и на графите не
+ * видны. Нет значка — место плашки пустое, названия стоят ровно.
  */
 const PAY_LOGOS: [RegExp, string, string][] = [
   [/(?<![А-ЯЁа-яё])МИР(?![А-ЯЁа-яё]| ?Pay)/, 'mir', 'МИР'],
@@ -43,22 +45,26 @@ const PAY_LOGOS: [RegExp, string, string][] = [
   [/Банковский перевод/i, 'bank', 'Банковский перевод'],
 ]
 const payLogos = (method: string) => PAY_LOGOS.filter(([re]) => re.test(method))
-// «Банковская карта (МИР, Visa, Mastercard)» → «Банковская карта»: системы видно по значкам (в 450px название шло в две
-// строки); полное — подсказкой и в alt значков
+// «Банковская карта (МИР, Visa, Mastercard)» → «Банковская карта»: системы видно по значкам; полное — подсказкой и в alt
 const payName = (method: string) => (payLogos(method).length > 1 ? method.replace(/ \(.*\)$/, '') : method)
-// Visa — сплошные крупные буквы во всю высоту, Mastercard — круги с мелкой надписью: на глаз одного размера так
-const LOGO_H: Record<string, string> = { visa: 'h-3', mastercard: 'h-[18px]' }
+// высота знака в плашке: Visa — сплошные буквы во всю высоту, Mastercard — круги с мелкой надписью; на глаз — одного
+// размера; у карты три знака в одной плашке — мельче
+const LOGO_H: Record<string, string> = { visa: 'h-3', mastercard: 'h-[18px]', sberpay: 'h-6', sbp: 'h-6', bank: 'h-5' }
+const LOGO_H_MULTI: Record<string, string> = { mastercard: 'h-3 sm:h-[15px]' }
 
-function PayLogos({ method, className = '' }: { method: string; className?: string }) {
+function PayLogos({ method }: { method: string }) {
   const list = payLogos(method)
-  if (!list.length) return null
   return (
-    <span className={`flex shrink-0 items-center gap-1 ${className}`}>
+    <span className="flex h-8 w-[88px] shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md bg-white px-1.5 empty:bg-transparent sm:w-[104px]">
       {list.map(([, key, alt]) => (
-        <span key={key} className="grid h-6 place-items-center rounded-md bg-white px-1.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/pay/${key}.png`} alt={alt} loading="lazy" className={`${LOGO_H[key] ?? 'h-4'} w-auto max-w-[64px] object-contain`} />
-        </span>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key={key}
+          src={`/pay/${key}.png`}
+          alt={alt}
+          loading="lazy"
+          className={`${list.length > 1 ? (LOGO_H_MULTI[key] ?? 'h-2 sm:h-2.5') : (LOGO_H[key] ?? 'h-4')} w-auto max-w-[84px] min-w-0 object-contain`}
+        />
       ))}
     </span>
   )
@@ -100,12 +106,12 @@ function PayTable({ title, timeLabel, rows }: { title: string; timeLabel: string
           {rows.map((r) => (
             <tr key={r.method}>
               <td className="py-2.5 pl-5 pr-3 font-medium">
-                <span className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-4">
+                  <PayLogos method={r.method} />
                   <span className="min-w-0" title={payName(r.method) !== r.method ? r.method : undefined}>
                     {payName(r.method)}
                     {r.note ? <span className="mt-0.5 block text-[12.5px] font-normal leading-snug text-mute">{r.note}</span> : null}
                   </span>
-                  <PayLogos method={r.method} />
                 </span>
               </td>
               <td className="num whitespace-nowrap px-3 py-2.5 text-fg/85">{v(r.min)}</td>
@@ -118,15 +124,15 @@ function PayTable({ title, timeLabel, rows }: { title: string; timeLabel: string
       </table>
       <ul className="divide-y divide-edge border-t border-edge sm:hidden">
         {rows.map((r) => (
-          <li key={r.method} className="px-4 py-2.5">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[15px] font-medium">{payName(r.method)}</span>
-              <PayLogos method={r.method} />
+          <li key={r.method} className="flex items-center gap-3 px-4 py-2.5">
+            <PayLogos method={r.method} />
+            <div className="min-w-0">
+              <div className="text-[15px] font-medium">{payName(r.method)}</div>
+              {/* лимиты и условия — двумя строками: одной на 390px рвалось посередине «Без / комиссии» */}
+              <div className="mt-0.5 text-[13px] text-dim">{[r.min && `от ${r.min}`, r.max && `до ${r.max}`].filter(Boolean).join(' · ') || '—'}</div>
+              {r.fee || (!one && r.time) ? <div className="text-[13px] text-dim">{[r.fee, !one && r.time].filter(Boolean).join(' · ')}</div> : null}
+              {r.note ? <div className="mt-0.5 text-[12.5px] leading-snug text-mute">{r.note}</div> : null}
             </div>
-            <div className="mt-0.5 text-[13px] text-dim">
-              {[r.min && `от ${r.min}`, r.max && `до ${r.max}`, r.fee, !one && r.time].filter(Boolean).join(' · ') || '—'}
-            </div>
-            {r.note ? <div className="mt-0.5 text-[12.5px] leading-snug text-mute">{r.note}</div> : null}
           </li>
         ))}
       </ul>
