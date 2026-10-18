@@ -946,10 +946,11 @@ html[data-shell-rc] .shell-r-rail {
   }
 }
 .page-enter {
-  animation: page-enter 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  /* backwards, не both: после анимации transform снова свой — мини-табло матча (.match-top) уходит им вместе с шапкой */
+  animation: page-enter 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
 }
 .page-enter-2 {
-  animation: page-enter 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) 0.06s both;
+  animation: page-enter 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) 0.06s backwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .page-enter,
@@ -1012,7 +1013,7 @@ html[data-shell-rc] .shell-r-rail {
   }
   .match-top {
     transition:
-      top 0.25s cubic-bezier(0.2, 0.7, 0.3, 1),
+      transform 0.25s cubic-bezier(0.2, 0.7, 0.3, 1),
       background-color 0.3s,
       border-color 0.3s;
   }
@@ -1032,8 +1033,9 @@ html[data-shell-rc] .shell-r-rail {
   html[data-bars-hidden] .hdr-sub {
     transform: translateY(calc(-100% - 66px));
   }
+  /* мини-табло уходит вместе с шапкой (владелец: «имею ввиду чтоб оно скрывалось вместе с хедером») */
   html[data-bars-hidden] .match-top {
-    top: 0;
+    transform: translateY(calc(-100% - 66px));
   }
   html[data-bars-hidden] .tabbar {
     transform: translateY(calc(100% + 56px));

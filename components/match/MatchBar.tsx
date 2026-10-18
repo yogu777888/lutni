@@ -76,8 +76,11 @@ export function MatchBar({
 
   // название — до двух строк, а не «Райо Валь…» (высоты панели хватает): на телефоне и на 768–1024 рядом с кэфами
   const team = (t: Side, right = false) => (
-    <span className={`flex min-w-0 items-center gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
-      <TeamLogo name={t.name} src={t.logo} size={22} />
+    <span className={`flex min-w-0 items-center justify-end gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
+      {/* ниже 380px — без эмблем: иначе «Барселона» рвалась по буквам («Барсело / на») */}
+      <span className="shrink-0 max-[379px]:hidden">
+        <TeamLogo name={t.name} src={t.logo} size={22} />
+      </span>
       <span className="line-clamp-2 break-words text-[14px] font-semibold leading-[1.15] sm:text-[15px]">{t.name}</span>
     </span>
   )
@@ -102,7 +105,7 @@ export function MatchBar({
         stuck ? 'lg:bg-[#090c10]' : ''
       }`}
     >
-      <div className="match-top-in flex min-h-[57.5px] items-center gap-3 px-4 py-2 lg:rounded-card lg:bg-panel-3 lg:shadow-[0_10px_30px_rgb(0_0_0/0.45)]">
+      <div className="match-top-in flex min-h-12 items-center gap-3 px-4 py-1.5 lg:min-h-[57.5px] lg:rounded-card lg:py-2 lg:bg-panel-3 lg:shadow-[0_10px_30px_rgb(0_0_0/0.45)]">
         <BackButton fallback={back} />
         <div className="relative flex min-w-0 flex-1 items-center self-stretch">
           {/* крошки */}
@@ -113,18 +116,22 @@ export function MatchBar({
           <div
             aria-hidden={!show}
             inert={!show}
-            className={`absolute inset-0 flex items-center gap-3 ${swap} ${show ? 'opacity-100' : 'pointer-events-none translate-y-1 opacity-0'}`}
+            className={`absolute inset-0 flex items-center gap-3 max-md:pr-11 ${swap} ${show ? 'opacity-100' : 'pointer-events-none translate-y-1 opacity-0'}`}
           >
             {/* счёт одной группой вплотную — «эмблема Бетис 1:0 Хетафе эмблема» сразу после «←», на месте крошек (владелец:
                 «как тебе хлебные крошки и то, что потом появляется?» — по сетке во всю ширину названия прилипали к краям, между
                 ними и счётом было по ~300px пустоты); кэфы — справа (ml-auto) */}
             {/* на телефоне кэфов в панели нет — счёт по центру свободного места, а не прижат влево с пустотой справа */}
-            <div className="mx-auto flex min-w-0 items-center gap-2.5 sm:gap-3 md:mx-0">
+            {/* на телефоне — сеткой 1fr · счёт · 1fr и с отступом справа шириной «←»: счёт ровно по центру экрана, названия
+                прижаты к нему (владелец: «как то криво стоит счет?» — по центру свободного места справа от «←» счёт уезжал
+                вправо, а минута под ним поднимала цифры выше названий) */}
+            <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2.5 md:flex md:w-auto sm:gap-3">
               {team(home)}
-              <span className="flex flex-col items-center leading-none">
+              {/* минута — под счётом вне потока: цифры по середине ряда, на одной линии с названиями */}
+              <span className="relative flex flex-col items-center leading-none">
                 <span className="num display-num whitespace-nowrap text-[20px] font-semibold">{center}</span>
                 {minute ? (
-                  <span className={`mt-0.5 flex items-center gap-1 text-[11px] ${minute.live ? 'text-live' : 'text-mute'}`}>
+                  <span className={`absolute left-1/2 top-full mt-0.5 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap text-[11px] ${minute.live ? 'text-live' : 'text-mute'}`}>
                     {minute.live ? <span className="h-1 w-1 rounded-full bg-live" /> : null}
                     {minute.text}
                   </span>
