@@ -7,7 +7,7 @@ import { PageHead } from '@/components/PageHead'
 import { CtaLink } from '@/components/CtaLink'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerBadge } from '@/components/PartnerBadge'
-import { getPartner, realBonus } from '@/config/bookmakers'
+import { getPartner, realBonus, type PayRow } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
 import { pluralN, todayYmd } from '@/lib/format'
 import { listHref } from '@/lib/links'
@@ -17,6 +17,52 @@ import { partnerLines, type PartnerRow } from '@/lib/partner-lines'
 export const dynamic = 'force-dynamic'
 
 type Props = { params: Promise<{ slug: string }> }
+
+/** «2026-10-18» → «18 октября 2026». */
+const ruDate = (ymd: string) =>
+  new Date(`${ymd}T12:00:00Z`).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).replace(' г.', '')
+
+/** Таблица пополнения или вывода: от sm — колонками, на телефоне — строкой под способом (пять колонок в 390px не влезают). */
+function PayTable({ title, timeLabel, rows }: { title: string; timeLabel: string; rows: PayRow[] }) {
+  const v = (x?: string) => x || '—'
+  return (
+    <div>
+      <h3 className="px-4 pb-2 pt-4 text-[15px] font-semibold sm:px-5">{title}</h3>
+      <table className="hidden w-full text-left text-[14px] sm:table">
+        <thead className="text-[12px] text-mute">
+          <tr className="border-b border-edge">
+            <th className="py-2 pl-5 pr-3 font-medium">Способ</th>
+            <th className="px-3 py-2 font-medium">Минимум</th>
+            <th className="px-3 py-2 font-medium">Максимум</th>
+            <th className="px-3 py-2 font-medium">Комиссия</th>
+            <th className="py-2 pl-3 pr-5 font-medium">{timeLabel}</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-edge">
+          {rows.map((r) => (
+            <tr key={r.method}>
+              <td className="py-2.5 pl-5 pr-3 font-medium">{r.method}</td>
+              <td className="num px-3 py-2.5 text-fg/85">{v(r.min)}</td>
+              <td className="num px-3 py-2.5 text-fg/85">{v(r.max)}</td>
+              <td className="px-3 py-2.5 text-fg/85">{v(r.fee)}</td>
+              <td className="py-2.5 pl-3 pr-5 text-fg/85">{v(r.time)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <ul className="divide-y divide-edge border-t border-edge sm:hidden">
+        {rows.map((r) => (
+          <li key={r.method} className="px-4 py-2.5">
+            <div className="text-[15px] font-medium">{r.method}</div>
+            <div className="mt-0.5 text-[13px] text-dim">
+              {[r.min && `от ${r.min}`, r.max && `до ${r.max}`, r.fee, r.time].filter(Boolean).join(' · ') || '—'}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
 
 const domain = (site: string) => site.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
 
@@ -68,11 +114,17 @@ export default async function BookmakerPage({ params }: Props) {
           </>,
         ] as [string, React.ReactNode]]
       : []),
-    ...(f.licenseNo ? [['Лицензия ФНС', f.licenseNo] as [string, React.ReactNode]] : []),
     ...(f.minDeposit ? [['Минимальный депозит', f.minDeposit] as [string, React.ReactNode]] : []),
-    ...(f.payments ? [['Пополнение и вывод', f.payments] as [string, React.ReactNode]] : []),
     ...(f.apps ? [['Приложение', f.apps] as [string, React.ReactNode]] : []),
     ...(f.verification ? [['Идентификация', f.verification] as [string, React.ReactNode]] : []),
+  ]
+  const checked = f.checked ? ruDate(f.checked) : null
+  // «О компании» — как блок лицензии у legalbet: юрлицо, номер и дата лицензии; общая строка про ФНС и ЕЦУПИС — в шапке
+  const company: [string, string][] = [
+    ...(f.legalEntity ? [['Юрлицо', f.legalEntity] as [string, string]] : []),
+    ...(f.licenseNo ? [['Лицензия ФНС', `${f.licenseNo}${f.licenseDate ? ` от ${ruDate(f.licenseDate)}` : ''}`] as [string, string]] : []),
+    ...(f.legalEntity || f.licenseNo ? [['Учёт ставок', 'Член ЕЦУПИС'] as [string, string]] : []),
+    ...(f.legalEntity || f.licenseNo ? [['Официальный сайт', domain(p.site)] as [string, string]] : []),
   ]
   const steps = [
     `Нажмите «${cta}» — откроется официальный сайт букмекера (${domain(p.site)}).`,
@@ -186,6 +238,33 @@ export default async function BookmakerPage({ params }: Props) {
             Информация носит справочный характер; условия бонусов устанавливает букмекер и может изменить их в любой момент. 18+.
           </p>
         </section>
+
+        {/* пополнение и вывод — таблицами, как у legalbet (владелец прислал их страницу Winline): только сверенное из
+            `facts.deposit` / `facts.withdraw`, с датой сверки; нет данных — блока нет */}
+        {f.deposit?.length || f.withdraw?.length ? (
+          <section className="card overflow-hidden">
+            <BlockHead title="Пополнение и вывод" aside={checked ? `данные на ${checked}` : null} />
+            {f.deposit?.length ? <PayTable title="Пополнение" timeLabel="Зачисление" rows={f.deposit} /> : null}
+            {f.withdraw?.length ? <PayTable title="Вывод" timeLabel="Срок вывода" rows={f.withdraw} /> : null}
+            <p className="mt-2 border-t border-edge px-4 py-3 text-[12px] leading-relaxed text-mute sm:px-5">
+              Лимиты, комиссии и сроки устанавливает букмекер и может их изменить — проверяйте в кассе на сайте {domain(p.site)}.
+            </p>
+          </section>
+        ) : null}
+
+        {company.length ? (
+          <section className="card overflow-hidden">
+            <BlockHead title="О компании" line />
+            <dl className="divide-y divide-edge text-[15px]">
+              {company.map(([k, val]) => (
+                <div key={k} className="grid gap-0.5 px-4 py-3 sm:grid-cols-[13rem_minmax(0,1fr)] sm:gap-4 sm:px-5">
+                  <dt className="text-dim">{k}</dt>
+                  <dd>{val}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ) : null}
       </div>
     </>
   )
