@@ -24,7 +24,7 @@ export function PageHead({
 }) {
   return (
     <section className="card min-w-0 px-4 py-4 sm:px-5">
-      {crumbs ? <Breadcrumbs items={crumbs} back hideLast className="mb-3" /> : null}
+      {crumbs ? <Breadcrumbs items={crumbs} back parentOnly className="mb-3" /> : null}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {lead ? <div className="shrink-0">{lead}</div> : null}

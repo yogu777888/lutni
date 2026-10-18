@@ -24,6 +24,7 @@ export function MatchBar({
   odds,
   partner,
   children,
+  back = '/matches',
 }: {
   /** хлебные крошки — видны, пока табло на экране */
   children: React.ReactNode
@@ -35,6 +36,8 @@ export function MatchBar({
   minute: { text: string; live: boolean } | null
   odds: BarOdd[] | null
   partner: { name: string; href: string; live?: boolean } | null
+  /** куда «←», если пришли не с сайта — раздел из крошек (лига) */
+  back?: string
 }) {
   const [show, setShow] = useState(false)
   // прилипла под шапкой (ниже xl): тогда над панелью — полоска цвета фона, страница в щели не просвечивает
@@ -94,7 +97,7 @@ export function MatchBar({
       }`}
     >
       <div className="match-top-in flex min-h-[57.5px] items-center gap-3 rounded-card bg-panel-3 px-3 py-2 shadow-[0_10px_30px_rgb(0_0_0/0.45)] sm:px-4">
-        <BackButton fallback="/matches" />
+        <BackButton fallback={back} />
         <div className="relative flex min-w-0 flex-1 items-center self-stretch">
           {/* крошки */}
           <div aria-hidden={show} inert={show} className={`min-w-0 flex-1 ${swap} ${show ? 'pointer-events-none -translate-y-1 opacity-0' : 'opacity-100'}`}>

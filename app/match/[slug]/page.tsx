@@ -240,6 +240,7 @@ export default async function MatchPage({ params }: Props) {
       <span hidden className="bare-match" />
       {/* верх страницы — одна закреплённая панель: «←», крошки, а когда табло уехало — мини-табло на том же месте */}
       <MatchBar
+        back={leagueHref(m.league)}
         home={{ name: m.home.name, logo: m.home.logo ?? null }}
         away={{ name: m.away.name, logo: m.away.logo ?? null }}
         center={m.score && m.status !== 'scheduled' ? `${m.score.home} : ${m.score.away}` : formatTime(m.ts)}
@@ -254,9 +255,10 @@ export default async function MatchPage({ params }: Props) {
         {/* на узком телефоне крошки не влезают и листаются вбок — край затухает, а не обрывается на «Овьедо — Ре» */}
         <Breadcrumbs
           className="min-w-0 pr-7 text-[13px] [mask-image:linear-gradient(90deg,#000_calc(100%_-_28px),transparent)]"
+          parentOnly
           items={[
             { href: '/matches', label: 'Матчи' },
-            { href: leagueHref(m.league), label: m.league.name },
+            { href: leagueHref(m.league), label: leagueTitle(m.league.name) },
             { href: canonical, label: pair },
           ]}
         />
