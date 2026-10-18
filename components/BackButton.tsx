@@ -144,7 +144,16 @@ export function BackButton({ fallback, className = '' }: { fallback: string; cla
  * Подпись рядом с «←» — куда «←» вернёт: пришли с сайта — предыдущая страница («← Матчи», «← Ла Лига»), иначе — раздел
  * выше из крошек (`fallback`). Нажатие — то же, что «←». Для поисковиков в крошках — полная цепочка (BreadcrumbList).
  */
-export function BackLabel({ fallback, className = '' }: { fallback: { href: string; label: string }; className?: string }) {
+export function BackLabel({
+  fallback,
+  className = '',
+  chip = false,
+}: {
+  fallback: { href: string; label: string }
+  className?: string
+  /** «‹ Лиги» чипом — кнопка «назад» в углу первого блока страницы, как в приложениях Apple */
+  chip?: boolean
+}) {
   const router = useRouter()
   const path = usePathname()
   const [prev, setPrev] = useState<Page | null>(null)
@@ -165,9 +174,19 @@ export function BackLabel({ fallback, className = '' }: { fallback: { href: stri
         if (prev && history.length > 1) router.back()
         else goUp(router, fallback.href)
       }}
-      className={`transition-colors hover:text-fg ${className}`}
+      title={chip ? `Назад: ${prev?.label ?? fallback.label}` : undefined}
+      className={
+        chip
+          ? `inline-flex h-8 max-w-full items-center gap-0.5 rounded-full bg-white/[0.07] pl-1.5 pr-3 text-[13px] font-medium text-dim transition-colors hover:bg-white/[0.13] hover:text-fg ${className}`
+          : `transition-colors hover:text-fg ${className}`
+      }
     >
-      {prev?.label ?? fallback.label}
+      {chip ? (
+        <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M14.5 6l-6 6 6 6" />
+        </svg>
+      ) : null}
+      <span className={chip ? 'truncate' : undefined}>{prev?.label ?? fallback.label}</span>
     </a>
   )
 }

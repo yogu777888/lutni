@@ -25,6 +25,7 @@ export function PredictHero({
   tags,
   tint,
   story,
+  back = null,
 }: {
   m: Match
   v: Verdict | null
@@ -33,6 +34,8 @@ export function PredictHero({
   tags: TagHit[]
   tint: { home: string; away: string } | null
   story: React.ReactNode
+  /** «‹ Ла Лига» чипом в верхнем левом углу (`Breadcrumbs chip`) */
+  back?: React.ReactNode
 }) {
   const ymd = ymdInTz(m.ts)
   const n = probs ? split100(probs) : null
@@ -57,9 +60,13 @@ export function PredictHero({
       <div className="relative">
         {/* турнир — в крошках над блоком (здесь он стоял второй раз, на телефоне турнир и дата — две строки); тур и день —
             одной тихой строкой по центру, как на табло после начала (`MatchHero`) */}
-        <p className="text-center text-[13px] text-dim first-letter:uppercase">
+        {/* «назад» чипом слева, тур и дата — по центру; на телефоне чип — строкой выше */}
+      <div className="grid items-center gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-x-4">
+        {back ? <div className="min-w-0 sm:col-start-1 sm:row-start-1">{back}</div> : null}
+        <p className="text-center text-[13px] text-dim first-letter:uppercase sm:col-start-2">
           {[m.round, `${formatWeekdayLong(m.ts)}, ${formatDateLong(m.ts)}`].filter(Boolean).join(' · ')}
         </p>
+      </div>
 
         {/* строка матча: по ней же мини-табло понимает, что пора появиться (#match-board) */}
         <div id="match-board" className="mt-4 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-5">

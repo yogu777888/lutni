@@ -23,11 +23,8 @@ export function MatchBar({
   minute,
   odds,
   partner,
-  children,
   back = '/matches',
 }: {
-  /** хлебные крошки — видны, пока табло на экране */
-  children: React.ReactNode
   home: Side
   away: Side
   /** «1 : 0» или «21:00» */
@@ -40,8 +37,6 @@ export function MatchBar({
   back?: string
 }) {
   const [show, setShow] = useState(false)
-  // прилипла под шапкой (ниже xl): тогда над панелью — полоска цвета фона, страница в щели не просвечивает
-  const [stuck, setStuck] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   // переходы включаем после первого кадра: при заходе на страницу состояние ставится сразу, без вспышки крошки → табло
   const [ready, setReady] = useState(false)
@@ -59,7 +54,6 @@ export function MatchBar({
         // сами цифры (первый ряд в #match-score): сменяем, когда половина крупного счёта ушла под панель
         const r = (board?.firstElementChild ?? board)?.getBoundingClientRect()
         setShow(r && box ? (r.top + r.bottom) / 2 < box.bottom : false)
-        setStuck(el && box ? Math.abs(box.top - parseFloat(getComputedStyle(el).top)) < 1 : false)
       })
     }
     check()
@@ -93,31 +87,24 @@ export function MatchBar({
     // меню внизу — `TabBar`, шапка в один ряд; было два ряда, 99px); от xl — 72px, как строка дней на главной (шапка 64 + полоска рамки 8). Ниже xl панель —
     // вплотную под шапкой, а 6px над ней — полоска цвета фона, пока панель прилипла (`stuck`): в щели между шапкой и
     // панелью просвечивала прокручиваемая страница (владелец: «а мини табло сверху при прокрутке как?»)
+    // панель — только когда крупный счёт ушёл под шапку (владелец: «а можно как то красиво кнопки назад в блоке вставить?»
+    // — «назад» теперь чипом в углу табло, а наверху страницы над табло пустой полосы с одним «←» нет): поверх страницы, без
+    // своего места в раскладке (обёртка высотой 0), видна только при прокрутке
+    <div className="sticky top-[65px] z-30 h-0 xl:top-[72px]">
     <div
       ref={ref}
-      // ниже lg — второй ряд шапки, как дни на главной (`.hdr-sub`): во всю ширину вплотную под шапкой, фон страницы и
-      // черта снизу, когда прилипла (владелец: «смотри как некрасиво на мобильном выглядит» — плавающая плашка со
-      // скруглением и тенью висела с зазорами, вокруг и под ней просвечивал текст страницы); от lg — плашкой, как была
-      // фон и черту ниже lg ставит CSS вместе с шапкой (`.match-top` в app/globals.css): наверху страницы — прозрачный, как
-      // шапка (иначе ряд был темнее шапки со светом сверху — владелец: «вижу разный фон у них»), после прокрутки — один
-      // сплошной цвет у шапки и ряда, черта — одна, под рядом
-      className={`match-top page-enter sticky top-[65px] z-30 mb-4 max-lg:-mx-4 max-lg:-mt-4 sm:max-lg:-mt-6 lg:-mt-1.5 lg:pt-1.5 xl:top-[72px] xl:mb-2 xl:mt-0 xl:pt-0 ${
-        stuck ? 'lg:bg-[#090c10]' : ''
-      }`}
+      aria-hidden={!show}
+      inert={!show}
+      // ниже lg — второй ряд шапки (фон и уход вместе с шапкой — правила `.match-top` в app/globals.css), от lg — плашка
+      className={`match-top absolute inset-x-0 top-0 max-lg:-inset-x-4 lg:bg-[#090c10] lg:pt-1.5 xl:pt-0 ${show ? '' : 'invisible'}`}
     >
-      <div className="match-top-in flex min-h-12 items-center gap-3 px-4 py-1.5 lg:min-h-[57.5px] lg:rounded-card lg:py-2 lg:bg-panel-3 lg:shadow-[0_10px_30px_rgb(0_0_0/0.45)]">
+      <div className={`match-top-in flex min-h-12 items-center gap-3 px-4 py-1.5 lg:min-h-[57.5px] lg:rounded-card lg:py-2 lg:bg-panel-3 lg:shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${swap} ${show ? 'opacity-100' : '-translate-y-1 opacity-0'}`}>
         <BackButton fallback={back} />
         <div className="relative flex min-w-0 flex-1 items-center self-stretch">
-          {/* крошки */}
-          <div aria-hidden={show} inert={show} className={`min-w-0 flex-1 ${swap} ${show ? 'pointer-events-none -translate-y-1 opacity-0' : 'opacity-100'}`}>
-            {children}
-          </div>
           {/* мини-табло на том же месте */}
           <div
-            aria-hidden={!show}
-            inert={!show}
             // с минутой под счётом ниже lg всё поднимаем на 3px: иначе минута почти касалась черты снизу ряда
-            className={`absolute inset-0 flex items-center gap-3 max-md:pr-11 ${minute ? 'max-lg:pb-1.5' : ''} ${swap} ${show ? 'opacity-100' : 'pointer-events-none translate-y-1 opacity-0'}`}
+            className={`absolute inset-0 flex items-center gap-3 max-md:pr-11 ${minute ? 'max-lg:pb-1.5' : ''}`}
           >
             {/* счёт одной группой вплотную — «эмблема Бетис 1:0 Хетафе эмблема» сразу после «←», на месте крошек (владелец:
                 «как тебе хлебные крошки и то, что потом появляется?» — по сетке во всю ширину названия прилипали к краям, между
@@ -175,6 +162,7 @@ export function MatchBar({
           </div>
         </div>
       </div>
+    </div>
     </div>
   )
 }

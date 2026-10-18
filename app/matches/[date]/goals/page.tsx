@@ -1,4 +1,3 @@
-import { PageTop } from '@/components/PageHead'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -75,8 +74,8 @@ export default async function GoalsPage({ params, searchParams }: Props) {
   return (
     <>
       <span hidden className="bare-sub" />
-      <PageTop crumbs={[{ href: '/matches', label: 'Матчи' }, ...(dayHref(date, today) === '/' ? [] : [{ href: dayHref(date, today), label: heading.title }]), { href: base, label: 'Голевые матчи' }]} title="Голевые матчи" />
       <PickHead ymd={date} today={today} date={heading.date} title="Голевые матчи" icon="pick-goals" section="goals"
+        crumbs={[{ href: '/matches', label: 'Матчи' }, ...(dayHref(date, today) === '/' ? [] : [{ href: dayHref(date, today), label: heading.title }]), { href: base, label: 'Голевые матчи' }]}
         how={
           <>
             Шанс — из пары коэффициентов «больше 2,5 / меньше 2,5» одного букмекера в одном снимке линии, без маржи: (1/ТБ) ÷ (1/ТБ + 1/ТМ). Средние голы команд

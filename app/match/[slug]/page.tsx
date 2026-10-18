@@ -251,18 +251,7 @@ export default async function MatchPage({ params }: Props) {
             : null
         }
         partner={heroLine}
-      >
-        {/* на узком телефоне крошки не влезают и листаются вбок — край затухает, а не обрывается на «Овьедо — Ре» */}
-        <Breadcrumbs
-          className="min-w-0 pr-7 text-[13px] [mask-image:linear-gradient(90deg,#000_calc(100%_-_28px),transparent)]"
-          parentOnly
-          items={[
-            { href: '/matches', label: 'Матчи' },
-            { href: leagueHref(m.league), label: leagueTitle(m.league.name) },
-            { href: canonical, label: pair },
-          ]}
-        />
-      </MatchBar>
+      />
       {/* заголовок — только для поисковиков: команды крупно на табло, видимый он третий раз повторял названия */}
       <h1 className="sr-only">{h1}</h1>
       {/* идёт матч — счёт, минута и live-кэфы обновляются сами */}
@@ -278,9 +267,18 @@ export default async function MatchPage({ params }: Props) {
           tags={tags}
           tint={tint ? distinctPair(tint) : null}
           story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null}
+          back={<Breadcrumbs chip className="" items={[
+            { href: '/matches', label: 'Матчи' },
+            { href: leagueHref(m.league), label: leagueTitle(m.league.name) },
+            { href: canonical, label: pair },
+          ]} />}
         />
       ) : (
-        <MatchHero full={full} cells={cells} books={cons.books} line={heroLine} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} />
+        <MatchHero full={full} cells={cells} books={cons.books} line={heroLine} tint={tint ? distinctPair(tint) : null} notes={notes} story={hasStory ? <StoryButton id={m.id} href={canonical} /> : null} back={<Breadcrumbs chip className="" items={[
+            { href: '/matches', label: 'Матчи' },
+            { href: leagueHref(m.league), label: leagueTitle(m.league.name) },
+            { href: canonical, label: pair },
+          ]} />} />
       )}
 
       {/* на телефоне между блоками 12px, как на главной (владелец: «такое чувство что отступы между блоком больше стали?» — «да»: было 24–32) */}

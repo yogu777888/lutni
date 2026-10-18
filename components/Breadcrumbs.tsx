@@ -17,17 +17,45 @@ export function Breadcrumbs({
   className = 'mb-4',
   back = false,
   parentOnly = false,
+  chip = false,
 }: {
   items: Crumb[]
   className?: string
   back?: boolean
   parentOnly?: boolean
+  /** одна кнопка «‹ Раздел» чипом (`BackLabel chip`) — в углу первого блока страницы; полная цепочка — для поисковиков */
+  chip?: boolean
 }) {
   // ссылка на тот же адрес второй раз не нужна (у подборки за сегодня «Футбол сегодня» и «Матчи» могут совпасть) —
   // иначе два одинаковых ключа и два одинаковых пункта в BreadcrumbList
   const all = items.filter((c, i, list) => list.findIndex((x) => x.href === c.href) === i)
   const shown = parentOnly && all.length > 1 ? [all[all.length - 2]] : all
   const parent = all.length > 1 ? all[all.length - 2].href : all[0]?.href ?? '/'
+  const ld = (
+    <JsonLd
+      data={{
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: all.map((c, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: c.label,
+          item: `${SITE.url}${c.href}`,
+        })),
+      }}
+    />
+  )
+  if (chip) {
+    const up = all.length > 1 ? all[all.length - 2] : all[0]
+    return (
+      <>
+        <nav aria-label="Навигация" className={`flex min-w-0 ${className}`}>
+          <BackLabel fallback={up} chip />
+        </nav>
+        {ld}
+      </>
+    )
+  }
   return (
     <>
       <nav aria-label="Навигация" className={`scrollbar-none flex items-center gap-1.5 overflow-x-auto whitespace-nowrap text-[13px] text-mute ${className}`}>
@@ -47,18 +75,7 @@ export function Breadcrumbs({
           </span>
         ))}
       </nav>
-      <JsonLd
-        data={{
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: all.map((c, i) => ({
-            '@type': 'ListItem',
-            position: i + 1,
-            name: c.label,
-            item: `${SITE.url}${c.href}`,
-          })),
-        }}
-      />
+      {ld}
     </>
   )
 }

@@ -1,4 +1,3 @@
-import { PageTop } from '@/components/PageHead'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -85,8 +84,8 @@ export default async function OddsMovesPage({ params, searchParams }: Props) {
   return (
     <>
       <span hidden className="bare-sub" />
-      <PageTop crumbs={[{ href: '/matches', label: 'Матчи' }, ...(dayHref(date, today) === '/' ? [] : [{ href: dayHref(date, today), label: heading.title }]), { href: base, label: 'Движение коэффициентов' }]} title="Движение коэффициентов" />
       <PickHead ymd={date} today={today} date={heading.date} title="Движение коэффициентов" icon="pick-moves" section="odds"
+        crumbs={[{ href: '/matches', label: 'Матчи' }, ...(dayHref(date, today) === '/' ? [] : [{ href: dayHref(date, today), label: heading.title }]), { href: base, label: 'Движение коэффициентов' }]}
         how={
           <>
             Это доматчевая линия: у ещё не начавшихся матчей — до момента, когда мы её взяли, у начавшихся — до начала матча. LIVE-коэффициенты здесь не

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
 import { BlockHead } from '@/components/BlockHead'
-import { PageHead, PageTop } from '@/components/PageHead'
+import { PageHead } from '@/components/PageHead'
 import { Flag } from '@/components/Flag'
 import { MatchRow } from '@/components/MatchRow'
 import { Sidebar } from '@/components/Sidebar'
@@ -122,10 +122,10 @@ export default async function LeaguePage({ params }: Props) {
   return (
     <>
       <span hidden className="bare-sub" />
-      <PageTop crumbs={[{ href: '/leagues', label: 'Лиги' }, { href: canonical, label: league.name }]} title={title} />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-1 xl:gap-2">
         <div className="min-w-0 space-y-4 xl:space-y-2">
           <PageHead
+            crumbs={[{ href: '/leagues', label: 'Лиги' }, { href: canonical, label: league.name }]}
             lead={<Flag league={league} className="!h-9 !w-9" />}
             title={title}
             sub={country || season ? <span className="block first-letter:uppercase">{[country, season].filter(Boolean).join(' · ')}</span> : null}

@@ -863,15 +863,15 @@ html[data-shell-rc] .shell-r-rail {
   }
   /* верх страницы матча (MatchBar: крошки → мини-табло на одном месте) — как строка дней на главной: подложка цвета
      фона, плашка панели 58px без тени, под ней полоска фона 8px и уголки — разделы уходят под неё со скруглённым верхом */
-  .shell-center:has(.bare-match, .bare-sub) .match-top {
+  .shell-center:has(.bare-match) .match-top {
     background: #090c10;
   }
-  .shell-center:has(.bare-match, .bare-sub) .match-top-in {
+  .shell-center:has(.bare-match) .match-top-in {
     background: var(--color-panel);
     box-shadow: none;
     padding: 8px 10px 8px 20px;
   }
-  .shell-center:has(.bare-match, .bare-sub) .match-top::after {
+  .shell-center:has(.bare-match) .match-top::after {
     content: '';
     pointer-events: none;
     position: absolute;
