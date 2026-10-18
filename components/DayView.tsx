@@ -209,6 +209,7 @@ export async function DayView({
       {view === 'list' ? (
         // страница «Матчи»: заголовок — как на главной, но про список
         <PageHead
+          section="/"
           title={
             <>
               {listTitle(heading.title)}

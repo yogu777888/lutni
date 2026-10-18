@@ -47,6 +47,7 @@ export default async function TagsPage() {
       <span hidden className="bare-sub" />
       <div className="space-y-4 xl:space-y-2">
         <PageHead
+          section="/tags"
           title="Подборки"
           sub="Матчи, собранные по одному признаку: где ждём много голов, где есть явный фаворит, где упал кэф. Признак считается по данным — кэфам букмекеров, форме команд, травмам. Это подсказка, где посмотреть, а не гарантия."
         />

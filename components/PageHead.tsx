@@ -1,5 +1,6 @@
 import { NavPair } from './BackButton'
 import { Breadcrumbs, upOf, type Crumb } from './Breadcrumbs'
+import { NavIcon } from './NavIcon'
 import { TopBar } from './TopBar'
 
 /**
@@ -13,10 +14,13 @@ export function PageHead({
   title,
   crumbs,
   lead,
+  section,
   sub,
   aside,
   children,
 }: {
+  /** раздел меню (`/tags`, `/leagues`…) — его значок из нижнего меню перед заголовком: «вы здесь» */
+  section?: string
   title: React.ReactNode
   crumbs?: Crumb[]
   lead?: React.ReactNode
@@ -38,8 +42,20 @@ export function PageHead({
           {crumbs ? <NavPair fallback={upOf(crumbs)} className="mr-1 max-lg:hidden" /> : null}
           {lead ? <div className="shrink-0">{lead}</div> : null}
           <div className="min-w-0">
-            <h1 data-bar-title className="h1-block text-[24px] leading-tight sm:text-[28px]">{title}</h1>
-            {sub ? <div className="mt-1 max-w-[68ch] text-[14px] leading-snug text-dim">{sub}</div> : null}
+            {/* у разделов меню — тот же значок, что в нижнем меню, в строке заголовка (владелец: «может на других страницах кроме
+                главной надо рядом с заголовком сделать иконку?» — «да»): белый в круге 36px; подпись — под ними во всю ширину
+                (значок по центру всего блока висел посреди абзаца) */}
+            <div className="flex items-center gap-3">
+              {section && !lead ? (
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.08] text-fg">
+                  <NavIcon href={section} on size={20} />
+                </span>
+              ) : null}
+              <h1 data-bar-title className="h1-block min-w-0 text-[24px] leading-tight sm:text-[28px]">
+                {title}
+              </h1>
+            </div>
+            {sub ? <div className="mt-1.5 max-w-[68ch] text-[14px] leading-snug text-dim">{sub}</div> : null}
           </div>
         </div>
         {aside ? <div className="w-full sm:w-auto">{aside}</div> : null}

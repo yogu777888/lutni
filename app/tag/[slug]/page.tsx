@@ -176,6 +176,7 @@ export default async function TagPage({ params }: Props) {
             (владелец: «на странице выгодно есть хлебные крошки и иконка» — крошки «Подборки / …» спорили с меню) */}
         <PageHead
           crumbs={isValue ? undefined : [{ href: '/tags', label: 'Подборки' }, { href: `/tag/${t.slug}`, label: t.title }]}
+          section={isValue ? '/tag/value' : undefined}
           lead={
             isValue ? null : (
               <span className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.06]">

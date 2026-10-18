@@ -86,6 +86,7 @@ export default async function LeaguesPage() {
       <span hidden className="bare-sub" />
       <div className="space-y-4 xl:space-y-2">
         <PageHead
+          section="/leagues"
           title="Лиги и турниры"
           sub={
             failed
