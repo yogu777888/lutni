@@ -361,6 +361,16 @@ const envKey = (slug: string) => slug.toUpperCase().replace(/[^A-Z0-9]+/g, '_')
 export const GENERIC_BONUS = 'Бонус для новых клиентов'
 
 /** Настоящие условия бонуса от партнёрки (`AFF_<SLUG>_BONUS`) или null — заглушку `GENERIC_BONUS` нигде не показываем. */
+/** Есть ли у букмекера проверенные факты для страницы (что-то, кроме даты сверки). */
+export const hasFacts = (p: Partner): boolean => Object.entries(p.facts ?? {}).some(([k, v]) => k !== 'checked' && (Array.isArray(v) ? v.length > 0 : Boolean(v)))
+
+/**
+ * Страница букмекера в поиске — только с содержанием (владелец: «нужно больше контента … чтобы поисковики не забанили сайт»):
+ * проверенные факты или линия в наших данных (PARI — раздел /Pari, Марафон — /Odds; у остальных партнёров линии в API нет).
+ * Пустая страница — только кнопка и общие слова — для поисковиков «тонкая партнёрская»: `noindex` и не в sitemap, пока не заполнят.
+ */
+export const indexable = (p: Partner): boolean => hasFacts(p) || p.slug === 'pari' || p.slug === 'marathonbet'
+
 export const realBonus = (p: Partner): string | null => (p.bonus && p.bonus !== GENERIC_BONUS ? p.bonus : null)
 
 function build(seed: PartnerSeed): Partner {

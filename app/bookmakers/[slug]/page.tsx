@@ -7,7 +7,7 @@ import { PageHead } from '@/components/PageHead'
 import { CtaLink } from '@/components/CtaLink'
 import { MatchRow } from '@/components/MatchRow'
 import { PartnerBadge } from '@/components/PartnerBadge'
-import { getPartner, realBonus, type PayRow } from '@/config/bookmakers'
+import { getPartner, indexable, realBonus, type Partner, type PayRow } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
 import { pluralN, todayYmd } from '@/lib/format'
 import { listHref } from '@/lib/links'
@@ -68,6 +68,59 @@ function PayTable({ title, timeLabel, rows }: { title: string; timeLabel: string
   )
 }
 
+type Faq = { q: string; a: string; link?: { href: string; text: string } }
+
+/** Способ оплаты внутри фразы: «Банковская карта (МИР…)» → «банковская карта»; СБП, ЦУПИС, ЮMoney — как есть. */
+const way = (m: string) => {
+  const s = m.replace(/ \(.*\)$/, '')
+  return /^[А-ЯЁ][а-яё]/.test(s) ? s[0].toLowerCase() + s.slice(1) : s
+}
+
+/**
+ * «Вопросы и ответы» — из проверенных фактов (`facts`), без текста «для объёма»: вопрос есть, только если есть ответ. Те же
+ * вопросы люди задают поиску («как вывести деньги из Winline»); разметка FAQPage — в странице.
+ */
+function faqFor(p: Partner): Faq[] {
+  const f = p.facts ?? {}
+  const out: Faq[] = []
+  if (f.licenseNo || f.legalEntity) {
+    const lic = [f.licenseNo, f.licenseDate && `от ${ruDate(f.licenseDate)}`].filter(Boolean).join(' ')
+    out.push({
+      q: `${p.name} — легальный букмекер?`,
+      a: `Да. ${p.name} работает по лицензии ФНС России${lic ? ` ${lic}` : ''}${f.legalEntity ? `, компания — ${f.legalEntity}` : ''}, и входит в ЕЦУПИС: деньги игроков и выплаты проходят через единый учёт ставок.`,
+    })
+  }
+  if (f.minDeposit || f.deposit?.length) {
+    const ways = f.deposit?.map((r) => way(r.method)).join(', ')
+    out.push({
+      q: `Какой минимальный депозит в ${p.name}?`,
+      a: [f.minDeposit && `Минимальное пополнение — ${f.minDeposit}.`, ways && `Пополнить счёт можно так: ${ways}.`].filter(Boolean).join(' '),
+    })
+  }
+  if (f.withdraw?.length) {
+    const ways = f.withdraw.map((r) => [way(r.method), r.min && `от ${r.min}`, r.time?.toLowerCase()].filter(Boolean).join(' — ')).join('; ')
+    out.push({
+      q: `Как вывести деньги из ${p.name}?`,
+      a: `Выигрыш выводят на те же способы, что и пополнение: ${ways}. Перед первым выводом нужно пройти идентификацию.`,
+    })
+  }
+  if (f.verification) out.push({ q: `Как пройти идентификацию в ${p.name}?`, a: `Способы: ${f.verification}.` })
+  if (f.apps) out.push({ q: `Есть ли у ${p.name} приложение?`, a: `${f.apps}.` })
+  const sup = f.support
+  if (sup && (sup.phone || sup.email)) {
+    const parts = [sup.phone && `телефон ${sup.phone}${sup.phoneNote ? ` (${sup.phoneNote})` : ''}`, sup.email && `почта ${sup.email}`, sup.chat && 'онлайн-чат на сайте']
+    out.push({ q: `Как связаться с поддержкой ${p.name}?`, a: `${parts.filter(Boolean).join(', ')}.`.replace(/^./, (c) => c.toUpperCase()) })
+  }
+  // налог — общий для всех, поэтому только к вопросам о самом букмекере, а не вместо них
+  if (out.length >= 2)
+    out.push({
+      q: `Нужно ли платить налог с выигрыша в ${p.name}?`,
+      a: `Да: с выигрыша (разницы между выплатой и ставкой) удерживается НДФЛ. С 2026 года легальный букмекер удерживает его сам при каждой выплате, отдельная декларация обычно не нужна.`,
+      link: { href: '/nalog', text: 'Подробнее — «Налог на выигрыш»' },
+    })
+  return out.length >= 3 ? out : []
+}
+
 const domain = (site: string) => site.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -79,6 +132,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${p.name}: обзор букмекера — лицензия, сайт, кэфы на футбол`,
     description: `Букмекер ${p.name}: лицензия ФНС России, официальный сайт ${domain(p.site)}, коэффициенты на футбол и как зарегистрироваться.`,
     alternates: { canonical: `/bookmakers/${p.slug}` },
+    // пустая страница (только кнопка) — не для поиска, пока не заполнят факты: «тонкая партнёрская» тянет вниз весь сайт
+    ...(indexable(p) ? {} : { robots: { index: false, follow: true } }),
   }
 }
 
@@ -157,6 +212,7 @@ export default async function BookmakerPage({ params }: Props) {
         ] as [string, React.ReactNode]]
       : []),
   ]
+  const faq = faqFor(p)
   const steps = [
     `Нажмите «${cta}» — откроется официальный сайт букмекера (${domain(p.site)}).`,
     'Зарегистрируйтесь по номеру телефона и подтвердите возраст (18+).',
@@ -280,6 +336,42 @@ export default async function BookmakerPage({ params }: Props) {
             <p className="mt-2 border-t border-edge px-4 py-3 text-[12px] leading-relaxed text-mute sm:px-5">
               Лимиты, комиссии и сроки устанавливает букмекер и может их изменить — проверяйте в кассе на сайте {domain(p.site)}.
             </p>
+          </section>
+        ) : null}
+
+        {/* «Вопросы и ответы» — из тех же фактов, что выше (владелец: «нужно больше контента … чтобы поисковики не забанили»):
+            вопрос только при ответе, разметка FAQPage для поисковиков */}
+        {faq.length ? (
+          <section className="card overflow-hidden">
+            <BlockHead title="Вопросы и ответы" line />
+            <div className="divide-y divide-edge">
+              {faq.map((x) => (
+                <div key={x.q} className="px-4 py-3.5 sm:px-5">
+                  <h3 className="text-[15px] font-semibold">{x.q}</h3>
+                  <p className="mt-1 max-w-[72ch] text-[14.5px] leading-relaxed text-fg/80">
+                    {x.a}
+                    {x.link ? (
+                      <>
+                        {' '}
+                        <Link href={x.link.href} className="text-dim underline decoration-white/25 underline-offset-4 transition-colors hover:text-fg">
+                          {x.link.text}
+                        </Link>
+                      </>
+                    ) : null}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  '@context': 'https://schema.org',
+                  '@type': 'FAQPage',
+                  mainEntity: faq.map((x) => ({ '@type': 'Question', name: x.q, acceptedAnswer: { '@type': 'Answer', text: x.a } })),
+                }).replace(/</g, '\\u003c'),
+              }}
+            />
           </section>
         ) : null}
 
