@@ -125,7 +125,7 @@ export function OddsTable({
   // таблица перевёрнута: строки — исходы словами, колонки — букмекеры и «Честная» (владелец: «как будто вытянутый блок
   // получился» — двумя частями «Исход» и «Голы» со своими шапками и «Честной ценой» выходило ~520px на телефоне); одна
   // шапка с логотипами, строку легко сравнить: кэф букмекера рядом с честной ценой
-  const colW = 'clamp(54px, 15vw, 96px)'
+  const colW = 'clamp(54px, 15vw, 150px)'
   const grid = { gridTemplateColumns: `minmax(0,1fr) repeat(${rows.length + (model ? 1 : 0)}, ${colW})` }
   const partners = rows.map((b) => ({ b, partner: partnerForApiBookmaker(b.bookmakerId, b.bookmakerName) }))
 
@@ -134,7 +134,9 @@ export function OddsTable({
       {rows.length ? (
         <div className="text-[15px]">
           <div className="grid items-start gap-x-1 pb-2" style={grid}>
-            <span />
+            {/* угол над подписями — название колонки, а не пустота (владелец: «в блоке коэффиценты слева пустая область
+                образовалась»), по линии подписей букмекеров */}
+            <span className="self-end text-[13px] text-mute">Ставка</span>
             {partners.map(({ b, partner }) => (
               <span key={`${b.bookmakerId}-${b.bookmakerName}`} title={partner?.name ?? b.bookmakerName} className="flex flex-col items-center gap-1 text-center">
                 {partner ? <PartnerBadge partner={partner} size={24} /> : null}
