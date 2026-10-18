@@ -7,7 +7,8 @@ import type { Match } from '@/lib/types'
 import { pluralN } from '@/lib/format'
 import { BlockMore } from '../BlockMore'
 import { PartnerBadge } from '../PartnerBadge'
-import { Segmented } from '../Segmented'
+import { SegPanel } from '../Segmented'
+import { TeamLogo } from '../TeamLogo'
 
 type Col = { key: string; label: string; title?: string; get: (b: BookOdds) => Quote | undefined }
 
@@ -88,10 +89,11 @@ export function OddsTable({
     if (!q) return <span className="text-mute">—</span>
     const moved = q.opening ? q.value / q.opening - 1 : 0
     const chip = (
-      // лаймом — только кэф выше честной цены, как в строках списка и «Выгодно сегодня»; лучший в колонке — белым жирным
+      // ячейкой, как кэфы в строках главной (владелец: «блок Коэффициенты букмекеров некрасивый» — числа висели в воздухе,
+      // и было не понять, что на них можно нажать): серая плашка, выгодный — лаймом, лучший в колонке — жирным
       <span
-        className={`num relative inline-flex h-8 min-w-[58px] items-center justify-center rounded-full px-2 text-[15px] ${
-          val ? 'bg-acid font-semibold text-acid-ink' : isBest ? 'font-semibold text-fg' : 'font-medium text-fg/85'
+        className={`num flex h-9 w-full items-center justify-center rounded-ctl text-[15px] transition-colors ${
+          val ? 'bg-acid font-semibold text-acid-ink' : `bg-white/[0.06] ${isBest ? 'font-semibold text-fg' : 'font-medium text-fg/90'}`
         }`}
         title={
           [`${c.title ?? c.label}: ${formatOdd(q.value)}`, val && p ? `выгодно — выше честной цены ${(1 / p).toFixed(2)}` : '', isBest ? 'лучший кэф' : '', q.opening ? `открытие ${q.opening.toFixed(2)}` : '']
@@ -108,7 +110,7 @@ export function OddsTable({
       </span>
     )
     return partner && open ? (
-      <a href={goHref(partner, 'odds-table', match.id)} target="_blank" rel={SPONSORED_REL} className="inline-block rounded-full transition-colors hover:bg-white/[0.08]">
+      <a href={goHref(partner, 'odds-table', match.id)} target="_blank" rel={SPONSORED_REL} className="block rounded-ctl hover:[&>span]:brightness-125">
         {chip}
       </a>
     ) : (
@@ -124,22 +126,27 @@ export function OddsTable({
   // выглядят … куча мелкого текста в блоке» — подписи исходов повторялись у каждого букмекера и у «Честной цены», 18
   // подписей на 18 чисел); голы — вторым сегментом «Исход | Голы», а не вторым рядом чисел; кнопки «Ставка» нет — к
   // букмекеру ведёт сам кэф
-  const GRID = 'grid grid-cols-[minmax(0,1fr)_repeat(3,minmax(58px,68px))] items-center gap-x-1 sm:grid-cols-[minmax(0,1fr)_repeat(3,96px)]'
+  const GRID = 'grid grid-cols-[minmax(0,1fr)_repeat(3,62px)] items-center gap-x-1.5 sm:grid-cols-[minmax(0,1fr)_repeat(3,88px)]'
   const table = (group: Col[]) => (
     <div className="text-[15px]">
-      {/* названия — до двух строк по низу («Райо / Вальекано»), а не «Райо Вал…» */}
+      {/* шапка одной ровной строкой: у исходов матча — эмблемы команд и «Ничья» (названия переносились «Райо / Вальекано»),
+          полное название — в подсказке */}
       <div className={`${GRID} !items-end pb-2 text-[13px] leading-tight text-mute`}>
         <span />
-        {group.map((c) => (
-          <span key={c.key} title={c.title ?? c.label} className="line-clamp-2 break-words text-center">
-            {c.label}
-          </span>
-        ))}
+        {group.map((c) => {
+          const t = c.key === 'home' ? match.home : c.key === 'away' ? match.away : null
+          return (
+            <span key={c.key} title={c.title ?? c.label} className="flex min-h-6 items-center justify-center text-center">
+              {t ? <TeamLogo name={t.name} src={t.logo ?? null} size={24} /> : c.label}
+              {t ? <span className="sr-only">{t.name}</span> : null}
+            </span>
+          )
+        })}
       </div>
       {rows.map((b) => {
         const partner = partnerForApiBookmaker(b.bookmakerId, b.bookmakerName)
         return (
-          <div key={`${b.bookmakerId}-${b.bookmakerName}`} className={`${GRID} min-h-12 border-t border-edge py-1.5`}>
+          <div key={`${b.bookmakerId}-${b.bookmakerName}`} className={`${GRID} min-h-12 border-t border-edge py-2`}>
             <span className="flex min-w-0 items-center gap-2.5">
               {partner ? <PartnerBadge partner={partner} size={24} /> : null}
               <span className="truncate font-medium">{partner?.name ?? b.bookmakerName}</span>
@@ -153,7 +160,7 @@ export function OddsTable({
         )
       })}
       {model ? (
-        <div className={`${GRID} min-h-12 border-t border-edge py-1.5 text-dim`} title="Сколько стоит исход по оценке tag.bet — без маржи букмекера">
+        <div className={`${GRID} min-h-12 border-t border-edge py-2 text-dim`} title="Сколько стоит исход по оценке tag.bet — без маржи букмекера">
           <span className="truncate">Честная цена</span>
           {group.map((c) => (
             <span key={c.key} className="num text-center">
@@ -169,14 +176,16 @@ export function OddsTable({
 
   return (
     <div>
-      {rows.length ? (
-        <Segmented
-          label="Рынок"
-          items={[
-            ...(x12.length ? [{ key: 'x12', label: 'Исход', content: table(x12) }] : []),
-            ...(goals.length ? [{ key: 'goals', label: 'Голы', content: table(goals) }] : []),
-          ]}
-        />
+      {/* рынки — сегментами «Исход | Голы» в строке заголовка (`SegTabs` у `Section` на странице матча) */}
+      {rows.length && x12.length ? (
+        <SegPanel k="x12" first>
+          {table(x12)}
+        </SegPanel>
+      ) : null}
+      {rows.length && goals.length ? (
+        <SegPanel k="goals" first={!x12.length}>
+          {table(goals)}
+        </SegPanel>
       ) : null}
 
       {others.length ? (
@@ -199,4 +208,10 @@ export function hasMoves(books: BookOdds[], match: Match) {
       return q?.opening ? Math.abs(q.value / q.opening - 1) >= 0.05 : false
     }),
   )
+}
+
+/** Какие рынки есть в таблице — для переключателя «Исход | Голы» над блоком. */
+export function oddsMarkets(match: Match, books: BookOdds[]) {
+  const cols = colsFor(match).filter((c) => books.some((b) => c.get(b)))
+  return { x12: cols.some((c) => ['home', 'draw', 'away'].includes(c.key)), goals: cols.some((c) => !['home', 'draw', 'away'].includes(c.key)) }
 }

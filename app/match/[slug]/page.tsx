@@ -12,7 +12,8 @@ import { FormBlock } from '@/components/match/FormBlock'
 import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
-import { hasMoves, OddsTable } from '@/components/match/OddsTable'
+import { hasMoves, oddsMarkets, OddsTable } from '@/components/match/OddsTable'
+import { SegRoot, SegTabs } from '@/components/Segmented'
 import { ChanceRow } from '@/components/match/ProbBars'
 import { PredictHero } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
@@ -230,6 +231,7 @@ export default async function MatchPage({ params }: Props) {
   const pickOffer = pick?.candidate.bestPartner
 
   const pair = `${m.home.name} — ${m.away.name}`
+  const markets = oddsMarkets(m, legalBooks)
   const crumbs = [
     { href: '/matches', label: 'Матчи' },
     { href: leagueHref(m.league), label: leagueTitle(m.league.name) },
@@ -371,8 +373,14 @@ export default async function MatchPage({ params }: Props) {
           {/* только до начала (владелец: «а коэффициенты букмекеров как?»): после — по доматчевым кэфам не поставить, а кэфы
               «сейчас» — на табло */}
           {scheduled ? (
+            <SegRoot initial={markets.x12 ? 'x12' : 'goals'}>
             <Section outside
               title="Коэффициенты букмекеров"
+              aside={
+                markets.x12 && markets.goals && legalBooks.length ? (
+                  <SegTabs label="Рынок" items={[{ key: 'x12', label: 'Исход' }, { key: 'goals', label: 'Голы' }]} />
+                ) : null
+              }
               note={
                 <>
                   {hasMoves(legalBooks, m) ? '▼▲ — изменение с открытия линии. ' : ''}
@@ -382,6 +390,7 @@ export default async function MatchPage({ params }: Props) {
             >
               <OddsTable part="table" match={m} books={legalBooks} model={model} candidates={candidates} />
             </Section>
+            </SegRoot>
           ) : null}
 
           {ins.homeForm || ins.awayForm ? (

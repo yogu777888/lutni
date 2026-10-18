@@ -47,7 +47,7 @@ export function Section({
 /** Заголовок раздела над блоком: Onest 20px жирным, подпись справа серым; отступ слева — как у содержимого блока. */
 export function BlockTitle({ title, aside, className = '' }: { title: React.ReactNode; aside?: React.ReactNode; className?: string }) {
   return (
-    <div className={`mb-2.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-1 sm:px-2 ${className}`}>
+    <div className={`mb-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1 sm:px-2 ${className}`}>
       <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">{title}</h2>
       {aside ? <div className="text-[13px] text-mute">{aside}</div> : null}
     </div>
