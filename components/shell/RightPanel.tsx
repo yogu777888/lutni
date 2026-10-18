@@ -156,9 +156,23 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
   // писать в описании не сколько матчей будет а какие команды?» — «да»); у всех подборок, и у «Скоро начнутся»; без
   // «и ещё N» — строка просто обрывается многоточием (владелец: «ты только название команды одной написал и мне кажется
   // что писать цифру сколько еще не нужно?»); число матчей и время — в подсказке
+  // только названия, что влезают целиком (владелец: «сейчас длинные описания получились?» — «да»: восемь строк с многоточием
+  // на полуслове): названия — элементами одной строки с переносом, а всё, что перенеслось, срезано высотой строки; так
+  // работает при любой ширине панели (её тянут). «, » — в начале следующего названия: перенесётся вместе с ним, и строка
+  // не кончается запятой
   const teamLine = (k: string) => {
     const all = teams?.[k]
-    return all?.length ? all.join(', ') : null
+    if (!all?.length) return null
+    return (
+      <span className="flex h-[1lh] flex-wrap overflow-hidden">
+        {all.map((n, i) => (
+          <span key={n} className="max-w-full truncate whitespace-pre">
+            {i ? ', ' : ''}
+            {n}
+          </span>
+        ))}
+      </span>
+    )
   }
   const stateOf = (k: string, n: number) => (states[k] ? stateText({ total: n, ...states[k], soon: k === 'soon', ahead: true }) : '')
   // впереди ничего нет (все сыграны или идут) — подпись тише
@@ -270,7 +284,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                         <span className="min-w-0 flex-1 leading-tight">
                           <span className="block truncate text-[14.5px] font-medium">{g.label}</span>
                           {teamLine(g.key) ? (
-                            <span className={`mt-0.5 block truncate text-[12.5px] ${done(g.key) ? 'text-mute/70' : 'text-mute'}`}>{teamLine(g.key)}</span>
+                            <span className={`mt-0.5 block text-[12.5px] ${done(g.key) ? 'text-mute/70' : 'text-mute'}`}>{teamLine(g.key)}</span>
                           ) : states[g.key] ? (
                             <span className="mt-0.5 block truncate text-[12.5px] text-mute">
                               <StateLine total={totals[g.key] ?? g.items.length} {...states[g.key]} soon={g.key === 'soon'} ahead />
