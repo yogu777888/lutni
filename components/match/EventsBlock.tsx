@@ -2,7 +2,6 @@ import type { MatchEvent, StatPair } from '@/lib/types'
 import { visibleStats } from '@/lib/sstats/normalize'
 import { Hint } from './Hint'
 import { TeamLogo } from '../TeamLogo'
-import { NavIcon } from '../NavIcon'
 
 type Side = { name: string; logo?: string | null }
 
@@ -70,76 +69,35 @@ export function scorers(events: MatchEvent[], final: { home: number; away: numbe
 const minuteText = (e: MatchEvent) => `${e.minute}${e.extra ? `+${e.extra}` : ''}′`
 
 /**
- * События матча — списком, как «Ход игры» в Apple Sports (владелец: «все равно он некрасивый и недоделанный какой-то? эппл
- * бы так не сделал»; была полоса 0′–90′ с плашками — диаграмма, а не табло): строка — минута по центру, событие хозяев
- * слева, гостей справа; гол — мяч, игрок и счёт после гола, красная — карточка и игрок; между таймами — черта «Перерыв».
- * Жёлтые не показываем — их число в статистике ниже; замены и VAR — тоже нет.
+ * События, которых нет на табло: удаления и незабитые пенальти — тихими строками под статистикой («Удаление · K. Ruiz ·
+ * 71′ · Леванте»). Голы здесь не повторяем — авторы и минуты уже под названиями команд на табло (владелец: «блок сейчас
+ * в матче очень некрасивый какой-то» — список голов с «Перерывом» повторял табло; выбрал вариант «А»). Жёлтые — числом
+ * в статистике; замены и VAR — нет.
  */
-export function EventsBlock({
-  events,
-  score,
-  now,
-}: {
-  events: MatchEvent[]
-  score: { home: number; away: number } | null
-  /** минута идущего матча; null — матч окончен */
-  now: number | null
-  home?: Side
-  away?: Side
-}) {
-  const shown = events.filter((e) => e.kind !== 'sub' && e.kind !== 'other' && e.kind !== 'var')
-  const flow = withScore(shown, now == null ? score : null).filter((e) => GOALS.has(e.kind) || e.kind === 'red' || e.kind === 'missed-penalty')
-  if (!flow.length) return null
-  // сторона гола — по изменению счёта (так учтён и автогол), как в `scorers`
-  let h = 0
-  const rows = flow.map((e) => {
-    let side = e.side
-    if (GOALS.has(e.kind) && e.score) {
-      const nh = Number(e.score.split(':')[0])
-      side = nh > h ? 'home' : 'away'
-      h = nh
-    }
-    return { e, side }
-  })
-  const firstSecond = rows.findIndex((r) => r.e.minute > 45)
-  const icon = (e: Flow) =>
-    GOALS.has(e.kind) ? (
-      // мяч — тот же значок, что «Матчи» в нижнем меню (Phosphor)
-      <NavIcon href="/" on size={18} className="shrink-0 text-fg" />
-    ) : e.kind === 'red' ? (
-      <span aria-hidden className="h-4 w-3 shrink-0 rounded-[2px] bg-[#ff453a]" />
-    ) : (
-      <span aria-hidden className="h-4 w-4 shrink-0 rounded-full ring-[1.5px] ring-inset ring-mute" />
-    )
-  const label = (e: Flow) =>
-    e.kind === 'own-goal' ? 'автогол' : e.kind === 'penalty' ? 'пенальти' : e.kind === 'missed-penalty' ? 'незабитый пенальти' : e.kind === 'red' ? 'удаление' : null
-  const cell = (e: Flow, right: boolean) => (
-    <div className={`flex min-w-0 items-center gap-2 ${right ? 'justify-start' : 'flex-row-reverse justify-start text-right'}`}>
-      {icon(e)}
-      <div className="min-w-0">
-        <div className="truncate text-[15px] font-medium leading-tight">{e.player || (GOALS.has(e.kind) ? 'Гол' : 'Карточка')}</div>
-        {label(e) || e.score ? (
-          <div className="text-[13px] leading-tight text-dim">{[e.score, label(e)].filter(Boolean).join(' · ')}</div>
-        ) : null}
-      </div>
-    </div>
-  )
+export function EventsBlock({ events, home, away }: { events: MatchEvent[]; home: Side; away: Side }) {
+  const rows = events.filter((e) => e.kind === 'red' || e.kind === 'missed-penalty')
+  if (!rows.length) return null
   return (
-    <ul className="mx-auto -my-1 max-w-xl">
-      {rows.map(({ e, side }, i) => (
-        <li key={i}>
-          {i === firstSecond && firstSecond > 0 ? (
-            <div className="my-1.5 flex items-center gap-3 text-[12px] text-mute">
-              <span className="h-px flex-1 bg-edge" />
-              Перерыв
-              <span className="h-px flex-1 bg-edge" />
-            </div>
-          ) : null}
-          <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_3.25rem_minmax(0,1fr)] items-center gap-2 py-1">
-            <div>{side === 'home' ? cell(e, false) : null}</div>
-            <div className="num text-center text-[13px] font-semibold text-dim">{minuteText(e)}</div>
-            <div>{side === 'away' ? cell(e, true) : null}</div>
-          </div>
+    <ul className="-my-1">
+      {rows.map((e, i) => (
+        <li key={i} className="flex min-h-10 items-center gap-3 text-[14px]">
+          {e.kind === 'red' ? (
+            <span aria-hidden className="h-4 w-3 shrink-0 rounded-[2px] bg-[#ff453a]" />
+          ) : (
+            <span aria-hidden className="h-3.5 w-3.5 shrink-0 rounded-full ring-[1.5px] ring-inset ring-mute" />
+          )}
+          <span className="min-w-0 truncate text-dim">
+            {e.kind === 'red' ? 'Удаление' : 'Незабитый пенальти'}
+            {e.player ? (
+              <>
+                {' · '}
+                <span className="font-medium text-fg">{e.player}</span>
+              </>
+            ) : null}
+            {' · '}
+            <span className="num">{minuteText(e)}</span>
+          </span>
+          <span className="ml-auto shrink-0 text-mute">{e.side === 'home' ? home.name : away.name}</span>
         </li>
       ))}
     </ul>
@@ -160,15 +118,12 @@ const ORDER = ['ballPossession', 'totalShots', 'shotsOnGoal', 'bigChances', 'exp
 const rank = (key: string) => (ORDER.includes(key) ? ORDER.indexOf(key) : ORDER.length)
 
 /**
- * Статистика по ходу матча — без цветов команд, как у Apple Sports: у каждой строки светлее та сторона, где больше
- * (лаймом были хозяева, а лайм у нас — «выгодно»). Дорожка под полосой видна (была 6% — полосы разной длины висели
- * посередине «ёлочкой»): каждая строка — полоса от края до края, цифры — на её концах.
- *
- * Чьи цифры — названиями над колонкой (владелец: «немного непонятно в графиках, где какая команда»): слева хозяева,
- * справа гости; мелко и серым, как подпись столбца, без эмблем (владелец: «а сейчас не много логотипов?» — с эмблемами
- * в шапках и у полосы на экране их было 10; эмблемы — на табло и в панели сверху). Колонок от md две — первая и вторая половина строк (удары и моменты / угловые, фолы,
- * карточки), шапка над каждой и черта между ними: иначе «45%» гостей в одной колонке и «1.33» хозяев в другой стояли
- * рядом и читались парой. На телефоне колонка одна — и шапка одна, порядок строк тот же.
+ * Статистика по ходу матча — как «Статистика команд» в Apple Sports (владелец выбрал вариант «А» из трёх картинок):
+ * сверху эмблема и название хозяев слева, гостей справа; строка — цифра хозяев слева, подпись по центру, гостей справа,
+ * под ней полоса от центра: хозяева — влево, гости — вправо, цветами клубов, как кромка табло (`ClubVars` → `--club-h` /
+ * `--club-a`, тёмный цвет клуба высветлен до читаемого — `.club-bar` в app/globals.css; цветов ещё нет — белые). У кого
+ * больше — цифра белым жирным и полоса яркой, у другого — серым и полоса бледнее; равные — обе яркие. Владение — первой
+ * строкой крупнее. Были белые пилюли у лидера — столбик «кнопок» слева, серые цифры справа, блок выглядел перекошенным.
  */
 export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home: Side; away: Side }) {
   const stats = visibleStats(all)
@@ -176,40 +131,50 @@ export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home:
     .sort((a, b) => rank(a.key) - rank(b.key))
   if (!stats.length) return <p className="text-sm text-dim">Статистика появится по ходу матча.</p>
   const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2))
-  // без полос, как «Статистика команд» в Apple Sports (владелец: «эппл бы так не сделал»): у кого больше — цифра в белой
-  // пилюле, у другого — серым; равные — обе белым текстом без пилюли
-  const val = (v: number, other: number, suffix = '') =>
-    v > other ? (
-      <span className="num inline-flex h-7 min-w-11 items-center justify-center rounded-full bg-white px-2.5 text-[15px] font-semibold text-ink">
-        {fmt(v)}
-        {suffix}
-      </span>
-    ) : (
-      <span className={`num inline-flex h-7 min-w-11 items-center justify-center px-2.5 text-[15px] ${v === other ? 'font-semibold text-fg' : 'text-dim'}`}>
-        {fmt(v)}
-        {suffix}
-      </span>
-    )
+  const team = (t: Side, right: boolean) => (
+    <span className={`flex min-w-0 items-center gap-2.5 ${right ? 'flex-row-reverse text-right' : ''}`}>
+      <TeamLogo name={t.name} src={t.logo ?? null} size={28} />
+      <span className="truncate text-[16px] font-semibold">{t.name}</span>
+    </span>
+  )
   return (
-    // одной колонкой по центру (в две колонки на компьютере путалось, чьи цифры где)
-    <div className="mx-auto max-w-xl">
-      {/* чьи цифры — эмблемами над колонками */}
-      <div className="mb-1 flex items-center justify-between px-1.5">
-        <TeamLogo name={home.name} src={home.logo ?? null} size={26} />
-        <span className="text-[13px] text-mute">Статистика</span>
-        <TeamLogo name={away.name} src={away.logo ?? null} size={26} />
+    <div>
+      <div className="flex items-center justify-between gap-4 border-b border-edge pb-3.5">
+        {team(home, false)}
+        {team(away, true)}
       </div>
       <ul>
-        {stats.map((s) => (
-          <li key={s.key} className="grid min-h-10 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
-            {val(s.home, s.away, s.suffix)}
-            <span className="truncate text-center text-[14px] text-dim">
-              {s.label}
-              {HINT[s.key] ? <Hint title={s.label} text={HINT[s.key]} /> : null}
+        {stats.map((s, i) => {
+          const big = i === 0 && s.key === 'ballPossession'
+          const sum = s.home + s.away || 1
+          const lead = (v: number, o: number) => v >= o
+          const num = (v: number, o: number) => (
+            <span className={`num shrink-0 ${big ? 'text-[26px] leading-none' : 'text-[16px]'} ${lead(v, o) ? 'font-bold text-fg' : 'text-dim'}`}>
+              {fmt(v)}
+              {s.suffix}
             </span>
-            {val(s.away, s.home, s.suffix)}
-          </li>
-        ))}
+          )
+          return (
+            <li key={s.key} className={`${i ? 'border-t border-edge' : ''} ${big ? 'pb-3.5 pt-4' : 'py-3'}`}>
+              <div className="flex items-baseline justify-between gap-3">
+                {num(s.home, s.away)}
+                <span className="min-w-0 truncate text-center text-[14px] text-dim">
+                  {s.label}
+                  {HINT[s.key] ? <Hint title={s.label} text={HINT[s.key]} /> : null}
+                </span>
+                {num(s.away, s.home)}
+              </div>
+              <div aria-hidden className={`mt-2 flex gap-1 ${big ? 'h-2' : 'h-1.5'}`}>
+                <div className="flex flex-1 justify-end rounded-full bg-white/[0.06]">
+                  <div className={`club-bar club-bar-h rounded-full ${lead(s.home, s.away) ? '' : 'opacity-45'}`} style={{ width: `${(s.home / sum) * 100}%` }} />
+                </div>
+                <div className="flex-1 rounded-full bg-white/[0.06]">
+                  <div className={`club-bar club-bar-a h-full rounded-full ${lead(s.away, s.home) ? '' : 'opacity-45'}`} style={{ width: `${(s.away / sum) * 100}%` }} />
+                </div>
+              </div>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )

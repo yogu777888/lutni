@@ -1061,3 +1061,8 @@ html[data-shell-rc] .shell-r-rail {
   .match-body .text-\[16px\]:not(text) { font-size: 17.5px; }
   .match-body .text-\[20px\]:not(text) { font-size: 24px; }
 }
+
+/* Полосы статистики «Сейчас в матче» — цветами клубов (`ClubVars`), тёмный цвет клуба высветлен до читаемого на графите
+   (у «Ювентуса» или «Ньюкасла» чёрный); цветов ещё нет — белые. */
+.club-bar-h { background: var(--club-h, #fff); background: oklch(from var(--club-h, #fff) max(l, 0.62) c h); }
+.club-bar-a { background: var(--club-a, #fff); background: oklch(from var(--club-a, #fff) max(l, 0.62) c h); }

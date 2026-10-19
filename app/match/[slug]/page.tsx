@@ -8,6 +8,7 @@ import { NavPair } from '@/components/BackButton'
 import { Breadcrumbs, upOf } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
 import { EventsBlock, StatsBars } from '@/components/match/EventsBlock'
+import { ClubVars } from '@/components/match/ClubVars'
 import { FormBlock } from '@/components/match/FormBlock'
 import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
@@ -289,17 +290,13 @@ export default async function MatchPage({ params }: Props) {
           {!scheduled && (full.events.length || full.stats.length) ? (
             // в игре — «Сейчас в матче»: эти цифры учитывают счёт и ход игры; доматчевые блоки ниже подписаны «До матча»
             <Section outside title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'}>
-              {/* сверху — полоса матча 0′–90′ во всю ширину, ниже — статистика в две колонки */}
-              <div className="space-y-6 [&>*+*]:border-t [&>*+*]:border-edge [&>*+*]:pt-5">
-                <EventsBlock
-                  events={full.events}
-                  score={m.score ?? null}
-                  now={isLive ? (m.elapsed ?? null) : null}
-                  home={m.home}
-                  away={m.away}
-                />
-                <StatsBars stats={full.stats} home={m.home} away={m.away} />
-              </div>
+              {/* статистика с полосами цветами клубов, под ней — удаления и незабитые пенальти (голы — на табло) */}
+              <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>
+                <div className="space-y-4 [&>*+*]:border-t [&>*+*]:border-edge [&>*+*]:pt-4">
+                  <StatsBars stats={full.stats} home={m.home} away={m.away} />
+                  <EventsBlock events={full.events} home={m.home} away={m.away} />
+                </div>
+              </ClubVars>
             </Section>
           ) : null}
 
