@@ -238,7 +238,6 @@ export function BackLabel({
   chip = false,
   bar = false,
   short = false,
-  round = false,
 }: {
   fallback: { href: string; label: string }
   className?: string
@@ -248,8 +247,6 @@ export function BackLabel({
   bar?: boolean
   /** в полосе — только «‹» (по центру появилось название или мини-табло); подпись — в подсказке */
   short?: boolean
-  /** круглая кнопка «‹» в шапке на телефоне (`HeaderRow`); подпись — в подсказке и для экранного диктора */
-  round?: boolean
 }) {
   const router = useRouter()
   // после гидратации: на сервере стека нет — сначала подпись из крошек; стек обновился (назад, подъём) — пересчитываем
@@ -263,23 +260,17 @@ export function BackLabel({
         if (prev && history.length > 1) router.back()
         else goUp(router, fallback.href)
       }}
-      title={chip || bar || round ? `Назад: ${prev?.label ?? fallback.label}` : undefined}
-      aria-label={(bar && short) || round ? `Назад: ${prev?.label ?? fallback.label}` : undefined}
+      title={chip || bar ? `Назад: ${prev?.label ?? fallback.label}` : undefined}
+      aria-label={bar && short ? `Назад: ${prev?.label ?? fallback.label}` : undefined}
       className={
-        round
-          ? `grid h-9 w-9 place-items-center rounded-full text-fg/90 transition-colors hover:bg-white/[0.08] hover:text-fg ${className}`
-          : bar
+        bar
           ? `-ml-2 inline-flex h-11 min-w-11 max-w-full items-center pr-2 text-[15px] font-medium text-fg/90 transition-colors hover:text-fg ${className}`
           : chip
           ? `inline-flex h-8 max-w-full items-center gap-0.5 rounded-full bg-white/[0.07] pl-1.5 pr-3 text-[13px] font-medium text-dim transition-colors hover:bg-white/[0.13] hover:text-fg ${className}`
           : `transition-colors hover:text-fg ${className}`
       }
     >
-      {round ? (
-        <svg viewBox="0 0 24 24" className="h-6 w-6 -translate-x-px" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M15 5.5l-6.5 6.5 6.5 6.5" />
-        </svg>
-      ) : bar ? (
+      {bar ? (
         <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M15 5.5l-6.5 6.5 6.5 6.5" />
         </svg>
@@ -290,7 +281,7 @@ export function BackLabel({
       ) : null}
       <span
         className={
-          round ? 'sr-only' : bar ? (short ? 'sr-only' : '-ml-0.5 truncate') : chip ? 'truncate' : undefined
+          bar ? (short ? 'sr-only' : '-ml-0.5 truncate') : chip ? 'truncate' : undefined
         }
       >
         {prev?.label ?? fallback.label}
