@@ -11,7 +11,7 @@ const key = () => `tb-cta-closed:${location.pathname}`
  * 16px, и на первом экране кнопки не оставалось вовсе. Отдельно от `StickyCta`: та — серверная и получает партнёра
  * целиком (в нём RegExp — в клиентский компонент его не передать).
  *
- * Крестик слева внутри плашки и свайп вниз закрывают плашку только на этом матче до конца сессии (владелец: «над попапом
+ * Крестик над правым краем плашки и свайп вниз закрывают плашку только на этом матче до конца сессии (владелец: «над попапом
  * снизу … сверху справа надо крестик сделать?» — «да»; сначала закрывалась на всех матчах — владелец: «после того как я
  * его закрыл и он вообще перестал появляться», а «Бонуса» в шапке на телефоне больше нет, и плашка — главный путь к
  * букмекеру на матче); на другом матче — снова видна.
@@ -51,16 +51,21 @@ export function StickyHide({ target, className, children }: { target: string; cl
       }}
       className={`${className} transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none ${off ? 'pointer-events-none translate-y-4 opacity-0' : ''}`}
     >
-      {/* крестик — внутри плашки слева, тонкий, без кружка (владелец: «как то она не очень выглядит» — кружок с тенью
-          торчал над стеклом отдельной деталью); от «Ставки» справа — далеко, случайно не нажать */}
-      <div className="flex items-center gap-1">
-        <button type="button" aria-label="Скрыть" title="Скрыть" onClick={close} className="-my-1 -ml-1.5 grid h-9 w-7 shrink-0 place-items-center text-mute transition-colors hover:text-fg">
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
-        <div className="min-w-0 flex-1">{children}</div>
-      </div>
+      {/* крестик — над правым краем плашки, в её же стекле и с той же обводкой, без тени (владелец: «в попапе не всё
+          влазит … крестик справа сверху над попапом» — место слева отдали тексту; прошлый угловой кружок с тяжёлой тенью
+          владелец отверг — «как то она не очень выглядит»); поле нажатия шире самого кружка */}
+      <button
+        type="button"
+        aria-label="Скрыть"
+        title="Скрыть"
+        onClick={close}
+        className="absolute -top-3 right-3 grid h-6 w-6 place-items-center rounded-full bg-[#151b22]/90 text-mute shadow-[inset_0_0_0_1px_rgb(255_255_255/0.12)] backdrop-blur-xl transition-colors before:absolute before:-inset-x-2.5 before:-top-2.5 before:bottom-0 before:content-[''] hover:text-fg"
+      >
+        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" aria-hidden>
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+      {children}
     </div>
   )
 }

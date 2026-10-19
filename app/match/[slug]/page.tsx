@@ -576,11 +576,12 @@ export default async function MatchPage({ params }: Props) {
         <StickyCta
           partner={partner}
           href={goHref(partner, 'sticky', m.id)}
-          // кэф — первым: «Прогноз: победа «Райо Вал…» обрезал и его, и исход; тип ставки — как в первом блоке, а не
-          // «Прогноз» (там у не выгодной честно написано «выгоды нет»)
-          title={pick ? `${pickOffer ? `${pickOffer.value.toFixed(2)} · ` : ''}${cap(outcomeText(pick.candidate.key, m))}` : `Ставки на ${pair}`}
-          subtitle={pick ? `${pick.kind === 'value' ? 'Выгодная ставка' : 'Наш выбор'} · ${partner.name}` : partner.name}
-          action="Ставка"
+          // кэф — на кнопке (владелец: «в попапе не всё влазит, может кэф писать на кнопке?»): в заголовке остаётся исход
+          // целиком; тип ставки — как в первом блоке, а не «Прогноз» (там у не выгодной честно написано «выгоды нет»)
+          title={pick ? cap(outcomeText(pick.candidate.key, m)) : `Ставки на ${pair}`}
+          // подпись — коротко, чтобы букмекер (рекламодатель) не обрезался: «Наш выбор · Ма…» на 360px
+          subtitle={pick?.kind === 'value' ? `Выгодно · ${partner.name}` : partner.name}
+          action={pick && pickOffer ? pickOffer.value.toFixed(2) : 'Ставка'}
         />
       ) : null}
 
