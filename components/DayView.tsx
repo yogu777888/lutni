@@ -315,10 +315,23 @@ export async function DayView({
         </div>
         {/* кружки историй — под днями и порядком (владелец: «а может на главной сортировки перенести под хедер?»): истории
             собраны из матчей выбранного дня, переключатель управляет и ими; на xl — подборки в правой панели каркаса */}
+        {/* своей карточкой «Подборки дня», как правая панель на компьютере с теми же историями (владелец: «а может на
+            телефоне истории в свой отдельный блок сделать а то они как сами по себе» — «да»): на фоне между днями и
+            «Сейчас в игре» кружки висели отдельно от остальной страницы из карточек */}
         {view === 'home' && storyGroups.length ? (
-          <div className="mt-3 sm:mt-4 xl:hidden">
-            <StoryCircles groups={storyGroups} />
-          </div>
+          <section aria-labelledby="picks-title" className="card mt-3 overflow-hidden sm:mt-4 xl:hidden">
+            <header className="flex items-baseline justify-between gap-3 px-4 pb-1 pt-4 sm:px-5">
+              <h2 id="picks-title" className="text-[20px] font-bold tracking-tight">
+                Подборки дня
+              </h2>
+              <Link href="/tags" className="text-[13px] font-medium text-dim transition-colors hover:text-fg">
+                Все →
+              </Link>
+            </header>
+            <div className="px-4 pb-3 sm:px-5">
+              <StoryCircles groups={storyGroups} />
+            </div>
+          </section>
         ) : null}
         <div
           className={`mt-3 grid gap-3 sm:mt-6 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-2 xl:!grid-cols-1 xl:gap-2' : ''}`}
