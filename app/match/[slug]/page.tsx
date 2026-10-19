@@ -284,9 +284,10 @@ export default async function MatchPage({ params }: Props) {
       />
 
       {/* .match-body — на компьютере текст крупнее (app/globals.css) */}
-      {/* на телефоне между блоками 12px, как на главной (владелец: «такое чувство что отступы между блоком больше стали?» — «да»: было 24–32) */}
-      <div className="match-body mt-6 grid gap-6 sm:mt-8 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:mt-6 xl:grid-cols-1 xl:gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0 space-y-6 sm:space-y-8 xl:space-y-6">
+      {/* между разделами 32px, а от заголовка до своей карточки 10px (`BlockTitle`): при 24 и 12 заголовок первого раздела
+          читался подписью к табло над ним (владелец: «заголовок как будто относится к верхнему блоку») */}
+      <div className="match-body mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-8">
           {!scheduled && (full.events.length || full.stats.length) ? (
             // в игре — «Сейчас в матче»: эти цифры учитывают счёт и ход игры; доматчевые блоки ниже подписаны «До матча»
             <Section outside title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'}>
