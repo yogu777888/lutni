@@ -288,7 +288,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
           >
             <StorySymbol k="live" tone="currentColor" className="h-[18px] w-[18px]" />
-            <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} />
+            <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} live />
           </button>
         ) : null}
         {top.map((l) => railFlag(l, day.leagues))}
@@ -325,7 +325,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                     <StorySymbol k="live" tone="currentColor" className="h-[18px] w-[18px]" />
                   </span>
                   <PlayOverlay />
-                  <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} />
+                  <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} live />
                 </button>
                 <a
                   href="/#live"
