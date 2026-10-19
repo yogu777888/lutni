@@ -40,7 +40,7 @@ describe('scorers', () => {
       player,
       assist: null,
     }))
-    expect(scorers(events, { home: 1, away: 1 })).toEqual({ home: ['J. Peña 5′'], away: ['Á. Plata 58′'] })
+    expect(scorers(events, { home: 1, away: 1 })).toEqual({ home: ['Peña 5′'], away: ['Plata 58′'] })
   })
 })
 

@@ -55,14 +55,17 @@ export function scorers(events: MatchEvent[], final: { home: number; away: numbe
       h = nh
     }
     // автора нет в данных (бывает в низших лигах и MLS) — «Гол 20′», а не «— 20′»
-    const name = e.player
-      ? `${e.player}${e.kind === 'own-goal' ? ' (авт.)' : e.kind === 'penalty' ? ' (пен.)' : ''}`
+    // только фамилия: «F. Wilson» → «Wilson» (инициалы латиницей ничего не говорят и съедают строку табло)
+    const who = e.player ? e.player.replace(/^(?:\p{Lu}\.\s*)+/u, '') || e.player : null
+    const name = who
+      ? `${who}${e.kind === 'own-goal' ? ' (авт.)' : e.kind === 'penalty' ? ' (пен.)' : ''}`
       : e.kind === 'own-goal' ? 'Автогол' : e.kind === 'penalty' ? 'Пенальти' : 'Гол'
     const list = out[side].get(name) ?? []
     list.push(minuteText(e))
     out[side].set(name, list)
   }
-  const fmt = (m: Map<string, string[]>) => [...m].map(([n, mins]) => `${n} ${mins.join(', ')}`)
+  // по игроку, минуты через пробел: «Wilson 17′ 57′»
+  const fmt = (m: Map<string, string[]>) => [...m].map(([n, mins]) => `${n} ${mins.join(' ')}`)
   return { home: fmt(out.home), away: fmt(out.away) }
 }
 

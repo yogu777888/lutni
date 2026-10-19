@@ -366,6 +366,32 @@ export default async function MatchPage({ params }: Props) {
               ) : null}
               <dl className={model ? '-mb-3' : '-my-1.5'}>
                 {[
+                  // после начала — шансы исходов до матча первой строкой (раньше строкой «До матча: …» внизу табло;
+                  // владелец: «и про до матча вроде тоже есть на странице?» — в табло только счёт)
+                  !scheduled && est
+                    ? {
+                        k: 'Шансы на победу',
+                        p: null,
+                        // в строку «подпись — значение» три исхода с эмблемами на телефоне не влезали — подпись сверху,
+                        // исходы под ней во всю ширину: хозяева слева, ничья по центру, гости справа, как полоса ниже
+                        wide: true,
+                        v: (
+                          <span className="grid grid-cols-3 items-center">
+                            <span className="flex items-center gap-1.5" title={`Победа «${m.home.name}»`}>
+                              <TeamLogo name={m.home.name} src={m.home.logo ?? null} size={20} />
+                              <span className="num font-semibold">{est.home}%</span>
+                            </span>
+                            <span className="text-center" title="Ничья">
+                              <span className="text-dim">ничья</span> <span className="num font-semibold">{est.draw}%</span>
+                            </span>
+                            <span className="flex items-center justify-end gap-1.5" title={`Победа «${m.away.name}»`}>
+                              <span className="num font-semibold">{est.away}%</span>
+                              <TeamLogo name={m.away.name} src={m.away.logo ?? null} size={20} />
+                            </span>
+                          </span>
+                        ),
+                      }
+                    : null,
                   model
                     ? {
                         k: 'Голы команд',
@@ -411,10 +437,17 @@ export default async function MatchPage({ params }: Props) {
                   .filter((r) => r != null)
                   .map((r) => (
                     <div key={r.k} className={`border-t border-edge py-3 text-[16px] ${model ? '' : 'first:border-t-0'}`}>
-                      <div className="flex items-center justify-between gap-4">
-                        <dt className="shrink-0 whitespace-nowrap text-[14px] text-dim">{r.k}</dt>
-                        <dd className="text-right">{r.v}</dd>
-                      </div>
+                      {'wide' in r ? (
+                        <>
+                          <dt className="text-[14px] text-dim">{r.k}</dt>
+                          <dd className="mt-2">{r.v}</dd>
+                        </>
+                      ) : (
+                        <div className="flex items-center justify-between gap-4">
+                          <dt className="shrink-0 whitespace-nowrap text-[14px] text-dim">{r.k}</dt>
+                          <dd className="text-right">{r.v}</dd>
+                        </div>
+                      )}
                       {'split' in r && r.split != null ? (
                         // доля голов хозяев слева, гостей справа — как полосы «Формы команд»
                         <div className="mt-2 flex h-1.5 gap-0.5" aria-hidden>
