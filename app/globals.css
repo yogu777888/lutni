@@ -973,6 +973,11 @@ html[data-shell-rc] .shell-r-rail {
   body:has(.hdr-over) .hdr-logo {
     visibility: hidden;
   }
+  /* лупа — только рядом с tag.bet, на разделах из нижнего меню; на вложенных страницах шапка — «‹» и название
+     (владелец: «а давай кнопку поиска оставим только когда лого есть?») */
+  body:has(.hdr-over) .hdr-search {
+    display: none;
+  }
 }
 
 /* дни и порядок на главной ниже lg — второй ряд шапки (`.hdr-sub` в DayView, только на главной, как чипы у YouTube):
