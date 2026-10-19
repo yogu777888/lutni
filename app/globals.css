@@ -979,6 +979,35 @@ html[data-shell-rc] .shell-r-rail {
   }
 }
 
+/* дни и порядок на главной ниже lg — второй ряд шапки (`.hdr-sub` в DayView, только на главной, как чипы у YouTube):
+   наверху — на фоне, как сама шапка; после прокрутки у шапки и ряда — один сплошной фон, черта одна — под рядом (два слоя
+   стекла расходились тоном, и на стыке был шов); уходит вместе с шапкой при прокрутке вниз */
+@media (max-width: 1023.98px) {
+  .hdr-sub {
+    border-bottom: 1px solid transparent;
+    transition:
+      transform 0.25s cubic-bezier(0.2, 0.7, 0.3, 1),
+      background-color 0.3s,
+      border-color 0.3s;
+  }
+  body:has(.site-header[data-scrolled]) .hdr-sub {
+    background-color: #090c10;
+    border-bottom-color: var(--color-edge);
+  }
+  body:has(.hdr-sub) .site-header[data-scrolled] {
+    border-bottom-color: #090c10;
+  }
+  /* 53px — шапка ниже lg (52px и черта) */
+  html[data-bars-hidden] .hdr-sub {
+    transform: translateY(calc(-100% - 53px));
+  }
+}
+@media (max-width: 1023.98px) and (prefers-reduced-motion: reduce) {
+  .hdr-sub {
+    transition: none;
+  }
+}
+
 /* ниже lg шапка и нижнее меню уходят при прокрутке вниз и возвращаются при прокрутке вверх — вместе, по одному правилу
    (`BarsAutoHide` ставит html[data-bars-hidden]). С шапкой уходит её слой «‹» и мини-табло (.hdr-over), плашка ставки
    (.sticky-cta) опускается на место меню. Шапка при прокрутке — сплошным цветом
