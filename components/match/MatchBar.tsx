@@ -101,18 +101,35 @@ export function MatchBar({
       {team(away, true)}
     </div>
   )
+  // в шапке телефона — те же команды всегда (владелец: «а можешь на странице матча сразу в хедере писать типа команды? и …
+  // красивее, чтоб сочеталось со страницей»): наверху между ними тихое «—», когда крупный счёт ушёл под шапку — на его месте
+  // счёт и минута; названия и эмблемы стоят на месте, меняется только середина
+  const headerBar = (
+    <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2.5">
+      {team(home)}
+      <span className="relative grid place-items-center leading-none">
+        <span aria-hidden={show} className={`col-start-1 row-start-1 text-[20px] text-mute transition-opacity duration-200 ${show ? 'opacity-0' : ''}`}>
+          —
+        </span>
+        <span aria-hidden={!show} className={`col-start-1 row-start-1 flex flex-col items-center transition-[opacity,transform] duration-200 ${show ? '' : 'translate-y-1 opacity-0'}`}>
+          <span className="num display-num whitespace-nowrap text-[20px] font-semibold">{center}</span>
+          {minute ? (
+            <span className={`absolute left-1/2 top-full mt-0.5 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap text-[11px] ${minute.live ? 'text-live' : 'text-mute'}`}>
+              {minute.live ? <span className="h-1 w-1 rounded-full bg-live" /> : null}
+              {minute.text}
+            </span>
+          ) : null}
+        </span>
+      </span>
+      {team(away, true)}
+    </div>
+  )
   return (
     <>
       {/* ниже lg — в самой шапке, как в Apple Sports (владелец: «мне не нравится двухэтажный хедер на мобильных» — «да»):
-          слева «‹», когда крупный счёт ушёл под шапку — по центру мини-табло вместо надписи tag.bet; кэфов там нет — внизу
-          своя плашка. Был второй ряд под шапкой «‹ Ла Лига» */}
-      <HeaderRow
-        fallback={{ href: back, label: backLabel }}
-        // наверху по центру — турнир, когда крупный счёт ушёл под шапку — мини-табло
-        idle={<p className="truncate text-[16px] font-semibold">{backLabel}</p>}
-        center={<div className={minute ? 'w-full pb-2.5' : 'w-full'}>{score}</div>}
-        show={show}
-      />
+          слева «‹», по центру — команды, а когда крупный счёт ушёл под шапку — между ними счёт (`headerBar`); кэфов там
+          нет — внизу своя плашка */}
+      <HeaderRow fallback={{ href: back, label: backLabel }} idle={headerBar} />
       {/* от lg — плашка поверх страницы под шапкой, только при прокрутке (обёртка высотой 0 — места в раскладке нет) */}
       <div className="sticky top-[65px] z-30 h-0 max-lg:hidden xl:top-[72px]">
         <div ref={ref} className={`match-top absolute inset-x-0 top-0 bg-[#090c10] pt-1.5 xl:pt-0 ${show ? '' : 'invisible'}`}>
