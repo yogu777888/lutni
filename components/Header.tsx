@@ -19,7 +19,7 @@ export function Header() {
   return (
     <HeaderShell>
       <div className="mx-auto flex h-[52px] max-w-6xl lg:h-16 items-center gap-3 px-4 sm:px-5 lg:gap-5 xl:max-w-none xl:px-6">
-        <Link href="/" aria-label="tag.bet — на главную" className="shrink-0 text-fg transition-opacity hover:opacity-80">
+        <Link href="/" aria-label="tag.bet — на главную" className="hdr-logo shrink-0 text-fg transition-[opacity,margin] hover:opacity-80">
           {/* на 3px ниже середины рамки: в рамку входит хвост «g» — без сдвига надпись стояла выше меню и кнопок. Глаз
               ровняет по высоким буквам «t», «b» и строке, а не по «a», «e»: середина «верх t — строка» = середина
               заглавных в меню (сдвиг 1,5px по середине «a», «e» владелец ещё видел выше) */}

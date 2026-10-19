@@ -966,33 +966,22 @@ html[data-shell-rc] .shell-r-rail {
   }
 }
 
-/* дни и порядок на главной и «Матчах» ниже lg — второй ряд шапки (`.hdr-sub` в DayView, как чипы у YouTube): наверху
-   страницы — на фоне, как сама шапка; после прокрутки у шапки и ряда — один сплошной цвет фона без стекла, черта — одна,
-   под рядом. Два слоя стекла размывали каждый своё — тон расходился, и на стыке был виден шов (владелец: «у сортировки
-   видно что свой фон и даже немного зазор между фоном хедера») */
+/* ниже lg «‹» и название страницы / мини-табло матча — слоем в самой шапке (`HeaderRow`, `.hdr-over`): надпись tag.bet
+   подвинута вправо под «‹», а когда по центру появилось название или мини-табло — гаснет (владелец: «мне не нравится
+   двухэтажный хедер на мобильных» — «да»; был второй ряд под шапкой — дни, «‹ Лиги», мини-табло) */
 @media (max-width: 1023.98px) {
-  .hdr-sub,
-  .match-top {
-    border-bottom: 1px solid transparent;
-    transition:
-      background-color 0.3s,
-      border-color 0.3s;
+  body:has(.hdr-over) .hdr-logo {
+    margin-left: 34px;
   }
-  body:has(.site-header[data-scrolled]) :is(.hdr-sub, .match-top) {
-    background-color: #090c10;
-    border-bottom-color: var(--color-edge);
-  }
-  body:has(.hdr-sub, .match-top) .site-header[data-scrolled] {
-    background-color: #090c10;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    border-bottom-color: #090c10;
+  body:has(.hdr-over[data-mini]) .hdr-logo {
+    opacity: 0;
+    pointer-events: none;
   }
 }
 
 /* ниже lg шапка и нижнее меню уходят при прокрутке вниз и возвращаются при прокрутке вверх — вместе, по одному правилу
-   (`BarsAutoHide` ставит html[data-bars-hidden]). С шапкой уходит ряд дней (.hdr-sub), мини-табло матча (.match-top)
-   поднимается к верху экрана, плашка ставки (.sticky-cta) опускается на место меню. Шапка при прокрутке — сплошным цветом
+   (`BarsAutoHide` ставит html[data-bars-hidden]). С шапкой уходит её слой «‹» и мини-табло (.hdr-over), плашка ставки
+   (.sticky-cta) опускается на место меню. Шапка при прокрутке — сплошным цветом
    фона, без стекла (сквозь стекло просвечивал текст страницы). Меню — стеклом: оно плавает поверх страницы */
 @media (max-width: 1023.98px) {
   .site-header[data-scrolled] {
@@ -1001,17 +990,11 @@ html[data-shell-rc] .shell-r-rail {
     backdrop-filter: none;
   }
   .site-header,
-  .hdr-sub,
+  .hdr-over,
   .tabbar {
     transition-property: transform, background-color, border-color;
     transition-duration: 0.25s;
     transition-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
-  }
-  .match-top {
-    transition:
-      transform 0.25s cubic-bezier(0.2, 0.7, 0.3, 1),
-      background-color 0.3s,
-      border-color 0.3s;
   }
   .sticky-cta {
     transition:
@@ -1023,16 +1006,8 @@ html[data-shell-rc] .shell-r-rail {
   html[data-bars-hidden] .sticky-cta {
     bottom: max(env(safe-area-inset-bottom), 10px);
   }
-  html[data-bars-hidden] .site-header {
+  html[data-bars-hidden] :is(.site-header, .hdr-over) {
     transform: translateY(-100%);
-  }
-  /* 54px — шапка ниже lg (52px и черта) и 1px запаса; от lg ряд не уходит (там своя раскладка) */
-  html[data-bars-hidden] .hdr-sub {
-    transform: translateY(calc(-100% - 54px));
-  }
-  /* мини-табло уходит вместе с шапкой (владелец: «имею ввиду чтоб оно скрывалось вместе с хедером») */
-  html[data-bars-hidden] .match-top {
-    transform: translateY(calc(-100% - 54px));
   }
   html[data-bars-hidden] .tabbar {
     transform: translateY(calc(100% + 52px));
@@ -1040,9 +1015,8 @@ html[data-shell-rc] .shell-r-rail {
 }
 @media (max-width: 1023.98px) and (prefers-reduced-motion: reduce) {
   .site-header,
-  .hdr-sub,
+  .hdr-over,
   .tabbar,
-  .match-top,
   .sticky-cta {
     transition: none;
   }

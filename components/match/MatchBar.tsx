@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { SPONSORED_REL } from '@/lib/affiliate'
-import { BackButton, BackLabel } from '../BackButton'
+import { BackButton } from '../BackButton'
+import { HeaderRow } from '../HeaderRow'
 import { TeamLogo } from '../TeamLogo'
 
 type Side = { name: string; logo: string | null }
@@ -52,11 +53,11 @@ export function MatchBar({
     const check = () => {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
-        const el = ref.current
-        const box = el?.getBoundingClientRect()
+        // ниже lg мини-табло — в самой шапке (52px), от lg — плашка под шапкой
+        const limit = innerWidth < 1024 ? 52 : ref.current?.getBoundingClientRect().bottom
         // сами цифры (первый ряд в #match-score): сменяем, когда половина крупного счёта ушла под панель
         const r = (board?.firstElementChild ?? board)?.getBoundingClientRect()
-        setShow(r && box ? (r.top + r.bottom) / 2 < box.bottom : false)
+        setShow(r && limit != null ? (r.top + r.bottom) / 2 < limit : false)
       })
     }
     check()
@@ -84,95 +85,71 @@ export function MatchBar({
   const outcome = (k: BarOdd['key']) => (k === 'draw' ? 'Ничья' : `«${k === 'home' ? home.name : away.name}»`)
 
   const swap = ready ? 'transition-[opacity,transform] duration-200 ease-out' : ''
+  // мини-табло: «эмблема Бетис 1:0 Хетафе эмблема», минута — под счётом вне потока (цифры на линии названий)
+  const score = (
+    <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2.5 md:flex md:w-auto sm:gap-3">
+      {team(home)}
+      <span className="relative flex flex-col items-center leading-none">
+        <span className="num display-num whitespace-nowrap text-[20px] font-semibold">{center}</span>
+        {minute ? (
+          <span className={`absolute left-1/2 top-full mt-0.5 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap text-[11px] ${minute.live ? 'text-live' : 'text-mute'}`}>
+            {minute.live ? <span className="h-1 w-1 rounded-full bg-live" /> : null}
+            {minute.text}
+          </span>
+        ) : null}
+      </span>
+      {team(away, true)}
+    </div>
+  )
   return (
-    // место под шапкой — классами, а не после замера: иначе при заходе на страницу панель вставала на 64px и через кадр
-    // прыгала вниз (владелец: «при переходе с главной верхний блок и текст в нём прыгает»). Шапка: 64px и черта (ниже lg
-    // меню внизу — `TabBar`, шапка в один ряд; было два ряда, 99px); от xl — 72px, как строка дней на главной (шапка 64 + полоска рамки 8). Ниже xl панель —
-    // вплотную под шапкой, а 6px над ней — полоска цвета фона, пока панель прилипла (`stuck`): в щели между шапкой и
-    // панелью просвечивала прокручиваемая страница (владелец: «а мини табло сверху при прокрутке как?»)
-    // панель — только когда крупный счёт ушёл под шапку (владелец: «а можно как то красиво кнопки назад в блоке вставить?»
-    // — «назад» теперь чипом в углу табло, а наверху страницы над табло пустой полосы с одним «←» нет): поверх страницы, без
-    // своего места в раскладке (обёртка высотой 0), видна только при прокрутке
-    // ниже lg — полоса под шапкой всегда, как навигация в iOS (владелец: «под хедером сделать как на айфоне кнопку назад и
-    // по центру надпись» — «давай»): наверху «‹ Ла Лига», когда крупный счёт ушёл под полосу — по центру мини-табло, у «‹»
-    // остаётся только шеврон; от lg — как было: плашка поверх страницы только при прокрутке
-    <div className="sticky top-[53px] z-30 lg:top-[65px] max-lg:-mx-4 max-lg:-mt-4 max-lg:mb-2 sm:max-lg:-mt-6 lg:h-0 xl:top-[72px]">
-    <div
-      ref={ref}
-      // ниже lg — второй ряд шапки (фон и уход вместе с шапкой — правила `.match-top` в app/globals.css), от lg — плашка
-      className={`match-top lg:absolute lg:inset-x-0 lg:top-0 lg:bg-[#090c10] lg:pt-1.5 xl:pt-0 ${show ? '' : 'lg:invisible'}`}
-    >
-      <div className={`match-top-in relative flex min-h-11 items-center gap-3 px-4 py-1 lg:min-h-[57.5px] lg:rounded-card lg:py-2 lg:bg-panel-3 lg:shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${swap} ${show ? 'opacity-100' : 'lg:-translate-y-1 lg:opacity-0'}`}>
-        <BackButton fallback={back} className="max-lg:hidden" />
-        <div className="pointer-events-none absolute inset-y-0 left-4 right-1/3 z-10 flex items-center lg:hidden [&>*]:pointer-events-auto">
-          <BackLabel fallback={{ href: back, label: backLabel }} bar short={show} />
-        </div>
-        <div className="relative flex min-w-0 flex-1 items-center self-stretch">
-          {/* мини-табло на том же месте */}
-          <div
-            aria-hidden={!show}
-            inert={!show}
-            // с минутой под счётом ниже lg всё поднимаем на 3px: иначе минута почти касалась черты снизу ряда; слева и справа —
-            // место под «‹», счёт — по центру экрана
-            className={`absolute inset-0 flex items-center gap-3 transition-opacity duration-200 max-md:px-10 md:max-lg:pl-10 ${minute ? 'max-lg:pb-2.5' : ''} ${show ? '' : 'max-lg:opacity-0'}`}
-          >
-            {/* счёт одной группой вплотную — «эмблема Бетис 1:0 Хетафе эмблема» сразу после «←», на месте крошек (владелец:
-                «как тебе хлебные крошки и то, что потом появляется?» — по сетке во всю ширину названия прилипали к краям, между
-                ними и счётом было по ~300px пустоты); кэфы — справа (ml-auto) */}
-            {/* на телефоне кэфов в панели нет — счёт по центру свободного места, а не прижат влево с пустотой справа */}
-            {/* на телефоне — сеткой 1fr · счёт · 1fr и с отступом справа шириной «←»: счёт ровно по центру экрана, названия
-                прижаты к нему (владелец: «как то криво стоит счет?» — по центру свободного места справа от «←» счёт уезжал
-                вправо, а минута под ним поднимала цифры выше названий) */}
-            <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2.5 md:flex md:w-auto sm:gap-3">
-              {team(home)}
-              {/* минута — под счётом вне потока: цифры по середине ряда, на одной линии с названиями */}
-              <span className="relative flex flex-col items-center leading-none">
-                <span className="num display-num whitespace-nowrap text-[20px] font-semibold">{center}</span>
-                {minute ? (
-                  <span className={`absolute left-1/2 top-full mt-0.5 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap text-[11px] ${minute.live ? 'text-live' : 'text-mute'}`}>
-                    {minute.live ? <span className="h-1 w-1 rounded-full bg-live" /> : null}
-                    {minute.text}
+    <>
+      {/* ниже lg — в самой шапке, как в Apple Sports (владелец: «мне не нравится двухэтажный хедер на мобильных» — «да»):
+          слева «‹», когда крупный счёт ушёл под шапку — по центру мини-табло вместо надписи tag.bet; кэфов там нет — внизу
+          своя плашка. Был второй ряд под шапкой «‹ Ла Лига» */}
+      <HeaderRow fallback={{ href: back, label: backLabel }} show={show} center={<div className={minute ? 'w-full pb-2.5' : 'w-full'}>{score}</div>} />
+      {/* от lg — плашка поверх страницы под шапкой, только при прокрутке (обёртка высотой 0 — места в раскладке нет) */}
+      <div className="sticky top-[65px] z-30 h-0 max-lg:hidden xl:top-[72px]">
+        <div ref={ref} className={`match-top absolute inset-x-0 top-0 bg-[#090c10] pt-1.5 xl:pt-0 ${show ? '' : 'invisible'}`}>
+          <div className={`match-top-in relative flex min-h-[57.5px] items-center gap-3 rounded-card bg-panel-3 px-4 py-2 shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${swap} ${show ? 'opacity-100' : '-translate-y-1 opacity-0'}`}>
+            <BackButton fallback={back} />
+            <div aria-hidden={!show} inert={!show} className="flex min-w-0 flex-1 items-center gap-3">
+              {score}
+              {odds && partner ? (
+                <div className="ml-auto flex shrink-0 items-center gap-1.5">
+                  {/* «Реклама» — и у кэфов по ходу матча: раньше там было «PARI / сейчас», а ячейки — ссылки к букмекеру (ст. 18.1) */}
+                  <span className="mr-1 text-right text-[11px] leading-tight text-mute">
+                    {partner.name}
+                    {partner.live ? (
+                      <span className="ml-1 inline-flex items-center gap-1 text-live">
+                        <span className="h-1 w-1 rounded-full bg-live" />
+                        сейчас
+                      </span>
+                    ) : null}
+                    <br />
+                    Реклама · 18+
                   </span>
-                ) : null}
-              </span>
-              {team(away, true)}
+                  {odds.map((o) => (
+                    <a
+                      key={o.key}
+                      href={partner.href}
+                      target="_blank"
+                      rel={SPONSORED_REL}
+                      title={`${o.title}: ${o.odd.toFixed(2)} в ${partner.name} · Реклама 18+`}
+                      // подпись исхода над числом, как на табло: без неё «1.01», стоявший сразу после «Хетафе», читался кэфом «Хетафе»
+                      className={`flex h-10 min-w-[60px] max-w-[88px] flex-col items-center justify-center rounded-ctl px-2 leading-none transition-colors ${
+                        o.hot ? 'bg-acid text-acid-ink hover:bg-acid/85' : 'bg-white/[0.07] text-fg hover:bg-white/[0.14]'
+                      }`}
+                    >
+                      <span className={`block max-w-full truncate text-[10px] ${o.hot ? 'text-acid-ink/70' : 'text-mute'}`}>{outcome(o.key)}</span>
+                      <span className="num mt-1 text-[14px] font-semibold">{o.odd.toFixed(2)}</span>
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </div>
-            {odds && partner ? (
-              <div className="ml-auto hidden shrink-0 items-center gap-1.5 md:flex">
-                {/* «Реклама» — и у кэфов по ходу матча: раньше там было «PARI / сейчас», а ячейки — ссылки к букмекеру (ст. 18.1) */}
-                <span className="mr-1 text-right text-[11px] leading-tight text-mute">
-                  {partner.name}
-                  {partner.live ? (
-                    <span className="ml-1 inline-flex items-center gap-1 text-live">
-                      <span className="h-1 w-1 rounded-full bg-live" />
-                      сейчас
-                    </span>
-                  ) : null}
-                  <br />
-                  Реклама · 18+
-                </span>
-                {odds.map((o) => (
-                  <a
-                    key={o.key}
-                    href={partner.href}
-                    target="_blank"
-                    rel={SPONSORED_REL}
-                    title={`${o.title}: ${o.odd.toFixed(2)} в ${partner.name} · Реклама 18+`}
-                    // подпись исхода над числом, как на табло: без неё «1.01», стоявший сразу после «Хетафе», читался кэфом «Хетафе»
-                    className={`flex h-10 min-w-[60px] max-w-[88px] flex-col items-center justify-center rounded-ctl px-2 leading-none transition-colors ${
-                      o.hot ? 'bg-acid text-acid-ink hover:bg-acid/85' : 'bg-white/[0.07] text-fg hover:bg-white/[0.14]'
-                    }`}
-                  >
-                    <span className={`block max-w-full truncate text-[10px] ${o.hot ? 'text-acid-ink/70' : 'text-mute'}`}>{outcome(o.key)}</span>
-                    <span className="num mt-1 text-[14px] font-semibold">{o.odd.toFixed(2)}</span>
-                  </a>
-                ))}
-              </div>
-            ) : null}
           </div>
         </div>
       </div>
-    </div>
-    </div>
+    </>
   )
 }

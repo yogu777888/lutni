@@ -245,11 +245,10 @@ export async function DayView({
         id="matches"
         className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : view === 'home' ? '-mt-4 sm:-mt-6 lg:mt-0' : 'mt-3 sm:mt-6'} xl:mt-0`}
       >
-        {/* ниже lg (телефон, планшет) — второй ряд шапки, как чипы у YouTube (владелец: «да зачем ты в отдельном блоке под
-            хедер сделал?»): без своей плашки, липкий вплотную под шапкой, при прокрутке — то же стекло, что у шапки, и одна
-            черта снизу (`.hdr-sub` в app/globals.css); lg–xl — плашкой цвета панели, липкой под шапкой; от xl — правила
-            .bare-panel в app/globals.css */}
-        <div className="bare-panel hdr-sub max-lg:sticky max-lg:top-[53px] max-lg:z-30 max-lg:-mx-4 lg:max-xl:sticky lg:max-xl:top-[65px] lg:max-xl:z-30 lg:max-xl:bg-[#090c10] lg:max-xl:pb-2">
+        {/* ниже lg (телефон, планшет) — первая строка страницы, а не второй ряд шапки: уезжает вместе со списком, как чипы у
+            YouTube (владелец: «мне не нравится двухэтажный хедер на мобильных» — «да»; был липким рядом под шапкой);
+            lg–xl — плашкой цвета панели, липкой под шапкой; от xl — правила .bare-panel в app/globals.css */}
+<div className="bare-panel max-lg:-mx-4 lg:max-xl:sticky lg:max-xl:top-[65px] lg:max-xl:z-30 lg:max-xl:bg-[#090c10] lg:max-xl:pb-2">
         {listHead ? (
           // заголовок — как у полок выше: одна схема на всю страницу
           <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
