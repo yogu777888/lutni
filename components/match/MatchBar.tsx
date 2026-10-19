@@ -106,7 +106,13 @@ export function MatchBar({
       {/* ниже lg — в самой шапке, как в Apple Sports (владелец: «мне не нравится двухэтажный хедер на мобильных» — «да»):
           слева «‹», когда крупный счёт ушёл под шапку — по центру мини-табло вместо надписи tag.bet; кэфов там нет — внизу
           своя плашка. Был второй ряд под шапкой «‹ Ла Лига» */}
-      <HeaderRow fallback={{ href: back, label: backLabel }} show={show} center={<div className={minute ? 'w-full pb-2.5' : 'w-full'}>{score}</div>} />
+      <HeaderRow
+        fallback={{ href: back, label: backLabel }}
+        // наверху по центру — турнир, когда крупный счёт ушёл под шапку — мини-табло
+        idle={<p className="truncate text-[16px] font-semibold">{backLabel}</p>}
+        center={<div className={minute ? 'w-full pb-2.5' : 'w-full'}>{score}</div>}
+        show={show}
+      />
       {/* от lg — плашка поверх страницы под шапкой, только при прокрутке (обёртка высотой 0 — места в раскладке нет) */}
       <div className="sticky top-[65px] z-30 h-0 max-lg:hidden xl:top-[72px]">
         <div ref={ref} className={`match-top absolute inset-x-0 top-0 bg-[#090c10] pt-1.5 xl:pt-0 ${show ? '' : 'invisible'}`}>
