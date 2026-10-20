@@ -26,7 +26,6 @@ export function MatchBar({
   partner,
   back = '/matches',
   backLabel = 'Матчи',
-  head = null,
 }: {
   home: Side
   away: Side
@@ -40,13 +39,9 @@ export function MatchBar({
   back?: string
   /** подпись у «‹» на телефоне, если пришли не с сайта — «Ла Лига» */
   backLabel?: string
-  /** строка турнира (`MatchHead`) — в плашке на компьютере наверху страницы */
-  head?: React.ReactNode
 }) {
   const [show, setShow] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  // переходы включаем после первого кадра: при заходе на страницу состояние ставится сразу, без вспышки крошки → табло
-  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     // ориентир — сам счёт (или время) на табло: мини-табло сменяет крошки, когда крупный счёт наполовину ушёл под панель
@@ -64,12 +59,10 @@ export function MatchBar({
       })
     }
     check()
-    const on = setTimeout(() => setReady(true), 300)
     addEventListener('scroll', check, { passive: true })
     addEventListener('resize', check)
     return () => {
       cancelAnimationFrame(raf)
-      clearTimeout(on)
       removeEventListener('scroll', check)
       removeEventListener('resize', check)
     }
@@ -87,8 +80,6 @@ export function MatchBar({
   )
   const outcome = (k: BarOdd['key']) => (k === 'draw' ? 'Ничья' : `«${k === 'home' ? home.name : away.name}»`)
 
-  // строка турнира ↔ мини-табло: одна уезжает вверх и гаснет, другая въезжает снизу
-  const swap = ready ? 'transition-[opacity,transform] duration-300 ease-[cubic-bezier(.2,.8,.2,1)]' : ''
   // мини-табло: «эмблема Бетис 1:0 Хетафе эмблема», минута — под счётом вне потока (цифры на линии названий)
   const score = (
     <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2.5 md:flex md:w-auto sm:gap-3">
@@ -134,23 +125,19 @@ export function MatchBar({
           слева «‹», по центру — команды, а когда крупный счёт ушёл под шапку — между ними счёт (`headerBar`); кэфов там
           нет — внизу своя плашка */}
       <HeaderRow fallback={{ href: back, label: backLabel }} idle={headerBar} />
-      {/* от lg — закреплённая плашка над табло, видна всегда (владелец: «не нравится что сейчас стрелочка на время пропадает
-          … чтобы она всегда была на месте»): «‹» в ней не двигается и не гаснет; наверху страницы рядом — строка турнира
-          (`head`: флаг, «Ла Лига · 20-й тур», минута пилюлей — в самом табло её от lg нет), когда крупный счёт наполовину
-          ушёл под плашку, строка уезжает вверх и гаснет, а снизу въезжают команды, счёт и кэфы — как смена заголовка в iOS */}
+      {/* от lg — закреплённая плашка над табло, видна всегда (владелец: «не нравится что сейчас стрелочка на время пропадает»,
+          потом «может сразу названия команд и счет в самом верхнем блоке сделать? и убрать рядом со стрелкой название лиги?»):
+          «‹», команды, счёт и кэфы с самого начала и ничего не сменяется; турнир и минута — строкой в табло ниже; когда
+          табло ушло под плашку — у неё тень */}
       <div className="sticky top-[65px] z-30 max-lg:hidden xl:top-[72px]">
         <div ref={ref} className="match-top relative bg-[#090c10] pt-1.5 xl:pt-0">
           <div
-            className={`match-top-in relative flex min-h-[58px] items-center gap-3 overflow-hidden rounded-card bg-panel-3 py-2 pl-[29px] pr-4 transition-shadow duration-300 ${
+            className={`match-top-in relative flex min-h-[58px] items-center gap-3 rounded-card bg-panel-3 py-2 pl-[29px] pr-4 transition-shadow duration-300 ${
               show ? 'shadow-[0_10px_30px_rgb(0_0_0/0.45)]' : ''
             }`}
           >
             <BackButton fallback={back} />
-            <div className="grid min-w-0 flex-1 items-center">
-              <div aria-hidden={show} inert={show} className={`col-start-1 row-start-1 flex min-w-0 items-center gap-3 ${swap} ${show ? '-translate-y-3 opacity-0' : ''}`}>
-                {head}
-              </div>
-              <div aria-hidden={!show} inert={!show} className={`col-start-1 row-start-1 flex min-w-0 items-center gap-3 ${swap} ${show ? '' : 'translate-y-3 opacity-0'}`}>
+            <div className="flex min-w-0 flex-1 items-center gap-3">
                 {score}
             {odds && partner ? (
               <div className="ml-auto flex shrink-0 items-center gap-1.5">
@@ -184,7 +171,6 @@ export function MatchBar({
                 ))}
               </div>
             ) : null}
-              </div>
             </div>
           </div>
         </div>

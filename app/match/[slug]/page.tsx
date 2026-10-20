@@ -11,7 +11,7 @@ import { ClubVars } from '@/components/match/ClubVars'
 import { FormBlock } from '@/components/match/FormBlock'
 import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
-import { MatchHead, MatchHero, type BoardCell } from '@/components/match/MatchHero'
+import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { hasMoves, OddsTable } from '@/components/match/OddsTable'
 import { PredictBlock } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
@@ -264,7 +264,6 @@ export default async function MatchPage({ params }: Props) {
             : null
         }
         partner={heroLine}
-        head={<MatchHead full={full} league={crumbs[1]} />}
       />
       {/* заголовок — только для поисковиков: команды крупно на табло, видимый он третий раз повторял названия */}
       <h1 className="sr-only">{h1}</h1>

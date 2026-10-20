@@ -26,8 +26,7 @@ export type BoardCell = {
 
 const signed = (ev: number) => `${ev >= 0 ? '+' : '−'}${Math.abs(ev * 100).toFixed(1).replace('.', ',')}%`
 
-/** Строка турнира над табло: флаг, турнир ссылкой и тур, справа — минута пилюлей или «итог». В `MatchHero` (ниже lg) и
- * в закреплённой плашке `MatchBar` (от lg). */
+/** Строка турнира над табло: флаг, турнир ссылкой и тур, справа — минута пилюлей или «итог». */
 export function MatchHead({ full, league = null }: { full: MatchFull; league?: { href: string; label: string } | null }) {
   const m = full.match
   const live = m.status === 'live' || m.status === 'suspended'
@@ -150,11 +149,11 @@ export function MatchHero({
   }
   return (
     <>
-    <section id="match-hero" className="card page-enter-2 relative overflow-hidden px-5 pb-2 pt-4 sm:px-7 sm:pb-3 sm:pt-5 lg:mt-2 lg:pt-1">
-      {/* сверху строкой: «‹ Ла Лига» (телефон и планшет), флаг, турнир и тур, справа — минута пилюлей или «итог»; на компьютере
-          эта строка — в закреплённой плашке над табло (`MatchBar`), там же «‹»: она на месте всегда */}
-      <div className="flex min-h-8 items-center gap-3 lg:hidden">
-        {back ? <div className="shrink-0">{back}</div> : null}
+    <section id="match-hero" className="card page-enter-2 relative overflow-hidden px-5 pb-2 pt-4 sm:px-7 sm:pb-3 sm:pt-5 lg:mt-2">
+      {/* сверху строкой: флаг, турнир и тур, справа — минута пилюлей или «итог»; «‹» здесь — только ниже lg, на компьютере
+          она в закреплённой плашке над табло (`MatchBar`) вместе с командами и счётом */}
+      <div className="flex min-h-8 items-center gap-3">
+        {back ? <div className="shrink-0 lg:hidden">{back}</div> : null}
         <MatchHead full={full} league={league} />
       </div>
 
