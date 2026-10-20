@@ -7,6 +7,7 @@ import type { MatchFull } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
 import { Tick } from '../Live'
 import { scorers } from './EventsBlock'
+import { ResBadge } from './FormStrip'
 import { Scorers } from './Scorers'
 import { Flag } from '../Flag'
 import type { Res } from '@/lib/stats'
@@ -94,14 +95,12 @@ export function MatchHero({
           {ctx?.[k].rank || ctx?.[k].form.length ? (
             <div className="mt-1 flex items-center gap-2 text-[13px] text-dim">
               {ctx[k].rank ? <span>{ctx[k].rank}-е место</span> : null}
-              {/* форма — последние 5, свежий справа */}
+              {/* форма — последние 5 буквами В/Н/П, свежий справа (владелец: «а про победы поражения понятно?» — кружочки без
+                подписи не читались) */}
               {ctx[k].form.length ? (
-                <span className="flex gap-1" title={`Последние ${ctx[k].form.length}: ${ctx[k].form.map((r) => (r === 'W' ? 'В' : r === 'D' ? 'Н' : 'П')).join(' ')} (свежий справа)`}>
+                <span className="flex gap-1" title={`Последние ${ctx[k].form.length} матчей, свежий справа`}>
                   {ctx[k].form.map((r, i) => (
-                    <span
-                      key={i}
-                      className={`h-[7px] w-[7px] rounded-full ${r === 'W' ? 'bg-white/85' : r === 'D' ? 'bg-white/35' : 'ring-[1.5px] ring-inset ring-white/40'}`}
-                    />
+                    <ResBadge key={i} r={r} size="xs" />
                   ))}
                 </span>
               ) : null}
@@ -253,13 +252,14 @@ export function MatchHero({
 
       {children}
     </section>
-      {/* день и стадион — тихой строкой (счёта перерыва нет: владелец — «зачем писать счет в перерыве если матч закончен?») под блоком, на линии текста
+      {/* день, время начала и стадион с городом — тихой строкой (счёта перерыва нет: владелец — «зачем писать счет в перерыве если матч закончен?») под блоком, на линии текста
         карточки, как пояснения под другими блоками: в карточке только табло (владелец: «не нравится что ты пишешь в блоке
         верхнем снизу текст этажами … может все под блок выносить?» — «да») */}
     <p className="mt-2.5 px-5 text-[13px] text-mute first-letter:uppercase sm:px-7">
       {[
-        `${formatWeekdayLong(m.ts)}, ${formatDateLong(m.ts).replace(/\s\d{4}$/, '')}`,
-        full.venue ? full.venue.name : null,
+        // время начала — только после начала: до него оно крупно на табло
+        `${formatWeekdayLong(m.ts)}, ${formatDateLong(m.ts).replace(/\s\d{4}$/, '')}${started ? `, ${formatTime(m.ts)} мск` : ''}`,
+        full.venue ? (full.venue.city && !full.venue.name.includes(full.venue.city) ? `${full.venue.name}, ${full.venue.city}` : full.venue.name) : null,
       ]
         .filter(Boolean)
         .join(' · ')}
