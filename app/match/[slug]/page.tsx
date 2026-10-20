@@ -258,12 +258,6 @@ export default async function MatchPage({ params }: Props) {
         away={{ name: m.away.name, logo: m.away.logo ?? null }}
         center={m.score && m.status !== 'scheduled' ? `${m.score.home} : ${m.score.away}` : formatTime(m.ts)}
         minute={isLive ? { text: m.elapsed ? `${m.elapsed}′` : 'идёт', live: true } : m.status === 'finished' ? { text: 'итог', live: false } : null}
-        odds={
-          heroLine && cells?.every((c) => c.odd)
-            ? cells.map((c) => ({ key: c.key, odd: c.odd!, hot: c.hot, title: c.key === 'draw' ? 'Ничья' : `Победа «${c.key === 'home' ? m.home.name : m.away.name}»` }))
-            : null
-        }
-        partner={heroLine}
       />
       {/* заголовок — только для поисковиков: команды крупно на табло, видимый он третий раз повторял названия */}
       <h1 className="sr-only">{h1}</h1>
