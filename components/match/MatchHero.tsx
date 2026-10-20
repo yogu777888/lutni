@@ -94,7 +94,9 @@ export function MatchHero({
           </div>
           {ctx?.[k].rank || ctx?.[k].form.length ? (
             <div className="mt-1 flex items-center gap-2 text-[13px] text-dim">
-              {ctx[k].rank ? <span>{ctx[k].rank}-е место</span> : null}
+              {/* место — колонкой одной ширины у обеих команд: значки формы стоят ровно друг под другом
+                (владелец: «индикаторы побед и поражений не ровно друг над другом стоят» — «6-е» уже «20-е») */}
+              {ctx.home.rank || ctx.away.rank ? <span className="num w-[5.6em] shrink-0 whitespace-nowrap">{ctx[k].rank ? `${ctx[k].rank}-е место` : ''}</span> : null}
               {/* форма — последние 5 буквами В/Н/П, свежий справа (владелец: «а про победы поражения понятно?» — кружочки без
                 подписи не читались) */}
               {ctx[k].form.length ? (
