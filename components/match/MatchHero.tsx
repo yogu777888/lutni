@@ -253,14 +253,13 @@ export function MatchHero({
 
       {children}
     </section>
-      {/* день, стадион и счёт первого тайма (если после перерыва он уже другой) — тихой строкой под блоком, на линии текста
+      {/* день и стадион — тихой строкой (счёта перерыва нет: владелец — «зачем писать счет в перерыве если матч закончен?») под блоком, на линии текста
         карточки, как пояснения под другими блоками: в карточке только табло (владелец: «не нравится что ты пишешь в блоке
         верхнем снизу текст этажами … может все под блок выносить?» — «да») */}
     <p className="mt-2.5 px-5 text-[13px] text-mute first-letter:uppercase sm:px-7">
       {[
         `${formatWeekdayLong(m.ts)}, ${formatDateLong(m.ts).replace(/\s\d{4}$/, '')}`,
         full.venue ? full.venue.name : null,
-        m.scoreHT && m.score && (m.scoreHT.home !== m.score.home || m.scoreHT.away !== m.score.away) ? `1-й тайм ${m.scoreHT.home}:${m.scoreHT.away}` : null,
       ]
         .filter(Boolean)
         .join(' · ')}
