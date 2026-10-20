@@ -5,6 +5,7 @@ import { SPONSORED_REL } from '@/lib/affiliate'
 import { BackButton } from '../BackButton'
 import { HeaderRow } from '../HeaderRow'
 import { TeamLogo } from '../TeamLogo'
+import { teamCode } from '@/lib/i18n/codes'
 
 type Side = { name: string; logo: string | null }
 export type BarOdd = { key: 'home' | 'draw' | 'away'; odd: number; hot: boolean; title: string }
@@ -47,8 +48,8 @@ export function MatchBar({
   const [tight, setTight] = useState(false)
 
   // ширина кэфов — минимум обеих боковых колонок плашки, чтобы счёт стоял ровно посередине; если тогда командам в
-  // середине меньше 22rem (узкий центр с боковыми панелями) — в плашке только эмблемы и счёт (`tight`), названия — в
-  // подсказке: иначе «Саутге / мптон»
+  // середине меньше 22rem (узкий центр с боковыми панелями) — вместо названий коды, как на табло трансляций: «АРС 1:0 ЧЕЛ»
+  // (`tight`, `teamCode`; полное название — в подсказке и для диктора): иначе «Саутге / мптон»
   useEffect(() => {
     const o = oddsRef.current
     const plate = plateRef.current
@@ -91,13 +92,18 @@ export function MatchBar({
   }, [])
 
   // название — до двух строк, а не «Райо Валь…» (высоты панели хватает): на телефоне и на 768–1024 рядом с кэфами
-  const team = (t: Side, right = false, logoOnly = false) => (
-    <span title={logoOnly ? t.name : undefined} className={`flex min-w-0 items-center justify-end gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
+  const team = (t: Side, right = false, short = false) => (
+    <span title={short ? t.name : undefined} className={`flex min-w-0 items-center justify-end gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
       {/* ниже 380px — без эмблем: иначе «Барселона» рвалась по буквам («Барсело / на») */}
       <span className="shrink-0 max-[379px]:hidden">
         <TeamLogo name={t.name} src={t.logo} size={22} />
       </span>
-      <span className={`line-clamp-2 break-words text-[14px] font-semibold leading-[1.15] sm:text-[15px] ${logoOnly ? 'sr-only' : ''}`}>{t.name}</span>
+      <span className={`line-clamp-2 break-words text-[14px] font-semibold leading-[1.15] sm:text-[15px] ${short ? 'sr-only' : ''}`}>{t.name}</span>
+      {short ? (
+        <span aria-hidden className="whitespace-nowrap text-[15px] font-semibold tracking-[0.04em]">
+          {teamCode(t.name)}
+        </span>
+      ) : null}
     </span>
   )
   const outcome = (k: BarOdd['key']) => (k === 'draw' ? 'Ничья' : `«${k === 'home' ? home.name : away.name}»`)
