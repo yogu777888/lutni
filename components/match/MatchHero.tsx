@@ -26,6 +26,38 @@ export type BoardCell = {
 
 const signed = (ev: number) => `${ev >= 0 ? '+' : '−'}${Math.abs(ev * 100).toFixed(1).replace('.', ',')}%`
 
+/** Строка турнира над табло: флаг, турнир ссылкой и тур, справа — минута пилюлей или «итог». В `MatchHero` (ниже lg) и
+ * в закреплённой плашке `MatchBar` (от lg). */
+export function MatchHead({ full, league = null }: { full: MatchFull; league?: { href: string; label: string } | null }) {
+  const m = full.match
+  const live = m.status === 'live' || m.status === 'suspended'
+  const played = Boolean(m.score) && (live || m.status === 'finished')
+  const started = m.status !== 'scheduled'
+  return (
+    <>
+      <p className="flex min-w-0 flex-1 items-center gap-2 text-[13px] text-dim sm:text-[14px]">
+        <Flag league={m.league} className="!h-[18px] !w-[18px]" />
+        <span className="min-w-0 truncate">
+          {league ? (
+            <Link href={league.href} className="font-medium text-fg/90 transition-colors hover:text-fg">
+              {league.label}
+            </Link>
+          ) : null}
+          {m.round ? `${league ? ' · ' : ''}${m.round}` : null}
+        </span>
+      </p>
+      {live ? (
+        <span className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full bg-live/15 px-2.5 text-[13px] font-bold text-live">
+          <span className="h-1.5 w-1.5 rounded-full bg-live" />
+          {m.elapsed && m.statusCode !== 4 ? `${m.elapsed}′` : m.statusLabel}
+        </span>
+      ) : started ? (
+        <span className={`shrink-0 text-[13px] font-semibold ${played ? 'text-dim' : 'text-loss'}`}>{m.statusLabel}</span>
+      ) : null}
+    </>
+  )
+}
+
 /**
  * Табло матча (как на стадионе): команды, время или счёт, «Разбор за минуту»; ниже — оценка tag.bet тремя процентами
  * и кэфы партнёра с честной ценой — тот, что выше честной, горит лаймом. Полосы шансов нет (повторяла проценты, а её
@@ -38,7 +70,6 @@ export function MatchHero({
   line = null,
   story = null,
   back = null,
-  pair = null,
   league = null,
   ctx = null,
   children,
@@ -52,9 +83,7 @@ export function MatchHero({
   story?: React.ReactNode
   /** «‹ Ла Лига» чипом в верхнем левом углу (`Breadcrumbs chip`) */
   back?: React.ReactNode
-  /** «‹» кругом на компьютере (`NavBack`) — вместо чипа `back` */
-  pair?: React.ReactNode
-  /** турнир — на компьютере в строке с капсулой: «‹ › Ла Лига · 20-й тур · воскресенье, 4 октября» */
+  /** турнир — ссылкой в строке над табло */
   league?: { href: string; label: string } | null
   /** место в таблице (с 3-го тура) и форма — последние 5, свежий справа; под названием команды */
   ctx?: Record<'home' | 'away', { rank: number | null; form: Res[] }> | null
@@ -121,30 +150,12 @@ export function MatchHero({
   }
   return (
     <>
-    <section id="match-hero" className="card page-enter-2 relative overflow-hidden px-5 pb-2 pt-4 sm:px-7 sm:pb-3 sm:pt-5 xl:pt-[11px]">
-      {/* сверху строкой: «‹ ›» (на компьютере), флаг, турнир и тур слева, справа — минута пилюлей или «итог» */}
-      <div className="flex min-h-8 items-center gap-3">
-        {pair ? <div className="shrink-0 max-lg:hidden">{pair}</div> : null}
-        {back ? <div className="shrink-0 lg:hidden">{back}</div> : null}
-        <p className="flex min-w-0 flex-1 items-center gap-2 text-[13px] text-dim sm:text-[14px]">
-          <Flag league={m.league} className="!h-[18px] !w-[18px]" />
-          <span className="min-w-0 truncate">
-            {league ? (
-              <Link href={league.href} className="font-medium text-fg/90 transition-colors hover:text-fg">
-                {league.label}
-              </Link>
-            ) : null}
-            {m.round ? `${league ? ' · ' : ''}${m.round}` : null}
-          </span>
-        </p>
-        {live ? (
-          <span className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full bg-live/15 px-2.5 text-[13px] font-bold text-live">
-            <span className="h-1.5 w-1.5 rounded-full bg-live" />
-            {m.elapsed && m.statusCode !== 4 ? `${m.elapsed}′` : m.statusLabel}
-          </span>
-        ) : started ? (
-          <span className={`shrink-0 text-[13px] font-semibold ${played ? 'text-dim' : 'text-loss'}`}>{m.statusLabel}</span>
-        ) : null}
+    <section id="match-hero" className="card page-enter-2 relative overflow-hidden px-5 pb-2 pt-4 sm:px-7 sm:pb-3 sm:pt-5 lg:mt-2 lg:pt-1">
+      {/* сверху строкой: «‹ Ла Лига» (телефон и планшет), флаг, турнир и тур, справа — минута пилюлей или «итог»; на компьютере
+          эта строка — в закреплённой плашке над табло (`MatchBar`), там же «‹»: она на месте всегда */}
+      <div className="flex min-h-8 items-center gap-3 lg:hidden">
+        {back ? <div className="shrink-0">{back}</div> : null}
+        <MatchHead full={full} league={league} />
       </div>
 
       <div id="match-board" className="mt-1 flex items-center gap-4">

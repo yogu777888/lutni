@@ -4,15 +4,14 @@ import { BlockMore } from '@/components/BlockMore'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
 import { MatchBar } from '@/components/match/MatchBar'
-import { NavBack } from '@/components/BackButton'
-import { Breadcrumbs, upOf } from '@/components/Breadcrumbs'
+import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
 import { EventsBlock, StatsBars } from '@/components/match/EventsBlock'
 import { ClubVars } from '@/components/match/ClubVars'
 import { FormBlock } from '@/components/match/FormBlock'
 import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
-import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
+import { MatchHead, MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { hasMoves, OddsTable } from '@/components/match/OddsTable'
 import { PredictBlock } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
@@ -265,6 +264,7 @@ export default async function MatchPage({ params }: Props) {
             : null
         }
         partner={heroLine}
+        head={<MatchHead full={full} league={crumbs[1]} />}
       />
       {/* заголовок — только для поисковиков: команды крупно на табло, видимый он третий раз повторял названия */}
       <h1 className="sr-only">{h1}</h1>
@@ -278,7 +278,6 @@ export default async function MatchPage({ params }: Props) {
         cells={scheduled && (verdict || pick) ? null : cells}
         books={cons.books}
         line={heroLine}
-        pair={<NavBack fallback={upOf(crumbs)} />}
         league={crumbs[1]}
         ctx={heroCtx}
       />
