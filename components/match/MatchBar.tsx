@@ -45,21 +45,12 @@ export function MatchBar({
   const ref = useRef<HTMLDivElement>(null)
   const plateRef = useRef<HTMLDivElement>(null)
   const oddsRef = useRef<HTMLDivElement>(null)
-  const [tight, setTight] = useState(false)
-
-  // ширина кэфов — минимум обеих боковых колонок плашки, чтобы счёт стоял ровно посередине; если тогда командам в
-  // середине меньше 22rem (узкий центр с боковыми панелями) — вместо названий коды, как на табло трансляций: «АРС 1:0 ЧЕЛ»
-  // (`tight`, `teamCode`; полное название — в подсказке и для диктора): иначе «Саутге / мптон»
+  // ширина кэфов — минимум обеих боковых колонок плашки, чтобы счёт стоял ровно посередине
   useEffect(() => {
     const o = oddsRef.current
     const plate = plateRef.current
     if (!o || !plate) return
-    const fit = () => {
-      const side = Math.ceil(o.getBoundingClientRect().width)
-      const room = plate.clientWidth - 58 - 24 - 2 * side
-      plate.style.setProperty('--side', `${side}px`)
-      setTight(room < 352)
-    }
+    const fit = () => plate.style.setProperty('--side', `${Math.ceil(o.getBoundingClientRect().width)}px`)
     const ro = new ResizeObserver(fit)
     ro.observe(o)
     ro.observe(plate)
@@ -91,7 +82,8 @@ export function MatchBar({
     }
   }, [])
 
-  // название — до двух строк, а не «Райо Валь…» (высоты панели хватает): на телефоне и на 768–1024 рядом с кэфами
+  // в шапке телефона — название до двух строк, а не «Райо Валь…»; в плашке от lg (`short`) — код, как на табло трансляций:
+  // «АРС 1:0 ЧЕЛ» (владелец: «чтоб там всегда коды были без полных названий»), полное — в подсказке и для диктора
   const team = (t: Side, right = false, short = false) => (
     <span title={short ? t.name : undefined} className={`flex min-w-0 items-center justify-end gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
       {/* ниже 380px — без эмблем: иначе «Барселона» рвалась по буквам («Барсело / на») */}
@@ -111,7 +103,7 @@ export function MatchBar({
   // мини-табло: «эмблема Бетис 1:0 Хетафе эмблема», минута — под счётом вне потока (цифры на линии названий)
   const score = (
     <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2.5 sm:gap-3">
-      {team(home, false, tight)}
+      {team(home, false, true)}
       <span className="relative flex flex-col items-center leading-none">
         <span className="num display-num whitespace-nowrap text-[20px] font-semibold">{center}</span>
         {minute ? (
@@ -121,7 +113,7 @@ export function MatchBar({
           </span>
         ) : null}
       </span>
-      {team(away, true, tight)}
+      {team(away, true, true)}
     </div>
   )
   // в шапке телефона — те же команды всегда (владелец: «а можешь на странице матча сразу в хедере писать типа команды? и …
