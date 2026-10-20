@@ -42,6 +42,28 @@ export function MatchBar({
 }) {
   const [show, setShow] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const plateRef = useRef<HTMLDivElement>(null)
+  const oddsRef = useRef<HTMLDivElement>(null)
+  const [tight, setTight] = useState(false)
+
+  // ширина кэфов — минимум обеих боковых колонок плашки, чтобы счёт стоял ровно посередине; если тогда командам в
+  // середине меньше 22rem (узкий центр с боковыми панелями) — в плашке только эмблемы и счёт (`tight`), названия — в
+  // подсказке: иначе «Саутге / мптон»
+  useEffect(() => {
+    const o = oddsRef.current
+    const plate = plateRef.current
+    if (!o || !plate) return
+    const fit = () => {
+      const side = Math.ceil(o.getBoundingClientRect().width)
+      const room = plate.clientWidth - 58 - 24 - 2 * side
+      plate.style.setProperty('--side', `${side}px`)
+      setTight(room < 352)
+    }
+    const ro = new ResizeObserver(fit)
+    ro.observe(o)
+    ro.observe(plate)
+    return () => ro.disconnect()
+  }, [])
 
   useEffect(() => {
     // ориентир — сам счёт (или время) на табло: мини-табло сменяет крошки, когда крупный счёт наполовину ушёл под панель
@@ -69,21 +91,21 @@ export function MatchBar({
   }, [])
 
   // название — до двух строк, а не «Райо Валь…» (высоты панели хватает): на телефоне и на 768–1024 рядом с кэфами
-  const team = (t: Side, right = false) => (
-    <span className={`flex min-w-0 items-center justify-end gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
+  const team = (t: Side, right = false, logoOnly = false) => (
+    <span title={logoOnly ? t.name : undefined} className={`flex min-w-0 items-center justify-end gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
       {/* ниже 380px — без эмблем: иначе «Барселона» рвалась по буквам («Барсело / на») */}
       <span className="shrink-0 max-[379px]:hidden">
         <TeamLogo name={t.name} src={t.logo} size={22} />
       </span>
-      <span className="line-clamp-2 break-words text-[14px] font-semibold leading-[1.15] sm:text-[15px]">{t.name}</span>
+      <span className={`line-clamp-2 break-words text-[14px] font-semibold leading-[1.15] sm:text-[15px] ${logoOnly ? 'sr-only' : ''}`}>{t.name}</span>
     </span>
   )
   const outcome = (k: BarOdd['key']) => (k === 'draw' ? 'Ничья' : `«${k === 'home' ? home.name : away.name}»`)
 
   // мини-табло: «эмблема Бетис 1:0 Хетафе эмблема», минута — под счётом вне потока (цифры на линии названий)
   const score = (
-    <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2.5 md:flex md:w-auto sm:gap-3">
-      {team(home)}
+    <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2.5 sm:gap-3">
+      {team(home, false, tight)}
       <span className="relative flex flex-col items-center leading-none">
         <span className="num display-num whitespace-nowrap text-[20px] font-semibold">{center}</span>
         {minute ? (
@@ -93,7 +115,7 @@ export function MatchBar({
           </span>
         ) : null}
       </span>
-      {team(away, true)}
+      {team(away, true, tight)}
     </div>
   )
   // в шапке телефона — те же команды всегда (владелец: «а можешь на странице матча сразу в хедере писать типа команды? и …
@@ -132,17 +154,20 @@ export function MatchBar({
       <div className="sticky top-[65px] z-30 max-lg:hidden xl:top-[72px]">
         <div ref={ref} className="match-top relative bg-[#090c10] pt-1.5 xl:pt-0">
           <div
-            className={`match-top-in relative flex min-h-[58px] items-center gap-3 rounded-card bg-panel-3 py-2 pl-[29px] pr-4 transition-shadow duration-300 ${
+            ref={plateRef}
+            className={`match-top-in relative grid min-h-[58px] grid-cols-[minmax(var(--side,32px),1fr)_minmax(0,28rem)_minmax(var(--side,32px),1fr)] items-center gap-3 rounded-card bg-panel-3 py-2 px-[29px] transition-shadow duration-300 ${
               show ? 'shadow-[0_10px_30px_rgb(0_0_0/0.45)]' : ''
             }`}
           >
-            <BackButton fallback={back} />
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-                {score}
+            {/* по центру плашки — команды и счёт (владелец: «по центру»), слева «‹», справа кэфы: обе боковые колонки не уже
+                кэфов (`--side` — их ширина, меряем), иначе широкие кэфы сдвигали счёт влево */}
+            <BackButton fallback={back} className="justify-self-start" />
+            <div className="contents">
+              {score}
             {odds && partner ? (
-              <div className="ml-auto flex shrink-0 items-center gap-1.5">
+              <div ref={oddsRef} className="col-start-3 flex shrink-0 items-center justify-self-end gap-1.5">
                 {/* «Реклама» — и у кэфов по ходу матча: раньше там было «PARI / сейчас», а ячейки — ссылки к букмекеру (ст. 18.1) */}
-                <span className="mr-1 text-right text-[11px] leading-tight text-mute">
+                <span className="mr-1 whitespace-nowrap text-right text-[11px] leading-tight text-mute">
                   {partner.name}
                   {partner.live ? (
                     <span className="ml-1 inline-flex items-center gap-1 text-live">

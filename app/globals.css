@@ -866,7 +866,7 @@ html[data-shell-rc] .shell-r-rail {
     background: var(--color-panel);
     box-shadow: none;
     /* слева 28px — «‹» на месте «‹» табло (`MatchHero` `sm:px-7`; плашка на 1px шире карточки) */
-    padding: 8px 10px 8px 29px;
+    padding: 8px 29px;
   }
   .shell-center:has(.bare-match) .match-top::after {
     content: '';
