@@ -121,7 +121,7 @@ export function MatchHero({
   }
   return (
     <>
-    <section id="match-hero" className="card page-enter-2 relative overflow-hidden px-5 pb-2 pt-4 sm:px-7 sm:pb-3 sm:pt-5">
+    <section id="match-hero" className="card page-enter-2 relative overflow-hidden px-5 pb-2 pt-4 sm:px-7 sm:pb-3 sm:pt-5 xl:pt-[11px]">
       {/* сверху строкой: «‹ ›» (на компьютере), флаг, турнир и тур слева, справа — минута пилюлей или «итог» */}
       <div className="flex min-h-8 items-center gap-3">
         {pair ? <div className="shrink-0 max-lg:hidden">{pair}</div> : null}

@@ -84,7 +84,9 @@ export function MatchBar({
   )
   const outcome = (k: BarOdd['key']) => (k === 'draw' ? 'Ничья' : `«${k === 'home' ? home.name : away.name}»`)
 
-  const swap = ready ? 'transition-[opacity,transform] duration-200 ease-out' : ''
+  // плашка — прозрачностью; содержимое — снизу вверх с лёгкой задержкой, как смена заголовка в iOS
+  const fade = ready ? 'transition-[opacity,visibility] duration-[260ms] ease-out' : ''
+  const slide = ready ? `transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(.2,.8,.2,1)] ${show ? 'delay-[60ms]' : ''}` : ''
   // мини-табло: «эмблема Бетис 1:0 Хетафе эмблема», минута — под счётом вне потока (цифры на линии названий)
   const score = (
     <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2.5 md:flex md:w-auto sm:gap-3">
@@ -132,10 +134,17 @@ export function MatchBar({
       <HeaderRow fallback={{ href: back, label: backLabel }} idle={headerBar} />
       {/* от lg — плашка поверх страницы под шапкой, только при прокрутке (обёртка высотой 0 — места в раскладке нет) */}
       <div className="sticky top-[65px] z-30 h-0 max-lg:hidden xl:top-[72px]">
-        <div ref={ref} className={`match-top absolute inset-x-0 top-0 bg-[#090c10] pt-1.5 xl:pt-0 ${show ? '' : 'invisible'}`}>
-          <div className={`match-top-in relative flex min-h-[57.5px] items-center gap-3 rounded-card bg-panel-3 px-4 py-2 shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${swap} ${show ? 'opacity-100' : '-translate-y-1 opacity-0'}`}>
+        {/* «‹» — на том же месте, что «‹» в табло (`MatchHero`: поле 28px, сверху 11px от xl; владелец: «чтоб была на сжатом и
+            не сжатом в одинаковом месте … не прыгала»): плашка проявляется вокруг неё, сама «‹» не двигается; содержимое —
+            въезжает снизу чуть позже, а прячется плашка тоже плавно (`visibility` гаснет в конце перехода, а не сразу —
+            раньше `invisible` убирал её мгновенно, «дёргано») */}
+        <div
+          ref={ref}
+          className={`match-top absolute inset-x-0 top-0 bg-[#090c10] pt-1.5 xl:pt-0 ${fade} ${show ? '' : 'invisible opacity-0'}`}
+        >
+          <div className="match-top-in relative flex min-h-[58px] items-center gap-3 rounded-card bg-panel-3 py-2 pl-[29px] pr-4 shadow-[0_10px_30px_rgb(0_0_0/0.45)]">
             <BackButton fallback={back} />
-            <div aria-hidden={!show} inert={!show} className="flex min-w-0 flex-1 items-center gap-3">
+            <div aria-hidden={!show} inert={!show} className={`flex min-w-0 flex-1 items-center gap-3 ${slide} ${show ? '' : 'translate-y-2 opacity-0'}`}>
               {score}
               {odds && partner ? (
                 <div className="ml-auto flex shrink-0 items-center gap-1.5">
