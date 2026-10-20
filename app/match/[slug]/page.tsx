@@ -4,7 +4,7 @@ import { BlockMore } from '@/components/BlockMore'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
 import { MatchBar } from '@/components/match/MatchBar'
-import { NavPair } from '@/components/BackButton'
+import { NavBack } from '@/components/BackButton'
 import { Breadcrumbs, upOf } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
 import { EventsBlock, StatsBars } from '@/components/match/EventsBlock'
@@ -278,7 +278,7 @@ export default async function MatchPage({ params }: Props) {
         cells={scheduled && (verdict || pick) ? null : cells}
         books={cons.books}
         line={heroLine}
-        pair={<NavPair fallback={upOf(crumbs)} />}
+        pair={<NavBack fallback={upOf(crumbs)} />}
         league={crumbs[1]}
         ctx={heroCtx}
       />

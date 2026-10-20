@@ -1,4 +1,4 @@
-import { NavPair } from './BackButton'
+import { NavBack } from './BackButton'
 import { Breadcrumbs, upOf, type Crumb } from './Breadcrumbs'
 import { NavIcon } from './NavIcon'
 import { TopBar } from './TopBar'
@@ -39,7 +39,7 @@ export function PageHead({
       {crumbs ? <Breadcrumbs items={crumbs} chip className="hidden" /> : null}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          {crumbs ? <NavPair fallback={upOf(crumbs)} className="mr-1 max-lg:hidden" /> : null}
+          {crumbs ? <NavBack fallback={upOf(crumbs)} className="mr-1 max-lg:hidden" /> : null}
           {lead ? <div className="shrink-0">{lead}</div> : null}
           <div className="min-w-0">
             {/* у разделов меню — тот же значок, что в нижнем меню, в строке заголовка (владелец: «может на других страницах кроме

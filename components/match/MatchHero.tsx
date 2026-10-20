@@ -52,7 +52,7 @@ export function MatchHero({
   story?: React.ReactNode
   /** «‹ Ла Лига» чипом в верхнем левом углу (`Breadcrumbs chip`) */
   back?: React.ReactNode
-  /** «‹ ›» капсулой на компьютере (`NavPair`) — вместо чипа `back` */
+  /** «‹» кругом на компьютере (`NavBack`) — вместо чипа `back` */
   pair?: React.ReactNode
   /** турнир — на компьютере в строке с капсулой: «‹ › Ла Лига · 20-й тур · воскресенье, 4 октября» */
   league?: { href: string; label: string } | null
