@@ -17,11 +17,23 @@ export type RawLsMetric = {
   away?: { value?: number | null; percentage?: number | null } | null
 }
 
+type RawLsPeriod = { metrics?: RawLsMetric[] | null } | null
+
+/** Событие матча: нам нужны только карточки с причиной («Holding», «Handball»…). */
+export type RawLsEvent = {
+  team?: number | null
+  minute?: number | null
+  displayTime?: string | null
+  reason?: string | null
+  actions?: { actionName?: string | null; playerName?: string | null }[] | null
+}
+
 export type RawLsInfo = {
   venue?: string | null
   city?: string | null
   attendance?: number | null
-  statistics?: { fullTime?: { metrics?: RawLsMetric[] | null } | null } | null
+  statistics?: { fullTime?: RawLsPeriod; firstHalf?: RawLsPeriod; secondHalf?: RawLsPeriod } | null
+  events?: RawLsEvent[] | null
 }
 
 export type RawLsPlayer = {
@@ -49,7 +61,9 @@ export type RawLsPlayer = {
   } | null
 }
 
-export type RawLsLineups = { lineups?: { side?: number | null; formation?: string | null; players?: RawLsPlayer[] | null }[] | null }
+export type RawLsLineups = {
+  lineups?: { side?: number | null; formation?: string | null; averageRating?: number | null; players?: RawLsPlayer[] | null }[] | null
+}
 
 export type RawLsMomentum = { points?: { elapsedMinute?: number | null; addedTime?: number | null; eventStage?: number | null; momentumValue?: number | null }[] | null } | null
 
@@ -73,6 +87,8 @@ export type LineupPlayer = {
 
 export type TeamLineup = {
   formation: string | null
+  /** Средняя оценка команды (после начала) */
+  avg?: number | null
   /** Основа по линиям: [вратарь], [защита], …, [нападение] */
   rows: LineupPlayer[][]
   bench: LineupPlayer[]
@@ -84,11 +100,17 @@ export type Lineups = { home: TeamLineup; away: TeamLineup }
 /** Давление по минутам: v > 0 — давят хозяева, v < 0 — гости (от −1 до 1); `part` — тайм (3 — дополнительное время). */
 export type MomentumPoint = { part: 1 | 2 | 3; minute: number; v: number }
 
+/** Удаление с причиной из `/Ls/GameInfo`: «за фол», «за игру рукой» — к красной карточке из `/Games`. */
+export type LsRed = { side: 'home' | 'away'; minute: number; reason: string }
+
 export type LsExtra = {
   lineups: Lineups | null
   momentum: MomentumPoint[] | null
   /** Строки статистики, которых нет в `/Games/{id}` */
   stats: StatPair[]
+  /** Статистика по таймам (в `/Games` её нет) — для переключателя «Матч · 1-й тайм · 2-й тайм» */
+  halves: { first: StatPair[]; second: StatPair[] } | null
+  reds: LsRed[]
   venue: { name: string; city: string } | null
   attendance: number | null
 }
@@ -147,6 +169,7 @@ function teamLineup(raw: NonNullable<RawLsLineups['lineups']>[number] | undefine
   }
   return {
     formation: raw?.formation?.trim() || null,
+    avg: typeof raw?.averageRating === 'number' && raw.averageRating > 0 ? raw.averageRating : null,
     rows: rows.filter((r) => r?.length),
     bench: players.filter((p) => p.kind === 1).sort((a, b) => n0(a.sortOrder) - n0(b.sortOrder)).map(player),
     coach: players.find((p) => p.kind === 2)?.playerName?.trim() || null,
@@ -222,6 +245,80 @@ export function lsStats(info: RawLsInfo | null | undefined, have: Set<string>): 
     const a = val(m, 'away', f.pct)
     if (h === null || a === null) continue
     out.push({ key: f.key, label: f.label, home: h, away: a, suffix: f.pct ? '%' : undefined })
+  }
+  return out
+}
+
+/**
+ * Статистика тайма — те же строки и подписи, что в «Статистике» матча целиком (`STAT_FIELDS` и `lsStats`): переключатель
+ * «Матч · 1-й тайм · 2-й тайм» (владелец прислал прототип ChatGPT, «давай без входа делай то что ты до этого хотел»).
+ */
+const PERIOD_STATS: { id: string; key: string; label: string; pct?: boolean }[] = [
+  { id: '12', key: 'ballPossession', label: 'Владение мячом', pct: true },
+  { id: '34', key: 'totalShots', label: 'Удары' },
+  { id: '13', key: 'shotsOnGoal', label: 'Удары в створ' },
+  { id: '461', key: 'shotsInsideBox', label: 'Удары из штрафной' },
+  { id: '457', key: 'hitWoodwork', label: 'Попадания в каркас ворот' },
+  { id: '459', key: 'bigChances', label: 'Голевые моменты' },
+  { id: '432', key: 'expectedGoals', label: 'Качество моментов' },
+  { id: '342', key: 'passAccuracy', label: 'Точность передач', pct: true },
+  { id: '16', key: 'cornerKicks', label: 'Угловые' },
+  { id: '21', key: 'fouls', label: 'Фолы' },
+  { id: '23', key: 'yellowCards', label: 'Жёлтые карточки' },
+  { id: '22', key: 'redCards', label: 'Красные карточки' },
+  { id: '17', key: 'offsides', label: 'Офсайды' },
+]
+
+export function periodStats(metrics: RawLsMetric[] | null | undefined): StatPair[] {
+  const byId = new Map((metrics ?? []).map((m) => [m.id, m]))
+  const out: StatPair[] = []
+  for (const f of PERIOD_STATS) {
+    const m = byId.get(f.id)
+    if (!m) continue
+    const v = (side: 'home' | 'away') => {
+      const s = m[side]
+      const x = f.pct ? s?.percentage : (s?.value ?? s?.percentage)
+      return typeof x === 'number' && Number.isFinite(x) ? x : null
+    }
+    const h = v('home')
+    const a = v('away')
+    if (h === null || a === null) continue
+    out.push({ key: f.key, label: f.label, home: h, away: a, suffix: f.pct ? '%' : undefined })
+  }
+  return out
+}
+
+/** Таймы — только если у обоих есть хотя бы три строки: иначе переключатель показывал бы пустые вкладки. */
+export function lsHalves(info: RawLsInfo | null | undefined): LsExtra['halves'] {
+  const first = periodStats(info?.statistics?.firstHalf?.metrics)
+  const second = periodStats(info?.statistics?.secondHalf?.metrics)
+  return first.length >= 3 && second.length >= 3 ? { first, second } : null
+}
+
+/**
+ * Причина удаления словами. В API — тип нарушения по-английски («Holding», «Tripping», «Handball»); незнакомое — не
+ * пишем (лучше без причины, чем с неверной).
+ */
+export function cardReason(reason: string | null | undefined): string | null {
+  const r = (reason ?? '').toLowerCase()
+  if (!r) return null
+  if (/hand ?ball/.test(r)) return 'за игру рукой'
+  if (/violent|serious foul|fight|spit|elbow|kick|stamp|headbutt/.test(r)) return 'за грубость'
+  if (/dissent|argu|unsporting|unsportsmanlike|insult|abus|simulat|time ?wast/.test(r)) return 'за неспортивное поведение'
+  if (/second yellow|2nd yellow/.test(r)) return 'вторая жёлтая'
+  if (/foul|holding|tripping|push|tackle|charg|obstruct|dangerous play/.test(r)) return 'за фол'
+  return null
+}
+
+/** Удаления с причиной: событие с действием «Red Card» (или «Yellow-Red»), сторона — `team` (1 — хозяева). */
+export function lsReds(events: RawLsEvent[] | null | undefined): LsRed[] {
+  const out: LsRed[] = []
+  for (const e of events ?? []) {
+    const red = e.actions?.some((a) => /red/i.test(a.actionName ?? ''))
+    const second = e.actions?.some((a) => /yellow.?red|second yellow/i.test(a.actionName ?? ''))
+    const reason = second ? 'вторая жёлтая' : cardReason(e.reason)
+    if (!red || !reason || (e.team !== 1 && e.team !== 2) || typeof e.minute !== 'number') continue
+    out.push({ side: e.team === 1 ? 'home' : 'away', minute: e.minute, reason })
   }
   return out
 }

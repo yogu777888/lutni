@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findLsGame, lsStats, minuteLabel, normalizeLineups, normalizeMomentum, surname, type RawLsPlayer } from '../lib/sstats/ls'
+import { cardReason, findLsGame, lsHalves, lsReds, lsStats, minuteLabel, normalizeLineups, normalizeMomentum, surname, type RawLsPlayer } from '../lib/sstats/ls'
 
 describe('Flashscore-раздел SStats (/Ls/*)', () => {
   it('матч — по id команд из flashId', () => {
@@ -63,5 +63,34 @@ describe('Flashscore-раздел SStats (/Ls/*)', () => {
     const out = lsStats(info, new Set(['expectedGoals']))
     expect(out.map((s) => s.key)).toEqual(['shotsInsideBox', 'passAccuracy'])
     expect(out[1]).toMatchObject({ home: 83, away: 63, suffix: '%' })
+  })
+})
+
+describe('таймы, удаления, средняя оценка', () => {
+  it('таймы — строками статистики, только если у обоих таймов есть данные', () => {
+    const m = (id: string, h: number, a: number) => ({ id, home: { value: h }, away: { value: a } })
+    const period = { metrics: [m('34', 13, 1), m('13', 4, 0), m('16', 4, 1), { id: '12', home: { percentage: 64 }, away: { percentage: 36 } }] }
+    const h = lsHalves({ statistics: { firstHalf: period, secondHalf: period } })!
+    expect(h.first.map((s) => s.key)).toEqual(['ballPossession', 'totalShots', 'shotsOnGoal', 'cornerKicks'])
+    expect(h.first[0]).toMatchObject({ home: 64, away: 36, suffix: '%' })
+    expect(lsHalves({ statistics: { firstHalf: period, secondHalf: { metrics: [] } } })).toBeNull()
+  })
+
+  it('причина удаления словами, незнакомая — не пишем', () => {
+    expect(cardReason('Holding')).toBe('за фол')
+    expect(cardReason('Handball')).toBe('за игру рукой')
+    expect(cardReason('Violent conduct')).toBe('за грубость')
+    expect(cardReason('Something new')).toBeNull()
+    expect(lsReds([{ team: 2, minute: 17, reason: 'Holding', actions: [{ actionName: 'Red Card' }] }, { team: 1, minute: 26, reason: 'Tripping', actions: [{ actionName: 'Yellow Card' }] }])).toEqual([
+      { side: 'away', minute: 17, reason: 'за фол' },
+    ])
+  })
+
+  it('средняя оценка команды из averageRating', () => {
+    const p = (kind: number, row: number | null, n: number): RawLsPlayer => ({ playerName: `P${n}`, kind, formationRow: row, sortOrder: n })
+    const players = [p(0, 0, 1), ...Array.from({ length: 10 }, (_, i) => p(0, 1 + (i % 3), i + 2))]
+    const l = normalizeLineups({ lineups: [{ side: 1, averageRating: 7.7, players }, { side: 2, players }] })!
+    expect(l.home.avg).toBe(7.7)
+    expect(l.away.avg).toBeNull()
   })
 })

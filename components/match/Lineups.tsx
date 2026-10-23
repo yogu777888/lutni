@@ -1,6 +1,7 @@
 import { ICONS } from '@/components/NavIcon'
 import { TeamLogo } from '@/components/TeamLogo'
 import { surname, type LineupPlayer, type Lineups as LineupsData, type TeamLineup } from '@/lib/sstats/ls'
+import { Tabs } from './Tabs'
 
 type Side = { name: string; logo: string | null }
 
@@ -68,14 +69,17 @@ function Dot({ p, away }: { p: LineupPlayer; away: boolean }) {
   )
 }
 
-/** Половина поля: вратарь у своих ворот, нападение — у центральной линии. У гостей (снизу) — зеркально. */
-function Half({ t, away }: { t: TeamLineup; away: boolean }) {
-  const rows = away ? [...t.rows].reverse() : t.rows
+/**
+ * Половина поля: вратарь у своих ворот, нападение — у центральной линии. У гостей (снизу) — зеркально; `flip` — вратарь
+ * снизу при любой команде (на телефоне поле одной команды: атака сверху, как в прототипе владельца).
+ */
+function Half({ t, away, flip = away }: { t: TeamLineup; away: boolean; flip?: boolean }) {
+  const rows = flip ? [...t.rows].reverse() : t.rows
   return (
-    <div className={`flex flex-col justify-between gap-3 px-2 ${away ? 'pb-4 pt-6' : 'pb-6 pt-4'}`}>
+    <div className={`flex flex-col justify-between gap-3 px-2 ${flip ? 'pb-4 pt-6' : 'pb-6 pt-4'}`}>
       {rows.map((row, i) => (
         <ul key={i} className="flex justify-around">
-          {(away ? [...row].reverse() : row).map((p, j) => (
+          {(flip ? [...row].reverse() : row).map((p, j) => (
             <Dot key={`${p.name}-${j}`} p={p} away={away} />
           ))}
         </ul>
@@ -92,6 +96,12 @@ function TeamHead({ side, t, away }: { side: Side; t: TeamLineup; away?: boolean
       {t.formation ? (
         <span className="num shrink-0 text-[14px] text-dim" title="Схема">
           {t.formation}
+        </span>
+      ) : null}
+      {/* средняя оценка игроков — после начала (`averageRating` в /Ls/GameLineups) */}
+      {t.avg != null ? (
+        <span className="num shrink-0 rounded-full bg-[#2a333d] px-2 text-[13px] font-semibold leading-6" title="Средняя оценка игроков">
+          {t.avg.toFixed(1).replace('.', ',')}
         </span>
       ) : null}
       <span className="sr-only">{away ? '— гости' : '— хозяева'}</span>
@@ -127,24 +137,56 @@ export function Lineups({ data, home, away }: { data: LineupsData; home: Side; a
   const coaches = [coach(data.home, home), coach(data.away, away)].filter(Boolean)
   return (
     <div className="mx-auto max-w-xl">
-      <TeamHead side={home} t={data.home} />
-      {/* поле: черта по центру, круг, штрафные у ворот */}
-      <div className="relative mt-3 overflow-hidden rounded-tile bg-white/[0.03] ring-1 ring-inset ring-white/[0.08]">
-        <span aria-hidden className="absolute inset-x-0 top-1/2 h-px bg-white/[0.08]" />
-        <span aria-hidden className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.08]" />
-        <span aria-hidden className="absolute left-1/2 top-0 h-12 w-2/5 -translate-x-1/2 border-x border-b border-white/[0.08]" />
-        <span aria-hidden className="absolute bottom-0 left-1/2 h-12 w-2/5 -translate-x-1/2 border-x border-t border-white/[0.08]" />
-        <div className="relative grid min-h-[560px] grid-rows-2 sm:min-h-[620px]">
-          <Half t={data.home} away={false} />
-          <Half t={data.away} away />
+      {/* от sm — обе команды на одном поле; на телефоне поле ~560px — по одной команде с переключателем (вдвое короче) */}
+      <div className="hidden sm:block">
+        <TeamHead side={home} t={data.home} />
+        {/* поле: черта по центру, круг, штрафные у ворот */}
+        <div className="relative mt-3 overflow-hidden rounded-tile bg-white/[0.03] ring-1 ring-inset ring-white/[0.08]">
+          <span aria-hidden className="absolute inset-x-0 top-1/2 h-px bg-white/[0.08]" />
+          <span aria-hidden className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.08]" />
+          <span aria-hidden className="absolute left-1/2 top-0 h-12 w-2/5 -translate-x-1/2 border-x border-b border-white/[0.08]" />
+          <span aria-hidden className="absolute bottom-0 left-1/2 h-12 w-2/5 -translate-x-1/2 border-x border-t border-white/[0.08]" />
+          <div className="relative grid min-h-[620px] grid-rows-2">
+            <Half t={data.home} away={false} />
+            <Half t={data.away} away />
+          </div>
+        </div>
+        <div className="mt-3">
+          <TeamHead side={away} t={data.away} away />
         </div>
       </div>
-      <div className="mt-3">
-        <TeamHead side={away} t={data.away} away />
-      </div>
-      <div className="mt-5 border-t border-edge pt-4">
-        <p className="text-[13px] text-mute">Запасные</p>
-        <div className="mt-2.5 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+      <Tabs
+        small
+        className="sm:hidden"
+        panelClassName="mt-4"
+        items={([['home', home, data.home, false], ['away', away, data.away, true]] as const).map(([key, side, t, isAway]) => ({
+          key,
+          label: side.name,
+          content: (
+            <>
+              <TeamHead side={side} t={t} away={isAway} />
+              {/* половина поля: центральный круг сверху, штрафная у ворот снизу */}
+              <div className="relative mt-3 overflow-hidden rounded-tile bg-white/[0.03] ring-1 ring-inset ring-white/[0.08]">
+                <span aria-hidden className="absolute left-1/2 top-0 h-10 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.08]" />
+                <span aria-hidden className="absolute bottom-0 left-1/2 h-12 w-2/5 -translate-x-1/2 border-x border-t border-white/[0.08]" />
+                <div className="relative grid min-h-[300px]">
+                  <Half t={t} away={isAway} flip />
+                </div>
+              </div>
+              {/* запасные — той же команды, что на поле */}
+              {t.bench.length ? (
+                <div className="mt-5 border-t border-edge pt-4">
+                  <p className="mb-2.5 text-[13px] text-mute">Запасные</p>
+                  <Bench t={t} />
+                </div>
+              ) : null}
+            </>
+          ),
+        }))}
+      />
+      <div className="mt-5 border-t border-edge pt-4 max-sm:mt-4 max-sm:border-0 max-sm:pt-0">
+        <p className="hidden text-[13px] text-mute sm:block">Запасные</p>
+        <div className="mt-2.5 hidden gap-x-6 gap-y-4 sm:grid sm:grid-cols-2">
           <div>
             <p className="mb-1.5 truncate text-[13px] font-semibold text-dim sm:hidden">{home.name}</p>
             <Bench t={data.home} />
@@ -154,7 +196,7 @@ export function Lineups({ data, home, away }: { data: LineupsData; home: Side; a
             <Bench t={data.away} />
           </div>
         </div>
-        {coaches.length ? <p className="mt-4 text-[13px] text-mute">Тренеры: {coaches.join(' · ')}</p> : null}
+        {coaches.length ? <p className="text-[13px] text-mute sm:mt-4">Тренеры: {coaches.join(' · ')}</p> : null}
       </div>
     </div>
   )

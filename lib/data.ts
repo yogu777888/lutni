@@ -17,7 +17,7 @@ import { ApiError, apiGet } from './sstats/client'
 import * as N from './sstats/normalize'
 import { normalizePariMatch, pariBook, pariHistory, type PariHistory, type PariMatch, type RawPariMatch, type RawPariSnapshot } from './sstats/pari'
 import { linkPari } from './pari-link'
-import { findLsGame, lsStats, normalizeLineups, normalizeMomentum, type LsExtra, type RawLsGame, type RawLsInfo, type RawLsLineups, type RawLsMomentum } from './sstats/ls'
+import { findLsGame, lsHalves, lsReds, lsStats, normalizeLineups, normalizeMomentum, type LsExtra, type RawLsGame, type RawLsInfo, type RawLsLineups, type RawLsMomentum } from './sstats/ls'
 import type {
   RawBookmakerOdds,
   RawGame,
@@ -313,23 +313,40 @@ export async function getLsExtra(m: Match, have: Set<string>, opts: Opts = {}): 
     started
       ? settle(
           cache.get(
-            `ls-info:${id}`,
+            // v2 — ещё таймы и удаления с причиной
+            `ls-info:v2:${id}`,
             async () => {
               const r = await apiGet<RawLsInfo>('/Ls/GameInfo', { id }, opts)
-              return { venue: r?.venue ?? null, city: r?.city ?? null, attendance: r?.attendance ?? null, statistics: { fullTime: { metrics: r?.statistics?.fullTime?.metrics ?? [] } } } as RawLsInfo
+              const st = r?.statistics
+              return {
+                venue: r?.venue ?? null,
+                city: r?.city ?? null,
+                attendance: r?.attendance ?? null,
+                statistics: {
+                  fullTime: { metrics: st?.fullTime?.metrics ?? [] },
+                  firstHalf: { metrics: st?.firstHalf?.metrics ?? [] },
+                  secondHalf: { metrics: st?.secondHalf?.metrics ?? [] },
+                },
+                // из событий (с комментариями — десятки КБ) — только карточки с причиной
+                events: (r?.events ?? [])
+                  .filter((e) => e.reason && e.actions?.some((a) => /red/i.test(a.actionName ?? '')))
+                  .map((e) => ({ team: e.team, minute: e.minute, displayTime: e.displayTime, reason: e.reason, actions: e.actions?.map((a) => ({ actionName: a.actionName })) })),
+              } as RawLsInfo
             },
             ttl,
           ),
           null,
         )
       : null,
-    settle(cache.get(`ls-lineups:${id}`, async () => normalizeLineups(await apiGet<RawLsLineups>('/Ls/GameLineups', { id }, opts)), ttl), null),
+    settle(cache.get(`ls-lineups:v2:${id}`, async () => normalizeLineups(await apiGet<RawLsLineups>('/Ls/GameLineups', { id }, opts)), ttl), null),
     started ? settle(cache.get(`ls-momentum:${id}`, async () => normalizeMomentum(await apiGet<RawLsMomentum>('/Ls/GameMomentum', { id }, opts)), ttl), null) : null,
   ])
   return {
     lineups,
     momentum,
     stats: lsStats(info, have),
+    halves: lsHalves(info),
+    reds: lsReds(info?.events),
     venue: info?.venue ? { name: info.venue, city: info.city ?? '' } : null,
     attendance: typeof info?.attendance === 'number' && info.attendance > 0 ? info.attendance : null,
   }

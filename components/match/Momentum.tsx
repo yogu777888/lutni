@@ -4,11 +4,11 @@ import type { MatchEvent } from '@/lib/types'
 type Side = { name: string }
 
 /**
- * «Кто давил» — давление по минутам из `/Ls/GameMomentum` (владелец: «сделай всё»): столбик вверх — атакуют хозяева,
+ * «Кто давил» (заголовок — у раздела) — давление по минутам из `/Ls/GameMomentum` (владелец: «сделай всё»): столбик вверх — атакуют хозяева,
  * вниз — гости, цветом клуба (`ClubVars` → `.club-bar-h/-a`; цветов нет — белые). Таймы — двумя частями с зазором,
  * у каждой ширина по числу минут; голы — точкой у края столбика своей минуты. Подписи осей — 0′, 45′, 90′ под чертой.
  */
-export function Momentum({ points, events, home, away }: { points: MomentumPoint[]; events: MatchEvent[]; home: Side; away: Side }) {
+export function Momentum({ points, events, home, away, line }: { points: MomentumPoint[]; events: MatchEvent[]; home: Side; away: Side; line?: string | null }) {
   const parts = ([1, 2, 3] as const).map((p) => points.filter((x) => x.part === p)).filter((x) => x.length)
   // гол — к столбику его минуты (в добавленное время первого тайма — к последним минутам первой части)
   const goalAt = new Map<string, 'home' | 'away'>()
@@ -26,7 +26,6 @@ export function Momentum({ points, events, home, away }: { points: MomentumPoint
           <span className="club-bar-h h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden />
           <span className="truncate">{home.name}</span>
         </span>
-        <span className="shrink-0 font-semibold text-fg">Кто давил</span>
         <span className="flex min-w-0 items-center justify-end gap-2">
           <span className="truncate">{away.name}</span>
           <span className="club-bar-a h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden />
@@ -64,7 +63,9 @@ export function Momentum({ points, events, home, away }: { points: MomentumPoint
           </div>
         ))}
       </div>
-      <p className="mt-2 text-[13px] text-mute">Столбик вверх — атакуют хозяева, вниз — гости; точка — гол.</p>
+      {/* вывод одной фразой, как в прототипе владельца («В последние минуты давление Арсенала выросло»), — `momentumLine` */}
+      {line ? <p className="mt-3 text-[15px] font-medium text-fg">{line}</p> : null}
+      <p className="mt-1.5 text-[13px] text-mute">Столбик вверх — атакуют хозяева, вниз — гости; точка — гол.</p>
     </div>
   )
 }

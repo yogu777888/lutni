@@ -1014,7 +1014,9 @@ function lsLineups(g: MockGame, now: number) {
       })
     }
     players.push({ playerName: playerName(team, 40), kind: 2 })
-    return { side: si + 1, formation, players }
+    const rated = players.map((p) => (p.statistics as { rating?: number } | null)?.rating).filter((v): v is number => typeof v === 'number')
+    const averageRating = rated.length ? Math.round((rated.reduce((a, b) => a + b, 0) / rated.length) * 10) / 10 : null
+    return { side: si + 1, formation, averageRating, players }
   })
   if (started) {
     // лучшая оценка матча — отметка `isBestRating`, как в API
@@ -1057,7 +1059,26 @@ function lsInfo(g: MockGame, now: number) {
     { id: '342', ...pct(Math.round(78 + (strength(g.home) - strength(g.away)) * 8 + r() * 6), Math.round(78 - (strength(g.home) - strength(g.away)) * 8 + r() * 6)) },
   ]
   const attendance = 9_000 + Math.floor(rng('crowd', g.home)() * 60_000)
-  return envelope({ venue: null, city: null, attendance, statistics: { fullTime: { metrics } } })
+  // таймы — от статистики /Games: первый — доля сыгранного до перерыва, второй — остальное (владение — ±3 от итога)
+  const st = (fullGame(g, now, 3).statistics ?? {}) as Record<string, number>
+  const IDS: [string, string][] = [['12', 'ballPossession'], ['34', 'totalShots'], ['13', 'shotsOnGoal'], ['432', 'expectedGoals'], ['16', 'cornerKicks'], ['21', 'fouls'], ['23', 'yellowCards'], ['17', 'offsides']]
+  const cut = Math.min(1, 45 / Math.max(ph.minute, 1))
+  const half = (first: boolean) =>
+    ph.minute <= 45 && !first
+      ? []
+      : IDS.filter(([, k]) => typeof st[`${k}Home`] === 'number').map(([id, k]) => {
+          if (k === 'ballPossession') {
+            const d = Math.round((r() - 0.5) * 6)
+            return { id, ...pct(st.ballPossessionHome + d, 100 - st.ballPossessionHome - d) }
+          }
+          const part = (v: number) => {
+            const a = k === 'expectedGoals' ? Math.round(v * cut * 100) / 100 : Math.round(v * cut)
+            return first ? a : Math.round((v - a) * 100) / 100
+          }
+          return { id, ...pair(part(st[`${k}Home`]), part(st[`${k}Away`])) }
+        })
+  const halves = ph.minute > 45 ? { firstHalf: { metrics: half(true) }, secondHalf: { metrics: half(false) } } : {}
+  return envelope({ venue: null, city: null, attendance, statistics: { fullTime: { metrics }, ...halves } })
 }
 
 /**

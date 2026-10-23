@@ -1,3 +1,4 @@
+import type { LsRed } from '@/lib/sstats/ls'
 import type { MatchEvent, StatPair } from '@/lib/types'
 import { visibleStats } from '@/lib/sstats/normalize'
 import { Hint } from './Hint'
@@ -77,8 +78,10 @@ const minuteText = (e: MatchEvent) => `${e.minute}${e.extra ? `+${e.extra}` : ''
  * в матче очень некрасивый какой-то» — список голов с «Перерывом» повторял табло; выбрал вариант «А»). Жёлтые — числом
  * в статистике; замены и VAR — нет.
  */
-export function EventsBlock({ events, home, away }: { events: MatchEvent[]; home: Side; away: Side }) {
+export function EventsBlock({ events, home, away, reds = [] }: { events: MatchEvent[]; home: Side; away: Side; reds?: LsRed[] }) {
   const rows = events.filter((e) => e.kind === 'red' || e.kind === 'missed-penalty')
+  // причина удаления — из `/Ls/GameInfo` («Holding» → «за фол»): та же команда, минута ±1 (у поставщиков она расходится)
+  const why = (e: MatchEvent) => (e.kind === 'red' ? reds.find((r) => r.side === e.side && Math.abs(r.minute - e.minute) <= 1)?.reason : null)
   if (!rows.length) return null
   return (
     <ul className="-my-1">
@@ -91,6 +94,7 @@ export function EventsBlock({ events, home, away }: { events: MatchEvent[]; home
           )}
           <span className="min-w-0 truncate text-dim">
             {e.kind === 'red' ? 'Удаление' : 'Незабитый пенальти'}
+            {why(e) ? ` ${why(e)}` : null}
             {e.player ? (
               <>
                 {' · '}

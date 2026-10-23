@@ -13,6 +13,7 @@ import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
 import { Lineups } from '@/components/match/Lineups'
 import { Momentum } from '@/components/match/Momentum'
+import { Tabs, type TabItem } from '@/components/match/Tabs'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { hasMoves, OddsTable } from '@/components/match/OddsTable'
 import { PredictBlock } from '@/components/match/PredictHero'
@@ -30,6 +31,7 @@ import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle
 import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
+import { matchNotes, momentumLine } from '@/lib/match-notes'
 import { appNow, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
@@ -39,7 +41,7 @@ import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
 
 export const dynamic = 'force-dynamic'
 
-type Props = { params: Promise<{ slug: string }> }
+type Props = { params: Promise<{ slug: string }>; searchParams?: Promise<{ tab?: string | string[] }> }
 
 const load = cache((id: number) => getMatchInsights(id))
 
@@ -73,8 +75,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 
-export default async function MatchPage({ params }: Props) {
+export default async function MatchPage({ params, searchParams }: Props) {
   const { slug } = await params
+  const rawTab = (await searchParams)?.tab
+  const tab = typeof rawTab === 'string' ? rawTab : undefined
   const id = idFromSlug(slug)
   if (!id) notFound()
   const ins = await load(id)
@@ -244,6 +248,7 @@ export default async function MatchPage({ params }: Props) {
 
   const pair = `${m.home.name} — ${m.away.name}`
   const dec1 = (n: number) => n.toFixed(1).replace('.', ',')
+  const dec2 = (n: number) => n.toFixed(2).replace('.', ',')
   const crumbs = [
     { href: '/matches', label: 'Матчи' },
     { href: leagueHref(m.league), label: leagueTitle(m.league.name) },
@@ -251,88 +256,10 @@ export default async function MatchPage({ params }: Props) {
   ]
   const h1 = m.status === 'finished' ? `${pair}: результат матча` : m.status === 'live' ? `${pair}: матч онлайн` : `Прогноз на матч ${pair}`
 
-  return (
+
+  // ─── Разделы страницы: собираем по вкладкам ниже ───
+  const sec_tags = (
     <>
-      {/* от xl — без общей подложки центра, как на главной: каждый раздел — своя панель, зазор 8px (владелец: «там блоки
-          в блоке на странице матча»; правила — .bare-match в app/globals.css) */}
-      <span hidden className="bare-match" />
-      {/* верх страницы — одна закреплённая панель: «←», крошки, а когда табло уехало — мини-табло на том же месте */}
-      {/* крошки — для поисковиков (BreadcrumbList); на экране «назад» — полоса `MatchBar` (телефон) и капсула в табло */}
-      <Breadcrumbs chip className="hidden" items={crumbs} />
-      <MatchBar
-        back={leagueHref(m.league)}
-        backLabel={leagueTitle(m.league.name)}
-        home={{ name: m.home.name, logo: m.home.logo ?? null }}
-        away={{ name: m.away.name, logo: m.away.logo ?? null }}
-        center={m.score && m.status !== 'scheduled' ? `${m.score.home} : ${m.score.away}` : formatTime(m.ts)}
-        minute={isLive ? { text: m.elapsed ? `${m.elapsed}′` : 'идёт', live: true } : m.status === 'finished' ? { text: 'итог', live: false } : null}
-      />
-      {/* заголовок — только для поисковиков: команды крупно на табло, видимый он третий раз повторял названия */}
-      <h1 className="sr-only">{h1}</h1>
-      {/* идёт матч — счёт, минута и live-кэфы обновляются сами */}
-      {m.status === 'live' || m.status === 'suspended' ? <LiveRefresh /> : null}
-
-      {/* табло — одно на все состояния: эмблемы, время или счёт, «Разбор за минуту»; до начала прогноз — отдельным блоком ниже
-          (владелец: «блок матча супер некрасивый» — «да»; был первым блоком «Прогноз tag.bet» с табло внутри) */}
-      <MatchHero
-        full={full}
-        cells={scheduled && (verdict || pick) ? null : cells}
-        books={cons.books}
-        line={heroLine}
-        league={crumbs[1]}
-        ctx={heroCtx}
-        attendance={ls?.attendance ?? null}
-      />
-
-      {/* .match-body — на компьютере текст крупнее (app/globals.css) */}
-      {/* между разделами 32px, а от заголовка до своей карточки 10px (`BlockTitle`): при 24 и 12 заголовок первого раздела
-          читался подписью к табло над ним (владелец: «заголовок как будто относится к верхнему блоку») */}
-      <div className="match-body mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0 space-y-8">
-          {!scheduled && (full.events.length || full.stats.length || ls?.momentum) ? (
-            // в игре — «Сейчас в матче»: эти цифры учитывают счёт и ход игры; доматчевые блоки ниже подписаны «До матча»
-            <Section outside title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'}>
-              {/* статистика с полосами цветами клубов, под ней — удаления и незабитые пенальти (голы — на табло) */}
-              <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>
-                <div className="space-y-4 [&>*+*]:border-t [&>*+*]:border-edge [&>*+*]:pt-4">
-                  {ls?.momentum ? <Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} /> : null}
-                  <StatsBars stats={full.stats} home={m.home} away={m.away} />
-                  <EventsBlock events={full.events} home={m.home} away={m.away} />
-                </div>
-              </ClubVars>
-            </Section>
-          ) : null}
-
-          {/* составы — после начала сразу за «Ходом матча», до начала (за 90 минут, раньше их нет) — после «Прогноза» */}
-          {ls?.lineups && !scheduled ? (
-            <Section outside title="Составы">
-              <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>
-                <Lineups data={ls.lineups} home={m.home} away={m.away} />
-              </ClubVars>
-            </Section>
-          ) : null}
-
-          {/* после начала прогноза нет — подборки матча с поводами здесь (владелец: «а теги матча как?»): «В подборках», как
-              в меню, правой панели и в блоке до начала («Теги» — наше внутреннее слово); метки — колонкой одной ширины,
-              факты — ровной колонкой справа (каждая фраза начиналась сразу за своей меткой — «ёлочка»), на телефоне метка
-              над фактом; факт — короткий (`short`), без повтора метки: «#кэф упал — Победа «Хетафе»: 7.42 → 6.37 (−14%)» */}
-          {scheduled && (verdict || pick) ? (
-            <Section outside title="Прогноз" note="Оценка tag.bet, а не гарантия. Ставки — это риск · 18+">
-              <PredictBlock m={m} v={verdict} pick={pick} probs={x} tags={tags} />
-            </Section>
-          ) : null}
-
-          {ls?.lineups && scheduled ? (
-            <Section outside title="Стартовые составы">
-              <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>
-                <Lineups data={ls.lineups} home={m.home} away={m.away} />
-              </ClubVars>
-            </Section>
-          ) : null}
-
-          {/* подборки матча — вариант «А» (владелец выбрал из трёх картинок: «давай лучше пилюли сделаем вариант а»): строка —
-              пилюля с значком и названием подборки, под ней факт целиком 15px; команда в начале факта — эмблемой; вся строка —
-              ссылка на подборку, черта между строками; до начала без «Выгодных ставок» — эта ставка уже в «Прогнозе» */}
           {shownTags.length ? (
             <Section outside title="В подборках" className="!py-1.5 sm:!py-2.5">
               <ul className="divide-y divide-edge">
@@ -363,6 +290,10 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
+    </>
+  )
+  const sec_goals = (
+    <>
           {x ? (
             // владелец: «а голы и счёт как?» — шансы строками, как статистика (без «46% — до 2 голов», повторявших 54%),
             // чьи голы — названиями («1.95 : 0.85» читалось счётом с дробями), без плашек внутри карточки и без
@@ -484,6 +415,10 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
+    </>
+  )
+  const sec_chance = (
+    <>
           {chanceMoved ? (
             // справа — без «9 изменений»: число ничего не говорит и спорило с «почти не менялись», а на телефоне длинная
             // подпись сжимала заголовок в две строки
@@ -504,6 +439,10 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
+    </>
+  )
+  const sec_odds = (
+    <>
           {/* только до начала (владелец: «а коэффициенты букмекеров как?»): после — по доматчевым кэфам не поставить, а кэфы
               «сейчас» — на табло */}
           {scheduled ? (
@@ -520,6 +459,10 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
+    </>
+  )
+  const sec_form = (
+    <>
           {ins.homeForm || ins.awayForm ? (
             // цифры — по последним (до 10) матчам: выборку называем числом (было «последние матчи», а в карточке — три разные выборки)
             <Section outside title="Форма команд">
@@ -527,6 +470,10 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
+    </>
+  )
+  const sec_h2h = (
+    <>
           {ins.h2h ? (
             // сколько встреч — сразу, как в «Форме команд»
             <Section outside
@@ -536,12 +483,20 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
+    </>
+  )
+  const sec_inj = (
+    <>
           {scheduled ? (
             <Section outside title="Кадровые потери">
               <InjuriesBlock injuries={ins.injuries} home={m.home} away={m.away} />
             </Section>
           ) : null}
 
+    </>
+  )
+  const sec_table = (
+    <>
           {ins.standings ? (
             // «полностью →» справа от заголовка — нижней строкой `BlockMore`, как у остальных блоков-списков
             <Section outside title="Турнирная таблица" className="overflow-hidden">
@@ -550,6 +505,10 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
+    </>
+  )
+  const sec_preview = (
+    <>
           {/* текст для чтения и поисковиков — в конце (владелец: «а прогноз на матч как?»): пересказывает «Форму команд», «Личные
               встречи» и «Кадровые потери», которые раньше шли сразу за ним; строка была ~150 знаков — глаз терял строку;
               после начала — «Перед матчем» («Обзор матча» обещал события, а в тексте расклад до матча); ширина строки — ~75 знаков */}
@@ -585,10 +544,174 @@ export default async function MatchPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {/* оговорка — последней строкой «Прогноза» (висела отдельным абзацем между карточками); прогноза нет — отдельно */}
-          {ins.preview.length ? null : <BlockNote className="!mt-0">{disclaimer}</BlockNote>}
-        </div>
+    </>
+  )
+  const sec_predict = (
+    <>
+          {scheduled && (verdict || pick) ? (
+            <Section outside title="Прогноз" note="Оценка tag.bet, а не гарантия. Ставки — это риск · 18+">
+              <PredictBlock m={m} v={verdict} pick={pick} probs={x} tags={tags} />
+            </Section>
+          ) : null}
 
+    </>
+  )
+
+
+  const started = !scheduled && m.status !== 'postponed' && m.status !== 'cancelled'
+  const clubVars = (node: React.ReactNode) => <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>{node}</ClubVars>
+  // «Главное» — два-три вывода словами из статистики и давления (как «Главное за минуту» в прототипе владельца)
+  const notes = started
+    ? matchNotes({ home: m.home.name, away: m.away.name, score: m.score ?? null, stats: full.stats, events: full.events, momentum: ls?.momentum ?? null, live: isLive })
+    : []
+  const hasReds = full.events.some((e) => e.kind === 'red' || e.kind === 'missed-penalty')
+  const sec_notes =
+    notes.length || hasReds ? (
+      <Section outside title="Главное">
+        {notes.length ? (
+          <ul className="-my-1 divide-y divide-edge">
+            {notes.map((n) => (
+              <li key={n.title} className="py-3 first:pt-1 last:pb-1">
+                <p className="text-[16px] font-semibold leading-snug">{n.title}</p>
+                <p className="mt-1 text-[14px] leading-snug text-dim">{n.text}</p>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {/* удаления и незабитые пенальти (голы — на табло) */}
+        {hasReds ? (
+          <div className={notes.length ? 'mt-3 border-t border-edge pt-3' : ''}>
+            <EventsBlock events={full.events} home={m.home} away={m.away} reds={ls?.reds} />
+          </div>
+        ) : null}
+      </Section>
+    ) : null
+  const sec_momentum = ls?.momentum ? (
+    <Section outside title="Кто давил">
+      {clubVars(<Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} line={momentumLine(ls.momentum, m.home.name, m.away.name, isLive)} />)}
+    </Section>
+  ) : null
+  // статистика — по таймам, если они есть (в `/Games` их нет — `/Ls/GameInfo`): «Матч · 1-й тайм · 2-й тайм»
+  const sec_stats =
+    started && full.stats.length ? (
+      <Section outside title="Статистика">
+        {clubVars(
+          ls?.halves ? (
+            <Tabs
+              small
+              panelClassName="mt-5"
+              items={[
+                { key: 'all', label: 'Матч', content: <StatsBars stats={full.stats} home={m.home} away={m.away} /> },
+                { key: 'first', label: '1-й тайм', content: <StatsBars stats={ls.halves.first} home={m.home} away={m.away} /> },
+                { key: 'second', label: '2-й тайм', content: <StatsBars stats={ls.halves.second} home={m.home} away={m.away} /> },
+              ]}
+            />
+          ) : (
+            <StatsBars stats={full.stats} home={m.home} away={m.away} />
+          ),
+        )}
+      </Section>
+    ) : null
+  // составы — после начала своей вкладкой, до начала (за 90 минут, раньше их нет) — тоже
+  const sec_lineups = ls?.lineups ? (
+    <Section outside title={scheduled ? 'Стартовые составы' : 'Составы'}>
+      {clubVars(<Lineups data={ls.lineups} home={m.home} away={m.away} />)}
+    </Section>
+  ) : null
+  const hasPredict = scheduled && Boolean(verdict || pick)
+  const tabs: TabItem[] = (
+    started
+      ? [
+          { key: 'overview', label: 'Обзор', on: Boolean(sec_notes || sec_momentum || shownTags.length), content: <>{sec_notes}{sec_momentum}{sec_tags}</> },
+          { key: 'stats', label: 'Статистика', on: Boolean(sec_stats), content: sec_stats },
+          { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
+          {
+            key: 'before',
+            label: 'До матча',
+            on: Boolean(x || chanceMoved || ins.homeForm || ins.awayForm || ins.h2h || ins.standings || ins.preview.length),
+            content: <>{sec_goals}{sec_chance}{sec_form}{sec_h2h}{sec_table}{sec_preview}</>,
+          },
+        ]
+      : [
+          {
+            key: 'predict',
+            label: 'Прогноз',
+            on: Boolean(hasPredict || shownTags.length || x || chanceMoved || scheduled || ins.preview.length),
+            content: <>{sec_predict}{sec_tags}{sec_goals}{sec_chance}{sec_odds}{sec_preview}</>,
+          },
+          { key: 'teams', label: 'Команды', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings), content: <>{sec_form}{sec_h2h}{sec_inj}{sec_table}</> },
+          { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
+        ]
+  )
+    .filter((t) => t.on)
+    .map(({ key, label, content }) => ({ key, label, content }))
+  // под табло после начала — три главные цифры, как в прототипе: видны на любой вкладке
+  const quick = started
+    ? (['expectedGoals', 'totalShots', 'cornerKicks'] as const)
+        .map((k) => full.stats.find((st) => st.key === k))
+        .filter((st): st is NonNullable<typeof st> => Boolean(st))
+    : []
+
+  return (
+    <>
+      {/* от xl — без общей подложки центра, как на главной: каждый раздел — своя панель, зазор 8px (владелец: «там блоки
+          в блоке на странице матча»; правила — .bare-match в app/globals.css) */}
+      <span hidden className="bare-match" />
+      {/* верх страницы — одна закреплённая панель: «←», крошки, а когда табло уехало — мини-табло на том же месте */}
+      {/* крошки — для поисковиков (BreadcrumbList); на экране «назад» — полоса `MatchBar` (телефон) и капсула в табло */}
+      <Breadcrumbs chip className="hidden" items={crumbs} />
+      <MatchBar
+        back={leagueHref(m.league)}
+        backLabel={leagueTitle(m.league.name)}
+        home={{ name: m.home.name, logo: m.home.logo ?? null }}
+        away={{ name: m.away.name, logo: m.away.logo ?? null }}
+        center={m.score && m.status !== 'scheduled' ? `${m.score.home} : ${m.score.away}` : formatTime(m.ts)}
+        minute={isLive ? { text: m.elapsed ? `${m.elapsed}′` : 'идёт', live: true } : m.status === 'finished' ? { text: 'итог', live: false } : null}
+      />
+      {/* заголовок — только для поисковиков: команды крупно на табло, видимый он третий раз повторял названия */}
+      <h1 className="sr-only">{h1}</h1>
+      {/* идёт матч — счёт, минута и live-кэфы обновляются сами */}
+      {m.status === 'live' || m.status === 'suspended' ? <LiveRefresh /> : null}
+
+      {/* табло — одно на все состояния: эмблемы, время или счёт, «Разбор за минуту»; до начала прогноз — отдельным блоком ниже
+          (владелец: «блок матча супер некрасивый» — «да»; был первым блоком «Прогноз tag.bet» с табло внутри) */}
+      <MatchHero
+        full={full}
+        cells={scheduled && (verdict || pick) ? null : cells}
+        books={cons.books}
+        line={heroLine}
+        league={crumbs[1]}
+        ctx={heroCtx}
+        attendance={ls?.attendance ?? null}
+      />
+
+      {quick.length >= 2 ? (
+        <div className="card mt-3 grid grid-cols-3 divide-x divide-edge py-3" aria-label="Главные цифры матча">
+          {quick.map((st) => (
+            <div key={st.key} className="min-w-0 px-2 text-center">
+              <p className="num text-[18px] font-semibold leading-tight">
+                {st.key === 'expectedGoals' ? `${dec2(st.home)} : ${dec2(st.away)}` : `${st.home} : ${st.away}`}
+              </p>
+              <p className="mt-0.5 truncate text-[13px] text-dim" title={st.key === 'expectedGoals' ? 'Качество моментов (xG)' : undefined}>
+                {st.key === 'expectedGoals' ? 'Моменты (xG)' : st.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {/* .match-body — на компьютере текст крупнее (app/globals.css) */}
+      {/* между разделами 32px, а от заголовка до своей карточки 10px (`BlockTitle`): при 24 и 12 заголовок первого раздела
+          читался подписью к табло над ним (владелец: «заголовок как будто относится к верхнему блоку») */}
+      <div className="match-body mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px]">
+        {/* вкладки под табло (владелец прислал прототип страницы матча из ChatGPT: «посмотри как там сделана страница матча
+            просто и понятно» — «давай без входа делай то что ты до этого хотел»): вместо 14 разделов лентой — 2–4 вкладки;
+            всё содержимое — в разметке с сервера (поисковикам — страница целиком), выбранная — в адресе `?tab=` */}
+        <div className="min-w-0">
+          <Tabs param="tab" initial={tab} items={tabs} panelClassName="mt-6 space-y-8" />
+          {/* оговорка — последней строкой разбора; разбора нет — под вкладками */}
+          {ins.preview.length ? null : <BlockNote className="!mt-8">{disclaimer}</BlockNote>}
+        </div>
         <aside className="space-y-6 sm:space-y-8 lg:sticky lg:top-24 lg:self-start xl:static xl:space-y-6 2xl:sticky 2xl:top-[72px]">
           <section>
             {/* заголовок — над блоком, как у разделов страницы (`Section outside`) */}
