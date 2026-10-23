@@ -7,6 +7,7 @@ import { MatchBar } from '@/components/match/MatchBar'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
 import { KeyEvents, StatsBars } from '@/components/match/EventsBlock'
+import { XgTerm, XgText } from '@/components/match/Xg'
 import { Strengths } from '@/components/match/Strengths'
 import { teamPoints } from '@/lib/team-xg'
 import { ClubVars } from '@/components/match/ClubVars'
@@ -574,9 +575,11 @@ export default async function MatchPage({ params, searchParams }: Props) {
       <div className="@container">
         <ul className={`-my-1 divide-y divide-edge @3xl:grid @3xl:divide-x @3xl:divide-y-0 ${notes.length === 3 ? '@3xl:grid-cols-3' : notes.length === 2 ? '@3xl:grid-cols-2' : ''}`}>
           {notes.map((n) => (
-            <li key={n.title} className="py-3 first:pt-1 last:pb-1 @3xl:px-5 @3xl:py-1 @3xl:first:pl-0 @3xl:last:pr-0">
+            <li key={n.title} className="relative py-3 first:pt-1 last:pb-1 @3xl:px-5 @3xl:py-1 @3xl:first:pl-0 @3xl:last:pr-0">
               <p className="text-[16px] font-semibold leading-snug">{n.title}</p>
-              <p className="mt-1 text-[14px] leading-snug text-dim">{n.text}</p>
+              <p className="mt-1 text-[14px] leading-snug text-dim">
+                <XgText text={n.text} />
+              </p>
             </li>
           ))}
         </ul>
@@ -702,14 +705,20 @@ export default async function MatchPage({ params, searchParams }: Props) {
       />
 
       {quick.length >= 2 ? (
-        <div className="card mt-3 grid grid-cols-3 divide-x divide-edge py-3" aria-label="Главные цифры матча">
+        <div className="card relative mt-3 grid grid-cols-3 divide-x divide-edge py-3" aria-label="Главные цифры матча">
           {quick.map((st) => (
             <div key={st.key} className="min-w-0 px-2 text-center">
               <p className="num text-[18px] font-semibold leading-tight">
                 {st.key === 'expectedGoals' ? `${dec2(st.home)} : ${dec2(st.away)}` : `${st.home} : ${st.away}`}
               </p>
-              <p className="mt-0.5 truncate text-[13px] text-dim" title={st.key === 'expectedGoals' ? 'Качество моментов (xG)' : undefined}>
-                {st.key === 'expectedGoals' ? 'Моменты (xG)' : st.label}
+              <p className="mt-0.5 truncate text-[13px] text-dim">
+                {st.key === 'expectedGoals' ? (
+                  <>
+                    Моменты (<XgTerm />)
+                  </>
+                ) : (
+                  st.label
+                )}
               </p>
             </div>
           ))}

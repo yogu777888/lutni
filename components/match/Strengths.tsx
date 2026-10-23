@@ -1,5 +1,6 @@
 import type { TeamPoints, Point } from '@/lib/team-xg'
 import { TeamLogo } from '../TeamLogo'
+import { XgText } from './Xg'
 
 type Side = { name: string; logo?: string | null }
 
@@ -8,7 +9,7 @@ function Row({ label, p }: { label: string; p: Point }) {
     <div>
       <p className="text-[13px] text-mute">{label}</p>
       <p className="mt-0.5 text-[16px] font-semibold leading-snug">{p.title}</p>
-      <p className="mt-0.5 text-[14px] leading-snug text-dim">{p.text}</p>
+      <p className="mt-0.5 text-[14px] leading-snug text-dim"><XgText text={p.text} /></p>
     </div>
   )
 }
@@ -19,7 +20,7 @@ function Row({ label, p }: { label: string; p: Point }) {
  */
 export function Strengths({ home, away, points }: { home: Side; away: Side; points: { home: TeamPoints; away: TeamPoints } }) {
   const col = (s: Side, t: TeamPoints) => (
-    <div className="space-y-3.5 py-4 first:pt-0 last:pb-0 @3xl:py-0 @3xl:first:pr-6 @3xl:last:pl-6">
+    <div className="relative space-y-3.5 py-4 first:pt-0 last:pb-0 @3xl:py-0 @3xl:first:pr-6 @3xl:last:pl-6">
       <div className="flex items-center gap-2.5">
         <TeamLogo name={s.name} src={s.logo ?? null} size={28} />
         <span className="min-w-0 truncate text-[16px] font-semibold">{s.name}</span>

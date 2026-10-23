@@ -2,6 +2,7 @@ import type { LsRed } from '@/lib/sstats/ls'
 import type { MatchEvent, StatPair } from '@/lib/types'
 import { visibleStats } from '@/lib/sstats/normalize'
 import { Hint } from './Hint'
+import { XG_HINT } from './Xg'
 import { TeamLogo } from '../TeamLogo'
 
 type Side = { name: string; logo?: string | null }
@@ -10,7 +11,7 @@ const GOALS = new Set<MatchEvent['kind']>(['goal', 'own-goal', 'penalty'])
 
 /** Подсказки к непонятным строкам статистики (xG словами — владелец: на странице жаргон убрали). */
 const HINT: Record<string, string> = {
-  expectedGoals: 'Сколько голов обычно забивают с таких моментов: чем больше, тем опаснее атаки. Например, 1.33 — в среднем чуть больше гола.',
+  expectedGoals: XG_HINT,
 }
 
 type Flow = MatchEvent & { score: string | null }
