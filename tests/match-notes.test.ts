@@ -9,7 +9,7 @@ describe('«Главное» словами', () => {
   it('опаснее по моментам, но уступает — первым', () => {
     const n = matchNotes({ ...base, score: { home: 2, away: 1 }, stats: [st('expectedGoals', 0.78, 1.89), st('totalShots', 8, 15)] })
     expect(n[0].title).toBe('«Челси» опаснее, но уступает')
-    expect(n[0].text).toContain('1,89 против 0,78')
+    expect(n[0].text).toBe('По моментам перевес — xG\u00a01,89 против 0,78, а на табло 2:1.')
   })
 
   it('ничего яркого — пусто', () => {
@@ -33,13 +33,13 @@ describe('«Главное» словами', () => {
 describe('сильное и слабое место — сегодня', () => {
   const pts = {
     home: { strong: null, weak: null, byXg: true },
-    away: { strong: null, weak: { key: 'finish-' as const, title: 'Не реализует моменты', text: 'Последние 4 матча: забивает 0,8 за игру при xG 1,4.' }, byXg: true },
+    away: { strong: null, weak: { key: 'finish-' as const, title: 'Не реализует моменты', text: '', xg: { n: 4, xgFor: 1.4, xgAgainst: 1.1, gf: 0.8, ga: 1 } }, byXg: true },
   }
   it('повторилось — строка «снова», обычная про реализацию не дублируется', () => {
     const n = matchNotes({ ...base, score: { home: 1, away: 0 }, stats: [st('expectedGoals', 0.9, 1.6), st('bigChances', 1, 4)], points: pts, minute: 70 })
     expect(n.map((x) => x.title)).toContain('«Челси» снова не реализует моменты')
     expect(n.map((x) => x.title)).not.toContain('«Челси» не реализует моменты')
-    expect(n.find((x) => x.title.includes('снова'))!.text).toBe('Сегодня xG 1,60, голов — 0. Последние 4 матча: забивает 0,8 за игру при xG 1,4.')
+    expect(n.find((x) => x.title.includes('снова'))!.text).toBe('Сегодня xG\u00a01,60, а голов нет. И в последних 4 матчах забивает 0,8 за игру при xG\u00a01,4.')
   })
   it('не повторилось — ничего', () => {
     const n = matchNotes({ ...base, score: { home: 0, away: 2 }, stats: [st('expectedGoals', 0.9, 1.6)], points: pts, minute: 70 })

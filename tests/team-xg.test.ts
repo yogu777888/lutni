@@ -15,7 +15,7 @@ describe('сильное и слабое место', () => {
     expect(p.byXg).toBe(true)
     expect(p.strong?.title).toBe('Создаёт много моментов')
     expect(p.weak?.title).toBe('Не реализует моменты')
-    expect(p.weak?.text).toBe('Последние 3 матча: забивает 1,0 за игру при xG\u00a02,1.')
+    expect(p.weak?.text).toBe('В последних 3 матчах забивает 1,0 за игру при xG\u00a02,1.')
   })
 
   it('средняя команда — ни сильного, ни слабого', () => {

@@ -5,7 +5,7 @@
  */
 import type { MomentumPoint } from './sstats/ls'
 import type { MatchEvent, StatPair } from './types'
-import type { Point, TeamPoints } from './team-xg'
+import { lastN, type Point, type TeamPoints } from './team-xg'
 
 export type MatchNote = { title: string; text: string }
 
@@ -24,6 +24,12 @@ type Ctx = {
 }
 
 const dec = (v: number, d = 2) => v.toFixed(d).replace('.', ',')
+const plural = (n: number, one: string, few: string, many: string) => {
+  const a = n % 10
+  const b = n % 100
+  return a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many
+}
+const goalsW = (n: number) => `${n}\u00a0${plural(n, 'гол', 'гола', 'голов')}`
 
 /** Давление за последние 10 минут: > 0 — хозяева, < 0 — гости. */
 export function lateMomentum(points: MomentumPoint[] | null, n = 10): number | null {
@@ -52,21 +58,44 @@ function historyNote(side: 'home' | 'away', p: Point, c: Ctx, xg: StatPair, sc: 
   const theirs = xg[other]
   const goals = sc[side]
   const late = !c.live || (c.minute ?? 0) >= 60
-  const was = `${p.text.replace(/\.$/, '')}.`
-  const today = (t: string) => `${c.live ? 'Сегодня' : 'В этом матче'} ${t}. ${was}`
+  const h = p.xg
+  if (!h) return null
+  // «Сегодня xG 1,90 — в последних 5 матчах в среднем 2,0 за игру.»: сначала сегодняшнее, потом прошлое — одной фразой
+  const now = c.live ? 'Сегодня' : 'В этом матче'
+  const already = c.live ? 'уже ' : ''
+  const past = lastN(h.n).replace(/^В/, 'в')
+  const d1 = (v: number) => dec(v, 1)
   switch (p.key) {
     case 'finish-':
-      return mine >= 1 && goals <= mine - 0.8 ? { title: `«${name}» снова не реализует моменты`, text: today(`xG\u00a0${dec(mine)}, голов — ${goals}`) } : null
+      return mine >= 1 && goals <= mine - 0.8
+        ? {
+            title: `«${name}» снова не реализует моменты`,
+            text: `${now} xG\u00a0${dec(mine)}, а ${goals ? `забит только ${goalsW(goals)}` : 'голов нет'}. И ${past} забивает ${d1(h.gf)} за игру при xG\u00a0${d1(h.xgFor)}.`,
+          }
+        : null
     case 'finish+':
-      return goals >= 2 && goals >= mine + 0.8 ? { title: `«${name}» снова забивает больше, чем создаёт`, text: today(`${goals} при xG\u00a0${dec(mine)}`) } : null
+      return goals >= 2 && goals >= mine + 0.8
+        ? {
+            title: `«${name}» снова забивает больше, чем создаёт`,
+            text: `${now} ${goalsW(goals)} при xG\u00a0${dec(mine)}. И ${past} — ${d1(h.gf)} за игру при xG\u00a0${d1(h.xgFor)}.`,
+          }
+        : null
     case 'attack+':
-      return mine >= 1.5 ? { title: `«${name}», как обычно, создаёт много моментов`, text: today(`уже xG\u00a0${dec(mine)}`) } : null
+      return mine >= 1.5
+        ? { title: `«${name}», как обычно, создаёт много моментов`, text: `${now} ${already}xG\u00a0${dec(mine)}, ${past} — в среднем ${d1(h.xgFor)} за игру.` }
+        : null
     case 'attack-':
-      return late && mine <= 0.5 ? { title: `«${name}» снова почти без моментов`, text: today(`xG\u00a0${dec(mine)}`) } : null
+      return late && mine <= 0.5
+        ? { title: `«${name}» снова почти без моментов`, text: `${now} xG\u00a0${dec(mine)}, ${past} — в среднем ${d1(h.xgFor)} за игру.` }
+        : null
     case 'defense+':
-      return late && theirs <= 0.5 ? { title: `«${name}», как обычно, почти не даёт бить`, text: today(`у соперника xG\u00a0${dec(theirs)}`) } : null
+      return late && theirs <= 0.5
+        ? { title: `«${name}», как обычно, почти не даёт бить`, text: `${now} у соперника xG\u00a0${dec(theirs)}, ${past} у соперников — в среднем ${d1(h.xgAgainst)}.` }
+        : null
     case 'defense-':
-      return theirs >= 1.5 ? { title: `«${name}» снова отдаёт много моментов`, text: today(`у соперника уже xG\u00a0${dec(theirs)}`) } : null
+      return theirs >= 1.5
+        ? { title: `«${name}» снова отдаёт много моментов`, text: `${now} у соперника ${already}xG\u00a0${dec(theirs)}, ${past} у соперников — в среднем ${d1(h.xgAgainst)}.` }
+        : null
     default:
       return null
   }
@@ -103,13 +132,13 @@ export function matchNotes(c: Ctx): MatchNote[] {
         p: 10,
         n: {
           title: `«${name(top)}» опаснее, но ${mine < theirs ? 'уступает' : 'не впереди'}`,
-          text: `Качество моментов (xG) — ${dec(a)} против ${dec(b)}, а в счёте ${mine}:${theirs}.`,
+          text: `По моментам перевес — xG\u00a0${dec(a)} против ${dec(b)}, а на табло ${sc.home}:${sc.away}.`,
         },
       })
     else
       out.push({
         p: 6,
-        n: { title: `«${name(top)}» ведёт по делу`, text: `Качество моментов (xG) — ${dec(a)} против ${dec(b)}.` },
+        n: { title: `«${name(top)}» ведёт по делу`, text: `По моментам тоже впереди — xG\u00a0${dec(a)} против ${dec(b)}.` },
       })
   }
 
@@ -120,7 +149,13 @@ export function matchNotes(c: Ctx): MatchNote[] {
       const ch = big[side]
       const g = sc[side]
       if (ch >= 3 && ch - g >= 3 && !repeated.has(`${side}:finish-`))
-        out.push({ p: 8, n: { title: `«${name(side)}» не реализует моменты`, text: `Голевых моментов — ${ch}, голов — ${g}.` } })
+        out.push({
+          p: 8,
+          n: {
+            title: `«${name(side)}» не реализует моменты`,
+            text: `${ch} ${plural(ch, 'голевой момент', 'голевых момента', 'голевых моментов')}, а ${g ? `забит только ${goalsW(g)}` : c.live ? 'гола пока нет' : 'гола так и не было'}.`,
+          },
+        })
     }
 
   // 3. давление в концовке (только по ходу и в сыгранном — концовка)
@@ -130,18 +165,24 @@ export function matchNotes(c: Ctx): MatchNote[] {
     out.push({
       p: c.live ? 9 : 4,
       n: c.live
-        ? { title: `«${name(side)}» давит последние 10 минут`, text: 'По графику «Кто давил»: атаки этой команды опаснее и чаще.' }
-        : { title: `Концовка — за «${name(side)}»`, text: 'По графику «Кто давил» за последние 10 минут.' },
+        ? { title: `«${name(side)}» давит последние 10 минут`, text: 'Атакует чаще и опаснее соперника — это видно на графике «Кто давил».' }
+        : { title: `Концовка — за «${name(side)}»`, text: 'В последние 10 минут атаковали чаще и опаснее — это видно на графике «Кто давил».' },
     })
   }
 
-  // 4. удаление — команда в меньшинстве (по ходу) / доиграла вдесятером
+  // 4. удаление — команда в меньшинстве: сколько играть (по ходу) / сколько доигрывали вдесятером
+  const left = (m: number) => {
+    const n = Math.max(0, 90 - (c.live ? Math.max(m, c.minute ?? m) : m))
+    if (n < 3) return 'Это уже в самой концовке.'
+    const mins = `${n}\u00a0${plural(n, 'минуту', 'минуты', 'минут')}`
+    return c.live ? `Вдесятером — ещё ${mins} основного времени.` : `Вдесятером доигрывали ${mins} с лишним.`
+  }
   for (const e of c.events.filter((x) => x.kind === 'red')) {
     out.push({
       p: c.live ? 11 : 5,
       n: {
-        title: c.live ? `«${name(e.side)}» в меньшинстве с ${e.minute}′` : `В меньшинстве доигрывали: «${name(e.side)}»`,
-        text: `${e.player ? `${e.player} удалён` : 'Удаление'} на ${e.minute}′.`,
+        title: `«${name(e.side)}» в меньшинстве с ${e.minute}′`,
+        text: `${e.player ? `Удалён ${e.player}. ` : ''}${left(e.minute)}`,
       },
     })
   }
@@ -152,14 +193,14 @@ export function matchNotes(c: Ctx): MatchNote[] {
     const side = shots.home > shots.away ? 'home' : 'away'
     const a = shots[side]
     const b = shots[side === 'home' ? 'away' : 'home']
-    if (a >= b * 2) out.push({ p: 7, n: { title: `«${name(side)}» бьёт вдвое чаще`, text: `Ударов — ${a} против ${b}.` } })
+    if (a >= b * 2) out.push({ p: 7, n: { title: `«${name(side)}» бьёт вдвое чаще`, text: `${a} ${plural(a, 'удар', 'удара', 'ударов')} против ${b} у соперника.` } })
   }
 
   // 6. владение: заметный перевес
   const poss = get('ballPossession')
   if (poss && Math.max(poss.home, poss.away) >= 62) {
     const side = poss.home > poss.away ? 'home' : 'away'
-    out.push({ p: 3, n: { title: `Больше владеет мячом «${name(side)}»`, text: `Владение — ${poss[side]}%.` } })
+    out.push({ p: 3, n: { title: `Мяч чаще у «${name(side)}»`, text: `Владение — ${poss[side]}% на ${poss[side === 'home' ? 'away' : 'home']}%.` } })
   }
 
   return out
