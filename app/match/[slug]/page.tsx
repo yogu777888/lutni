@@ -652,9 +652,9 @@ export default async function MatchPage({ params, searchParams }: Props) {
             key: 'predict',
             label: 'Прогноз',
             on: Boolean(hasPredict || shownTags.length || x || chanceMoved || scheduled || ins.preview.length),
-            content: <>{sec_predict}{sec_tags}{sec_goals}{sec_chance}{sec_odds}{sec_preview}</>,
+            content: <>{sec_predict}{sec_points}{sec_tags}{sec_goals}{sec_chance}{sec_odds}{sec_preview}</>,
           },
-          { key: 'teams', label: 'Команды', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings), content: <>{sec_form}{sec_points}{sec_h2h}{sec_inj}{sec_table}</> },
+          { key: 'teams', label: 'Команды', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings), content: <>{sec_form}{sec_h2h}{sec_inj}{sec_table}</> },
           { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
         ]
   )
