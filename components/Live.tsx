@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react'
  * перезагрузки, карусель, прокрутка и открытые сторис остаются на месте. Только пока вкладка на экране; вернулись
  * на вкладку — обновляем сразу. Данные кэширует наш слой (lib/data.ts), так что лишних запросов к API нет.
  */
-export function LiveRefresh({ every = 30_000 }: { every?: number }) {
+export function LiveRefresh({ every = 60_000 }: { every?: number }) {
   const router = useRouter()
   useEffect(() => {
     let t: number | undefined

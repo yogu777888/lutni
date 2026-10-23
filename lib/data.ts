@@ -52,7 +52,7 @@ const byTime = (a: Match, b: Match) => a.ts - b.ts || a.id - b.id
 function matchTtl(m: Match | null | undefined): CacheOptions {
   if (!m) return { ttl: 300, stale: 600 }
   const now = appNow()
-  if (m.status === 'live' || m.status === 'suspended') return { ttl: 45, stale: 90 }
+  if (m.status === 'live' || m.status === 'suspended') return { ttl: 60, stale: 120 }
   if (m.status === 'scheduled') {
     const until = m.ts - now
     if (until < 0) return { ttl: 60, stale: 120 } // вот-вот начнётся
@@ -216,12 +216,12 @@ export async function getPariDay(ymd: string, opts: Opts = {}): Promise<PariMatc
   )
 }
 
-/** Идущие матчи PARI с текущими live-кэфами (1 запрос на всех, обновление раз в 30 с). */
+/** Идущие матчи PARI с текущими live-кэфами (1 запрос на всех, обновление раз в минуту). */
 export async function getPariLive(opts: Opts = {}): Promise<PariMatch[]> {
   return cache.get(
     'pari:live',
     async () => pariList(await apiGet<RawPariMatch[]>('/Pari/matches', { live: true, includeOdds: true, limit: 200 }, opts)),
-    { ttl: 30, stale: 120 },
+    { ttl: 60, stale: 120 },
     false,
   )
 }
@@ -308,7 +308,11 @@ export async function getLsExtra(m: Match, have: Set<string>, opts: Opts = {}): 
   if (!started && !soon) return null
   const id = await getLsId(m, opts)
   if (!id) return null
-  const ttl = matchTtl(m)
+  // по ходу матча — реже, чем счёт (владелец: «чуть более редко обновлялось … чтоб не нагружать апи»): давление и
+  // статистика `/Ls/*` — раз в 2 минуты, составы (замены, оценки) — раз в 5; счёт из `/Games` — по `matchTtl`
+  const isLive = m.status === 'live' || m.status === 'suspended'
+  const ttl = isLive ? { ttl: 120, stale: 240 } : matchTtl(m)
+  const lineupTtl = isLive ? { ttl: 300, stale: 600 } : ttl
   const [info, lineups, momentum] = await Promise.all([
     // в ответе ~100 КБ (события с комментариями, кэфы) — храним только нужное
     started
@@ -339,7 +343,7 @@ export async function getLsExtra(m: Match, have: Set<string>, opts: Opts = {}): 
           null,
         )
       : null,
-    settle(cache.get(`ls-lineups:v2:${id}`, async () => normalizeLineups(await apiGet<RawLsLineups>('/Ls/GameLineups', { id }, opts)), ttl), null),
+    settle(cache.get(`ls-lineups:v2:${id}`, async () => normalizeLineups(await apiGet<RawLsLineups>('/Ls/GameLineups', { id }, opts)), lineupTtl), null),
     started ? settle(cache.get(`ls-momentum:${id}`, async () => normalizeMomentum(await apiGet<RawLsMomentum>('/Ls/GameMomentum', { id }, opts)), ttl), null) : null,
   ])
   return {
