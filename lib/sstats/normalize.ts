@@ -215,7 +215,7 @@ export function normalizeGame(g: RawGame, tzOffset: number): Match {
 
 const STAT_FIELDS: [string, string, string?][] = [
   ['ballPossession', 'Владение мячом', '%'],
-  ['expectedGoals', 'Качество моментов'],
+  ['expectedGoals', 'Ожидаемые голы (xG)'],
   ['totalShots', 'Удары'],
   ['shotsOnGoal', 'Удары в створ'],
   ['bigChances', 'Голевые моменты'],

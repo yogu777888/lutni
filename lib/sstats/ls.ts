@@ -235,7 +235,7 @@ export function lsStats(info: RawLsInfo | null | undefined, have: Set<string>): 
     const h = val(m, 'home', f.key === 'ballPossession')
     const a = val(m, 'away', f.key === 'ballPossession')
     if (h === null || a === null) continue
-    const label = { expectedGoals: 'Качество моментов', bigChances: 'Голевые моменты', ballPossession: 'Владение мячом' }[f.key]!
+    const label = { expectedGoals: 'Ожидаемые голы (xG)', bigChances: 'Голевые моменты', ballPossession: 'Владение мячом' }[f.key]!
     out.push({ key: f.key, label, home: h, away: a, suffix: f.key === 'ballPossession' ? '%' : undefined })
   }
   for (const f of LS_STATS) {
@@ -260,7 +260,7 @@ const PERIOD_STATS: { id: string; key: string; label: string; pct?: boolean }[] 
   { id: '461', key: 'shotsInsideBox', label: 'Удары из штрафной' },
   { id: '457', key: 'hitWoodwork', label: 'Попадания в каркас ворот' },
   { id: '459', key: 'bigChances', label: 'Голевые моменты' },
-  { id: '432', key: 'expectedGoals', label: 'Качество моментов' },
+  { id: '432', key: 'expectedGoals', label: 'Ожидаемые голы (xG)' },
   { id: '342', key: 'passAccuracy', label: 'Точность передач', pct: true },
   { id: '16', key: 'cornerKicks', label: 'Угловые' },
   { id: '21', key: 'fouls', label: 'Фолы' },

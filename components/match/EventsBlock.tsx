@@ -2,17 +2,15 @@ import type { LsRed } from '@/lib/sstats/ls'
 import type { MatchEvent, StatPair } from '@/lib/types'
 import { visibleStats } from '@/lib/sstats/normalize'
 import { Hint } from './Hint'
-import { XG_HINT } from './Xg'
+import { XgTerm } from './Xg'
 import { TeamLogo } from '../TeamLogo'
 
 type Side = { name: string; logo?: string | null }
 
 const GOALS = new Set<MatchEvent['kind']>(['goal', 'own-goal', 'penalty'])
 
-/** Подсказки к непонятным строкам статистики (xG словами — владелец: на странице жаргон убрали). */
-const HINT: Record<string, string> = {
-  expectedGoals: XG_HINT,
-}
+/** Подсказки к непонятным строкам статистики (у xG — своя метка «xG ⓘ», `XgTerm`). */
+const HINT: Record<string, string> = {}
 
 type Flow = MatchEvent & { score: string | null }
 
@@ -132,7 +130,7 @@ export function KeyEvents({ events, home, away, final, reds = [] }: { events: Ma
 const HIDE = new Set(['totalPasses', 'goalkeeperSaves'])
 
 /**
- * Порядок строк: сначала понятное — кто давит (владение, удары, в створ, голевые моменты), «Качество моментов» (дробь
+ * Порядок строк: сначала понятное — кто давит (владение, удары, в створ, голевые моменты), «Ожидаемые голы xG» (дробь
  * с ⓘ) — после них, дальше угловые, фолы, карточки, офсайды. От md это и есть две колонки: игра / стандарты и карточки.
  */
 // shotsInsideBox, hitWoodwork, passAccuracy — из `/Ls/GameInfo` (`lsStats` в lib/sstats/ls.ts)
@@ -152,7 +150,7 @@ export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home:
     .filter((s) => !HIDE.has(s.key))
     .sort((a, b) => rank(a.key) - rank(b.key))
   if (!stats.length) return <p className="text-sm text-dim">Статистика появится по ходу матча.</p>
-  const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2))
+  const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ','))
   const team = (t: Side, right: boolean) => (
     <span className={`flex min-w-0 items-center gap-2.5 ${right ? 'flex-row-reverse text-right' : ''}`}>
       <TeamLogo name={t.name} src={t.logo ?? null} size={28} />
@@ -181,8 +179,18 @@ export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home:
               <div className="flex items-baseline justify-between gap-3">
                 {num(s.home, s.away)}
                 <span className="min-w-0 truncate text-center text-[14px] text-dim">
-                  {s.label}
-                  {HINT[s.key] ? <Hint title={s.label} text={HINT[s.key]} /> : null}
+                  {/* xG — «Ожидаемые голы xG ⓘ» (было «Качество моментов» — владелец не узнал в нём xG); подпись — здесь, а не из
+                      данных: у сыгранных матчей в кэше лежит старая */}
+                  {s.key === 'expectedGoals' ? (
+                    <>
+                      Ожидаемые голы <XgTerm />
+                    </>
+                  ) : (
+                    <>
+                      {s.label}
+                      {HINT[s.key] ? <Hint title={s.label} text={HINT[s.key]} /> : null}
+                    </>
+                  )}
                 </span>
                 {num(s.away, s.home)}
               </div>
