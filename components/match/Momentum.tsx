@@ -14,13 +14,16 @@ const plural = (n: number, one: string, few: string, many: string) => {
   return a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many
 }
 const mins = (n: number) => `${n} мин`
-/** «15–19′» → «15′–19′»: минута у обеих границ, иначе «15» читается числом */
-const span = (x: string | null) => (x ? x.replace('–', '′–') : '—')
+/** «15–19′» → «с 15-й по 19-ю минуту»; с добавленным временем — «на 45+1′–45+5′» */
+const spanText = (x: string) => {
+  const [a, b] = x.replace('′', '').split('–')
+  return a.includes('+') || b.includes('+') ? `на ${a}′–${b}′` : `с ${a}-й по ${b}-ю минуту`
+}
 
 /**
- * «Кто давил» (заголовок — у раздела) — давление по минутам из `/Ls/GameMomentum` (владелец: «виджет давление команд
+ * «Давление команд» (было «Кто давил»; заголовок — у раздела) — давление по минутам из `/Ls/GameMomentum` (владелец: «виджет давление команд
  * некрасивый и не информативный и в плане текста какаято бурмалда написана»). Сверху — строки, как в статистике:
- * «Минут с перевесом», «Сильнее всего давил» (5 минут подряд), «Последние 10 минут» — «7 из 10» (`momentumSummary`).
+ * «Сколько минут давила команда» с полосой и «ещё 8 мин — на равных», ниже фразами — самый сильный натиск и последние 10 минут (`momentumSummary`).
  * Ниже график по настоящей шкале: тайм — 45 минут (по ходу второй тайм дорисован пустым до 90′, «сейчас» — чертой),
  * столбик вверх — давит хозяин, вниз — гость, цветом клуба (`ClubVars` → `.club-bar-h/-a`); слева шкала силы давления
  * (100% — самый сильный натиск; владелец: «почему слева шкалы в процентах нет?»); гол — метка «эмблема 17′» над графиком
@@ -90,6 +93,12 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
   )
   // лучший отрезок: сравниваем силу не словами — у кого он есть, тот и белым
   const sp = sum.spell
+  const even = Math.max(0, points.length - sum.minutes.home - sum.minutes.away)
+  const spells = [sp.home ? `«${home.name}» — ${spanText(sp.home)}` : null, sp.away ? `«${away.name}» — ${spanText(sp.away)}` : null].filter(Boolean)
+  const spellText = spells.length ? `Самый сильный натиск: ${spells.join(', ')}.` : null
+  const lateText = sum.late
+    ? `${live ? 'Последние 10 минут' : 'Концовка, последние 10 минут'}: «${home.name}» — ${mins(sum.late.home)} с перевесом, «${away.name}» — ${mins(sum.late.away)}.`
+    : null
 
   return (
     <div>
@@ -97,13 +106,18 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
         {team(home, false)}
         {team(away, true)}
       </div>
-      <ul className="mb-4">
-        {row('Минут с перевесом', mins(sum.minutes.home), mins(sum.minutes.away), sum.minutes.home, sum.minutes.away, true)}
-        {sp.home || sp.away ? row('Сильнее всего давил', span(sp.home), span(sp.away), sp.home ? 1 : 0, sp.away ? 1 : 0) : null}
-        {sum.late
-          ? row(live ? 'Последние 10 минут' : 'Концовка, 10 минут', `${sum.late.home} из 10`, `${sum.late.away} из 10`, sum.late.home, sum.late.away)
-          : null}
-      </ul>
+      {/* сколько минут давила каждая, сколько — на равных: числа складываются в сыгранное время */}
+      <ul>{row('Сколько минут давила команда', mins(sum.minutes.home), mins(sum.minutes.away), sum.minutes.home, sum.minutes.away, true)}</ul>
+      {/* «всего N мин» не пишем: с добавленным временем выходило «всего 61» при «сейчас 59′» */}
+      {even > 0 ? <p className="-mt-1 text-center text-[13px] text-mute">ещё {mins(even)} — на равных</p> : null}
+      {/* остальное — фразами: «15–19′» и «7 из 10» без слов были непонятны */}
+      {spellText || lateText ? (
+        <ul className="mt-3.5 space-y-1.5 border-t border-edge pt-3.5 text-[14px] leading-snug text-dim">
+          {spellText ? <li>{spellText}</li> : null}
+          {lateText ? <li>{lateText}</li> : null}
+        </ul>
+      ) : null}
+      <div className="mb-4" />
 
       <div
         className="relative touch-pan-y select-none"

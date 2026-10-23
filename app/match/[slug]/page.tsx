@@ -606,7 +606,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
     </Section>
   ) : null
   const sec_momentum = ls?.momentum ? (
-    <Section outside title="Кто давил" note={`Столбик — минута матча: вверх — давит «${m.home.name}», вниз — «${m.away.name}». Высота — сила давления: 100% — самый сильный натиск. Перевес — минуты, когда команда атакует чаще и опаснее соперника.`}>
+    <Section outside title="Давление команд" note={`Давит та команда, что в эту минуту атакует чаще и опаснее соперника. Столбик — минута матча: вверх — давит «${m.home.name}», вниз — «${m.away.name}». Высота — сила давления: 100% — самый сильный натиск.`}>
       {clubVars(<Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} live={isLive} />)}
     </Section>
   ) : null
