@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { matchNotes, momentumLine } from '../lib/match-notes'
+import { matchNotes, momentumSummary } from '../lib/match-notes'
 import type { MatchEvent, StatPair } from '../lib/types'
 
 const st = (key: string, home: number, away: number): StatPair => ({ key, label: key, home, away })
@@ -26,7 +26,7 @@ describe('«Главное» словами', () => {
     })
     expect(n).toHaveLength(3)
     expect(n.map((x) => x.title)).toContain('«Арсенал» давит последние 10 минут')
-    expect(momentumLine(momentum, 'Арсенал', 'Челси', false)).toBe('Концовка — за «Арсенал».')
+    expect(momentumSummary(momentum)).toEqual({ minutes: { home: 10, away: 10 }, spell: { home: '60–64′', away: null }, late: { home: 10, away: 0 } })
   })
 })
 

@@ -34,7 +34,7 @@ import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle
 import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
-import { matchNotes, momentumLine } from '@/lib/match-notes'
+import { matchNotes } from '@/lib/match-notes'
 import { appNow, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
@@ -606,8 +606,8 @@ export default async function MatchPage({ params, searchParams }: Props) {
     </Section>
   ) : null
   const sec_momentum = ls?.momentum ? (
-    <Section outside title="Кто давил">
-      {clubVars(<Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} line={momentumLine(ls.momentum, m.home.name, m.away.name, isLive)} />)}
+    <Section outside title="Кто давил" note={`Перевес — минуты, когда команда атакует чаще и опаснее соперника. Столбик вверх — давит «${m.home.name}», вниз — «${m.away.name}».`}>
+      {clubVars(<Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} live={isLive} />)}
     </Section>
   ) : null
   // статистика — по таймам, если они есть (в `/Games` их нет — `/Ls/GameInfo`): «Матч · 1-й тайм · 2-й тайм»

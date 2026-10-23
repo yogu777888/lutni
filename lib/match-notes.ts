@@ -3,7 +3,7 @@
  * прототип ChatGPT с «Главным за минуту»: «давай без входа делай то что ты до этого хотел»). Только то, что видно в
  * цифрах, без советов и прогнозов; названия команд — в именительном падеже, в кавычках; глаголы — в настоящем времени (род у названий разный: «Челси», «Ман Сити»).
  */
-import type { MomentumPoint } from './sstats/ls'
+import { minuteLabel, type MomentumPoint } from './sstats/ls'
 import type { MatchEvent, StatPair } from './types'
 import { lastN, type Point, type TeamPoints } from './team-xg'
 
@@ -38,13 +38,40 @@ export function lateMomentum(points: MomentumPoint[] | null, n = 10): number | n
   return tail.reduce((a, p) => a + p.v, 0) / tail.length
 }
 
-/** Подпись под графиком «Кто давил»: кто сильнее в последние 10 минут (по ходу) или в концовке (сыгран). */
-export function momentumLine(points: MomentumPoint[] | null, home: string, away: string, live: boolean): string | null {
-  const v = lateMomentum(points)
-  if (v == null) return null
-  if (Math.abs(v) < 0.15) return live ? 'Последние 10 минут — на равных.' : 'Концовка — на равных.'
-  const who = v > 0 ? home : away
-  return live ? `Последние 10 минут давит «${who}».` : `Концовка — за «${who}».`
+/** Минута давления «за» команду: точка, где перевес заметный (`|v| ≥ 0.1`), — меньшие колебания считаем равной игрой. */
+const PRESS = 0.1
+
+export type MomentumSummary = {
+  /** сколько минут перевес у каждой команды */
+  minutes: { home: number; away: number }
+  /** лучший отрезок команды — «21–25′» (5 минут подряд с самым сильным давлением), нет заметного — null */
+  spell: { home: string | null; away: string | null }
+  /** последние 10 минут (по ходу) / концовка (сыгран): минуты с перевесом */
+  late: { home: number; away: number } | null
+}
+
+/**
+ * Цифры над графиком «Кто давил» (владелец: «виджет давление команд некрасивый и не информативный и в плане текста
+ * какаято бурмалда написана»): вместо фразы и легенды — строки, как в статистике, у каждой команды своё число.
+ */
+export function momentumSummary(points: MomentumPoint[]): MomentumSummary {
+  const count = (xs: MomentumPoint[]) => ({ home: xs.filter((p) => p.v >= PRESS).length, away: xs.filter((p) => p.v <= -PRESS).length })
+  const spell = (sign: 1 | -1) => {
+    let best: { avg: number; from: MomentumPoint; to: MomentumPoint } | null = null
+    for (let i = 0; i + 5 <= points.length; i++) {
+      const w = points.slice(i, i + 5)
+      if (w[0].part !== w[4].part) continue
+      const avg = (w.reduce((a, p) => a + p.v, 0) / 5) * sign
+      if (!best || avg > best.avg) best = { avg, from: w[0], to: w[4] }
+    }
+    if (!best || best.avg < 0.3) return null
+    return `${minuteLabel(best.from).replace('′', '')}–${minuteLabel(best.to)}`
+  }
+  return {
+    minutes: count(points),
+    spell: { home: spell(1), away: spell(-1) },
+    late: points.length >= 20 ? count(points.slice(-10)) : null,
+  }
 }
 
 /**
