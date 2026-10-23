@@ -14,14 +14,17 @@ const plural = (n: number, one: string, few: string, many: string) => {
   return a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many
 }
 const mins = (n: number) => `${n} мин`
+/** «15–19′» → «15′–19′»: минута у обеих границ, иначе «15» читается числом */
+const span = (x: string | null) => (x ? x.replace('–', '′–') : '—')
 
 /**
  * «Кто давил» (заголовок — у раздела) — давление по минутам из `/Ls/GameMomentum` (владелец: «виджет давление команд
  * некрасивый и не информативный и в плане текста какаято бурмалда написана»). Сверху — строки, как в статистике:
- * «Перевес» (минут), «Лучший отрезок», «Последние 10 минут» (`momentumSummary`), у каждой команды своё число.
+ * «Минут с перевесом», «Сильнее всего давил» (5 минут подряд), «Последние 10 минут» — «7 из 10» (`momentumSummary`).
  * Ниже график по настоящей шкале: тайм — 45 минут (по ходу второй тайм дорисован пустым до 90′, «сейчас» — чертой),
- * столбик вверх — давит хозяин, вниз — гость, цветом клуба (`ClubVars` → `.club-bar-h/-a`); гол — мяч с минутой у края;
- * при наведении или касании — минута и кто давит.
+ * столбик вверх — давит хозяин, вниз — гость, цветом клуба (`ClubVars` → `.club-bar-h/-a`); слева шкала силы давления
+ * (100% — самый сильный натиск; владелец: «почему слева шкалы в процентах нет?»); гол — метка «эмблема 17′» над графиком
+ * и пунктир через него (мяч у края столбика владелец не понял); при наведении или касании — минута, кто давит и с какой силой.
  */
 export function Momentum({ points, events, home, away, live }: { points: MomentumPoint[]; events: MatchEvent[]; home: Side; away: Side; live: boolean }) {
   const [act, setAct] = useState<string | null>(null)
@@ -35,15 +38,26 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
       return { part: p, pts, base, slots: Math.max(len, pts.length) }
     })
     .filter((x) => x.pts.length)
-  const goals = new Map<string, { side: 'home' | 'away'; label: string }>()
+  // голы — по таймам; ярус выше, если рядом (ближе 6 минут) уже стоит метка — иначе налезут
+  const goalMarks: { key: string; part: number; slot: number; side: 'home' | 'away'; label: string; level: number }[] = []
   for (const e of events) {
     if (e.kind !== 'goal' && e.kind !== 'penalty' && e.kind !== 'own-goal') continue
     const part = e.minute <= 45 ? 1 : e.minute <= 90 ? 2 : 3
-    goals.set(`${part}:${e.minute + (e.extra ?? 0)}`, { side: e.side, label: `${e.minute}${e.extra ? `+${e.extra}` : ''}′` })
+    const pt = parts.find((x) => x.part === part)
+    if (!pt) continue
+    const m = e.minute + (e.extra ?? 0)
+    const at = pt.pts.findIndex((x) => x.minute === m)
+    const slot = at >= 0 ? at : Math.min(pt.slots - 1, Math.max(0, m - pt.base - 1))
+    const near = goalMarks.filter((g) => g.part === part && Math.abs(g.slot - slot) < 6).map((g) => g.level)
+    let level = 0
+    while (near.includes(level)) level++
+    goalMarks.push({ key: `${part}:${m}:${goalMarks.length}`, part, slot, side: e.side, label: `${e.minute}${e.extra ? `+${e.extra}` : ''}′`, level })
   }
+  const goalRows = goalMarks.length ? Math.max(...goalMarks.map((g) => g.level)) + 1 : 0
   const byKey = new Map(points.map((p) => [`${p.part}:${p.minute}`, p]))
   const cur = act ? byKey.get(act) : null
-  const who = (p: MomentumPoint) => (p.v >= 0.1 ? `давит «${home.name}»` : p.v <= -0.1 ? `давит «${away.name}»` : 'на равных')
+  const who = (p: MomentumPoint) =>
+    p.v >= 0.1 ? `давит «${home.name}» · ${Math.round(p.v * 100)}%` : p.v <= -0.1 ? `давит «${away.name}» · ${Math.round(-p.v * 100)}%` : 'на равных'
   const pick = (e: React.PointerEvent) => {
     const el = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-k]')
     setAct(el?.dataset.k ?? null)
@@ -59,7 +73,7 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
     <li className="border-t border-edge py-3 first:border-t-0">
       <div className="flex items-baseline justify-between gap-3">
         <span className={`num shrink-0 ${bar ? 'text-[26px] leading-none' : 'text-[16px]'} ${hv >= av ? 'font-bold text-fg' : 'text-dim'}`}>{h}</span>
-        <span className="min-w-0 truncate text-center text-[14px] text-dim">{label}</span>
+        <span className="min-w-0 text-balance text-center text-[14px] leading-snug text-dim">{label}</span>
         <span className={`num shrink-0 ${bar ? 'text-[26px] leading-none' : 'text-[16px]'} ${av >= hv ? 'font-bold text-fg' : 'text-dim'}`}>{a}</span>
       </div>
       {bar ? (
@@ -84,15 +98,16 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
         {team(away, true)}
       </div>
       <ul className="mb-4">
-        {row('Перевес', mins(sum.minutes.home), mins(sum.minutes.away), sum.minutes.home, sum.minutes.away, true)}
-        {sp.home || sp.away ? row('Лучший отрезок', sp.home ?? '—', sp.away ?? '—', sp.home ? 1 : 0, sp.away ? 1 : 0) : null}
+        {row('Минут с перевесом', mins(sum.minutes.home), mins(sum.minutes.away), sum.minutes.home, sum.minutes.away, true)}
+        {sp.home || sp.away ? row('Сильнее всего давил', span(sp.home), span(sp.away), sp.home ? 1 : 0, sp.away ? 1 : 0) : null}
         {sum.late
-          ? row(live ? 'Последние 10 минут' : 'Концовка, 10 минут', mins(sum.late.home), mins(sum.late.away), sum.late.home, sum.late.away)
+          ? row(live ? 'Последние 10 минут' : 'Концовка, 10 минут', `${sum.late.home} из 10`, `${sum.late.away} из 10`, sum.late.home, sum.late.away)
           : null}
       </ul>
 
       <div
-        className="relative touch-pan-y select-none pt-7"
+        className="relative touch-pan-y select-none"
+        style={{ paddingTop: goalRows ? goalRows * 26 + 6 : 8 }}
         onPointerMove={pick}
         onPointerDown={pick}
         onPointerLeave={(e) => e.pointerType === 'mouse' && setAct(null)}
@@ -100,28 +115,63 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
         aria-label={`Давление по минутам: вверх — «${home.name}», вниз — «${away.name}». Перевес: «${home.name}» — ${sum.minutes.home} ${plural(sum.minutes.home, 'минута', 'минуты', 'минут')}, «${away.name}» — ${sum.minutes.away}.`}
       >
         <div className="flex gap-2">
+          {/* шкала слева: сила давления, 100% — самый сильный натиск; вверх — хозяева, вниз — гости */}
+          <div aria-hidden className="relative h-[120px] w-9 shrink-0 text-right text-[13px] leading-none text-mute lg:h-[150px]">
+            {SCALE.map(([top, t]) => (
+              <span key={top} className="absolute right-0 -translate-y-1/2" style={{ top: `${top}%` }}>
+                {t}
+              </span>
+            ))}
+          </div>
           {parts.map((pt, i) => {
             const last = pt.pts[pt.pts.length - 1]
             const filled = pt.pts.length / pt.slots
             const end = pt.base + (pt.part === 3 ? 30 : 45)
             const ticks = [15, 30].map((d) => pt.base + d).filter((m) => m < end)
+            const now = live && filled < 1 && pt === parts[parts.length - 1]
             return (
               <div key={pt.part} className="relative min-w-0" style={{ flex: pt.slots }}>
+                {/* голы: метка «эмблема 17′» над графиком и черта через него — чей гол, видно по эмблеме */}
+                {goalMarks
+                  .filter((g) => g.part === pt.part)
+                  .map((g) => {
+                    const x = ((g.slot + 0.5) / pt.slots) * 100
+                    const t = g.side === 'home' ? home : away
+                    const shift = x < 10 ? '' : x > 90 ? '-translate-x-full' : '-translate-x-1/2'
+                    return (
+                      <span key={g.key}>
+                        <span
+                          aria-hidden
+                          className="absolute bottom-6 w-px border-l border-dashed border-white/45"
+                          style={{ left: `${x}%`, top: -(g.level * 26 + 6) }}
+                        />
+                        <span
+                          className={`absolute z-[1] flex items-center gap-1 whitespace-nowrap rounded-full bg-panel-3 py-0.5 pl-0.5 pr-2 text-[13px] font-semibold ${shift}`}
+                          style={{ left: `${x}%`, top: -(g.level * 26 + 28) }}
+                          title={`Гол «${t.name}», ${g.label}`}
+                        >
+                          <TeamLogo name={t.name} src={t.logo ?? null} size={18} />
+                          {g.label}
+                        </span>
+                      </span>
+                    )
+                  })}
                 <div className="relative flex h-[120px] items-stretch gap-px lg:h-[150px]">
-                  <span className="absolute inset-x-0 top-1/2 h-px bg-white/15" aria-hidden />
-                  {/* ещё не сыгранное — тихой дорожкой, «сейчас» — чертой */}
-                  {live && filled < 1 && pt === parts[parts.length - 1] ? (
+                  <span className="absolute inset-x-0 top-1/2 h-px bg-white/20" aria-hidden />
+                  <span className="absolute inset-x-0 top-1/4 h-px bg-white/[0.05]" aria-hidden />
+                  <span className="absolute inset-x-0 top-3/4 h-px bg-white/[0.05]" aria-hidden />
+                  {/* ещё не сыгранное — тихой дорожкой, «сейчас» — чертой с подписью в пустой части */}
+                  {now ? (
                     <>
                       <span aria-hidden className="absolute inset-y-0 right-0 rounded-sm bg-white/[0.03]" style={{ left: `${filled * 100}%` }} />
                       <span aria-hidden className="absolute inset-y-0 w-px bg-live" style={{ left: `${filled * 100}%` }} />
-                      <span className="absolute -top-6 -translate-x-1/2 whitespace-nowrap text-[13px] font-semibold text-live" style={{ left: `${filled * 100}%` }}>
-                        {minuteLabel(last)}
+                      <span className="absolute top-1 whitespace-nowrap pl-1.5 text-[13px] font-semibold text-live" style={{ left: `${filled * 100}%` }}>
+                        сейчас {minuteLabel(last)}
                       </span>
                     </>
                   ) : null}
                   {pt.pts.map((x) => {
                     const k = `${x.part}:${x.minute}`
-                    const g = goals.get(k)
                     const on = act === k
                     return (
                       <span key={k} data-k={k} className="relative flex-1">
@@ -131,11 +181,6 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
                         ) : (
                           <span className="club-bar-a absolute inset-x-0 top-1/2 rounded-b-[2px]" style={{ height: `${Math.max(-x.v * 50, 1.5)}%` }} />
                         )}
-                        {g ? (
-                          <span aria-hidden className={`absolute left-1/2 z-[1] -translate-x-1/2 ${g.side === 'home' ? 'top-0 -translate-y-1/2' : 'bottom-0 translate-y-1/2'}`}>
-                            <Ball />
-                          </span>
-                        ) : null}
                       </span>
                     )
                   })}
@@ -143,7 +188,7 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
                     <span key={`e${j}`} className="flex-1" />
                   ))}
                 </div>
-                {/* шкала: 15′ и 30′ внутри тайма — ниже sm прячем, концы тайма — всегда */}
+                {/* минуты матча: 15′ и 30′ внутри тайма — ниже sm прячем, концы тайма — всегда */}
                 <div className="relative mt-2 h-4 text-[13px] text-mute">
                   {i === 0 ? <span className="absolute left-0">{pt.base}′</span> : null}
                   {ticks.map((m) => (
@@ -159,19 +204,28 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
             )
           })}
         </div>
-        {/* подсказка: минута и кто давит — над графиком, у краёв прижата */}
+        {/* подсказка: минута, кто давит и с какой силой — над графиком, у краёв прижата */}
         {cur ? (
           <span
-            className="pointer-events-none absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-ctl bg-panel-3 px-2 py-0.5 text-[13px] font-semibold"
-            style={{ left: `clamp(80px, ${tipLeft(parts, cur)}%, calc(100% - 80px))` }}
+            className="pointer-events-none absolute top-0 z-[2] -translate-x-1/2 whitespace-nowrap rounded-ctl bg-panel-3 px-2 py-0.5 text-[13px] font-semibold"
+            style={{ left: `clamp(110px, calc(44px + (100% - 44px) * ${tipLeft(parts, cur) / 100}), calc(100% - 110px))` }}
           >
-            {minuteLabel(cur)} · {goals.get(`${cur.part}:${cur.minute}`) ? `гол «${goals.get(`${cur.part}:${cur.minute}`)!.side === 'home' ? home.name : away.name}»` : who(cur)}
+            {minuteLabel(cur)} · {who(cur)}
           </span>
         ) : null}
       </div>
     </div>
   )
 }
+
+/** Шкала силы давления: вверх — хозяева, вниз — гости. */
+const SCALE: [number, string][] = [
+  [0, '100%'],
+  [25, '50%'],
+  [50, '0'],
+  [75, '50%'],
+  [100, '100%'],
+]
 
 /** Где подсказка по ширине всего графика (в процентах): части — по числу слотов, зазор между ними не учитываем. */
 function tipLeft(parts: { part: number; pts: MomentumPoint[]; slots: number }[], p: MomentumPoint): number {
@@ -182,13 +236,4 @@ function tipLeft(parts: { part: number; pts: MomentumPoint[]; slots: number }[],
     off += x.slots
   }
   return 50
-}
-
-function Ball() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" className="block rounded-full ring-2 ring-panel">
-      <circle cx="8" cy="8" r="8" fill="#fff" />
-      <path d="M8 4.6l3 2.2-1.1 3.6H6.1L5 6.8z" fill="#0B0F14" />
-    </svg>
-  )
 }
