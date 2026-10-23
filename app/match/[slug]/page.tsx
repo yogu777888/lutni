@@ -6,7 +6,9 @@ import { cache } from 'react'
 import { MatchBar } from '@/components/match/MatchBar'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
-import { EventsBlock, StatsBars } from '@/components/match/EventsBlock'
+import { KeyEvents, StatsBars } from '@/components/match/EventsBlock'
+import { Strengths } from '@/components/match/Strengths'
+import { teamPoints } from '@/lib/team-xg'
 import { ClubVars } from '@/components/match/ClubVars'
 import { FormBlock } from '@/components/match/FormBlock'
 import { H2HBlock } from '@/components/match/H2HBlock'
@@ -27,7 +29,7 @@ import { StickyCta } from '@/components/StickyCta'
 import { PARTNERS, partnerForApiBookmaker, primaryPartner } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
-import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle, waitLsExtra } from '@/lib/data'
+import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle, waitLsExtra, waitTeamXg } from '@/lib/data'
 import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
@@ -90,7 +92,8 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const { full: base, books, cons, model, candidates, pick, tags } = ins
   // Flashscore-раздел SStats (`/Ls/*`): составы, давление по минутам, лишние строки статистики, стадион и зрители —
   // ждём не дольше 1,5 с, дальше ответ дозаполнит кэш к следующему открытию (владелец: «сделай всё»)
-  const ls = await waitLsExtra(m, new Set(base.stats.map((s) => s.key)))
+  // xG прошлых матчей обеих команд — для «Сильного и слабого места» (тоже ≤1,5 с, параллельно)
+  const [ls, xg] = await Promise.all([waitLsExtra(m, new Set(base.stats.map((s) => s.key))), waitTeamXg(ins.homeForm, ins.awayForm)])
   const full = ls && (ls.stats.length || (ls.venue && !base.venue))
     ? { ...base, stats: [...base.stats, ...ls.stats], venue: base.venue ?? (ls.venue ? { ...ls.venue, capacity: null } : null) }
     : base
@@ -564,31 +567,40 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const notes = started
     ? matchNotes({ home: m.home.name, away: m.away.name, score: m.score ?? null, stats: full.stats, events: full.events, momentum: ls?.momentum ?? null, live: isLive })
     : []
-  const hasReds = full.events.some((e) => e.kind === 'red' || e.kind === 'missed-penalty')
-  const sec_notes =
-    notes.length || hasReds ? (
-      <Section outside title="Главное">
-        {notes.length ? (
-          // на компьютере (блок от 48rem) выводы — колонками в ряд через черту, как карточки в прототипе; уже — строками
-          <div className="@container">
-            <ul className={`-my-1 divide-y divide-edge @3xl:grid @3xl:divide-x @3xl:divide-y-0 ${notes.length === 3 ? '@3xl:grid-cols-3' : notes.length === 2 ? '@3xl:grid-cols-2' : ''}`}>
-            {notes.map((n) => (
-              <li key={n.title} className="py-3 first:pt-1 last:pb-1 @3xl:px-5 @3xl:py-1 @3xl:first:pl-0 @3xl:last:pr-0">
-                <p className="text-[16px] font-semibold leading-snug">{n.title}</p>
-                <p className="mt-1 text-[14px] leading-snug text-dim">{n.text}</p>
-              </li>
-            ))}
-            </ul>
-          </div>
-        ) : null}
-        {/* удаления и незабитые пенальти (голы — на табло) */}
-        {hasReds ? (
-          <div className={notes.length ? 'mt-3 border-t border-edge pt-3' : ''}>
-            <EventsBlock events={full.events} home={m.home} away={m.away} reds={ls?.reds} />
-          </div>
-        ) : null}
-      </Section>
-    ) : null
+  const sec_notes = notes.length ? (
+    <Section outside title="Главное">
+      <div className="@container">
+        <ul className={`-my-1 divide-y divide-edge @3xl:grid @3xl:divide-x @3xl:divide-y-0 ${notes.length === 3 ? '@3xl:grid-cols-3' : notes.length === 2 ? '@3xl:grid-cols-2' : ''}`}>
+          {notes.map((n) => (
+            <li key={n.title} className="py-3 first:pt-1 last:pb-1 @3xl:px-5 @3xl:py-1 @3xl:first:pl-0 @3xl:last:pr-0">
+              <p className="text-[16px] font-semibold leading-snug">{n.title}</p>
+              <p className="mt-1 text-[14px] leading-snug text-dim">{n.text}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Section>
+  ) : null
+  // «Ключевые события» — голы, удаления с причиной, незабитые пенальти по порядку (`KeyEvents`)
+  const hasKey = full.events.some((e) => ['goal', 'own-goal', 'penalty', 'red', 'missed-penalty'].includes(e.kind))
+  const sec_events = started && hasKey ? (
+    <Section outside title="Ключевые события">
+      <KeyEvents events={full.events} home={m.home} away={m.away} final={m.score ?? null} reds={ls?.reds} />
+    </Section>
+  ) : null
+  // «Сильное и слабое место» — по xG прошлых матчей (`getTeamXg`), без него — по голам формы
+  const points = { home: teamPoints(xg.home, ins.homeForm), away: teamPoints(xg.away, ins.awayForm) }
+  const anyPoint = [points.home, points.away].some((p) => p.strong || p.weak)
+  const byXg = points.home.byXg || points.away.byXg
+  const sec_points = anyPoint ? (
+    <Section
+      outside
+      title="Сильное и слабое место"
+      note={byXg ? 'xG — сколько голов обычно забивают с таких моментов. Считаем по последним матчам команды.' : 'Считаем по голам в последних матчах команды.'}
+    >
+      <Strengths home={m.home} away={m.away} points={points} />
+    </Section>
+  ) : null
   const sec_momentum = ls?.momentum ? (
     <Section outside title="Кто давил">
       {clubVars(<Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} line={momentumLine(ls.momentum, m.home.name, m.away.name, isLive)} />)}
@@ -625,14 +637,14 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const tabs: TabItem[] = (
     started
       ? [
-          { key: 'overview', label: 'Обзор', on: Boolean(sec_notes || sec_momentum || shownTags.length), content: <>{sec_notes}{sec_momentum}{sec_tags}</> },
+          { key: 'overview', label: 'Обзор', on: Boolean(sec_notes || sec_events || sec_momentum || shownTags.length), content: <>{sec_notes}{sec_events}{sec_momentum}{sec_tags}</> },
           { key: 'stats', label: 'Статистика', on: Boolean(sec_stats), content: sec_stats },
           { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
           {
             key: 'before',
             label: 'До матча',
             on: Boolean(x || chanceMoved || ins.homeForm || ins.awayForm || ins.h2h || ins.standings || ins.preview.length),
-            content: <>{sec_goals}{sec_chance}{sec_form}{sec_h2h}{sec_table}{sec_preview}</>,
+            content: <>{sec_goals}{sec_chance}{sec_form}{sec_points}{sec_h2h}{sec_table}{sec_preview}</>,
           },
         ]
       : [
@@ -642,7 +654,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
             on: Boolean(hasPredict || shownTags.length || x || chanceMoved || scheduled || ins.preview.length),
             content: <>{sec_predict}{sec_tags}{sec_goals}{sec_chance}{sec_odds}{sec_preview}</>,
           },
-          { key: 'teams', label: 'Команды', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings), content: <>{sec_form}{sec_h2h}{sec_inj}{sec_table}</> },
+          { key: 'teams', label: 'Команды', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings), content: <>{sec_form}{sec_points}{sec_h2h}{sec_inj}{sec_table}</> },
           { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
         ]
   )

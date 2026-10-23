@@ -7,7 +7,7 @@
  * Env: WARMER=0 — выключить; WARMER_INTERVAL_MIN (15); WARMER_MAX_MATCHES (60).
  */
 import { isFeatured } from '@/config/leagues'
-import { featuredFirst, getChanceCheck, getMatchInsights, getMatchesByDate, settle } from './data'
+import { featuredFirst, getChanceCheck, getMatchInsights, getMatchesByDate, getTeamXg, settle } from './data'
 import { addDays, appNow, todayYmd } from './format'
 import { IS_DESIGN } from './sstats/client'
 import { singleton } from './runtime'
@@ -36,7 +36,9 @@ export const warmerState = singleton<State>('warmer', () => ({
 
 async function analyze(id: number) {
   try {
-    await getMatchInsights(id, { priority: 'low' })
+    const ins = await getMatchInsights(id, { priority: 'low' })
+    // xG прошлых матчей обеих команд — для «Сильного и слабого места»: страница ждёт их не дольше 1,5 с
+    if (ins) await Promise.all([settle(getTeamXg(ins.homeForm, { priority: 'low' }), null), settle(getTeamXg(ins.awayForm, { priority: 'low' }), null)])
     warmerState.analyzed++
   } catch {
     warmerState.errors++

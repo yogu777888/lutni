@@ -72,41 +72,54 @@ export function scorers(events: MatchEvent[], final: { home: number; away: numbe
 
 const minuteText = (e: MatchEvent) => `${e.minute}${e.extra ? `+${e.extra}` : ''}′`
 
+const short = (p: string | null) => (p ? p.replace(/^(?:\p{Lu}\.\s*)+/u, '') || p : null)
+
 /**
- * События, которых нет на табло: удаления и незабитые пенальти — тихими строками под статистикой («Удаление · K. Ruiz ·
- * 71′ · Леванте»). Голы здесь не повторяем — авторы и минуты уже под названиями команд на табло (владелец: «блок сейчас
- * в матче очень некрасивый какой-то» — список голов с «Перерывом» повторял табло; выбрал вариант «А»). Жёлтые — числом
- * в статистике; замены и VAR — нет.
+ * «Ключевые события» (владелец прислал прототип ChatGPT — «Ключевые события», «да»): хронология строками — минута,
+ * эмблема команды, что произошло и кто; у гола — счёт после него пилюлей справа и передача, у удаления — причина
+ * из `/Ls/GameInfo` («за фол»). Голы, удаления, незабитые пенальти; жёлтых, замен и VAR нет (VAR в данных без слов —
+ * «гол отменён» или «пенальти назначен», не понять). Между таймами — «Перерыв». На табло авторы голов — одной строкой с
+ * «+2», здесь — все и по порядку.
  */
-export function EventsBlock({ events, home, away, reds = [] }: { events: MatchEvent[]; home: Side; away: Side; reds?: LsRed[] }) {
-  const rows = events.filter((e) => e.kind === 'red' || e.kind === 'missed-penalty')
-  // причина удаления — из `/Ls/GameInfo` («Holding» → «за фол»): та же команда, минута ±1 (у поставщиков она расходится)
+export function KeyEvents({ events, home, away, final, reds = [] }: { events: MatchEvent[]; home: Side; away: Side; final: { home: number; away: number } | null; reds?: LsRed[] }) {
+  const keep = events.filter((e) => GOALS.has(e.kind) || e.kind === 'red' || e.kind === 'missed-penalty')
+  if (!keep.length) return null
+  const flow = withScore(keep, final)
   const why = (e: MatchEvent) => (e.kind === 'red' ? reds.find((r) => r.side === e.side && Math.abs(r.minute - e.minute) <= 1)?.reason : null)
-  if (!rows.length) return null
+  const what: Record<string, string> = { goal: 'Гол', 'own-goal': 'Автогол', penalty: 'Гол с пенальти', red: 'Удаление', 'missed-penalty': 'Незабитый пенальти' }
+  const breakAt = flow.findIndex((e) => e.minute > 45)
   return (
     <ul className="-my-1">
-      {rows.map((e, i) => (
-        <li key={i} className="flex min-h-10 items-center gap-3 text-[14px]">
-          {e.kind === 'red' ? (
-            <span aria-hidden className="h-4 w-3 shrink-0 rounded-[2px] bg-[#ff453a]" />
-          ) : (
-            <span aria-hidden className="h-3.5 w-3.5 shrink-0 rounded-full ring-[1.5px] ring-inset ring-mute" />
-          )}
-          <span className="min-w-0 truncate text-dim">
-            {e.kind === 'red' ? 'Удаление' : 'Незабитый пенальти'}
-            {why(e) ? ` ${why(e)}` : null}
-            {e.player ? (
-              <>
-                {' · '}
-                <span className="font-medium text-fg">{e.player}</span>
-              </>
+      {flow.map((e, i) => {
+        const team = e.side === 'home' ? home : away
+        const who = short(e.player)
+        const sub = GOALS.has(e.kind) ? (e.assist ? `передача — ${short(e.assist)}` : null) : why(e) ?? null
+        return (
+          <li key={i}>
+            {i === breakAt && i > 0 ? (
+              <div className="flex items-center gap-3 py-2 text-[13px] text-mute">
+                <span className="h-px flex-1 bg-white/10" />
+                Перерыв
+                <span className="h-px flex-1 bg-white/10" />
+              </div>
             ) : null}
-            {' · '}
-            <span className="num">{minuteText(e)}</span>
-          </span>
-          <span className="ml-auto shrink-0 text-mute">{e.side === 'home' ? home.name : away.name}</span>
-        </li>
-      ))}
+            <div className="flex min-h-12 items-center gap-3 py-1.5">
+              <span className="num w-10 shrink-0 text-[15px] font-semibold text-dim">{minuteText(e)}</span>
+              <TeamLogo name={team.name} src={team.logo ?? null} size={20} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[15px] leading-snug">
+                  {e.kind === 'red' ? <span aria-hidden className="mr-1.5 inline-block h-3.5 w-2.5 translate-y-[2px] rounded-[2px] bg-[#ff453a]" /> : null}
+                  <span className={GOALS.has(e.kind) ? 'font-semibold' : ''}>{what[e.kind]}</span>
+                  {who ? <span className="text-dim"> · {who}</span> : null}
+                </span>
+                {sub ? <span className="block truncate text-[13px] text-mute">{sub}</span> : null}
+              </span>
+              {e.score ? <span className="num shrink-0 rounded-full bg-white/[0.08] px-2.5 py-0.5 text-[14px] font-semibold">{e.score}</span> : null}
+              <span className="sr-only">{team.name}</span>
+            </div>
+          </li>
+        )
+      })}
     </ul>
   )
 }
