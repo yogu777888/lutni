@@ -569,14 +569,17 @@ export default async function MatchPage({ params, searchParams }: Props) {
     notes.length || hasReds ? (
       <Section outside title="Главное">
         {notes.length ? (
-          <ul className="-my-1 divide-y divide-edge">
+          // на компьютере (блок от 48rem) выводы — колонками в ряд через черту, как карточки в прототипе; уже — строками
+          <div className="@container">
+            <ul className={`-my-1 divide-y divide-edge @3xl:grid @3xl:divide-x @3xl:divide-y-0 ${notes.length === 3 ? '@3xl:grid-cols-3' : notes.length === 2 ? '@3xl:grid-cols-2' : ''}`}>
             {notes.map((n) => (
-              <li key={n.title} className="py-3 first:pt-1 last:pb-1">
+              <li key={n.title} className="py-3 first:pt-1 last:pb-1 @3xl:px-5 @3xl:py-1 @3xl:first:pl-0 @3xl:last:pr-0">
                 <p className="text-[16px] font-semibold leading-snug">{n.title}</p>
                 <p className="mt-1 text-[14px] leading-snug text-dim">{n.text}</p>
               </li>
             ))}
-          </ul>
+            </ul>
+          </div>
         ) : null}
         {/* удаления и незабитые пенальти (голы — на табло) */}
         {hasReds ? (

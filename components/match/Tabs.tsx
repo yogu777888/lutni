@@ -5,7 +5,7 @@ import { useId, useState, type ReactNode } from 'react'
 export type TabItem = { key: string; label: string; content: ReactNode }
 
 /**
- * Переключатель в стиле iOS: капсула, выбранный — белый с тёмным текстом, как выбранный день в ряду дней. Все вкладки
+ * Переключатель в стиле iOS: капсула (главный — на всю ширину колонки, внутри карточки — `small`, не шире 24rem), выбранный — белый с тёмным текстом, как выбранный день в ряду дней. Все вкладки
  * — в разметке с сервера (поисковики видят страницу целиком), невыбранные скрыты `hidden`. С `param` выбранная
  * вкладка пишется в адрес (`?tab=stats`, без новой записи в историю) — ссылкой можно поделиться, а обновление идущего
  * матча (`router.refresh`) остаётся на ней.
@@ -43,7 +43,7 @@ export function Tabs({
     <div className={className}>
       <div
         role="tablist"
-        className={`flex gap-1 rounded-full bg-white/[0.07] p-1 ${small ? '' : 'max-w-xl'} ${barClassName}`}
+        className={`flex gap-1 rounded-full bg-white/[0.07] p-1 ${small ? 'max-w-sm' : ''} ${barClassName}`}
       >
         {items.map((t) => {
           const on = t.key === cur

@@ -20,7 +20,7 @@ export function Momentum({ points, events, home, away, line }: { points: Momentu
   }
   const lead = (x: MomentumPoint) => (x.v > 0.05 ? `давят «${home.name}»` : x.v < -0.05 ? `давят «${away.name}»` : 'равная игра')
   return (
-    <div className="mx-auto max-w-xl">
+    <div>
       <div className="flex items-center justify-between gap-3 text-[13px] text-dim">
         <span className="flex min-w-0 items-center gap-2">
           <span className="club-bar-h h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden />
@@ -34,7 +34,7 @@ export function Momentum({ points, events, home, away, line }: { points: Momentu
       <div className="mt-3 flex gap-1.5" role="img" aria-label={`Давление по минутам: вверх — «${home.name}», вниз — «${away.name}»`}>
         {parts.map((pts, i) => (
           <div key={i} className="min-w-0" style={{ flex: pts.length }}>
-            <div className="relative flex h-[112px] items-stretch gap-px">
+            <div className="relative flex h-[112px] lg:h-[140px] items-stretch gap-px">
               <span className="absolute inset-x-0 top-1/2 h-px bg-white/15" aria-hidden />
               {pts.map((x) => {
                 const g = goalAt.get(`${x.part}:${x.minute}`)

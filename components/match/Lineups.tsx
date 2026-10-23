@@ -130,13 +130,16 @@ function Bench({ t }: { t: TeamLineup }) {
  * «Составы» — из `/Ls/GameLineups` (владелец: «сделай всё»): поле сверху вниз, как у Apple Sports и Sofascore на
  * телефоне, — хозяева в верхней половине, гости в нижней, у каждой схема; у игрока — номер в кружке цветом клуба
  * (`ClubVars`), фамилия, после начала — оценка (лучшая в матче — белой пилюлей), голы мячом, карточка, минута замены.
- * Ниже — запасные двумя колонками и тренеры. Кто не сыграет — в «Кадровых потерях», здесь не повторяем.
+ * Ниже — запасные двумя колонками и тренеры (на компьютере — колонкой справа от поля). Кто не сыграет — в «Кадровых потерях», здесь не повторяем.
  */
 export function Lineups({ data, home, away }: { data: LineupsData; home: Side; away: Side }) {
   const coach = (t: TeamLineup, s: Side) => (t.coach ? `${s.name} — ${t.coach}` : null)
   const coaches = [coach(data.home, home), coach(data.away, away)].filter(Boolean)
   return (
-    <div className="mx-auto max-w-xl">
+    // от 48rem ширины блока (компьютер) запасные и тренеры — колонкой справа от поля, а не под ним: блок вдвое ниже
+    <div className="@container">
+      <div className="mx-auto max-w-xl @3xl:grid @3xl:max-w-none @3xl:grid-cols-[minmax(0,34rem)_minmax(0,1fr)] @3xl:gap-x-8">
+      <div>
       {/* от sm — обе команды на одном поле; на телефоне поле ~560px — по одной команде с переключателем (вдвое короче) */}
       <div className="hidden sm:block">
         <TeamHead side={home} t={data.home} />
@@ -184,19 +187,21 @@ export function Lineups({ data, home, away }: { data: LineupsData; home: Side; a
           ),
         }))}
       />
-      <div className="mt-5 border-t border-edge pt-4 max-sm:mt-4 max-sm:border-0 max-sm:pt-0">
+      </div>
+      <div className="mt-5 border-t border-edge pt-4 max-sm:mt-4 max-sm:border-0 max-sm:pt-0 @3xl:mt-0 @3xl:border-0 @3xl:pt-0">
         <p className="hidden text-[13px] text-mute sm:block">Запасные</p>
-        <div className="mt-2.5 hidden gap-x-6 gap-y-4 sm:grid sm:grid-cols-2">
+        <div className="mt-2.5 hidden gap-x-6 gap-y-4 sm:grid sm:grid-cols-2 @3xl:grid-cols-1 @3xl:gap-y-5">
           <div>
-            <p className="mb-1.5 truncate text-[13px] font-semibold text-dim sm:hidden">{home.name}</p>
+            <p className="mb-1.5 hidden truncate text-[13px] font-semibold text-dim @3xl:block">{home.name}</p>
             <Bench t={data.home} />
           </div>
           <div>
-            <p className="mb-1.5 truncate text-[13px] font-semibold text-dim sm:hidden">{away.name}</p>
+            <p className="mb-1.5 hidden truncate text-[13px] font-semibold text-dim @3xl:block">{away.name}</p>
             <Bench t={data.away} />
           </div>
         </div>
-        {coaches.length ? <p className="text-[13px] text-mute sm:mt-4">Тренеры: {coaches.join(' · ')}</p> : null}
+        {coaches.length ? <p className="text-[13px] text-mute sm:mt-4 @3xl:mt-5">Тренеры: {coaches.join(' · ')}</p> : null}
+      </div>
       </div>
     </div>
   )
