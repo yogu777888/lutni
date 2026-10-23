@@ -564,8 +564,10 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const started = !scheduled && m.status !== 'postponed' && m.status !== 'cancelled'
   const clubVars = (node: React.ReactNode) => <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>{node}</ClubVars>
   // «Главное» — два-три вывода словами из статистики и давления (как «Главное за минуту» в прототипе владельца)
+  // сильное и слабое место по прошлым матчам — и для блока, и для «Главного» идущего матча («снова не реализует»)
+  const points = { home: teamPoints(xg.home, ins.homeForm), away: teamPoints(xg.away, ins.awayForm) }
   const notes = started
-    ? matchNotes({ home: m.home.name, away: m.away.name, score: m.score ?? null, stats: full.stats, events: full.events, momentum: ls?.momentum ?? null, live: isLive })
+    ? matchNotes({ home: m.home.name, away: m.away.name, score: m.score ?? null, stats: full.stats, events: full.events, momentum: ls?.momentum ?? null, live: isLive, minute: m.elapsed, points })
     : []
   const sec_notes = notes.length ? (
     <Section outside title="Главное">
@@ -589,7 +591,6 @@ export default async function MatchPage({ params, searchParams }: Props) {
     </Section>
   ) : null
   // «Сильное и слабое место» — по xG прошлых матчей (`getTeamXg`), без него — по голам формы
-  const points = { home: teamPoints(xg.home, ins.homeForm), away: teamPoints(xg.away, ins.awayForm) }
   const anyPoint = [points.home, points.away].some((p) => p.strong || p.weak)
   const byXg = points.home.byXg || points.away.byXg
   const sec_points = anyPoint ? (

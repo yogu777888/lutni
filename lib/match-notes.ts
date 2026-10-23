@@ -5,6 +5,7 @@
  */
 import type { MomentumPoint } from './sstats/ls'
 import type { MatchEvent, StatPair } from './types'
+import type { Point, TeamPoints } from './team-xg'
 
 export type MatchNote = { title: string; text: string }
 
@@ -16,6 +17,10 @@ type Ctx = {
   events: MatchEvent[]
   momentum: MomentumPoint[] | null
   live: boolean
+  /** минута идущего матча: «почти без моментов» говорим не раньше 60-й */
+  minute?: number | null
+  /** сильное и слабое место команд по прошлым матчам (`teamPoints`) — сверяем с сегодняшними цифрами */
+  points?: { home: TeamPoints; away: TeamPoints } | null
 }
 
 const dec = (v: number, d = 2) => v.toFixed(d).replace('.', ',')
@@ -36,11 +41,54 @@ export function momentumLine(points: MomentumPoint[] | null, home: string, away:
   return live ? `Последние 10 минут давит «${who}».` : `Концовка — за «${who}».`
 }
 
+/**
+ * Прошлое против сегодняшнего (владелец: «а в идущем матче будем писать?» — «да»): если сегодняшние цифры повторяют
+ * сильное или слабое место команды по последним матчам (только по xG — у «по голам» нет сегодняшней пары), — одна
+ * строка: «„Эвертон“ снова не реализует моменты». Не повторяет — ничего не пишем.
+ */
+function historyNote(side: 'home' | 'away', p: Point, c: Ctx, xg: StatPair, sc: { home: number; away: number }, name: string): MatchNote | null {
+  const other = side === 'home' ? 'away' : 'home'
+  const mine = xg[side]
+  const theirs = xg[other]
+  const goals = sc[side]
+  const late = !c.live || (c.minute ?? 0) >= 60
+  const was = `${p.text.replace(/\.$/, '')}.`
+  const today = (t: string) => `${c.live ? 'Сегодня' : 'В этом матче'} ${t}. ${was}`
+  switch (p.key) {
+    case 'finish-':
+      return mine >= 1 && goals <= mine - 0.8 ? { title: `«${name}» снова не реализует моменты`, text: today(`xG\u00a0${dec(mine)}, голов — ${goals}`) } : null
+    case 'finish+':
+      return goals >= 2 && goals >= mine + 0.8 ? { title: `«${name}» снова забивает больше, чем создаёт`, text: today(`${goals} при xG\u00a0${dec(mine)}`) } : null
+    case 'attack+':
+      return mine >= 1.5 ? { title: `«${name}», как обычно, создаёт много моментов`, text: today(`уже xG\u00a0${dec(mine)}`) } : null
+    case 'attack-':
+      return late && mine <= 0.5 ? { title: `«${name}» снова почти без моментов`, text: today(`xG\u00a0${dec(mine)}`) } : null
+    case 'defense+':
+      return late && theirs <= 0.5 ? { title: `«${name}», как обычно, почти не даёт бить`, text: today(`у соперника xG\u00a0${dec(theirs)}`) } : null
+    case 'defense-':
+      return theirs >= 1.5 ? { title: `«${name}» снова отдаёт много моментов`, text: today(`у соперника уже xG\u00a0${dec(theirs)}`) } : null
+    default:
+      return null
+  }
+}
+
 export function matchNotes(c: Ctx): MatchNote[] {
   const get = (k: string) => c.stats.find((s) => s.key === k) ?? null
   const name = (side: 'home' | 'away') => (side === 'home' ? c.home : c.away)
   const out: { p: number; n: MatchNote }[] = []
   const sc = c.score
+  // 0. сильное / слабое место команды подтверждается сегодня — сразу за удалением по ходу (11) и «опаснее, но уступает» (10)
+  const repeated = new Set<string>()
+  const xgNow = get('expectedGoals')
+  if (c.points && xgNow && sc)
+    for (const side of ['home', 'away'] as const)
+      for (const p of [c.points[side].strong, c.points[side].weak]) {
+        const n = p && c.points[side].byXg ? historyNote(side, p, c, xgNow, sc, name(side)) : null
+        if (n) {
+          out.push({ p: 9.5, n })
+          repeated.add(`${side}:${p!.key}`)
+        }
+      }
 
   // 1. моменты против счёта: по качеству моментов (xG) один опаснее, а в счёте не впереди — или ведёт по делу
   const xg = get('expectedGoals')
@@ -71,7 +119,7 @@ export function matchNotes(c: Ctx): MatchNote[] {
     for (const side of ['home', 'away'] as const) {
       const ch = big[side]
       const g = sc[side]
-      if (ch >= 3 && ch - g >= 3)
+      if (ch >= 3 && ch - g >= 3 && !repeated.has(`${side}:finish-`))
         out.push({ p: 8, n: { title: `«${name(side)}» не реализует моменты`, text: `Голевых моментов — ${ch}, голов — ${g}.` } })
     }
 

@@ -29,3 +29,20 @@ describe('«Главное» словами', () => {
     expect(momentumLine(momentum, 'Арсенал', 'Челси', false)).toBe('Концовка — за «Арсенал».')
   })
 })
+
+describe('сильное и слабое место — сегодня', () => {
+  const pts = {
+    home: { strong: null, weak: null, byXg: true },
+    away: { strong: null, weak: { key: 'finish-' as const, title: 'Не реализует моменты', text: 'Последние 4 матча: забивает 0,8 за игру при xG 1,4.' }, byXg: true },
+  }
+  it('повторилось — строка «снова», обычная про реализацию не дублируется', () => {
+    const n = matchNotes({ ...base, score: { home: 1, away: 0 }, stats: [st('expectedGoals', 0.9, 1.6), st('bigChances', 1, 4)], points: pts, minute: 70 })
+    expect(n.map((x) => x.title)).toContain('«Челси» снова не реализует моменты')
+    expect(n.map((x) => x.title)).not.toContain('«Челси» не реализует моменты')
+    expect(n.find((x) => x.title.includes('снова'))!.text).toBe('Сегодня xG 1,60, голов — 0. Последние 4 матча: забивает 0,8 за игру при xG 1,4.')
+  })
+  it('не повторилось — ничего', () => {
+    const n = matchNotes({ ...base, score: { home: 0, away: 2 }, stats: [st('expectedGoals', 0.9, 1.6)], points: pts, minute: 70 })
+    expect(n.some((x) => x.title.includes('снова'))).toBe(false)
+  })
+})
