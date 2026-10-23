@@ -714,7 +714,9 @@ export default async function MatchPage({ params, searchParams }: Props) {
               <p className="mt-0.5 truncate text-[13px] text-dim">
                 {st.key === 'expectedGoals' ? (
                   <>
-                    Моменты (<XgTerm />)
+                    {/* на телефоне колонка ~120px — «Моменты xG ⓘ» обрезалось */}
+                    <span className="max-sm:hidden">Моменты </span>
+                    <XgTerm />
                   </>
                 ) : (
                   st.label
