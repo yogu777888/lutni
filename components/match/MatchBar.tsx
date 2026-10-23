@@ -62,27 +62,24 @@ export function MatchBar({
     }
   }, [])
 
-  // в шапке телефона — название до двух строк, а не «Райо Валь…»; в плашке от lg (`short`) — код, как на табло трансляций:
-  // «АРС 1:0 ЧЕЛ» (владелец: «чтоб там всегда коды были без полных названий»), полное — в подсказке и для диктора
-  const team = (t: Side, right = false, short = false) => (
-    <span title={short ? t.name : undefined} className={`flex min-w-0 items-center justify-end gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
-      {/* ниже 380px — без эмблем: иначе «Барселона» рвалась по буквам («Барсело / на») */}
-      <span className="shrink-0 max-[379px]:hidden">
+  // и в шапке телефона, и в плашке от lg — код, как на табло трансляций: «АРС 1:0 ЧЕЛ» (владелец: «чтоб там всегда коды были
+  // без полных названий», потом «а можно на телефоне тоже коды сверху?»), полное — в подсказке и для диктора
+  const team = (t: Side, right = false) => (
+    <span title={t.name} className={`flex min-w-0 items-center justify-end gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
+      <span className="shrink-0">
         <TeamLogo name={t.name} src={t.logo} size={22} />
       </span>
-      <span className={`line-clamp-2 break-words text-[14px] font-semibold leading-[1.15] sm:text-[15px] ${short ? 'sr-only' : ''}`}>{t.name}</span>
-      {short ? (
-        <span aria-hidden className="whitespace-nowrap text-[15px] font-semibold tracking-[0.04em]">
-          {teamCode(t.name)}
-        </span>
-      ) : null}
+      <span className="sr-only">{t.name}</span>
+      <span aria-hidden className="whitespace-nowrap text-[15px] font-semibold tracking-[0.04em]">
+        {teamCode(t.name)}
+      </span>
     </span>
   )
 
   // мини-табло: «эмблема Бетис 1:0 Хетафе эмблема», минута — под счётом вне потока (цифры на линии названий)
   const score = (
     <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2.5 sm:gap-3">
-      {team(home, false, true)}
+      {team(home)}
       <span className="relative flex flex-col items-center leading-none">
         <span className="num display-num whitespace-nowrap text-[20px] font-semibold">{center}</span>
         {minute ? (
@@ -92,11 +89,11 @@ export function MatchBar({
           </span>
         ) : null}
       </span>
-      {team(away, true, true)}
+      {team(away, true)}
     </div>
   )
-  // в шапке телефона — те же команды всегда (владелец: «а можешь на странице матча сразу в хедере писать типа команды? и …
-  // красивее, чтоб сочеталось со страницей»): наверху между ними тихое «—», когда крупный счёт ушёл под шапку — на его месте
+  // в шапке телефона — те же эмблемы и коды всегда (владелец: «а можешь на странице матча сразу в хедере писать типа команды? и …
+  // красивее, чтоб сочеталось со страницей», потом «а можно на телефоне тоже коды сверху?»): наверху между ними тихое «—», когда крупный счёт ушёл под шапку — на его месте
   // счёт и минута; названия и эмблемы стоят на месте, меняется только середина
   const headerBar = (
     <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2.5">
