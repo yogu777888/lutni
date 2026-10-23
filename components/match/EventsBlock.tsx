@@ -117,7 +117,8 @@ const HIDE = new Set(['totalPasses', 'goalkeeperSaves'])
  * Порядок строк: сначала понятное — кто давит (владение, удары, в створ, голевые моменты), «Качество моментов» (дробь
  * с ⓘ) — после них, дальше угловые, фолы, карточки, офсайды. От md это и есть две колонки: игра / стандарты и карточки.
  */
-const ORDER = ['ballPossession', 'totalShots', 'shotsOnGoal', 'bigChances', 'expectedGoals', 'dangerousAttacks', 'cornerKicks', 'fouls', 'yellowCards', 'redCards', 'offsides']
+// shotsInsideBox, hitWoodwork, passAccuracy — из `/Ls/GameInfo` (`lsStats` в lib/sstats/ls.ts)
+const ORDER = ['ballPossession', 'totalShots', 'shotsOnGoal', 'shotsInsideBox', 'hitWoodwork', 'bigChances', 'expectedGoals', 'dangerousAttacks', 'passAccuracy', 'cornerKicks', 'fouls', 'yellowCards', 'redCards', 'offsides']
 const rank = (key: string) => (ORDER.includes(key) ? ORDER.indexOf(key) : ORDER.length)
 
 /**

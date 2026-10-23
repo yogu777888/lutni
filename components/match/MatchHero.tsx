@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { SITE } from '@/config/site'
 import { SPONSORED_REL } from '@/lib/affiliate'
-import { formatDateLong, formatTime, formatWeekdayLong } from '@/lib/format'
+import { formatDateLong, formatTime, formatWeekdayLong, plural } from '@/lib/format'
 import { split100 } from '@/lib/verdict'
 import type { MatchFull } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
@@ -71,6 +71,7 @@ export function MatchHero({
   back = null,
   league = null,
   ctx = null,
+  attendance = null,
   children,
 }: {
   full: MatchFull
@@ -78,6 +79,8 @@ export function MatchHero({
   books: number
   /** чьи кэфы в ячейках и ссылка к нему (реклама); null — кэфы без ссылки (после начала матча) */
   line?: { name: string; href: string; live?: boolean } | null
+  /** зрителей на стадионе (`/Ls/GameInfo`) — в строке под табло после начала */
+  attendance?: number | null
   /** «Разбор за минуту» — под табло по центру */
   story?: React.ReactNode
   /** «‹ Ла Лига» чипом в верхнем левом углу (`Breadcrumbs chip`) */
@@ -272,6 +275,7 @@ export function MatchHero({
         // время начала — только после начала: до него оно крупно на табло
         `${formatWeekdayLong(m.ts)}, ${formatDateLong(m.ts).replace(/\s\d{4}$/, '')}${started ? `, ${formatTime(m.ts)} мск` : ''}`,
         full.venue ? (full.venue.city && !full.venue.name.includes(full.venue.city) ? `${full.venue.name}, ${full.venue.city}` : full.venue.name) : null,
+        started && attendance ? `${attendance.toLocaleString('ru-RU')}\u00a0${plural(attendance, ['зритель', 'зрителя', 'зрителей'])}` : null,
       ]
         .filter(Boolean)
         .join(' · ')}

@@ -188,9 +188,15 @@ function strength(team: string): number {
 /** Настоящие эмблемы команд (`npm run team-logos`, см. ./team-logos.ts); обновляются на каждый запрос. */
 let LOGOS: Record<string, string> = {}
 
+/** Восьмизначные id Flashscore-раздела (`/Ls/*`): команда — «T…», матч — «G…» */
+const lsCode = (p: 'T' | 'G', n: number) => p + n.toString(36).padStart(7, '0')
+const lsNum = (code: string) => parseInt(code.slice(1), 36)
+
 function rawTeam(name: string): RawTeam {
   const country = TEAM_COUNTRY.get(name) ?? ''
-  return { id: TEAM_ID.get(name) ?? 0, name, logoUrl: LOGOS[name] ?? null, country: { code: '', name: country } }
+  const id = TEAM_ID.get(name) ?? 0
+  const flashId = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}/${lsCode('T', id)}`
+  return { id, name, flashId, logoUrl: LOGOS[name] ?? null, country: { code: '', name: country } }
 }
 
 // ─── Расписание ──────────────────────────────────────────────────────────────
@@ -551,7 +557,7 @@ function fullGame(g: MockGame, now: number, tz: number): RawGameFull {
         elapsed: goal.minute,
         type: 1,
         name: r() < 0.1 ? 'Penalty' : 'Normal Goal',
-        player: { id: null, name: playerName(team, Math.floor(r() * 11)) },
+        player: { id: null, name: playerName(team, 1 + Math.floor(r() * 10)) },
         assistPlayer: r() < 0.7 ? { id: null, name: playerName(team, 11 + Math.floor(r() * 11)) } : null,
       })
     }
@@ -943,6 +949,117 @@ function pariHistoryMock(eventId: number, now: number) {
   return envelope(snaps)
 }
 
+// ─── Flashscore-раздел (/Ls/*): составы, давление, статистика ────────────────
+
+function lsList(p: URLSearchParams) {
+  const team = lsNum((p.get('Team') ?? '').split('/').pop() ?? '')
+  const ymd = p.get('Date') ?? ''
+  const out = gamesOnDay(dayIndexOf(ymd))
+    .filter((g) => TEAM_ID.get(g.home) === team || TEAM_ID.get(g.away) === team)
+    .map((g) => ({ id: lsCode('G', g.id), homeTeamId: lsCode('T', TEAM_ID.get(g.home) ?? 0), awayTeamId: lsCode('T', TEAM_ID.get(g.away) ?? 0) }))
+  return envelope(out)
+}
+
+const FORMATIONS = ['4-3-3', '4-2-3-1', '4-4-2', '3-5-2', '4-1-4-1']
+
+function lsLineups(g: MockGame, now: number) {
+  const ph = phaseOf(g, now)
+  const started = ph.status !== 2
+  // голы и карточки — по тем же событиям, что в /Games/{id}: имена авторов совпадают с основой (номера 0–10)
+  const events = fullGame(g, now, 3).events ?? []
+  const sides = [g.home, g.away].map((team, si) => {
+    const r = rng('lineup', g.id, team)
+    const formation = FORMATIONS[Math.floor(r() * FORMATIONS.length)]
+    const lines = [1, ...formation.split('-').map(Number)]
+    const tid = TEAM_ID.get(team) ?? 0
+    const mine = events.filter((e) => e.teamId === tid)
+    const subs = started ? [62, 71, 79].filter((mm) => mm <= ph.minute) : []
+    const players: Record<string, unknown>[] = []
+    // номера — разные у всех 20 игроков: перемешанные 2–40, у вратарей 1 и 12/22
+    const shirts = Array.from({ length: 39 }, (_, i) => i + 2).filter((x) => x !== 12 && x !== 22)
+    for (let i = shirts.length - 1; i > 0; i--) {
+      const j = Math.floor(r() * (i + 1))
+      ;[shirts[i], shirts[j]] = [shirts[j], shirts[i]]
+    }
+    let n = 0
+    lines.forEach((count, row) => {
+      for (let j = 0; j < count; j++, n++) {
+        const name = playerName(team, n)
+        const goals = mine.filter((e) => e.type === 1 && e.player?.name === name).length
+        const yellow = mine.some((e) => e.type === 2 && e.player?.name === name)
+        const out = [10, 9, 7].indexOf(n)
+        players.push({
+          playerName: name,
+          kind: 0,
+          shirtNumber: String(n === 0 ? 1 : shirts[n]),
+          isCaptain: n === 4,
+          isGoalkeeper: n === 0,
+          formationRow: row,
+          sortOrder: n,
+          subOutTime: out >= 0 && subs[out] ? subs[out] : null,
+          statistics: started ? { rating: Math.round((6.1 + r() * 1.9 + goals * 0.9) * 10) / 10, goals, yellowCards: yellow ? 1 : 0 } : null,
+        })
+      }
+    })
+    for (let b = 0; b < 9; b++) {
+      const inAt = subs[b] ?? null
+      players.push({
+        playerName: playerName(team, 11 + b),
+        kind: 1,
+        shirtNumber: String(b === 8 ? 12 + si * 10 : shirts[11 + b]),
+        isGoalkeeper: b === 8,
+        sortOrder: 20 + b,
+        subInTime: inAt,
+        statistics: inAt ? { rating: Math.round((6.2 + r() * 1.0) * 10) / 10 } : null,
+      })
+    }
+    players.push({ playerName: playerName(team, 40), kind: 2 })
+    return { side: si + 1, formation, players }
+  })
+  if (started) {
+    // лучшая оценка матча — отметка `isBestRating`, как в API
+    const all = sides.flatMap((t) => t.players).filter((p) => (p.statistics as { rating?: number } | null)?.rating)
+    const best = all.reduce((a, b) => ((b.statistics as { rating: number }).rating > (a.statistics as { rating: number }).rating ? b : a), all[0])
+    if (best) (best.statistics as Record<string, unknown>).isBestRating = true
+  }
+  return envelope({ lineups: sides })
+}
+
+function lsMomentum(g: MockGame, now: number) {
+  const ph = phaseOf(g, now)
+  if (ph.status === 2) return envelope(null)
+  const r = rng('momentum', g.id)
+  const bias = Math.max(-0.3, Math.min(0.3, (strength(g.home) - strength(g.away)) * 0.4))
+  const points: Record<string, number>[] = []
+  const add = (stage: number, minute: number, added: number) => {
+    const goal = g.goals.find((x) => x.minute >= minute && x.minute - minute < 3)
+    const push = goal ? (goal.side === 'home' ? 0.75 : -0.75) : 0
+    const v = Math.max(-1, Math.min(1, bias + push + (r() - 0.5) * 1.5))
+    points.push({ eventStage: stage, elapsedMinute: minute, elapsedSecond: 59, addedTime: added, momentumValue: Math.round(v * 1e4) / 1e4 })
+  }
+  const firstEnd = ph.status === 3 ? ph.minute : 47
+  for (let mm = 0; mm < firstEnd; mm++) add(12, mm, Math.max(0, mm - 44))
+  if (ph.status >= 5) for (let mm = 45; mm < Math.min(ph.minute, 90) + (ph.status === 8 ? 3 : 0); mm++) add(13, mm, Math.max(0, mm - 89))
+  return envelope({ points })
+}
+
+function lsInfo(g: MockGame, now: number) {
+  const ph = phaseOf(g, now)
+  if (ph.status === 2) return envelope({ statistics: null })
+  const r = rng('ls-info', g.id)
+  const share = ph.minute / 90
+  const sc = scoreAt(g, ph.minute)
+  const pair = (h: number, a: number) => ({ home: { value: h }, away: { value: a } })
+  const pct = (h: number, a: number) => ({ home: { percentage: h }, away: { percentage: a } })
+  const metrics = [
+    { id: '461', ...pair(Math.round((g.lh * 3.4 + r() * 3) * share) + sc.h, Math.round((g.la * 3.4 + r() * 3) * share) + sc.a) },
+    { id: '457', ...pair(r() < 0.25 ? 1 : 0, r() < 0.2 ? 1 : 0) },
+    { id: '342', ...pct(Math.round(78 + (strength(g.home) - strength(g.away)) * 8 + r() * 6), Math.round(78 - (strength(g.home) - strength(g.away)) * 8 + r() * 6)) },
+  ]
+  const attendance = 9_000 + Math.floor(rng('crowd', g.home)() * 60_000)
+  return envelope({ venue: null, city: null, attendance, statistics: { fullTime: { metrics } } })
+}
+
 /**
  * Точка входа: имитирует GET {path}?{params} к api.sstats.net. Часы — общие с сайтом (`appNow`):
  * в демо они стоят на 4 октября, 19:30; SSTATS_MOCK_NOW=2026-10-02T21:00:00+03:00 «переводит» их,
@@ -955,6 +1072,12 @@ export async function mockFetch(pathname: string, params: URLSearchParams): Prom
   const low = path.toLowerCase()
   let m: RegExpExecArray | null
   if (low === '/games/list') return listGames(params, now)
+  if (low === '/ls/list') return lsList(params)
+  if (low === '/ls/gamelineups' || low === '/ls/gamemomentum' || low === '/ls/gameinfo') {
+    const g = gameById(lsNum(params.get('id') ?? ''))
+    if (!g) return envelope(null)
+    return low === '/ls/gamelineups' ? lsLineups(g, now) : low === '/ls/gamemomentum' ? lsMomentum(g, now) : lsInfo(g, now)
+  }
   if (low === '/leagues') return leaguesList()
   if (low === '/seasons/standings') return standings(params, now)
   if (low === '/games/injuries') return injuries(Number(params.get('gameId')))

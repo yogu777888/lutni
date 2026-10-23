@@ -11,6 +11,8 @@ import { ClubVars } from '@/components/match/ClubVars'
 import { FormBlock } from '@/components/match/FormBlock'
 import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
+import { Lineups } from '@/components/match/Lineups'
+import { Momentum } from '@/components/match/Momentum'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { hasMoves, OddsTable } from '@/components/match/OddsTable'
 import { PredictBlock } from '@/components/match/PredictHero'
@@ -24,7 +26,7 @@ import { StickyCta } from '@/components/StickyCta'
 import { PARTNERS, partnerForApiBookmaker, primaryPartner } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
-import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle } from '@/lib/data'
+import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle, waitLsExtra } from '@/lib/data'
 import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
@@ -81,7 +83,13 @@ export default async function MatchPage({ params }: Props) {
   const canonical = matchHref(m)
   if (`/match/${slug}` !== canonical) permanentRedirect(canonical)
 
-  const { full, books, cons, model, candidates, pick, tags } = ins
+  const { full: base, books, cons, model, candidates, pick, tags } = ins
+  // Flashscore-раздел SStats (`/Ls/*`): составы, давление по минутам, лишние строки статистики, стадион и зрители —
+  // ждём не дольше 1,5 с, дальше ответ дозаполнит кэш к следующему открытию (владелец: «сделай всё»)
+  const ls = await waitLsExtra(m, new Set(base.stats.map((s) => s.key)))
+  const full = ls && (ls.stats.length || (ls.venue && !base.venue))
+    ? { ...base, stats: [...base.stats, ...ls.stats], venue: base.venue ?? (ls.venue ? { ...ls.venue, capacity: null } : null) }
+    : base
   // в таблице кэфов — только легальные партнёры (владелец: «оставь легал»): зарубежных букмекеров в РФ рекламировать
   // нельзя, а строка без ссылки — реклама конкурента; в честной цене (консенсус) они по-прежнему участвуют
   const legalBooks = books.filter((b) => partnerForApiBookmaker(b.bookmakerId, b.bookmakerName))
@@ -273,6 +281,7 @@ export default async function MatchPage({ params }: Props) {
         line={heroLine}
         league={crumbs[1]}
         ctx={heroCtx}
+        attendance={ls?.attendance ?? null}
       />
 
       {/* .match-body — на компьютере текст крупнее (app/globals.css) */}
@@ -280,15 +289,25 @@ export default async function MatchPage({ params }: Props) {
           читался подписью к табло над ним (владелец: «заголовок как будто относится к верхнему блоку») */}
       <div className="match-body mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-8">
-          {!scheduled && (full.events.length || full.stats.length) ? (
+          {!scheduled && (full.events.length || full.stats.length || ls?.momentum) ? (
             // в игре — «Сейчас в матче»: эти цифры учитывают счёт и ход игры; доматчевые блоки ниже подписаны «До матча»
             <Section outside title={m.status === 'live' ? 'Сейчас в матче' : 'Ход матча'}>
               {/* статистика с полосами цветами клубов, под ней — удаления и незабитые пенальти (голы — на табло) */}
               <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>
                 <div className="space-y-4 [&>*+*]:border-t [&>*+*]:border-edge [&>*+*]:pt-4">
+                  {ls?.momentum ? <Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} /> : null}
                   <StatsBars stats={full.stats} home={m.home} away={m.away} />
                   <EventsBlock events={full.events} home={m.home} away={m.away} />
                 </div>
+              </ClubVars>
+            </Section>
+          ) : null}
+
+          {/* составы — после начала сразу за «Ходом матча», до начала (за 90 минут, раньше их нет) — после «Прогноза» */}
+          {ls?.lineups && !scheduled ? (
+            <Section outside title="Составы">
+              <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>
+                <Lineups data={ls.lineups} home={m.home} away={m.away} />
               </ClubVars>
             </Section>
           ) : null}
@@ -300,6 +319,14 @@ export default async function MatchPage({ params }: Props) {
           {scheduled && (verdict || pick) ? (
             <Section outside title="Прогноз" note="Оценка tag.bet, а не гарантия. Ставки — это риск · 18+">
               <PredictBlock m={m} v={verdict} pick={pick} probs={x} tags={tags} />
+            </Section>
+          ) : null}
+
+          {ls?.lineups && scheduled ? (
+            <Section outside title="Стартовые составы">
+              <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>
+                <Lineups data={ls.lineups} home={m.home} away={m.away} />
+              </ClubVars>
             </Section>
           ) : null}
 

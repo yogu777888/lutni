@@ -10,6 +10,8 @@ export type Team = {
   original: string
   logo: string | null
   country: string
+  /** Id команды во Flashscore-разделе SStats (`/Ls/*`): «bournemouth/OtpNdwrc» — по нему ищем матч там. */
+  flash?: string | null
 }
 
 export type League = {

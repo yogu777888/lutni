@@ -146,6 +146,7 @@ export function normalizeTeam(t: RawTeam | null | undefined): Team {
     original,
     logo: t?.logoUrl || null,
     country: t?.country?.name ?? '',
+    flash: t?.flashId || null,
   }
 }
 

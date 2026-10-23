@@ -17,6 +17,7 @@ import { ApiError, apiGet } from './sstats/client'
 import * as N from './sstats/normalize'
 import { normalizePariMatch, pariBook, pariHistory, type PariHistory, type PariMatch, type RawPariMatch, type RawPariSnapshot } from './sstats/pari'
 import { linkPari } from './pari-link'
+import { findLsGame, lsStats, normalizeLineups, normalizeMomentum, type LsExtra, type RawLsGame, type RawLsInfo, type RawLsLineups, type RawLsMomentum } from './sstats/ls'
 import type {
   RawBookmakerOdds,
   RawGame,
@@ -150,8 +151,9 @@ export async function getMatchFull(id: number, opts: Opts = {}): Promise<MatchFu
   try {
     return await cache.get(
       // в кэше лежит уже разобранный матч, и у сыгранных старый разбор жил бы ещё неделю: v2 — события VAR больше не
-      // голы и не карточки (`eventKind`), v3 — тур по-русски («Clausura - 11» → «Клаусура, 11-й тур», `ruRound`)
-      `game:v3:${id}`,
+      // голы и не карточки (`eventKind`), v3 — тур по-русски («Clausura - 11» → «Клаусура, 11-й тур», `ruRound`),
+      // v4 — у команд id во Flashscore (`flash`): по нему ищем составы и давление (`getLsExtra`)
+      `game:v4:${id}`,
       async () => N.normalizeFull(await apiGet<RawGameFull>(`/Games/${id}`, { TimeZone: tz }, opts), tz),
       (full) => matchTtl(full.match),
     )
@@ -278,6 +280,64 @@ export async function daySnaps(matches: Match[], ms = 2500): Promise<{ snaps: Ma
 /** Полные данные матча (статистика, события) не дольше `ms` — для «Главных матчей»: идущие и сыгранные. */
 export async function waitMatchFull(id: number, ms = 1200): Promise<MatchFull | null> {
   const run = settle(getMatchFull(id, { priority: 'low' }), null)
+  return Promise.race([run, new Promise<null>((r) => setTimeout(() => r(null), ms).unref?.())])
+}
+
+/** Id матча во Flashscore-разделе (`/Ls/*`) — по команде хозяев и дню; не нашли — null (и это тоже держим в кэше). */
+async function getLsId(m: Match, opts: Opts = {}): Promise<string | null> {
+  const home = m.home.flash
+  const away = m.away.flash
+  if (!home || !away) return null
+  const tz = tzOffsetHours(undefined, m.ts)
+  return cache.get(
+    `ls-id:${m.id}`,
+    async () => findLsGame(await apiGet<RawLsGame[]>('/Ls/List', { Team: home, Date: ymdInTz(m.ts), TimeZone: tz }, opts), home, away),
+    (id) => (id ? { ttl: 7 * 24 * H } : { ttl: 6 * H }),
+  )
+}
+
+/**
+ * Составы, давление по минутам, лишние строки статистики, стадион и зрители (владелец: «сделай всё» — про новые
+ * методы `/Ls/*`). До начала — только составы и не раньше чем за 90 минут (раньше их нет); давление и статистика —
+ * после начала. Каждая часть — своим запросом, упала одна — остальные на месте.
+ */
+export async function getLsExtra(m: Match, have: Set<string>, opts: Opts = {}): Promise<LsExtra | null> {
+  const started = m.status !== 'scheduled' && m.status !== 'postponed' && m.status !== 'cancelled'
+  const soon = m.status === 'scheduled' && m.ts - appNow() < 90 * 60_000
+  if (!started && !soon) return null
+  const id = await getLsId(m, opts)
+  if (!id) return null
+  const ttl = matchTtl(m)
+  const [info, lineups, momentum] = await Promise.all([
+    // в ответе ~100 КБ (события с комментариями, кэфы) — храним только нужное
+    started
+      ? settle(
+          cache.get(
+            `ls-info:${id}`,
+            async () => {
+              const r = await apiGet<RawLsInfo>('/Ls/GameInfo', { id }, opts)
+              return { venue: r?.venue ?? null, city: r?.city ?? null, attendance: r?.attendance ?? null, statistics: { fullTime: { metrics: r?.statistics?.fullTime?.metrics ?? [] } } } as RawLsInfo
+            },
+            ttl,
+          ),
+          null,
+        )
+      : null,
+    settle(cache.get(`ls-lineups:${id}`, async () => normalizeLineups(await apiGet<RawLsLineups>('/Ls/GameLineups', { id }, opts)), ttl), null),
+    started ? settle(cache.get(`ls-momentum:${id}`, async () => normalizeMomentum(await apiGet<RawLsMomentum>('/Ls/GameMomentum', { id }, opts)), ttl), null) : null,
+  ])
+  return {
+    lineups,
+    momentum,
+    stats: lsStats(info, have),
+    venue: info?.venue ? { name: info.venue, city: info.city ?? '' } : null,
+    attendance: typeof info?.attendance === 'number' && info.attendance > 0 ? info.attendance : null,
+  }
+}
+
+/** Подождать `getLsExtra` не дольше `ms`: дальше ответ дозаполнит кэш к следующему открытию. */
+export async function waitLsExtra(m: Match, have: Set<string>, ms = 1500): Promise<LsExtra | null> {
+  const run = settle(getLsExtra(m, have, { priority: 'low' }), null)
   return Promise.race([run, new Promise<null>((r) => setTimeout(() => r(null), ms).unref?.())])
 }
 
