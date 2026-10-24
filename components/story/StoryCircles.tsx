@@ -6,6 +6,7 @@ import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
 import { discBackground, StorySymbol, symbolColor } from './StorySymbol'
+import { arc, ringSegments } from '../shell/StoryRing'
 
 /**
  * Истории — круглые входы в подборки, в духе iOS: светлый диск (#FFFFFF → #EAF2F8, тонкая граница, мягкая тень), в
@@ -22,13 +23,24 @@ const LIVE = '#ff5c63'
 const SEEN = 'rgb(255 255 255 / 0.22)'
 
 /**
- * Кольцо одним контуром: просмотренная доля — приглушённая, остальное — цветом (от верха по часовой стрелке).
- * Без сегментов на каждый матч: на подборках из 15–30 матчей они превратились бы в рябь.
+ * Кольцо дугами по матчу, как в Instagram (`ringSegments`: от 2 до 12 матчей, зазор 3px); просмотренные — первые
+ * `seen` дуг, приглушённые. Больше 12 — одним контуром, просмотренная доля приглушённая от верха по часовой: из 15–30 дуг
+ * вышла бы рябь.
  */
 function Ring({ kind, n, seen }: { kind: CircleKind; n: number; seen: number }) {
   const color = kind === 'live' ? LIVE : UNSEEN
   const done = Math.round((seen / Math.max(1, n)) * 100)
   const c = { cx: D / 2, cy: D / 2, r: R, fill: 'none', strokeWidth: 2, pathLength: 100, vectorEffect: 'non-scaling-stroke' } as const
+  // зазор ~3px на экране: круг 58px из 76 единиц, окружность r 36,5 — ~229 единиц
+  const segs = ringSegments(n, 12, ((3 * D) / 58 / (2 * Math.PI * R)) * 100)
+  if (segs)
+    return (
+      <svg aria-hidden viewBox={`0 0 ${D} ${D}`} className="absolute inset-0 h-full w-full -rotate-90 overflow-visible">
+        {segs.map((s, i) => (
+          <circle key={i} {...c} style={{ stroke: i < seen ? SEEN : color }} {...arc(s)} />
+        ))}
+      </svg>
+    )
   return (
     <svg aria-hidden viewBox={`0 0 ${D} ${D}`} className="absolute inset-0 h-full w-full -rotate-90 overflow-visible">
       <circle {...c} style={{ stroke: done > 0 ? SEEN : color }} />
