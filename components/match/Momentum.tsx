@@ -56,7 +56,7 @@ const EV_WORD: Partial<Record<MatchEvent['kind'], string>> = { goal: 'гол', p
  * до текущей минуты с небольшим запасом, после матча — вся продолжительность. Голы — метка «эмблема 17′» и пунктир.
  * Сверху — «Сколько минут давила команда» с полосой и «ещё N мин — на равных · сыграно M мин» (`momentumSummary`).
  */
-export function Momentum({ points, events, home, away, live }: { points: MomentumPoint[]; events: MatchEvent[]; home: Side; away: Side; live: boolean }) {
+export function Momentum({ points, events, home, away, live, clock = null }: { points: MomentumPoint[]; events: MatchEvent[]; home: Side; away: Side; live: boolean; /** минута на часах по ходу (`elapsed`) */ clock?: number | null }) {
   const box = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(0)
   const [act, setAct] = useState<number | null>(null)
@@ -75,14 +75,16 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
   const even = Math.max(0, points.length - sum.minutes.home - sum.minutes.away)
   const bs = buckets(points, pt.pos)
   const last = points[points.length - 1]
-  const xNow = last ? pt.pos(last.part, last.minute) : 0
-  // правый край — «сейчас» по ходу и конец матча после: данные доходят до края графика, а не висят внутри
+  // xData — последняя минута с данными; xNow — «сейчас» по часам матча (данные бывают на минуту-две позади)
+  const xData = last ? pt.pos(last.part, last.minute) : 0
+  const clockPos = (m: number) => (m <= 45 ? m : m <= 90 ? pt.len1 + m - 45 : pt.len1 + pt.len2 + m - 90)
+  const xNow = live && clock ? Math.max(xData, clockPos(clock)) : xData
+  // правый край — «сейчас» по ходу и конец матча после
   const xMax = Math.max(live ? xNow : pt.total, 10)
+  const behind = live && last && xNow > xData
   const top = Math.max(...bs.map((b) => Math.max(b.h, b.a)), 1)
   const yMax = Math.min(100, Math.max(40, Math.ceil(top / 20) * 20))
   const yTicks = Array.from({ length: yMax / 20 + 1 }, (_, i) => i * 20)
-  // минута по часам → место на оси (у второго тайма — после добавленного к первому)
-  const clockPos = (m: number) => (m <= 45 ? m : m <= 90 ? pt.len1 + m - 45 : pt.len1 + pt.len2 + m - 90)
 
   const evPos = (e: MatchEvent) => pt.pos(evPart(e), e.minute + (e.extra ?? 0))
   // голы: ярус выше, если рядом (ближе 8 минут) уже стоит метка
@@ -112,16 +114,12 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
     .filter((m) => (m <= 45 || pt.len2 > 0 || m === 0) && (m <= 90 || pt.total > pt.len1 + pt.len2))
     .map((m) => ({ m, x: clockPos(m) }))
     .filter((t) => t.x <= xMax)
-  // точка отрезка — его середина; у первого и последнего линия доведена ровно до начала и конца отрезка (0′ и «сейчас»)
-  const path = (k: 'h' | 'a') => {
-    if (!bs.length) return ''
-    const pts = [[bs[0].from, bs[0][k]], ...bs.map((b) => [b.x, b[k]]), [bs[bs.length - 1].to, bs[bs.length - 1][k]]]
-    return pts.map(([x, v], i) => `${i ? 'L' : 'M'}${X(x).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')
-  }
+  // только настоящие точки (середины отрезков): до первой и после последней линию не продлеваем
+  const path = (k: 'h' | 'a') => bs.map((b, i) => `${i ? 'L' : 'M'}${X(b.x).toFixed(1)},${Y(b[k]).toFixed(1)}`).join(' ')
   const cur = act != null ? bs[act] : null
   // события отрезка — только те, что есть в данных матча
   const curEvents = cur ? events.filter((e) => EV_WORD[e.kind] && evPos(e) > cur.from && evPos(e) <= cur.to) : []
-  const nowLabel = last ? minuteLabel(last) : ''
+  const nowLabel = behind && clock ? `${clock}′` : last ? minuteLabel(last) : ''
   const nowLeft = X(xNow) + 96 > L + pw
 
   const pick = (e: React.PointerEvent<SVGRectElement>) => {
@@ -140,7 +138,8 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
 
   // вывод под графиком: ровно последние 10 минут по данным, без пропусков; иначе — ничего не пишем
   const tail = points.slice(-10)
-  const whole = points.length >= 20 && tail.every((p, i) => !i || pt.pos(p.part, p.minute) - pt.pos(tail[i - 1].part, tail[i - 1].minute) === 1)
+  // по ходу данные должны быть свежими (не дальше 3 минут от «сейчас»), иначе вывод не делаем
+  const whole = points.length >= 20 && (!live || xNow - xData <= 3) && tail.every((p, i) => !i || pt.pos(p.part, p.minute) - pt.pos(tail[i - 1].part, tail[i - 1].minute) === 1)
   const th = (tail.reduce((s, p) => s + Math.max(p.v, 0), 0) / 10) * 100
   const ta = (tail.reduce((s, p) => s + Math.max(-p.v, 0), 0) / 10) * 100
   const lead = Math.abs(th - ta) < 8 ? null : th > ta ? home : away
@@ -150,7 +149,7 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
       ? live
         ? `В последние 10 минут сильнее давит «${lead.name}».`
         : `В последние 10 минут матча сильнее давила команда «${lead.name}».`
-      : `${live ? 'Последние 10 минут' : 'Последние 10 минут матча'} — на равных.`
+      : `${live ? 'В последние 10 минут' : 'В последние 10 минут матча'} — на равных.`
   const swatch = (k: 'h' | 'a') => (
     <svg width="18" height="8" aria-hidden className={`momentum-line ${k === 'h' ? 'club-stroke-h' : 'club-stroke-a'}`}>
       <path d="M1,4 L17,4" strokeWidth={2.5} strokeLinecap="round" />
@@ -192,6 +191,7 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
         <p className="mt-2.5 text-center text-[13px] text-mute">
           {[
             pt.added > 0 ? `сыграно ${mins(pt.total)} с добавленным временем` : null,
+            behind ? `данные давления до ${minuteLabel(last)}` : null,
             pt.gap > 0 ? `нет данных — ${mins(pt.gap)}` : null,
           ]
             .filter(Boolean)

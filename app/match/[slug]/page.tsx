@@ -18,6 +18,7 @@ import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
 import { Lineups } from '@/components/match/Lineups'
 import { Momentum } from '@/components/match/Momentum'
+import { Hint } from '@/components/match/Hint'
 import { Tabs, type TabItem } from '@/components/match/Tabs'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { hasMoves, OddsTable } from '@/components/match/OddsTable'
@@ -608,8 +609,17 @@ export default async function MatchPage({ params, searchParams }: Props) {
     </Section>
   ) : null
   const sec_momentum = ls?.momentum ? (
-    <Section outside title="Давление команд" note="Индекс давления 0–100 показывает, какая команда в эти минуты чаще и опаснее атакует. Это не владение мячом и не вероятность гола.">
-      {clubVars(<Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} live={isLive} />)}
+    <Section
+      outside
+      title={
+        // ⓘ — объяснение шкалы по наведению и нажатию; окошко — во всю ширину этой обёртки
+        <span className="relative inline-flex w-[min(24rem,calc(100vw-4rem))] items-center">
+          Давление команд
+          <Hint title="Индекс давления" text="Шкала 0–100 показывает, какая команда в эти минуты чаще и опаснее атакует. Это не владение мячом и не вероятность гола." />
+        </span>
+      }
+    >
+      {clubVars(<Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} live={isLive} clock={isLive ? m.elapsed : null} />)}
     </Section>
   ) : null
   // статистика: матч целиком — строки `/Games` (обновляются со счётом) и всё остальное из `/Ls/GameInfo`; таймы и
