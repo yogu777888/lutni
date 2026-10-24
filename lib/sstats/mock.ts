@@ -1058,6 +1058,33 @@ function lsInfo(g: MockGame, now: number) {
     { id: '457', ...pair(r() < 0.25 ? 1 : 0, r() < 0.2 ? 1 : 0) },
     { id: '342', ...pct(Math.round(78 + (strength(g.home) - strength(g.away)) * 8 + r() * 6), Math.round(78 - (strength(g.home) - strength(g.away)) * 8 + r() * 6)) },
   ]
+  // остальные показатели, как в настоящем ответе: доли «из» (отборы, длинные передачи), xGOT, xA, вратари, ошибки
+  const n = (base: number) => Math.round(base * share * (0.7 + r() * 0.6))
+  const ratio = (tot: number, acc: number) => {
+    const t = Math.max(1, n(tot))
+    const ok = Math.round(t * acc)
+    return { percentage: Math.round((ok / t) * 100), successful: ok, total: t }
+  }
+  const xgot = [Math.round(g.lh * share * (0.6 + r()) * 100) / 100, Math.round(g.la * share * (0.6 + r()) * 100) / 100]
+  const more: { id: string; name: string; groups: string[]; home: object; away: object }[] = [
+    { id: '499', name: 'xG on target (xGOT)', groups: ['Shots'], home: { value: xgot[0] }, away: { value: xgot[1] } },
+    { id: '503', name: 'Expected assists (xA)', groups: ['Passes'], home: { value: Math.round(g.lh * share * 0.7 * 100) / 100 }, away: { value: Math.round(g.la * share * 0.7 * 100) / 100 } },
+    { id: '158', name: 'Blocked shots', groups: ['Shots'], home: { value: n(3) }, away: { value: n(3) } },
+    { id: '463', name: 'Shots outside the box', groups: ['Shots'], home: { value: n(5) }, away: { value: n(4) } },
+    { id: '471', name: 'Touches in opposition box', groups: ['Attack'], home: { value: n(20 * g.lh) }, away: { value: n(20 * g.la) } },
+    { id: '517', name: 'Long passes', groups: ['Passes'], home: ratio(55, 0.55 + r() * 0.1), away: ratio(55, 0.5 + r() * 0.1) },
+    { id: '433', name: 'Crosses', groups: ['Passes'], home: ratio(20, 0.2 + r() * 0.1), away: ratio(20, 0.2 + r() * 0.1) },
+    { id: '475', name: 'Tackles', groups: ['Defense'], home: ratio(16, 0.35 + r() * 0.2), away: ratio(16, 0.35 + r() * 0.2) },
+    { id: '513', name: 'Duels won', groups: ['Defense'], home: { value: n(45) }, away: { value: n(45) } },
+    { id: '434', name: 'Interceptions', groups: ['Defense'], home: { value: n(10) }, away: { value: n(10) } },
+    { id: '479', name: 'Clearances', groups: ['Defense'], home: { value: n(20) }, away: { value: n(25) } },
+    { id: '509', name: 'Errors leading to goal', groups: ['Defense'], home: { value: 0 }, away: { value: r() < 0.2 ? 1 : 0 } },
+    { id: '501', name: 'xGOT faced', groups: ['Goalkeeping'], home: { value: xgot[1] }, away: { value: xgot[0] } },
+    { id: '511', name: 'Goals prevented', groups: ['Goalkeeping'], home: { value: Math.round((xgot[1] - sc.a) * 100) / 100 }, away: { value: Math.round((xgot[0] - sc.h) * 100) / 100 } },
+    { id: '20', name: 'Goal kicks', groups: ['Goalkeeping'], home: { value: n(7) }, away: { value: n(7) } },
+    { id: '15', name: 'Free kicks', groups: ['Attack'], home: { value: n(12) }, away: { value: n(12) } },
+    { id: '18', name: 'Throw ins', groups: ['Passes'], home: { value: n(18) }, away: { value: n(18) } },
+  ]
   const attendance = 9_000 + Math.floor(rng('crowd', g.home)() * 60_000)
   // таймы — от статистики /Games: первый — доля сыгранного до перерыва, второй — остальное (владение — ±3 от итога)
   const st = (fullGame(g, now, 3).statistics ?? {}) as Record<string, number>
@@ -1078,7 +1105,7 @@ function lsInfo(g: MockGame, now: number) {
           return { id, ...pair(part(st[`${k}Home`]), part(st[`${k}Away`])) }
         })
   const halves = ph.minute > 45 ? { firstHalf: { metrics: half(true) }, secondHalf: { metrics: half(false) } } : {}
-  return envelope({ venue: null, city: null, attendance, statistics: { fullTime: { metrics }, ...halves } })
+  return envelope({ venue: null, city: null, attendance, statistics: { fullTime: { metrics: [...metrics, ...more], otherStats: { 'Goal kicks': { home: '7', away: '6' } } }, ...halves } })
 }
 
 /**

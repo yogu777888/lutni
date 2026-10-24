@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cardReason, findLsGame, lsHalves, lsReds, lsStats, minuteLabel, normalizeLineups, normalizeMomentum, surname, type RawLsPlayer } from '../lib/sstats/ls'
+import { cardReason, findLsGame, lsPeriods, lsReds, lsStats, minuteLabel, normalizeLineups, normalizeMomentum, surname, type RawLsPlayer } from '../lib/sstats/ls'
 
 describe('Flashscore-раздел SStats (/Ls/*)', () => {
   it('матч — по id команд из flashId', () => {
@@ -67,13 +67,14 @@ describe('Flashscore-раздел SStats (/Ls/*)', () => {
 })
 
 describe('таймы, удаления, средняя оценка', () => {
-  it('таймы — строками статистики, только если у обоих таймов есть данные', () => {
+  it('таймы — строками статистики, только когда начался второй', () => {
     const m = (id: string, h: number, a: number) => ({ id, home: { value: h }, away: { value: a } })
     const period = { metrics: [m('34', 13, 1), m('13', 4, 0), m('16', 4, 1), { id: '12', home: { percentage: 64 }, away: { percentage: 36 } }] }
-    const h = lsHalves({ statistics: { firstHalf: period, secondHalf: period } })!
-    expect(h.first.map((s) => s.key)).toEqual(['ballPossession', 'totalShots', 'shotsOnGoal', 'cornerKicks'])
-    expect(h.first[0]).toMatchObject({ home: 64, away: 36, suffix: '%' })
-    expect(lsHalves({ statistics: { firstHalf: period, secondHalf: { metrics: [] } } })).toBeNull()
+    const p = lsPeriods({ statistics: { fullTime: period, firstHalf: period, secondHalf: period } })
+    expect(p.map((x) => x.key)).toEqual(['all', 'first', 'second'])
+    expect(p[1].rows.map((s) => s.key)).toEqual(['ballPossession', 'totalShots', 'shotsOnGoal', 'cornerKicks'])
+    expect(p[1].rows[0]).toMatchObject({ home: 64, away: 36, suffix: '%', kind: 'share' })
+    expect(lsPeriods({ statistics: { fullTime: period, firstHalf: period, secondHalf: { metrics: [] } } }).map((x) => x.key)).toEqual(['all'])
   })
 
   it('причина удаления словами, незнакомая — не пишем', () => {

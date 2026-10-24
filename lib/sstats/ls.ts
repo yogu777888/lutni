@@ -5,19 +5,25 @@
  * Проверено на настоящем API (октябрь 2026, «Борнмут» — «Сандерленд»).
  */
 import type { StatPair } from '../types'
+import { lsPeriods, periodRows, type StatPeriod } from './stat-rows'
 
 // ─── Ответы API (только нужные поля) ─────────────────────────────────────────
 
 export type RawLsGame = { id: string; homeTeamId?: string | null; awayTeamId?: string | null; dateUtc?: number | null }
 
+type RawLsSide = { raw?: string | null; value?: number | null; percentage?: number | null; successful?: number | null; total?: number | null } | null
+
 export type RawLsMetric = {
   id: string
   name?: string
-  home?: { value?: number | null; percentage?: number | null } | null
-  away?: { value?: number | null; percentage?: number | null } | null
+  /** группы во Flashscore: «Top stats», «Shots», «Attack», «Passes», «Defense», «Goalkeeping» */
+  groups?: string[] | null
+  home?: RawLsSide
+  away?: RawLsSide
 }
 
-type RawLsPeriod = { metrics?: RawLsMetric[] | null } | null
+/** Период статистики: `metrics` и `otherStats` — то, у чего в API нет id («Goal kicks»: { home: "6", away: "5" }). */
+export type RawLsPeriod = { metrics?: RawLsMetric[] | null; otherStats?: Record<string, { home?: string | number | null; away?: string | number | null } | null> | null } | null
 
 /** Событие матча: нам нужны только карточки с причиной («Holding», «Handball»…). */
 export type RawLsEvent = {
@@ -32,7 +38,8 @@ export type RawLsInfo = {
   venue?: string | null
   city?: string | null
   attendance?: number | null
-  statistics?: { fullTime?: RawLsPeriod; firstHalf?: RawLsPeriod; secondHalf?: RawLsPeriod } | null
+  /** «fullTime», «firstHalf», «secondHalf», дополнительное время — «extraTime» (бывает «extraTIme») */
+  statistics?: Record<string, RawLsPeriod> | null
   events?: RawLsEvent[] | null
 }
 
@@ -108,8 +115,8 @@ export type LsExtra = {
   momentum: MomentumPoint[] | null
   /** Строки статистики, которых нет в `/Games/{id}` */
   stats: StatPair[]
-  /** Статистика по таймам (в `/Games` её нет) — для переключателя «Матч · 1-й тайм · 2-й тайм» */
-  halves: { first: StatPair[]; second: StatPair[] } | null
+  /** Все показатели по периодам — матч, таймы, доп. время (в `/Games` таймов нет): блок «Статистика» */
+  periods: StatPeriod[]
   reds: LsRed[]
   venue: { name: string; city: string } | null
   attendance: number | null
@@ -204,96 +211,23 @@ export function minuteLabel(p: Pick<MomentumPoint, 'part' | 'minute'>): string {
 }
 
 /**
- * Дополнительные строки статистики (их нет в `/Games/{id}`): берём немного и понятными словами — блок и так длинный
- * (владелец: «блок сейчас в матче некрасивый очень и длинный»). 0 : 0 прячет `visibleStats`.
+ * Дополнительные строки к статистике `/Games` (для сторис и «Главного»; блок «Статистика» берёт всё из `periods`):
+ * немного и понятными словами. Строки, которые в `/Games` бывают пустыми (xG, голевые моменты, владение), — только если
+ * своих нет. Разбор — общий с блоком (`periodRows`).
  */
-const LS_STATS: { id: string; key: string; label: string; pct?: boolean }[] = [
-  { id: '461', key: 'shotsInsideBox', label: 'Удары из штрафной' },
-  { id: '457', key: 'hitWoodwork', label: 'Попадания в каркас ворот' },
-  { id: '342', key: 'passAccuracy', label: 'Точность передач', pct: true },
-]
-
-/** Строки, которые в `/Games` бывают пустыми, а здесь есть: подставляем, только если своих нет. */
-const LS_FALLBACK: { id: string; key: string }[] = [
-  { id: '432', key: 'expectedGoals' },
-  { id: '459', key: 'bigChances' },
-  { id: '12', key: 'ballPossession' },
-]
+const LS_EXTRA = ['expectedGoals', 'bigChances', 'ballPossession', 'shotsInsideBox', 'hitWoodwork', 'passAccuracy']
+const LS_EXTRA_LABEL: Record<string, string> = { expectedGoals: 'Ожидаемые голы (xG)' }
 
 export function lsStats(info: RawLsInfo | null | undefined, have: Set<string>): StatPair[] {
-  const metrics = info?.statistics?.fullTime?.metrics ?? []
-  const byId = new Map(metrics.map((m) => [m.id, m]))
-  const val = (m: RawLsMetric, side: 'home' | 'away', pct?: boolean) => {
-    const s = m[side]
-    const v = pct ? s?.percentage : (s?.value ?? s?.percentage)
-    return typeof v === 'number' && Number.isFinite(v) ? v : null
-  }
-  const out: StatPair[] = []
-  for (const f of LS_FALLBACK) {
-    const m = byId.get(f.id)
-    if (!m || have.has(f.key)) continue
-    const h = val(m, 'home', f.key === 'ballPossession')
-    const a = val(m, 'away', f.key === 'ballPossession')
-    if (h === null || a === null) continue
-    const label = { expectedGoals: 'Ожидаемые голы (xG)', bigChances: 'Голевые моменты', ballPossession: 'Владение мячом' }[f.key]!
-    out.push({ key: f.key, label, home: h, away: a, suffix: f.key === 'ballPossession' ? '%' : undefined })
-  }
-  for (const f of LS_STATS) {
-    const m = byId.get(f.id)
-    if (!m || have.has(f.key)) continue
-    const h = val(m, 'home', f.pct)
-    const a = val(m, 'away', f.pct)
-    if (h === null || a === null) continue
-    out.push({ key: f.key, label: f.label, home: h, away: a, suffix: f.pct ? '%' : undefined })
-  }
-  return out
+  const rows = periodRows(info?.statistics?.fullTime)
+  return LS_EXTRA.flatMap((key) => {
+    const r = rows.find((x) => x.key === key)
+    if (!r || have.has(key) || r.home === null || r.away === null) return []
+    return [{ key, label: LS_EXTRA_LABEL[key] ?? r.label, home: r.home, away: r.away, suffix: r.suffix }]
+  })
 }
 
-/**
- * Статистика тайма — те же строки и подписи, что в «Статистике» матча целиком (`STAT_FIELDS` и `lsStats`): переключатель
- * «Матч · 1-й тайм · 2-й тайм» (владелец прислал прототип ChatGPT, «давай без входа делай то что ты до этого хотел»).
- */
-const PERIOD_STATS: { id: string; key: string; label: string; pct?: boolean }[] = [
-  { id: '12', key: 'ballPossession', label: 'Владение мячом', pct: true },
-  { id: '34', key: 'totalShots', label: 'Удары' },
-  { id: '13', key: 'shotsOnGoal', label: 'Удары в створ' },
-  { id: '461', key: 'shotsInsideBox', label: 'Удары из штрафной' },
-  { id: '457', key: 'hitWoodwork', label: 'Попадания в каркас ворот' },
-  { id: '459', key: 'bigChances', label: 'Голевые моменты' },
-  { id: '432', key: 'expectedGoals', label: 'Ожидаемые голы (xG)' },
-  { id: '342', key: 'passAccuracy', label: 'Точность передач', pct: true },
-  { id: '16', key: 'cornerKicks', label: 'Угловые' },
-  { id: '21', key: 'fouls', label: 'Фолы' },
-  { id: '23', key: 'yellowCards', label: 'Жёлтые карточки' },
-  { id: '22', key: 'redCards', label: 'Красные карточки' },
-  { id: '17', key: 'offsides', label: 'Офсайды' },
-]
-
-export function periodStats(metrics: RawLsMetric[] | null | undefined): StatPair[] {
-  const byId = new Map((metrics ?? []).map((m) => [m.id, m]))
-  const out: StatPair[] = []
-  for (const f of PERIOD_STATS) {
-    const m = byId.get(f.id)
-    if (!m) continue
-    const v = (side: 'home' | 'away') => {
-      const s = m[side]
-      const x = f.pct ? s?.percentage : (s?.value ?? s?.percentage)
-      return typeof x === 'number' && Number.isFinite(x) ? x : null
-    }
-    const h = v('home')
-    const a = v('away')
-    if (h === null || a === null) continue
-    out.push({ key: f.key, label: f.label, home: h, away: a, suffix: f.pct ? '%' : undefined })
-  }
-  return out
-}
-
-/** Таймы — только если у обоих есть хотя бы три строки: иначе переключатель показывал бы пустые вкладки. */
-export function lsHalves(info: RawLsInfo | null | undefined): LsExtra['halves'] {
-  const first = periodStats(info?.statistics?.firstHalf?.metrics)
-  const second = periodStats(info?.statistics?.secondHalf?.metrics)
-  return first.length >= 3 && second.length >= 3 ? { first, second } : null
-}
+export { lsPeriods }
 
 /**
  * Причина удаления словами. В API — тип нарушения по-английски («Holding», «Tripping», «Handball»); незнакомое — не

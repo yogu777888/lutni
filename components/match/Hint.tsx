@@ -42,28 +42,22 @@ export function Hint({ title, text, term }: { title: string; text: string; /** �
         className={
           term
             ? `group/term relative whitespace-nowrap transition-colors after:absolute after:-inset-1.5 hover:text-fg ${open ? 'text-fg' : ''}`
-            : `relative ml-1 transition-colors after:absolute after:-inset-2 hover:text-fg ${open ? 'text-fg' : 'text-mute/70'}`
+            : `group/term relative ml-1 after:absolute after:-inset-2`
         }
       >
-        {term ? (
-          <>
-            {term}
-            {/* значок рядом со словом: без него пунктир не читался как «нажми — объясним» (владелец: «нет значка») */}
-            <svg
-              aria-hidden
-              viewBox="0 0 16 16"
-              width={15}
-              height={15}
-              className={`ml-[3px] inline-block -translate-y-px align-middle transition-colors group-hover/term:text-fg ${open ? 'text-fg' : 'text-dim'}`}
-            >
-              <circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" strokeWidth="1.4" />
-              <rect x="7.25" y="7" width="1.5" height="4.6" rx="0.75" fill="currentColor" />
-              <circle cx="8" cy="4.9" r="0.95" fill="currentColor" />
-            </svg>
-          </>
-        ) : (
-          'ⓘ'
-        )}
+        {term}
+        {/* значок рядом со словом: без него пунктир не читался как «нажми — объясним» (владелец: «нет значка») */}
+        <svg
+          aria-hidden
+          viewBox="0 0 16 16"
+          width={15}
+          height={15}
+          className={`inline-block -translate-y-px align-middle transition-colors group-hover/term:text-fg ${term ? 'ml-[3px]' : ''} ${open ? 'text-fg' : 'text-dim'}`}
+        >
+          <circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" strokeWidth="1.4" />
+          <rect x="7.25" y="7" width="1.5" height="4.6" rx="0.75" fill="currentColor" />
+          <circle cx="8" cy="4.9" r="0.95" fill="currentColor" />
+        </svg>
       </button>
       {open ? (
         <span

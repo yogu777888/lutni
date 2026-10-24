@@ -1067,11 +1067,11 @@ html[data-shell-rc] .shell-r-rail {
   .match-body .text-\[20px\]:not(text) { font-size: 24px; }
 }
 
-/* Полосы статистики «Сейчас в матче» — цветами клубов (`ClubVars`), тёмный цвет клуба высветлен до читаемого на графите
-   (у «Ювентуса» или «Ньюкасла» чёрный); цветов ещё нет — белые. */
-.club-bar-h { background: var(--club-h, #fff); background: oklch(from var(--club-h, #fff) max(l, 0.62) c h); }
-.club-bar-a { background: var(--club-a, #fff); background: oklch(from var(--club-a, #fff) max(l, 0.62) c h); }
-.club-stroke-h { stroke: var(--club-h, #fff); stroke: oklch(from var(--club-h, #fff) max(l, 0.62) c h); fill: var(--club-h, #fff); fill: oklch(from var(--club-h, #fff) max(l, 0.62) c h); }
-.club-stroke-a { stroke: var(--club-a, #fff); stroke: oklch(from var(--club-a, #fff) max(l, 0.62) c h); fill: var(--club-a, #fff); fill: oklch(from var(--club-a, #fff) max(l, 0.62) c h); }
+/* Полосы «Статистики» и линии «Давления команд» — цветами клубов (`ClubVars`), тёмный цвет клуба высветлен до читаемого
+   на графите (у «Ювентуса» или «Ньюкасла» чёрный); цветов нет — запасная пара: светло-серая у хозяев, серая у гостей. */
+.club-bar-h { background: var(--club-h, #dfe3e8); background: oklch(from var(--club-h, #dfe3e8) max(l, 0.62) c h); }
+.club-bar-a { background: var(--club-a, #7d8794); background: oklch(from var(--club-a, #7d8794) max(l, 0.62) c h); }
+.club-stroke-h { stroke: var(--club-h, #dfe3e8); stroke: oklch(from var(--club-h, #dfe3e8) max(l, 0.62) c h); fill: var(--club-h, #dfe3e8); fill: oklch(from var(--club-h, #dfe3e8) max(l, 0.62) c h); }
+.club-stroke-a { stroke: var(--club-a, #7d8794); stroke: oklch(from var(--club-a, #7d8794) max(l, 0.62) c h); fill: var(--club-a, #7d8794); fill: oklch(from var(--club-a, #7d8794) max(l, 0.62) c h); }
 /* точки на линиях «Давления команд» — с кольцом цвета карточки, чтобы не сливались на пересечениях */
 .club-dot { stroke: var(--color-panel); }

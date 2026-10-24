@@ -2,10 +2,12 @@
 
 import { useMatchTint } from '../shell/tint'
 
-/** Оттенок (0–360) и насыщенность (0–1) цвета `hsl(h s% l%)` (так их отдаёт `/api/tint`) или `#rrggbb`; иначе null. */
-function hs(c: string): { h: number; s: number } | null {
-  const k = /^hsl\(\s*([\d.]+)\s+([\d.]+)%/i.exec(c.trim())
-  if (k) return { h: +k[1], s: +k[2] / 100 }
+type Hsl = { h: number; s: number; l: number }
+
+/** Оттенок (0–360), насыщенность и светлота (0–1) цвета `hsl(h s% l%)` (так их отдаёт `/api/tint`) или `#rrggbb`; иначе null. */
+function hsl(c: string): Hsl | null {
+  const k = /^hsl\(\s*([\d.]+)\s+([\d.]+)%\s+([\d.]+)%/i.exec(c.trim())
+  if (k) return { h: +k[1], s: +k[2] / 100, l: +k[3] / 100 }
   const m = /^#?([0-9a-f]{6})$/i.exec(c.trim())
   if (!m) return null
   const n = parseInt(m[1], 16)
@@ -13,30 +15,44 @@ function hs(c: string): { h: number; s: number } | null {
   const max = Math.max(r, g, b)
   const min = Math.min(r, g, b)
   const d = max - min
-  if (!d) return { h: 0, s: 0 }
   const l = (max + min) / 2
+  if (!d) return { h: 0, s: 0, l }
   const s = d / (1 - Math.abs(2 * l - 1))
   const h = max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4
-  return { h: h * 60, s }
+  return { h: h * 60, s, l }
 }
 
-/** Оба цвета яркие и одного оттенка (меньше 35°) — полосы не различить. */
-function alike(a: string, b: string): boolean {
-  const x = hs(a)
-  const y = hs(b)
-  if (!x || !y || x.s < 0.2 || y.s < 0.2) return false
+/**
+ * Полосы не различить: оба цвета яркие и одного оттенка (меньше 35°) или оба почти без цвета (белый, серый, чёрный)
+ * и близкой светлоты.
+ */
+function alike(x: Hsl, y: Hsl): boolean {
+  if (x.s < 0.2 && y.s < 0.2) return Math.abs(x.l - y.l) < 0.3
+  if (x.s < 0.2 || y.s < 0.2) return false
   const gap = Math.abs(x.h - y.h)
   return Math.min(gap, 360 - gap) < 35
 }
 
 /**
- * Цвета клубов матча — переменными `--club-h` / `--club-a` для блока внутри (полосы статистики «Сейчас в матче»), те же,
- * что у эмблем клубов (`useMatchTint`). Цвета догружаются (`/api/tint`); пока их нет — переменных нет, полосы белые.
- * Второго цвета у гостей не нашлось и цвета одного оттенка — у гостей белые полосы (владелец прислал «Овьедо» —
- * «Реал Мадрид»: обе команды синие, не видно, где чья).
+ * Цвета одного оттенка — гостям тот же оттенок другой светлоты: к светлым хозяевам — темнее, к остальным — светлее (тёмные CSS и так высветлит до L 0,62)
+ * (было — белый, владелец: у гостей свой цвет, не белый). Исходные цвета не меняем — только вид полос.
+ */
+function shade(home: Hsl, away: Hsl): string {
+  const light = home.l > 0.7
+  return `hsl(${Math.round(away.h)} ${Math.round(Math.min(away.s, 0.75) * 100)}% ${light ? 40 : 80}%)`
+}
+
+/**
+ * Цвета клубов матча — переменными `--club-h` / `--club-a` для блока внутри (полосы «Статистики», линии «Давления
+ * команд»), те же, что у эмблем клубов (`useMatchTint`). Цвета догружаются (`/api/tint`); пока их нет — переменных нет,
+ * полосы — запасной парой серых (`.club-bar-h/-a` в `app/globals.css`: светлая у хозяев, темнее у гостей). Тёмные цвета
+ * высветляет CSS (`oklch` L ≥ 0,62). Цвета одного оттенка (владелец прислал «Овьедо» — «Реал Мадрид»: обе синие) —
+ * у гостей тот же оттенок другой светлоты (`shade`).
  */
 export function ClubVars({ id, ymd, children }: { id: number; ymd: string; children: React.ReactNode }) {
   const t = useMatchTint(id, ymd, null)
-  const away = t && alike(t.home, t.away) ? '#ffffff' : t?.away
+  const h = t ? hsl(t.home) : null
+  const a = t ? hsl(t.away) : null
+  const away = t && h && a && alike(h, a) ? shade(h, a) : t?.away
   return <div style={t ? ({ '--club-h': t.home, '--club-a': away } as React.CSSProperties) : undefined}>{children}</div>
 }

@@ -17,7 +17,7 @@ import { ApiError, apiGet } from './sstats/client'
 import * as N from './sstats/normalize'
 import { normalizePariMatch, pariBook, pariHistory, type PariHistory, type PariMatch, type RawPariMatch, type RawPariSnapshot } from './sstats/pari'
 import { linkPari } from './pari-link'
-import { findLsGame, lsHalves, lsReds, lsStats, normalizeLineups, normalizeMomentum, type LsExtra, type RawLsGame, type RawLsInfo, type RawLsLineups, type RawLsMomentum } from './sstats/ls'
+import { findLsGame, lsPeriods, lsReds, lsStats, normalizeLineups, normalizeMomentum, type LsExtra, type RawLsGame, type RawLsInfo, type RawLsLineups, type RawLsMomentum } from './sstats/ls'
 import type {
   RawBookmakerOdds,
   RawGame,
@@ -318,8 +318,8 @@ export async function getLsExtra(m: Match, have: Set<string>, opts: Opts = {}): 
     started
       ? settle(
           cache.get(
-            // v2 — ещё таймы и удаления с причиной
-            `ls-info:v2:${id}`,
+            // v3 — все показатели (`otherStats`, группы, «372/452») и доп. время
+            `ls-info:v3:${id}`,
             async () => {
               const r = await apiGet<RawLsInfo>('/Ls/GameInfo', { id }, opts)
               const st = r?.statistics
@@ -327,11 +327,16 @@ export async function getLsExtra(m: Match, have: Set<string>, opts: Opts = {}): 
                 venue: r?.venue ?? null,
                 city: r?.city ?? null,
                 attendance: r?.attendance ?? null,
-                statistics: {
-                  fullTime: { metrics: st?.fullTime?.metrics ?? [] },
-                  firstHalf: { metrics: st?.firstHalf?.metrics ?? [] },
-                  secondHalf: { metrics: st?.secondHalf?.metrics ?? [] },
-                },
+                // все периоды как есть (у доп. времени ключ бывает «extraTIme»), из метрик — только нужные поля
+                statistics: Object.fromEntries(
+                  Object.entries(st ?? {}).map(([k, p]) => [
+                    k,
+                    {
+                      metrics: (p?.metrics ?? []).map((m) => ({ id: m.id, name: m.name, groups: m.groups, home: m.home, away: m.away })),
+                      otherStats: p?.otherStats ?? null,
+                    },
+                  ]),
+                ),
                 // из событий (с комментариями — десятки КБ) — только карточки с причиной
                 events: (r?.events ?? [])
                   .filter((e) => e.reason && e.actions?.some((a) => /red/i.test(a.actionName ?? '')))
@@ -350,7 +355,7 @@ export async function getLsExtra(m: Match, have: Set<string>, opts: Opts = {}): 
     lineups,
     momentum,
     stats: lsStats(info, have),
-    halves: lsHalves(info),
+    periods: lsPeriods(info),
     reds: lsReds(info?.events),
     venue: info?.venue ? { name: info.venue, city: info.city ?? '' } : null,
     attendance: typeof info?.attendance === 'number' && info.attendance > 0 ? info.attendance : null,

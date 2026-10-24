@@ -6,7 +6,9 @@ import { cache } from 'react'
 import { MatchBar } from '@/components/match/MatchBar'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
-import { KeyEvents, StatsBars } from '@/components/match/EventsBlock'
+import { KeyEvents } from '@/components/match/EventsBlock'
+import { StatsPanel } from '@/components/match/StatsPanel'
+import { matchRows, type StatPeriod } from '@/lib/sstats/stat-rows'
 import { XgTerm, XgText } from '@/components/match/Xg'
 import { Strengths } from '@/components/match/Strengths'
 import { teamPoints } from '@/lib/team-xg'
@@ -610,25 +612,16 @@ export default async function MatchPage({ params, searchParams }: Props) {
       {clubVars(<Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} live={isLive} />)}
     </Section>
   ) : null
-  // статистика — по таймам, если они есть (в `/Games` их нет — `/Ls/GameInfo`): «Матч · 1-й тайм · 2-й тайм»
+  // статистика: матч целиком — строки `/Games` (обновляются со счётом) и всё остальное из `/Ls/GameInfo`; таймы и
+  // доп. время — только из `/Ls/GameInfo` (в `/Games` их нет); «Основные / Все показатели» — в `StatsPanel`
+  const statPeriods: StatPeriod[] = [
+    { key: 'all', label: 'Матч', rows: matchRows(base.stats, ls?.periods.find((p) => p.key === 'all')?.rows ?? []) },
+    ...(ls?.periods.filter((p) => p.key !== 'all') ?? []),
+  ]
   const sec_stats =
-    started && full.stats.length ? (
+    started && statPeriods[0].rows.length ? (
       <Section outside title="Статистика">
-        {clubVars(
-          ls?.halves ? (
-            <Tabs
-              small
-              panelClassName="mt-5"
-              items={[
-                { key: 'all', label: 'Матч', content: <StatsBars stats={full.stats} home={m.home} away={m.away} /> },
-                { key: 'first', label: '1-й тайм', content: <StatsBars stats={ls.halves.first} home={m.home} away={m.away} /> },
-                { key: 'second', label: '2-й тайм', content: <StatsBars stats={ls.halves.second} home={m.home} away={m.away} /> },
-              ]}
-            />
-          ) : (
-            <StatsBars stats={full.stats} home={m.home} away={m.away} />
-          ),
-        )}
+        {clubVars(<StatsPanel periods={statPeriods} home={{ name: m.home.name, logo: m.home.logo }} away={{ name: m.away.name, logo: m.away.logo }} />)}
       </Section>
     ) : null
   // составы — после начала своей вкладкой, до начала (за 90 минут, раньше их нет) — тоже
