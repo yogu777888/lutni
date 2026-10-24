@@ -59,7 +59,7 @@ function ValueRow({ it }: { it: FeedItem }) {
         <p className="mt-0.5 truncate text-[13px] text-dim">
           {m.home.name} — {m.away.name} · {m.league.name}
         </p>
-        <p className="mt-0.5 text-[12.5px] text-mute">
+        <p className="mt-0.5 text-[13px] text-mute">
           шанс {pct(p.prob)} · честная цена {(1 / p.prob).toFixed(2)}
           {p.ev != null ? <span className="text-good"> · выгода {signedPct(p.ev)}</span> : null}
         </p>
@@ -97,8 +97,8 @@ function TagRow({ it, hit, bet }: { it: FeedItem; hit: TagHit; bet: ReturnType<t
         <Link href={matchHref(m)} prefetch={false} className="block truncate text-[15px] font-semibold after:absolute after:inset-0 sm:text-[16px]">
           {m.home.name} — {m.away.name}
         </Link>
-        <p className="mt-0.5 text-[13.5px] leading-snug text-fg/85">{hit.short ?? hit.reason}</p>
-        <p className="mt-0.5 truncate text-[12.5px] text-mute">{m.league.name}</p>
+        <p className="mt-0.5 text-[14px] leading-snug text-fg/85">{hit.short ?? hit.reason}</p>
+        <p className="mt-0.5 truncate text-[13px] text-mute">{m.league.name}</p>
       </div>
       {bet ? (
         <div className="relative z-10 flex flex-col items-end gap-1">
@@ -200,6 +200,8 @@ export default async function TagPage({ params }: Props) {
           )}
         </PageHead>
 
+        {/* .match-body — от lg текст списка крупнее, как на главной и странице матча (app/globals.css); шапка — как была */}
+        <div className="match-body space-y-4 xl:space-y-2">
         {!ok ? <div className="card px-4 py-4 text-[14px] text-dim sm:px-5">Источник данных временно недоступен — список может быть неполным.</div> : null}
 
         {isValue ? (
@@ -259,7 +261,7 @@ export default async function TagPage({ params }: Props) {
                 href={`/tag/${x.slug}`}
                 prefetch={false}
                 title={x.hint}
-                className="rounded-ctl bg-white/[0.06] px-3 py-1.5 text-[13.5px] transition-colors hover:bg-white/[0.12]"
+                className="rounded-ctl bg-white/[0.06] px-3 py-1.5 text-[14px] transition-colors hover:bg-white/[0.12]"
               >
                 {x.title}
               </Link>
@@ -269,6 +271,7 @@ export default async function TagPage({ params }: Props) {
             Все подборки →
           </Link>
         </section>
+        </div>
       </div>
     </>
   )
