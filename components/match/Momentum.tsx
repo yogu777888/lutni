@@ -175,7 +175,9 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
         ) : null}
       </div>
 
-      <div ref={box} className="relative mt-4">
+      {/* график с легендой — вторым внутренним блоком того же фона */}
+      <div className="mt-2.5 rounded-tile bg-white/[0.04] px-4 py-3.5">
+      <div ref={box} className="relative">
         {w ? (
           <svg width={w} height={T + H + B} className="block select-none" role="img" aria-label={`Индекс давления команд по 5 минут, 0–100: «${home.name}» и «${away.name}».`}>
             {/* шкала силы давления и сетка */}
@@ -296,6 +298,7 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
           {swatch('a')}
           {away.name}
         </span>
+      </div>
       </div>
     </div>
   )

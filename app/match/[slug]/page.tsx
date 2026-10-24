@@ -618,6 +618,8 @@ export default async function MatchPage({ params, searchParams }: Props) {
           <Hint title="Индекс давления" text="Показывает интенсивность атак по шкале 0–100. Проценты отражают распределение инициативы за проанализированное время." />
         </span>
       }
+      // карточка — рамка для двух внутренних блоков: поля как зазор между ними (10px)
+      className="!p-2.5"
       // вывод про последние 10 минут — под карточкой, обычной серой строкой
       note={lateNote(ls.momentum, isLive, isLive ? m.elapsed : null, m.home.name, m.away.name)}
     >
