@@ -216,7 +216,7 @@ const ASPECT: Record<string, number> = {
   'concacaf-nations-league': 0.73, 'conmebol-sudamericana': 1.26, 'copa-america-2024': 0.92,
   'copa-libertadores': 1.28, 'cymru-premier': 0.72, 'cyprus-league': 0.91, 'efl-championship-england': 0.76,
   'efl-league-one': 0.76, 'efl-league-two': 0.76, 'egyptian-premier-league': 2.06, 'eliteserien-norway': 2.16,
-  'eredivisie-netherlands': 1.71, 'erovnuli-liga': 1.13, 'europa-league': 0.68, 'fifa-world-cup-2026': 0.65,
+  'erovnuli-liga': 1.13, 'europa-league': 0.68, 'fifa-world-cup-2026': 0.65,
   'iraq-stars-league': 0.38, 'israeli-premier-league': 0.79, 'j1-league-japan': 0.74, 'j2-league-japan': 0.72,
   'j3-league-japan': 0.71, 'k-league-1-south-korea': 0.82, 'k-league-2': 0.85, 'kazakhstan-premier-league': 0.83,
   'league-of-ireland': 0.63, 'leagues-cup': 3.35, 'liga-1-peru': 0.71, 'liga-bolivia': 1.31,

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { BlockHead } from '@/components/BlockHead'
 import { LeagueFilter } from '@/components/LeagueFilter'
 import { LeagueMark } from '@/components/LeagueMark'
+import { leagueLogo } from '@/lib/league-logos'
 import { PageHead } from '@/components/PageHead'
 import { getLeagues } from '@/lib/data'
 import { pluralN } from '@/lib/format'
@@ -49,11 +50,14 @@ function Group({ g }: { g: IndexGroup }) {
           </span>
         </summary>
         {/* оформление ссылок — у списка, а не у каждой из 1249: страница и так ~1 МБ */}
-        <ul className="pb-2 [&_a]:block [&_a]:py-1.5 [&_a]:pl-[50px] [&_a]:pr-4 [&_a]:text-[14px] [&_a]:text-dim [&_a]:transition-colors [&_a:hover]:text-fg sm:[&_a]:pl-[54px]">
+        {/* логотип турнира, если он есть, — в колонке знака страны (владелец: «в лигах и турнирах все логотипы турниров сделать»);
+            нет — место пустое, названия стоят ровной колонкой */}
+        <ul className="pb-2 [&_a]:flex [&_a]:items-center [&_a]:gap-3 [&_a]:py-1.5 [&_a]:pl-4 [&_a]:pr-4 [&_a]:text-[14px] [&_a]:text-dim [&_a]:transition-colors [&_a:hover]:text-fg sm:[&_a]:pl-5">
           {g.leagues.map((l) => (
             <li key={l.id} data-league data-q={l.q || undefined}>
               <Link href={l.href} prefetch={false}>
-                {l.name}
+                <span className="grid w-[26px] shrink-0 place-items-center">{leagueLogo(l.id) ? <LeagueMark id={l.id} flag={null} size={22} bare /> : null}</span>
+                <span className="min-w-0">{l.name}</span>
               </Link>
             </li>
           ))}
