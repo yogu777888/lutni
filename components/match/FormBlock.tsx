@@ -2,8 +2,8 @@ import { formatDayShort } from '@/lib/format'
 import type { TeamForm as TeamFormData } from '@/lib/stats'
 import type { Team } from '@/lib/types'
 import { FormStrip, type StripGame } from './FormStrip'
-import { FavStar } from '../FavStar'
-import { TeamLogo } from '../TeamLogo'
+import { MirrorBars, mirrorWidths } from './SplitBar'
+import { TeamHead } from './TeamHead'
 
 /**
  * Сравнение, как статистика в «Сейчас в матче» (владелец: «блок форма команд тоже как то не очень выглядит» — «да»):
@@ -14,37 +14,32 @@ import { TeamLogo } from '../TeamLogo'
  */
 export function FormBlock({ home, away, homeForm, awayForm }: { home: Team; away: Team; homeForm: TeamFormData | null; awayForm: TeamFormData | null }) {
   const dec = (n: number) => n.toFixed(1).replace('.', ',')
-  const row = (label: string, get: (f: TeamFormData) => number, show: (n: number) => string, lowerBetter = false) => {
+  // строка — тем же видом, что в «Статистике» (владелец: «по шрифту и отступам они все равно отличаются, сделай как в
+  // статистике»): цифры 16px, подпись 14px по центру, `py-2`, полоса `MirrorBars` с теми же ширинами (`mirrorWidths`:
+  // средние — от большего в строке, проценты — по шкале 0–100); у кого лучше — цветом клуба, другая — серая
+  const row = (label: string, get: (f: TeamFormData) => number, show: (n: number) => string, pctRow = false, lowerBetter = false) => {
     const h = homeForm ? get(homeForm) : null
     const a = awayForm ? get(awayForm) : null
-    const tone = (me: number | null, them: number | null) =>
-      me == null ? 'text-mute' : them == null || me === them || (lowerBetter ? me < them : me > them) ? 'font-semibold text-fg' : 'font-medium text-dim'
-    const better = (me: number | null, them: number | null) => me != null && them != null && me !== them && (lowerBetter ? me < them : me > them)
-    const eq = h != null && h === a
-    // у кого лучше — цветом своего клуба (`ClubVars`), другая — серая (владелец: «если где то команда лучше то вместо
-    // белого их цвет как был в графиках»)
-    const bar = (good: boolean, club: string) => (eq ? 'bg-white/45' : good ? club : 'bg-white/30')
-    const total = (h ?? 0) + (a ?? 0) || 1
+    const both = h != null && a != null
+    const lead = (me: number | null, them: number | null) => both && me !== them && (lowerBetter ? me! < them! : me! > them!)
+    const num = (v: number | null, o: number | null, right: boolean) => (
+      <span className={`num min-w-0 text-[16px] leading-snug ${right ? 'text-right' : ''} ${v == null ? 'text-mute' : lead(v, o) ? 'font-bold text-fg' : lead(o, v) ? 'font-semibold text-dim' : 'font-semibold text-fg'}`}>
+        {v == null ? '—' : show(v)}
+      </span>
+    )
+    const tone = !both || h === a ? null : lead(h, a) ? 'home' : 'away'
+    const k = pctRow ? 100 : 1
     return (
-      <div className="border-t border-edge py-3">
-        <div className="grid grid-cols-[56px_minmax(0,1fr)_56px] items-center gap-x-2 text-[16px]">
-          <span className={`num ${tone(h, a)}`}>{h == null ? '—' : show(h)}</span>
-          <span className="truncate text-center text-[14px] text-dim">{label}</span>
-          <span className={`num text-right ${tone(a, h)}`}>{a == null ? '—' : show(a)}</span>
+      <li className="relative border-t border-edge py-2 first:border-t-0">
+        <div className="grid grid-cols-[minmax(3.5rem,1fr)_minmax(0,auto)_minmax(3.5rem,1fr)] items-baseline gap-x-2 sm:gap-x-3">
+          {num(h, a, false)}
+          <span className="text-balance text-center text-[14px] leading-snug text-dim">{label}</span>
+          {num(a, h, true)}
         </div>
-        {/* полоса сравнения, как в статистике «Сейчас в матче»: перевес видно раньше, чем прочитаны цифры (владелец:
-            «просто сейчас реально настройки из айос напоминает» — «да» на полосы и крупные цифры) */}
-        {h != null && a != null ? (
-          <div className="mt-2 flex h-1.5 gap-0.5" aria-hidden>
-            <div className="flex flex-1 justify-end overflow-hidden rounded-l-full bg-white/[0.09]">
-              <div className={`h-full rounded-l-full ${bar(better(h, a), 'club-bar-h')}`} style={{ width: `${(h / total) * 100}%` }} />
-            </div>
-            <div className="flex-1 overflow-hidden rounded-r-full bg-white/[0.09]">
-              <div className={`h-full rounded-r-full ${bar(better(a, h), 'club-bar-a')}`} style={{ width: `${(a / total) * 100}%` }} />
-            </div>
-          </div>
-        ) : null}
-      </div>
+        <div className="mt-2">
+          <MirrorBars widths={both ? mirrorWidths(h! * k, a! * k, pctRow) : null} lead={tone} />
+        </div>
+      </li>
     )
   }
   const strip = (f: TeamFormData | null): StripGame[] | null =>
@@ -57,23 +52,17 @@ export function FormBlock({ home, away, homeForm, awayForm }: { home: Team; away
   const pct = (n: number) => `${Math.round(n * 100)}%`
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 pb-3">
-        <span className="flex min-w-0 items-center gap-2.5">
-          <span className="shrink-0"><TeamLogo name={home.name} src={home.logo} size={32} /></span>
-          <span className="line-clamp-2 break-words text-[16px] font-semibold leading-tight">{home.name}</span>
-          {/* «в избранное» — здесь, у названия команды (на табло звёздочки у эмблем были лишними) */}
-          <FavStar id={home.id} name={home.name} logo={home.logo} compact className="-ml-1" />
-        </span>
-        <span className="flex min-w-0 items-center gap-2">
-          <FavStar id={away.id} name={away.name} logo={away.logo} compact className="-mr-1" />
-          <span className="line-clamp-2 break-words text-right text-[16px] font-semibold leading-tight">{away.name}</span>
-          <span className="shrink-0"><TeamLogo name={away.name} src={away.logo} size={32} /></span>
-        </span>
+      {/* шапка — как в «Статистике»: эмблема 28px, название 16px, звёздочка «в избранное», черта снизу */}
+      <div className="flex items-center justify-between gap-4 border-b border-edge pb-3">
+        <TeamHead t={home} />
+        <TeamHead t={away} right />
       </div>
-      {row('Забивает за\u00a0игру', (f) => f.gfAvg, dec)}
-      {row('Пропускает за\u00a0игру', (f) => f.gaAvg, dec, true)}
-      {row('3 гола и больше', (f) => f.over25Rate, pct)}
-      {row('Обе забили', (f) => f.bttsRate, pct)}
+      <ul className="mt-1.5">
+        {row('Забивает за\u00a0игру', (f) => f.gfAvg, dec)}
+        {row('Пропускает за\u00a0игру', (f) => f.gaAvg, dec, false, true)}
+        {row('3 гола и больше', (f) => f.over25Rate, pct, true)}
+        {row('Обе забили', (f) => f.bttsRate, pct, true)}
+      </ul>
       <FormStrip home={strip(homeForm)} away={strip(awayForm)} />
     </div>
   )

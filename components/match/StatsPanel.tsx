@@ -5,9 +5,9 @@ import { GROUP_ORDER, GROUP_TITLE, MAIN_KEYS, STAT_HINT, shownAll, type StatPeri
 import { Hint } from './Hint'
 import { XgTerm } from './Xg'
 import { MirrorBars, mirrorWidths } from './SplitBar'
-import { TeamLogo } from '../TeamLogo'
+import { TeamHead } from './TeamHead'
 
-type Side = { name: string; logo?: string | null }
+type Side = { id: number; name: string; logo?: string | null }
 type Mode = 'main' | 'all'
 
 /** Самые информативные строки — цифры на 1px крупнее, подпись светлее. */
@@ -108,12 +108,6 @@ export function StatsPanel({ periods, home, away }: { periods: StatPeriod[]; hom
   const canToggle = main.length > 0 && all.some((r) => !MAIN_KEYS.includes(r.key))
   const cur: Mode = main.length ? (canToggle ? mode : 'main') : 'all'
 
-  const team = (t: Side, right: boolean) => (
-    <span className={`flex min-w-0 items-center gap-2.5 ${right ? 'flex-row-reverse text-right' : ''}`}>
-      <TeamLogo name={t.name} src={t.logo ?? null} size={28} />
-      <span className="truncate text-[16px] font-semibold">{t.name}</span>
-    </span>
-  )
   const list = (items: StatRow[]) => <ul>{items.map((r, i) => <Row key={r.key} r={r} first={i === 0} />)}</ul>
 
   return (
@@ -135,8 +129,8 @@ export function StatsPanel({ periods, home, away }: { periods: StatPeriod[]; hom
         </div>
       ) : null}
       <div className="flex items-center justify-between gap-4 border-b border-edge pb-3">
-        {team(home, false)}
-        {team(away, true)}
+        <TeamHead t={home} />
+        <TeamHead t={away} right />
       </div>
       {!rows.length || (cur === 'all' ? !all.length : !main.length) ? (
         <p className="mt-4 text-[14px] text-dim">{periods.length > 1 ? 'За этот период статистики пока нет.' : 'Статистика появится по ходу матча.'}</p>

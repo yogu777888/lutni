@@ -71,7 +71,7 @@ export function FormStrip({ home, away }: { home: StripGame[] | null; away: Stri
     </span>
   )
   return (
-    <div ref={ref} className="relative border-t border-edge pt-3">
+    <div ref={ref} className="relative mt-1 border-t border-edge pt-3">
       <p className="mb-2.5 text-center text-[14px] text-dim">Последние 5 матчей</p>
       <div className="flex items-center justify-between gap-4">
         {cell(home)}

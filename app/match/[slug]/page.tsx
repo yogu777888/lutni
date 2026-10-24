@@ -612,7 +612,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const sec_stats =
     started && statPeriods[0].rows.length ? (
       <Section outside title="Статистика">
-        {clubVars(<StatsPanel periods={statPeriods} home={{ name: m.home.name, logo: m.home.logo }} away={{ name: m.away.name, logo: m.away.logo }} />)}
+        {clubVars(<StatsPanel periods={statPeriods} home={{ id: m.home.id, name: m.home.name, logo: m.home.logo }} away={{ id: m.away.id, name: m.away.name, logo: m.away.logo }} />)}
       </Section>
     ) : null
   // составы — после начала своей вкладкой, до начала (за 90 минут, раньше их нет) — тоже
@@ -631,7 +631,8 @@ export default async function MatchPage({ params, searchParams }: Props) {
           {
             key: 'before',
             label: 'До матча',
-            on: Boolean(x || chanceMoved || ins.homeForm || ins.awayForm || ins.h2h || ins.standings || ins.preview.length),
+            // у идущего матча вкладки нет (владелец: «убери раздел до матча из лайв матча») — у сыгранного осталась
+            on: !isLive && Boolean(x || chanceMoved || ins.homeForm || ins.awayForm || ins.h2h || ins.standings || ins.preview.length),
             content: <>{sec_goals}{sec_chance}{sec_form}{sec_points}{sec_h2h}{sec_table}{sec_preview}</>,
           },
         ]
