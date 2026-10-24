@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AdMark } from '@/components/AdMark'
-import { BlockHead } from '@/components/BlockHead'
+import { BlockMore } from '@/components/BlockMore'
+import { BlockTitle } from '@/components/Section'
 import { PageHead } from '@/components/PageHead'
 import { StorySymbol } from '@/components/story/StorySymbol'
 import { CtaLink } from '@/components/CtaLink'
@@ -201,15 +202,16 @@ export default async function TagPage({ params }: Props) {
         </PageHead>
 
         {/* .match-body — от lg текст списка крупнее, как на главной и странице матча (app/globals.css); шапка — как была */}
-        <div className="match-body space-y-4 xl:space-y-2">
+        {/* заголовки дней и «Другие подборки» — над карточками на фоне страницы, как на главной и «Лигах»; между блоками 32px */}
+        <div className="match-body space-y-8 pt-4 xl:pt-6">
         {!ok ? <div className="card px-4 py-4 text-[14px] text-dim sm:px-5">Источник данных временно недоступен — список может быть неполным.</div> : null}
 
         {isValue ? (
           values.length ? (
             [...days].map(([ymd, list]) => (
-              <section key={ymd} className="card overflow-hidden">
-                <BlockHead title={dayHead(ymd, list[0].match.ts, today)} aside={`${pluralN(list.length, ['ставка', 'ставки', 'ставок'])} · Реклама · 18+`} line />
-                <div className="divide-y divide-edge">
+              <section key={ymd}>
+                <BlockTitle rows title={dayHead(ymd, list[0].match.ts, today)} aside={`${pluralN(list.length, ['ставка', 'ставки', 'ставок'])} · Реклама · 18+`} />
+                <div className="card divide-y divide-edge overflow-hidden">
                   {list.map((it) => (
                     <ValueRow key={it.match.id} it={it} />
                   ))}
@@ -224,9 +226,9 @@ export default async function TagPage({ params }: Props) {
         ) : ahead.length || liveHits.length ? (
           <>
             {tagDayList.map(([ymd, list]) => (
-              <section key={ymd} className="card overflow-hidden">
-                <BlockHead title={dayHead(ymd, list[0].match.ts, today)} aside={pluralN(list.length, ['матч', 'матча', 'матчей'])} line />
-                <div className="divide-y divide-edge">
+              <section key={ymd}>
+                <BlockTitle rows title={dayHead(ymd, list[0].match.ts, today)} aside={pluralN(list.length, ['матч', 'матча', 'матчей'])} />
+                <div className="card divide-y divide-edge overflow-hidden">
                   {list.map((it) => (
                     <TagRow key={it.match.id} it={it} hit={hitOf(it)} bet={betOf(it)} />
                   ))}
@@ -234,9 +236,9 @@ export default async function TagPage({ params }: Props) {
               </section>
             ))}
             {liveHits.length ? (
-              <section className="card overflow-hidden">
-                <BlockHead title="Уже идут" aside="кэфы до матча уже не действуют" line />
-                <div className="divide-y divide-edge">
+              <section>
+                <BlockTitle rows title="Уже идут" aside="кэфы до матча уже не действуют" />
+                <div className="card divide-y divide-edge overflow-hidden">
                   {liveHits.map((it) => (
                     <TagRow key={it.match.id} it={it} hit={hitOf(it)} bet={null} />
                   ))}
@@ -251,9 +253,10 @@ export default async function TagPage({ params }: Props) {
           </p>
         )}
 
-        <section className="card px-4 py-4 sm:px-5">
-          <h2 className="mb-3 text-[15px] font-semibold">Другие подборки</h2>
-          <div className="flex flex-wrap gap-2">
+        <section>
+          <BlockTitle rows title="Другие подборки" />
+          <div className="card overflow-hidden">
+          <div className="flex flex-wrap gap-2 px-4 py-4 sm:px-5">
             {/* названия — как в правой панели и на «Подборках», без решётки и цветов: лайм — только «выгодно» в цифрах */}
             {TAGS.filter((x) => x.slug !== t.slug).map((x) => (
               <Link
@@ -267,9 +270,8 @@ export default async function TagPage({ params }: Props) {
               </Link>
             ))}
           </div>
-          <Link href="/tags" className="mt-4 inline-block text-[13px] font-medium text-fg transition-opacity hover:opacity-75">
-            Все подборки →
-          </Link>
+          <BlockMore href="/tags">Все подборки</BlockMore>
+          </div>
         </section>
         </div>
       </div>
