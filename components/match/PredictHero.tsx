@@ -106,13 +106,13 @@ export function PredictBlock({
                 className={`flex min-w-0 flex-col gap-1.5 sm:items-center sm:gap-2.5 ${i === 0 ? 'items-start sm:flex-row' : 'items-end text-right sm:flex-row-reverse'}`}
               >
                 <span className="shrink-0">
-                  <TeamLogo name={t.name} src={t.logo} size={32} />
+                  <TeamLogo name={t.name} src={t.logo} size={44} />
                 </span>
                 <span className="line-clamp-2 break-words leading-tight">{t.name}</span>
               </span>
             ) : (
               // по центру — время начала, как на табло (до начала счёта нет)
-              <span key={i} className="num display-num text-[24px] leading-none">{formatTime(m.ts)}</span>
+              <span key={i} className="num display-num text-[28px] leading-none sm:text-[30px]">{formatTime(m.ts)}</span>
             ),
           )}
         </div>
@@ -166,9 +166,9 @@ export function PredictBlock({
         <div className="mt-4 rounded-tile bg-white/[0.04] p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className={`text-[13px] font-semibold ${value ? 'text-good' : 'text-dim'}`}>{value ? 'Выгодная ставка' : 'Наш выбор'}</p>
-              {/* исход словами вместо «П1» */}
-              <p className="mt-1 text-[18px] font-bold leading-tight tracking-[-0.02em] first-letter:uppercase">{outcomeText(c.key, m)}</p>
+              <p className={`text-[14px] font-semibold ${value ? 'text-good' : 'text-dim'}`}>{value ? 'Выгодная ставка' : 'Наш выбор'}</p>
+              {/* исход словами вместо «П1» — тем же размером, что вывод в блоке выше (владелец: «заголовок в наш выбор … побольше») */}
+              <p className="mt-1 text-[20px] font-bold leading-tight tracking-[-0.02em] first-letter:uppercase sm:text-[22px]">{outcomeText(c.key, m)}</p>
             </div>
             {odd != null ? (
               <div className="shrink-0 text-right">
