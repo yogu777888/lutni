@@ -76,8 +76,8 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
   const bs = buckets(points, pt.pos)
   const last = points[points.length - 1]
   const xNow = last ? pt.pos(last.part, last.minute) : 0
-  // по ходу — до «сейчас» с запасом в пару минут, после матча — сыгранное целиком
-  const xMax = Math.max(live ? Math.ceil((xNow + 2) / STEP) * STEP : pt.total, 10)
+  // правый край — «сейчас» по ходу и конец матча после: данные доходят до края графика, а не висят внутри
+  const xMax = Math.max(live ? xNow : pt.total, 10)
   const top = Math.max(...bs.map((b) => Math.max(b.h, b.a)), 1)
   const yMax = Math.min(100, Math.max(40, Math.ceil(top / 20) * 20))
   const yTicks = Array.from({ length: yMax / 20 + 1 }, (_, i) => i * 20)
@@ -100,7 +100,7 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
 
   // размеры графика: слева — подписи шкалы, сверху — метки голов, снизу — минуты (высота — на ~23% ниже прежней)
   const L = 40
-  const R = 10
+  const R = 6
   const T = goalRows * 28 + 12
   const H = w >= 640 ? 170 : 140
   const B = 26
@@ -112,7 +112,12 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
     .filter((m) => (m <= 45 || pt.len2 > 0 || m === 0) && (m <= 90 || pt.total > pt.len1 + pt.len2))
     .map((m) => ({ m, x: clockPos(m) }))
     .filter((t) => t.x <= xMax)
-  const path = (k: 'h' | 'a') => bs.map((b, i) => `${i ? 'L' : 'M'}${X(b.x).toFixed(1)},${Y(b[k]).toFixed(1)}`).join(' ')
+  // точка отрезка — его середина; у первого и последнего линия доведена ровно до начала и конца отрезка (0′ и «сейчас»)
+  const path = (k: 'h' | 'a') => {
+    if (!bs.length) return ''
+    const pts = [[bs[0].from, bs[0][k]], ...bs.map((b) => [b.x, b[k]]), [bs[bs.length - 1].to, bs[bs.length - 1][k]]]
+    return pts.map(([x, v], i) => `${i ? 'L' : 'M'}${X(x).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')
+  }
   const cur = act != null ? bs[act] : null
   // события отрезка — только те, что есть в данных матча
   const curEvents = cur ? events.filter((e) => EV_WORD[e.kind] && evPos(e) > cur.from && evPos(e) <= cur.to) : []
@@ -142,7 +147,9 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
   const note = !whole
     ? null
     : lead
-      ? `${live ? 'Последние 10 минут давление выше' : 'В последние 10 минут давление было выше'} у команды «${lead.name}».`
+      ? live
+        ? `В последние 10 минут сильнее давит «${lead.name}».`
+        : `В последние 10 минут матча сильнее давила команда «${lead.name}».`
       : `${live ? 'Последние 10 минут' : 'Последние 10 минут матча'} — на равных.`
   const swatch = (k: 'h' | 'a') => (
     <svg width="18" height="8" aria-hidden className={`momentum-line ${k === 'h' ? 'club-stroke-h' : 'club-stroke-a'}`}>
@@ -165,18 +172,25 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
         {team(home, false)}
         {team(away, true)}
       </div>
-      {/* сколько минут давила каждая, сколько — на равных: числа складываются в сыгранное время */}
+      {/* сколько минут давила каждая и сколько — на равных: три части полосы складываются в минуты с данными */}
       <div className="pb-1 pt-3.5">
-        <div className="flex items-baseline justify-between gap-3">
-          <span className={`num shrink-0 text-[26px] leading-none ${hv >= av ? 'font-bold text-fg' : 'text-dim'}`}>{mins(hv)}</span>
-          <span className="min-w-0 text-balance text-center text-[14px] leading-snug text-dim">Сколько минут давила команда</span>
-          <span className={`num shrink-0 text-[26px] leading-none ${av >= hv ? 'font-bold text-fg' : 'text-dim'}`}>{mins(av)}</span>
-        </div>
-        <SplitBar home={hv} away={av} className="mt-2 h-2" />
-        {/* сумма трёх чисел — минуты с данными; с добавленным временем она больше минуты на часах (61 при «59′») — так и пишем */}
-        <p className="mt-2 text-center text-[13px] text-mute">
+        <p className="text-center text-[14px] text-dim">Сколько минут давила команда</p>
+        <SplitBar home={hv} away={av} even={even} className="mt-2.5 h-2" />
+        <div className="mt-2.5 grid grid-cols-3 gap-3">
           {[
-            even > 0 ? `ещё ${mins(even)} — на равных` : null,
+            { v: hv, label: home.name, strong: hv >= av, cls: 'text-left' },
+            { v: even, label: 'на равных', strong: false, cls: 'text-center' },
+            { v: av, label: away.name, strong: av >= hv, cls: 'text-right' },
+          ].map((c, i) => (
+            <div key={i} className={`min-w-0 ${c.cls}`}>
+              <div className={`num text-[22px] leading-none ${c.strong ? 'font-bold text-fg' : 'text-dim'}`}>{mins(c.v)}</div>
+              <div className="mt-1 truncate text-[13px] text-mute">{c.label}</div>
+            </div>
+          ))}
+        </div>
+        {/* с добавленным временем сумма больше минуты на часах (61 при «59′») — так и пишем */}
+        <p className="mt-2.5 text-center text-[13px] text-mute">
+          {[
             pt.added > 0 ? `сыграно ${mins(pt.total)} с добавленным временем` : null,
             pt.gap > 0 ? `нет данных — ${mins(pt.gap)}` : null,
           ]
@@ -200,9 +214,9 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
             {/* перерыв — тонкой чертой */}
             {pt.len2 > 0 ? <line x1={X(pt.len1)} x2={X(pt.len1)} y1={T} y2={T + H} className="stroke-white/10" /> : null}
             {/* по ходу — несыгранное пустым, «сейчас» — красной чертой */}
-            {live && xNow < xMax ? (
+            {live && last ? (
               <g>
-                <rect x={X(xNow)} y={T} width={Math.max(0, X(xMax) - X(xNow))} height={H} className="fill-white/[0.03]" />
+                {xNow < xMax ? <rect x={X(xNow)} y={T} width={X(xMax) - X(xNow)} height={H} className="fill-white/[0.03]" /> : null}
                 <line x1={X(xNow)} x2={X(xNow)} y1={T} y2={T + H} className="stroke-live" />
                 <text x={X(xNow) + (nowLeft ? -6 : 6)} y={T + 16} textAnchor={nowLeft ? 'end' : 'start'} className="fill-live text-[13px] font-semibold">
                   сейчас {nowLabel}
@@ -271,21 +285,27 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
             style={{ left: Math.min(Math.max(X(cur.x), 100), w - 100), top: T + 8 }}
           >
             <div className="font-semibold">
-              {cur.label}
+              {cur.from + 1 === cur.to ? 'Минута' : 'Интервал'} {cur.label}
             </div>
+            <div className="mt-1 text-mute">Индекс давления, 0–100</div>
             <div className="flex items-center gap-1.5">
               {swatch('h')}
-              {home.name} — {cur.h}
+              «{home.name}»: <span className="num font-semibold">{cur.h}</span>
             </div>
             <div className="flex items-center gap-1.5">
               {swatch('a')}
-              {away.name} — {cur.a}
+              «{away.name}»: <span className="num font-semibold">{cur.a}</span>
             </div>
-            {curEvents.map((e, i) => (
-              <div key={i} className="text-dim">
-                {evLabel(e)} {EV_WORD[e.kind]} «{e.side === 'home' ? home.name : away.name}»
+            {/* события — отдельно от цифр давления */}
+            {curEvents.length ? (
+              <div className="mt-1.5 border-t border-white/10 pt-1.5">
+                {curEvents.map((e, i) => (
+                  <div key={i}>
+                    Событие: {EV_WORD[e.kind]} «{e.side === 'home' ? home.name : away.name}» на {evLabel(e)}
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : null}
           </div>
         ) : null}
       </div>

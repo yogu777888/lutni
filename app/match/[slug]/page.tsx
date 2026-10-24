@@ -608,7 +608,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
     </Section>
   ) : null
   const sec_momentum = ls?.momentum ? (
-    <Section outside title="Давление команд" note="Давит та команда, что в эту минуту атакует чаще и опаснее соперника. Линия — индекс давления команды за 5 минут, от 0 до 100: насколько сильнее соперника она атакует по данным матча. Это не владение мячом и не шанс гола.">
+    <Section outside title="Давление команд" note="Индекс давления 0–100 показывает, какая команда в эти минуты чаще и опаснее атакует. Это не владение мячом и не вероятность гола.">
       {clubVars(<Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} live={isLive} />)}
     </Section>
   ) : null

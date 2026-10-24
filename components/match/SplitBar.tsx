@@ -4,12 +4,14 @@
  * центра, отстающая — бледнее: у команды без цвета клуба полоса скакала серой и белой от строки к строке. Оба нуля —
  * пустая дорожка.
  */
-export function SplitBar({ home, away, className = 'h-[5px]' }: { home: number; away: number; className?: string }) {
-  const sum = home + away
-  if (!(sum > 0) || home < 0 || away < 0) return <div aria-hidden className={`rounded-full bg-white/[0.06] ${className}`} />
+export function SplitBar({ home, away, even = 0, className = 'h-[5px]' }: { home: number; away: number; even?: number; className?: string }) {
+  const sum = home + away + even
+  if (!(sum > 0) || home < 0 || away < 0 || even < 0) return <div aria-hidden className={`rounded-full bg-white/[0.06] ${className}`} />
   return (
     <div aria-hidden className={`flex gap-[3px] ${className}`}>
       {home > 0 ? <div className="club-bar-h rounded-full" style={{ flexGrow: home, flexBasis: 0 }} /> : null}
+      {/* `even` — третья часть посередине, нейтральная (в «Давлении команд» — минуты на равных) */}
+      {even > 0 ? <div className="rounded-full bg-white/20" style={{ flexGrow: even, flexBasis: 0 }} /> : null}
       {away > 0 ? <div className="club-bar-a rounded-full" style={{ flexGrow: away, flexBasis: 0 }} /> : null}
     </div>
   )
