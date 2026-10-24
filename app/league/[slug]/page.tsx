@@ -131,7 +131,7 @@ export default async function LeaguePage({ params }: Props) {
             sub={country || season ? <span className="block first-letter:uppercase">{[country, season].filter(Boolean).join(' · ')}</span> : null}
           />
 
-          <section className="card overflow-hidden">
+          <section className="match-body card overflow-hidden">
             <BlockHead title="Ближайшие матчи" aside={books.length ? `Кэфы ${books.join(', ')} · Реклама` : null} line />
             {upcoming.length ? (
               <>
@@ -160,7 +160,7 @@ export default async function LeaguePage({ params }: Props) {
           </section>
 
           {standings ? (
-            <section className="card overflow-hidden">
+            <section className="match-body card overflow-hidden">
               <BlockHead title="Турнирная таблица" />
               <div className="px-4 pb-5 sm:px-5">
                 <StandingsTable standings={standings} />
@@ -169,7 +169,7 @@ export default async function LeaguePage({ params }: Props) {
           ) : null}
 
           {results.length ? (
-            <section className="card overflow-hidden">
+            <section className="match-body card overflow-hidden">
               {/* по дням, как ближайшие: без дат время скакало 22:00, 18:30, 16:00, 19:30… и было непонятно, когда игрались */}
               <BlockHead title="Последние результаты" line />
               <div className="divide-y divide-edge">

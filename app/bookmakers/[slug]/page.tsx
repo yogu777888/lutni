@@ -117,7 +117,7 @@ function PayTable({ title, timeLabel, rows }: { title: string; timeLabel: string
                   <PayLogos method={r.method} />
                   <span className="min-w-0" title={payName(r.method) !== r.method ? r.method : undefined}>
                     {payName(r.method)}
-                    {r.note ? <span className="mt-0.5 block text-[12.5px] font-normal leading-snug text-mute">{r.note}</span> : null}
+                    {r.note ? <span className="mt-0.5 block text-[13px] font-normal leading-snug text-mute">{r.note}</span> : null}
                   </span>
                 </span>
               </td>
@@ -138,7 +138,7 @@ function PayTable({ title, timeLabel, rows }: { title: string; timeLabel: string
               {/* лимиты и условия — двумя строками: одной на 390px рвалось посередине «Без / комиссии» */}
               <div className="mt-0.5 text-[13px] text-dim">{[r.min && `от ${r.min}`, r.max && `до ${r.max}`].filter(Boolean).join(' · ') || '—'}</div>
               {r.fee || (!one && r.time) ? <div className="text-[13px] text-dim">{[r.fee, !one && r.time].filter(Boolean).join(' · ')}</div> : null}
-              {r.note ? <div className="mt-0.5 text-[12.5px] leading-snug text-mute">{r.note}</div> : null}
+              {r.note ? <div className="mt-0.5 text-[13px] leading-snug text-mute">{r.note}</div> : null}
             </div>
           </li>
         ))}
@@ -338,7 +338,7 @@ export default async function BookmakerPage({ params }: Props) {
         {/* «Коротко о …» — вместо обзора с оценками (владелец: «в букмекерах какие-то обзоры надо делать?»): только то,
             что можно проверить — маржа по нашим данным и факты из `facts` в config/bookmakers.ts; нечего показать — блока нет */}
         {facts.length ? (
-          <section className="card overflow-hidden">
+          <section className="match-body card overflow-hidden">
             <BlockHead title={`Коротко о ${p.name}`} line />
             <dl className="divide-y divide-edge text-[15px]">
               {facts.map(([k, v]) => (
@@ -355,7 +355,7 @@ export default async function BookmakerPage({ params }: Props) {
             ближайших матчах, теми же строками и с той же шапкой, что блок лиги на главной: ссылки на матч, кэфы — к
             букмекеру, лаймом — выгодный кэф */}
         {day ? (
-        <section id="kefy" className="card scroll-mt-24 overflow-hidden">
+        <section id="kefy" className="match-body card scroll-mt-24 overflow-hidden">
           <BlockHead title={`Кэфы ${p.name} ${day.when}`} aside={`${pluralN(day.rows.length, ['матч', 'матча', 'матчей'])} · Реклама · 18+`} line />
             <>
               <div className="divide-y divide-edge">
@@ -380,7 +380,7 @@ export default async function BookmakerPage({ params }: Props) {
                   </div>
                 </details>
               ) : null}
-              <div className="border-t border-edge px-4 py-3 text-[13.5px] sm:px-5">
+              <div className="border-t border-edge px-4 py-3 text-[14px] sm:px-5">
                 <Link href={listHref(day.ymd, todayYmd())} className="text-dim transition-colors hover:text-fg">
                   Все матчи {day.when} →
                 </Link>
@@ -389,7 +389,7 @@ export default async function BookmakerPage({ params }: Props) {
         </section>
         ) : null}
 
-        <section className="card overflow-hidden">
+        <section className="match-body card overflow-hidden">
           <BlockHead title={bonus ? 'Как получить бонус' : 'Как зарегистрироваться'} />
           <ol className="space-y-2.5 px-4 pb-5 text-[15px] sm:px-5">
             {steps.map((s, i) => (
@@ -409,7 +409,7 @@ export default async function BookmakerPage({ params }: Props) {
         {/* пополнение и вывод — таблицами, как у legalbet (владелец прислал их страницу Winline): только сверенное из
             `facts.deposit` / `facts.withdraw`, с датой сверки; нет данных — блока нет */}
         {f.deposit?.length || f.withdraw?.length ? (
-          <section className="card overflow-hidden">
+          <section className="match-body card overflow-hidden">
             <BlockHead title="Пополнение и вывод" aside={checked ? `данные на ${checked}` : null} />
             {f.deposit?.length ? <PayTable title="Пополнение" timeLabel="Зачисление" rows={f.deposit} /> : null}
             {f.withdraw?.length ? <PayTable title="Вывод" timeLabel="Срок вывода" rows={f.withdraw} /> : null}
@@ -422,7 +422,7 @@ export default async function BookmakerPage({ params }: Props) {
         {/* «Вопросы и ответы» — из тех же фактов, что выше (владелец: «нужно больше контента … чтобы поисковики не забанили»):
             вопрос только при ответе, разметка FAQPage для поисковиков */}
         {faq.length ? (
-          <section className="card overflow-hidden">
+          <section className="match-body card overflow-hidden">
             <BlockHead title="Вопросы и ответы" />
             {/* раскрывашками: ответы во многом повторяют «Коротко», кассу и «О компании» — читатель видит вопросы, а текст
                 остаётся в коде страницы и в FAQPage для поисковиков */}
@@ -435,7 +435,7 @@ export default async function BookmakerPage({ params }: Props) {
                       ▾
                     </span>
                   </summary>
-                  <p className="-mt-1 max-w-[72ch] px-4 pb-4 text-[14.5px] leading-relaxed text-fg/80 sm:px-5">
+                  <p className="-mt-1 max-w-[72ch] px-4 pb-4 text-[14px] leading-relaxed text-fg/80 sm:px-5">
                     {x.a}
                     {x.link ? (
                       <>
@@ -463,7 +463,7 @@ export default async function BookmakerPage({ params }: Props) {
         ) : null}
 
         {company.length ? (
-          <section className="card overflow-hidden">
+          <section className="match-body card overflow-hidden">
             <BlockHead title="О компании" aside={checked ? `данные на ${checked}` : null} line />
             <dl className="divide-y divide-edge text-[15px]">
               {company.map(([k, val]) => (

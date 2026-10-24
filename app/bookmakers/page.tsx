@@ -41,7 +41,7 @@ export default async function BookmakersPage() {
           title="Легальные букмекеры"
           sub="Только с лицензией ФНС России и членством в ЕЦУПИС. Ссылки на букмекеров — партнёрские: мы можем получать вознаграждение."
         />
-        <section className="card overflow-hidden">
+        <section className="match-body card overflow-hidden">
           <ul className="divide-y divide-edge">
             {PARTNERS.map((p) => {
               const day = lines.get(p.slug)
