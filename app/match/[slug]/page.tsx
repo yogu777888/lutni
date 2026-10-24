@@ -534,7 +534,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
     <>
           {scheduled && (verdict || pick) ? (
             <Section outside title="Прогноз" className="!p-4">
-              <PredictBlock m={m} v={verdict} pick={pick} probs={x} tags={tags} url={`${SITE.url}${canonical}`} when={`${leagueTitle(m.league.name)} · ${dayLabel(ymdInTz(m.ts)).toLowerCase()} ${formatTime(m.ts)}`} />
+              <PredictBlock m={m} v={verdict} pick={pick} probs={x} tags={tags} url={`${SITE.url}${canonical}`} when={`${leagueTitle(m.league.name)} · ${dayLabel(ymdInTz(m.ts)).toLowerCase()}`} />
             </Section>
           ) : null}
 

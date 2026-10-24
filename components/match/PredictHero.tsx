@@ -1,6 +1,6 @@
 import { primaryPartner } from '@/config/bookmakers'
 import { goHref } from '@/lib/affiliate'
-import { pct } from '@/lib/format'
+import { formatTime, pct } from '@/lib/format'
 import type { Pick } from '@/lib/model'
 import type { Match } from '@/lib/types'
 import { outcomeText, split100, type Verdict } from '@/lib/verdict'
@@ -34,7 +34,7 @@ export function PredictBlock({
   pick: Pick | null
   probs: { home: number; draw: number; away: number } | null
   tags?: TagHit[]
-  /** «Ла Лига · сегодня 20:30» */
+  /** «Ла Лига · сегодня» */
   when: string
   /** адрес матча на tag.bet — для картинки и «Поделиться» */
   url: string
@@ -66,7 +66,7 @@ export function PredictBlock({
   const card: PredictCard = {
     home: m.home.name,
     away: m.away.name,
-    when,
+    when: `${when} ${formatTime(m.ts)}`,
     headline: v?.headline ?? null,
     probs: n
       ? (['home', 'draw', 'away'] as const).map((k) => ({
@@ -90,27 +90,32 @@ export function PredictBlock({
     <div>
       {/* шапка — матч, турнир и время, справа «···»: сохранить картинку или переслать (владелец: «сверху добавь счет и лигу
           и время как на фото и справа кнопочку чтоб можно было фото сохранить или переслать»); до начала счёта нет — «—» */}
-      <div className="flex items-start gap-2 px-1 pt-1">
-        <span className="w-8 shrink-0" aria-hidden />
-        <div className="min-w-0 flex-1">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 text-[16px] font-semibold">
-            {[m.home, null, m.away].map((t, i) =>
-              t ? (
-                // на телефоне эмблема над названием — в строку «Райо Валье…» обрезалось
-                <span key={i} className={`flex min-w-0 flex-col items-center gap-1 text-center sm:flex-row sm:gap-2 sm:text-left ${i === 0 ? 'sm:justify-end' : ''}`}>
-                  <span className="shrink-0">
-                    <TeamLogo name={t.name} src={t.logo} size={28} />
-                  </span>
-                  <span className="line-clamp-2 break-words leading-tight">{t.name}</span>
-                </span>
-              ) : (
-                <span key={i} className="text-mute">—</span>
-              ),
-            )}
-          </div>
-          <p className="mt-1.5 text-center text-[14px] text-dim">{when}</p>
+      {/* команды — во всю ширину карточки: хозяева от левого края, гости от правого (владелец: «а можно команды как то на
+          всю ширину сделать … а то они сжаты сверху»); время — между ними, как на табло, турнир и день — строкой над ними, «···» — справа в той же строке */}
+      <div className="px-4">
+        <div className="-mr-2 flex items-center justify-between gap-3">
+          <p className="min-w-0 truncate text-[14px] text-dim">{when}</p>
+          <PredictShare card={card} />
         </div>
-        <PredictShare card={card} />
+        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 text-[17px] font-semibold">
+          {[m.home, null, m.away].map((t, i) =>
+            t ? (
+              // на телефоне эмблема над названием — в строку «Райо Валье…» обрезалось
+              <span
+                key={i}
+                className={`flex min-w-0 flex-col gap-1.5 sm:items-center sm:gap-2.5 ${i === 0 ? 'items-start sm:flex-row' : 'items-end text-right sm:flex-row-reverse'}`}
+              >
+                <span className="shrink-0">
+                  <TeamLogo name={t.name} src={t.logo} size={32} />
+                </span>
+                <span className="line-clamp-2 break-words leading-tight">{t.name}</span>
+              </span>
+            ) : (
+              // по центру — время начала, как на табло (до начала счёта нет)
+              <span key={i} className="num display-num text-[24px] leading-none">{formatTime(m.ts)}</span>
+            ),
+          )}
+        </div>
       </div>
       {/* вывод, полоса шансов и доводы — своим внутренним блоком, как ставка ниже; поля и зазоры — как в «Давлении команд» */}
       <div className="mt-4 rounded-tile bg-white/[0.04] p-4">
