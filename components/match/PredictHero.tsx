@@ -94,7 +94,7 @@ export function PredictBlock({
           всю ширину сделать … а то они сжаты сверху»); время — между ними, как на табло, турнир и день — строкой над ними, «···» — справа в той же строке */}
       <div className="px-4">
         <div className="-mr-2 flex items-center justify-between gap-3">
-          <p className="min-w-0 truncate text-[14px] text-dim">{when}</p>
+          <p className="min-w-0 truncate text-[14px] text-dim">{card.when}</p>
           <PredictShare card={card} />
         </div>
         <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 text-[17px] font-semibold">
@@ -111,8 +111,8 @@ export function PredictBlock({
                 <span className="line-clamp-2 break-words leading-tight">{t.name}</span>
               </span>
             ) : (
-              // по центру — время начала, как на табло (до начала счёта нет)
-              <span key={i} className="num display-num text-[28px] leading-none sm:text-[30px]">{formatTime(m.ts)}</span>
+              // по центру — прочерк на месте счёта, время — в строке с турниром (владелец: «время рядом с лигой писать а по центру между командами прочерк»)
+              <span key={i} className="num display-num text-[28px] leading-none text-mute sm:text-[30px]" aria-hidden>—</span>
             ),
           )}
         </div>
