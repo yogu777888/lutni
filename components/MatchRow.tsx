@@ -152,11 +152,11 @@ export function MatchRow({
     return (
       // справа — шеврон, как у строк списка в iOS: видно, что строка ведёт на страницу матча (владелец: «в блоке другие
       // матчи у матчей может справа сделать типа кнопочку стрелочку?»)
-      <div className="group relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto_auto] items-center gap-x-3 px-5 py-3 sm:px-7 transition-colors hover:bg-white/[0.02]">
+      <div className="group relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto_auto] items-center gap-x-3 px-4 py-3 sm:px-5 transition-colors hover:bg-white/[0.02]">
         <StatusCell m={m} />
         <Link href={matchHref(m)} prefetch={false} className="min-w-0 after:absolute after:inset-0 after:content-['']">
-          <span className="block truncate text-[14px] font-semibold">{m.home.name}</span>
-          <span className="block truncate text-[14px] font-semibold">{m.away.name}</span>
+          <span className="block truncate text-[16px] font-semibold">{m.home.name}</span>
+          <span className="block truncate text-[16px] font-semibold">{m.away.name}</span>
           {showLeague ? <span className="block truncate text-[13px] text-mute">{m.league.name}</span> : null}
         </Link>
         {played ? <Score m={m} /> : <span />}

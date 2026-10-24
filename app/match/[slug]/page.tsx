@@ -747,7 +747,9 @@ export default async function MatchPage({ params, searchParams }: Props) {
             // — две колонки, иначе название слева и счёт в 1500px справа; внизу — весь список дня
             <section>
               <BlockTitle title="Другие матчи" />
-              <div className="@container card overflow-hidden">
+              {/* шрифт и поля — как у «Где поставить» над ним (владелец: «я вижу что тут различие по размеру шрифтов»):
+                  `keep-size`, строки `px-4 sm:px-5`, названия 16px, «Все матчи дня» — как «Все букмекеры» */}
+              <div className="keep-size @container card overflow-hidden">
               <div className="grid @2xl:grid-cols-2">
                 {related.map((o, i) => (
                   <div key={o.id} className={`border-edge @2xl:even:border-l ${i ? 'border-t' : ''} ${i === 1 ? '@2xl:border-t-0' : ''}`}>
@@ -755,7 +757,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
                   </div>
                 ))}
               </div>
-              <BlockMore href={listHref(matchDay, today)} className="!px-5 !py-3.5 sm:!px-7">Все матчи дня</BlockMore>
+              <BlockMore href={listHref(matchDay, today)} className="keep-size">Все матчи дня</BlockMore>
             </div>
             </section>
           ) : null}
