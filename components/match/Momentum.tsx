@@ -256,6 +256,8 @@ export function Momentum({ points, events, final = null, url, league, status, ho
       g.moveTo(cx(pt.len1), top)
       g.lineTo(cx(pt.len1), top + ch)
       g.stroke()
+      const right = cx(pt.len1) + 110 > cl + cw
+      text('Перерыв', cx(pt.len1) + (right ? -10 : 10), top + 26, '400 22px', '#6b747f', right ? 'right' : 'left')
     }
     for (const m of [0, 15, 30, 45, 60, 75, 90, 105, 120].filter((m) => (m <= 45 || pt.len2 > 0 || m === 0) && (m <= 90 || pt.total > pt.len1 + pt.len2))) {
       const x = clockPos(m)
@@ -499,7 +501,15 @@ export function Momentum({ points, events, final = null, url, league, status, ho
               </g>
             ))}
             {/* перерыв — тонкой чертой */}
-            {pt.len2 > 0 ? <line x1={X(pt.len1)} x2={X(pt.len1)} y1={T} y2={T + H} className="stroke-white/10" /> : null}
+            {/* перерыв: черта после первого тайма с добавленным временем (pt.len1 = 45 + добавленные минуты) */}
+            {pt.len2 > 0 ? (
+              <g>
+                <line x1={X(pt.len1)} x2={X(pt.len1)} y1={T} y2={T + H} className="stroke-white/10" />
+                <text x={X(pt.len1) + (X(pt.len1) + 64 > L + pw ? -5 : 5)} y={T + 12} textAnchor={X(pt.len1) + 64 > L + pw ? 'end' : 'start'} className="fill-mute text-[12px] opacity-70">
+                  Перерыв
+                </text>
+              </g>
+            ) : null}
             {/* голы — пунктир через график */}
             {goals.map((g, i) => (
               <line key={i} x1={X(g.x)} x2={X(g.x)} y1={T - 6 - g.level * 26} y2={T + H} className={g.side === 'home' ? 'club-stroke-h' : g.side === 'away' ? 'club-stroke-a' : 'stroke-white/40'} strokeWidth={1} strokeDasharray="2 3" opacity={0.55} />
