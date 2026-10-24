@@ -75,6 +75,23 @@ export function momentumSummary(points: MomentumPoint[]): MomentumSummary {
 }
 
 /**
+ * Распределение давления в десятых долях процента (сумма — ровно 1000, остаток — наибольшим дробным частям): доля
+ * проанализированных минут, когда заметно давили хозяева, гости или было на равных. Одна точка `/Ls/GameMomentum` —
+ * одна минута, повторы уже слиты в `normalizeMomentum`; минуты без точек в знаменатель не входят.
+ */
+export function pressShares(points: MomentumPoint[]): { home: number; even: number; away: number; n: number } | null {
+  const n = points.length
+  if (!n) return null
+  const { home, away } = momentumSummary(points).minutes
+  const raw = [home, n - home - away, away].map((c) => (c * 1000) / n)
+  const out = raw.map(Math.floor)
+  const order = raw.map((v, i) => [v - Math.floor(v), i] as const).sort((a, b) => b[0] - a[0])
+  const left = 1000 - out.reduce((a, b) => a + b, 0)
+  for (let k = 0; k < left; k++) out[order[k][1]]++
+  return { home: out[0], even: out[1], away: out[2], n }
+}
+
+/**
  * Сыгранное время по точкам давления — одна точка на минуту, с добавленным временем (владелец: на 59′ «43 + 10 + 8 =
  * 61» — это 59 минут по часам и 2 добавленные к первому тайму). `pos` — минута на общей оси: первый тайм — 1…45+N,
  * второй — сразу за ним, дальше доп. время. `gap` — минуты без точек внутри сыгранного (не делим их между командами).

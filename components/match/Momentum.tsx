@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { momentumSummary, playedTime } from '@/lib/match-notes'
+import { momentumSummary, playedTime, pressShares } from '@/lib/match-notes'
 import { minuteLabel, type MomentumPoint } from '@/lib/sstats/ls'
 import type { MatchEvent } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
@@ -71,8 +71,8 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
 
   const sum = momentumSummary(points)
   const pt = playedTime(points)
-  // три группы не пересекаются: перевес хозяев, перевес гостей, остальное — на равных; в сумме — минуты с данными
-  const even = Math.max(0, points.length - sum.minutes.home - sum.minutes.away)
+  // три группы не пересекаются: перевес хозяев, на равных, перевес гостей — доли минут с данными, в сумме ровно 100%
+  const share = pressShares(points)
   const bs = buckets(points, pt.pos)
   const last = points[points.length - 1]
   // xData — последняя минута с данными; xNow — «сейчас» по часам матча (данные бывают на минуту-две позади)
@@ -114,8 +114,10 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
     .filter((m) => (m <= 45 || pt.len2 > 0 || m === 0) && (m <= 90 || pt.total > pt.len1 + pt.len2))
     .map((m) => ({ m, x: clockPos(m) }))
     .filter((t) => t.x <= xMax)
-  // только настоящие точки (середины отрезков): до первой и после последней линию не продлеваем
-  const path = (k: 'h' | 'a') => bs.map((b, i) => `${i ? 'L' : 'M'}${X(b.x).toFixed(1)},${Y(b[k]).toFixed(1)}`).join(' ')
+  // только настоящие точки (середины отрезков): до первой и после последней линию не продлеваем, через отрезок без
+  // данных — разрыв, а не прямая
+  const path = (k: 'h' | 'a') =>
+    bs.map((b, i) => `${i && b.from <= bs[i - 1].to ? 'L' : 'M'}${X(b.x).toFixed(1)},${Y(b[k]).toFixed(1)}`).join(' ')
   const cur = act != null ? bs[act] : null
   // события отрезка — только те, что есть в данных матча
   const curEvents = cur ? events.filter((e) => EV_WORD[e.kind] && evPos(e) > cur.from && evPos(e) <= cur.to) : []
@@ -164,6 +166,7 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
   )
   const hv = sum.minutes.home
   const av = sum.minutes.away
+  const pct = (v: number) => `${(v / 10).toFixed(1).replace('.', ',')}%`
 
   return (
     <div>
@@ -171,27 +174,27 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
         {team(home, false)}
         {team(away, true)}
       </div>
-      {/* сколько минут давила каждая и сколько — на равных: три части полосы складываются в минуты с данными */}
+      {/* доля проанализированных минут: перевес хозяев · на равных · перевес гостей, в сумме 100% */}
       <div className="pb-1 pt-3.5">
-        <p className="text-center text-[14px] text-dim">Сколько минут давила команда</p>
-        <SplitBar home={hv} away={av} even={even} className="mt-2.5 h-2" />
+        <p className="text-center text-[14px] text-dim">Распределение давления</p>
+        <SplitBar home={share?.home ?? 0} away={share?.away ?? 0} even={share?.even ?? 0} className="mt-2.5 h-2" />
         <div className="mt-2.5 grid grid-cols-3 gap-3">
           {[
-            { v: hv, label: home.name, strong: hv >= av, cls: 'text-left' },
-            { v: even, label: 'на равных', strong: false, cls: 'text-center' },
-            { v: av, label: away.name, strong: av >= hv, cls: 'text-right' },
+            { v: share?.home ?? 0, label: home.name, strong: hv >= av, cls: 'text-left' },
+            { v: share?.even ?? 0, label: 'на равных', strong: false, cls: 'text-center' },
+            { v: share?.away ?? 0, label: away.name, strong: av >= hv, cls: 'text-right' },
           ].map((c, i) => (
             <div key={i} className={`min-w-0 ${c.cls}`}>
-              <div className={`num text-[22px] leading-none ${c.strong ? 'font-bold text-fg' : 'text-dim'}`}>{mins(c.v)}</div>
+              <div className={`num text-[22px] leading-none ${c.strong ? 'font-bold text-fg' : 'text-dim'}`}>{pct(c.v)}</div>
               <div className="mt-1 truncate text-[13px] text-mute">{c.label}</div>
             </div>
           ))}
         </div>
-        {/* с добавленным временем сумма больше минуты на часах (61 при «59′») — так и пишем */}
+        {/* знаменатель процентов — минуты с данными; с добавленным временем их больше минуты на часах (61 при «59′») */}
         <p className="mt-2.5 text-center text-[13px] text-mute">
           {[
-            pt.added > 0 ? `сыграно ${mins(pt.total)} с добавленным временем` : null,
-            behind ? `данные давления до ${minuteLabel(last)}` : null,
+            share ? `по ${mins(share.n)} игры${pt.added > 0 ? ` с добавленным временем` : ''}` : null,
+            behind ? `Данные до ${minuteLabel(last)}` : null,
             pt.gap > 0 ? `нет данных — ${mins(pt.gap)}` : null,
           ]
             .filter(Boolean)
@@ -284,24 +287,24 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
             className="pointer-events-none absolute z-[2] -translate-x-1/2 whitespace-nowrap rounded-ctl bg-panel-3 px-2.5 py-1.5 text-[13px] shadow-lg"
             style={{ left: Math.min(Math.max(X(cur.x), 100), w - 100), top: T + 8 }}
           >
+            {/* отрезок — минуты, по которым усреднён индекс (одна минута — одна минута) */}
             <div className="font-semibold">
-              {cur.from + 1 === cur.to ? 'Минута' : 'Интервал'} {cur.label}
+              {cur.label} <span className="font-normal text-mute">· Индекс давления</span>
             </div>
-            <div className="mt-1 text-mute">Индекс давления, 0–100</div>
-            <div className="flex items-center gap-1.5">
+            <div className="mt-1 flex items-center gap-1.5">
               {swatch('h')}
-              «{home.name}»: <span className="num font-semibold">{cur.h}</span>
+              {home.name} — <span className="num font-semibold">{cur.h}/100</span>
             </div>
             <div className="flex items-center gap-1.5">
               {swatch('a')}
-              «{away.name}»: <span className="num font-semibold">{cur.a}</span>
+              {away.name} — <span className="num font-semibold">{cur.a}/100</span>
             </div>
-            {/* события — отдельно от цифр давления */}
+            {/* события этого отрезка — отдельно от цифр давления */}
             {curEvents.length ? (
               <div className="mt-1.5 border-t border-white/10 pt-1.5">
                 {curEvents.map((e, i) => (
                   <div key={i}>
-                    Событие: {EV_WORD[e.kind]} «{e.side === 'home' ? home.name : away.name}» на {evLabel(e)}
+                    {EV_WORD[e.kind]!.replace(/^./, (c) => c.toUpperCase())} «{e.side === 'home' ? home.name : away.name}» · {evLabel(e)}
                   </div>
                 ))}
               </div>
