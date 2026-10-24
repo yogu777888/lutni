@@ -9,6 +9,7 @@
  */
 import { addDays, appNow, diffDays, tzOffsetHours, ymdInTz } from '../format'
 import { teamLogos } from './team-logos'
+import REAL_LEAGUES from './mock-leagues.json'
 import type {
   ApiEnvelope,
   RawBet,
@@ -765,20 +766,31 @@ function standings(p: URLSearchParams, now: number): ApiEnvelope<RawStandings> {
   })
 }
 
+/**
+ * Список турниров: демо-лиги с матчами и остальные турниры настоящего `/Leagues` (снимок `mock-leagues.json`: id,
+ * название, страна, последний сезон) — иначе на «Лигах и турнирах» в демо было две страны. Матчей у остальных нет.
+ */
 function leaguesList(): ApiEnvelope<RawLeagueWithSeasons[]> {
-  return envelope(
-    LEAGUES.map((l) => ({
-      id: l.id,
-      name: l.name,
-      country: { code: l.code ?? '', name: l.country },
-      seasons: [2025, 2026].map((year) => ({
-        uid: seasonUid(l.id, year),
-        year,
-        dateStart: `${year}-08-07`,
-        dateEnd: `${year + 1}-05-31`,
-      })),
+  const own = LEAGUES.map((l) => ({
+    id: l.id,
+    name: l.name,
+    country: { code: l.code ?? '', name: l.country },
+    seasons: [2025, 2026].map((year) => ({
+      uid: seasonUid(l.id, year),
+      year,
+      dateStart: `${year}-08-07`,
+      dateEnd: `${year + 1}-05-31`,
     })),
-  )
+  }))
+  const rest = (REAL_LEAGUES as [number, string, string, string, number | null, string | null, string | null][])
+    .filter(([id]) => !LEAGUE_BY_ID.has(id))
+    .map(([id, name, code, country, year, start, end]) => ({
+      id,
+      name,
+      country: { code, name: country },
+      seasons: year == null ? [] : [{ uid: seasonUid(id, year), year, dateStart: `${start}T00:00:00`, dateEnd: `${end}T00:00:00` }],
+    }))
+  return envelope([...own, ...rest])
 }
 
 function injuries(gameId: number): RawInjury[] {
