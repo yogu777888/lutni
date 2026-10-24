@@ -5,6 +5,7 @@ import { momentumSummary } from '@/lib/match-notes'
 import type { MomentumPoint } from '@/lib/sstats/ls'
 import type { MatchEvent } from '@/lib/types'
 import { TeamLogo } from '../TeamLogo'
+import { SplitBar } from './SplitBar'
 
 type Side = { name: string; logo?: string | null }
 
@@ -151,14 +152,7 @@ export function Momentum({ points, events, home, away, live }: { points: Momentu
           <span className="min-w-0 text-balance text-center text-[14px] leading-snug text-dim">Сколько минут давила команда</span>
           <span className={`num shrink-0 text-[26px] leading-none ${av >= hv ? 'font-bold text-fg' : 'text-dim'}`}>{mins(av)}</span>
         </div>
-        <div aria-hidden className="mt-2 flex h-2 gap-1">
-          <div className="flex flex-1 justify-end rounded-full bg-white/[0.06]">
-            <div className={`club-bar-h rounded-full ${hv >= av ? '' : 'opacity-45'}`} style={{ width: `${(hv / (hv + av || 1)) * 100}%` }} />
-          </div>
-          <div className="flex-1 rounded-full bg-white/[0.06]">
-            <div className={`club-bar-a h-full rounded-full ${av >= hv ? '' : 'opacity-45'}`} style={{ width: `${(av / (hv + av || 1)) * 100}%` }} />
-          </div>
-        </div>
+        <SplitBar home={hv} away={av} className="mt-2 h-2" />
         {/* «всего N мин» не пишем: с добавленным временем выходило «всего 61» при «сейчас 59′» */}
         {even > 0 ? <p className="mt-2 text-center text-[13px] text-mute">ещё {mins(even)} — на равных</p> : null}
       </div>

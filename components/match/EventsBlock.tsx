@@ -3,6 +3,7 @@ import type { MatchEvent, StatPair } from '@/lib/types'
 import { visibleStats } from '@/lib/sstats/normalize'
 import { Hint } from './Hint'
 import { XgTerm } from './Xg'
+import { SplitBar } from './SplitBar'
 import { TeamLogo } from '../TeamLogo'
 
 type Side = { name: string; logo?: string | null }
@@ -130,25 +131,29 @@ export function KeyEvents({ events, home, away, final, reds = [] }: { events: Ma
 const HIDE = new Set(['totalPasses', 'goalkeeperSaves'])
 
 /**
- * Порядок строк: сначала понятное — кто давит (владение, удары, в створ, голевые моменты), «Ожидаемые голы xG» (дробь
- * с ⓘ) — после них, дальше угловые, фолы, карточки, офсайды. От md это и есть две колонки: игра / стандарты и карточки.
+ * Строки — тремя группами с подписью (владелец: «да» — блок был ~700px сплошным столбиком, три строки про удары
+ * сливались): «Игра с мячом» — владение (крупно) и точность передач, «Атака» — удары, «Ожидаемые голы xG» (дробь с ⓘ —
+ * после понятных), угловые, «Дисциплина» — фолы, карточки, офсайды. Там больше — хуже: лидера не подсвечиваем (было — 3 жёлтые
+ * у «Барселоны» выглядели её преимуществом), полоса — `neutral`.
  */
 // shotsInsideBox, hitWoodwork, passAccuracy — из `/Ls/GameInfo` (`lsStats` в lib/sstats/ls.ts)
-const ORDER = ['ballPossession', 'totalShots', 'shotsOnGoal', 'shotsInsideBox', 'hitWoodwork', 'bigChances', 'expectedGoals', 'dangerousAttacks', 'passAccuracy', 'cornerKicks', 'fouls', 'yellowCards', 'redCards', 'offsides']
+const GROUPS: { title: string; keys: string[]; neutral?: boolean }[] = [
+  { title: 'Игра с мячом', keys: ['ballPossession', 'passAccuracy'] },
+  { title: 'Атака', keys: ['totalShots', 'shotsOnGoal', 'shotsInsideBox', 'hitWoodwork', 'bigChances', 'expectedGoals', 'dangerousAttacks', 'cornerKicks'] },
+  { title: 'Дисциплина', keys: ['fouls', 'yellowCards', 'redCards', 'offsides'], neutral: true },
+]
+const ORDER = GROUPS.flatMap((g) => g.keys)
 const rank = (key: string) => (ORDER.includes(key) ? ORDER.indexOf(key) : ORDER.length)
 
 /**
  * Статистика по ходу матча — как «Статистика команд» в Apple Sports (владелец выбрал вариант «А» из трёх картинок):
- * сверху эмблема и название хозяев слева, гостей справа; строка — цифра хозяев слева, подпись по центру, гостей справа,
- * под ней полоса от центра: хозяева — влево, гости — вправо, цветами клубов (`ClubVars` → `--club-h` /
- * `--club-a`, тёмный цвет клуба высветлен до читаемого — `.club-bar` в app/globals.css; цветов ещё нет — белые). У кого
- * больше — цифра белым жирным и полоса яркой, у другого — серым и полоса бледнее; равные — обе яркие. Владение — первой
- * строкой крупнее. Были белые пилюли у лидера — столбик «кнопок» слева, серые цифры справа, блок выглядел перекошенным.
+ * сверху эмблема и название хозяев слева, гостей справа; строки — по группам (`GROUPS`), цифра хозяев слева, подпись по
+ * центру, гостей справа, под ней одна полоса по долям цветами клубов (`SplitBar`, как в прототипе ChatGPT; было две
+ * половинки от центра с бледной у отстающего). У кого больше — цифра белым жирным, у другого — серым; в «Дисциплине» и
+ * при равенстве — обе обычные. Владение — первой строкой крупнее.
  */
 export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home: Side; away: Side }) {
-  const stats = visibleStats(all)
-    .filter((s) => !HIDE.has(s.key))
-    .sort((a, b) => rank(a.key) - rank(b.key))
+  const stats = visibleStats(all).filter((s) => !HIDE.has(s.key))
   if (!stats.length) return <p className="text-sm text-dim">Статистика появится по ходу матча.</p>
   const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ','))
   const team = (t: Side, right: boolean) => (
@@ -157,55 +162,57 @@ export function StatsBars({ stats: all, home, away }: { stats: StatPair[]; home:
       <span className="truncate text-[16px] font-semibold">{t.name}</span>
     </span>
   )
+  // незнакомые строки — в конец «Атаки»
+  const groups = GROUPS.map((g) => ({
+    ...g,
+    rows: stats
+      .filter((s) => g.keys.includes(s.key) || (g.title === 'Атака' && !ORDER.includes(s.key)))
+      .sort((a, b) => rank(a.key) - rank(b.key)),
+  })).filter((g) => g.rows.length)
+  const row = (s: StatPair, neutral: boolean, first: boolean) => {
+    const big = s.key === 'ballPossession'
+    const num = (v: number, o: number) => (
+      <span className={`num shrink-0 ${big ? 'text-[26px] leading-none' : 'text-[16px]'} ${!neutral && v > o ? 'font-bold text-fg' : neutral || v === o ? 'text-fg' : 'text-dim'}`}>
+        {fmt(v)}
+        {s.suffix}
+      </span>
+    )
+    return (
+      <li key={s.key} className={`${first ? '' : 'border-t border-edge'} ${big ? 'pb-3 pt-1' : 'py-2.5'}`}>
+        <div className="flex items-baseline justify-between gap-3">
+          {num(s.home, s.away)}
+          <span className="min-w-0 truncate text-center text-[14px] text-dim">
+            {/* xG — «Ожидаемые голы xG ⓘ» (было «Качество моментов» — владелец не узнал в нём xG); подпись — здесь, а не из
+                данных: у сыгранных матчей в кэше лежит старая */}
+            {s.key === 'expectedGoals' ? (
+              <>
+                Ожидаемые голы <XgTerm />
+              </>
+            ) : (
+              <>
+                {s.label}
+                {HINT[s.key] ? <Hint title={s.label} text={HINT[s.key]} /> : null}
+              </>
+            )}
+          </span>
+          {num(s.away, s.home)}
+        </div>
+        <SplitBar home={s.home} away={s.away} className={`mt-2 ${big ? 'h-2' : 'h-1.5'} ${neutral ? 'opacity-60' : ''}`} />
+      </li>
+    )
+  }
   return (
     <div>
       <div className="flex items-center justify-between gap-4 border-b border-edge pb-3.5">
         {team(home, false)}
         {team(away, true)}
       </div>
-      <ul>
-        {stats.map((s, i) => {
-          const big = i === 0 && s.key === 'ballPossession'
-          const sum = s.home + s.away || 1
-          const lead = (v: number, o: number) => v >= o
-          const num = (v: number, o: number) => (
-            <span className={`num shrink-0 ${big ? 'text-[26px] leading-none' : 'text-[16px]'} ${lead(v, o) ? 'font-bold text-fg' : 'text-dim'}`}>
-              {fmt(v)}
-              {s.suffix}
-            </span>
-          )
-          return (
-            <li key={s.key} className={`${i ? 'border-t border-edge' : ''} ${big ? 'pb-3.5 pt-4' : 'py-3'}`}>
-              <div className="flex items-baseline justify-between gap-3">
-                {num(s.home, s.away)}
-                <span className="min-w-0 truncate text-center text-[14px] text-dim">
-                  {/* xG — «Ожидаемые голы xG ⓘ» (было «Качество моментов» — владелец не узнал в нём xG); подпись — здесь, а не из
-                      данных: у сыгранных матчей в кэше лежит старая */}
-                  {s.key === 'expectedGoals' ? (
-                    <>
-                      Ожидаемые голы <XgTerm />
-                    </>
-                  ) : (
-                    <>
-                      {s.label}
-                      {HINT[s.key] ? <Hint title={s.label} text={HINT[s.key]} /> : null}
-                    </>
-                  )}
-                </span>
-                {num(s.away, s.home)}
-              </div>
-              <div aria-hidden className={`mt-2 flex gap-1 ${big ? 'h-2' : 'h-1.5'}`}>
-                <div className="flex flex-1 justify-end rounded-full bg-white/[0.06]">
-                  <div className={`club-bar club-bar-h rounded-full ${lead(s.home, s.away) ? '' : 'opacity-45'}`} style={{ width: `${(s.home / sum) * 100}%` }} />
-                </div>
-                <div className="flex-1 rounded-full bg-white/[0.06]">
-                  <div className={`club-bar club-bar-a h-full rounded-full ${lead(s.away, s.home) ? '' : 'opacity-45'}`} style={{ width: `${(s.away / sum) * 100}%` }} />
-                </div>
-              </div>
-            </li>
-          )
-        })}
-      </ul>
+      {groups.map((g) => (
+        <section key={g.title} className="mt-4">
+          <h3 className="text-[13px] font-semibold uppercase tracking-wide text-mute">{g.title}</h3>
+          <ul className="mt-1">{g.rows.map((s, i) => row(s, !!g.neutral, i === 0))}</ul>
+        </section>
+      ))}
     </div>
   )
 }
