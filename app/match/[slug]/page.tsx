@@ -267,7 +267,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const sec_tags = (
     <>
           {shownTags.length ? (
-            <Section outside title="Матч в подборках" className="keep-size overflow-hidden !p-0">
+            <Section outside title="Матч в подборках" className="overflow-hidden !p-0">
               <MatchTags tags={shownTags} home={m.home} away={m.away} started={!scheduled} injuries={ins.injuries ?? []} />
             </Section>
           ) : null}
@@ -737,14 +737,14 @@ export default async function MatchPage({ params, searchParams }: Props) {
             {/* заголовок — над блоком, как у разделов страницы (`Section outside`) */}
             <BlockTitle title="Где поставить" />
             <div className="card overflow-hidden">
-              <div className="keep-size divide-y divide-edge">
+              <div className="divide-y divide-edge">
                 {PARTNERS.slice(0, 3).map((p, i) => (
                   <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} className="px-4 sm:px-5" />
                 ))}
               </div>
               {/* легальных букмекеров 17, здесь — три: остальные — на странице «Букмекеры» */}
-              {/* поля и шрифт — как у строк букмекеров над ней (`keep-size`, `px-4 sm:px-5`) и «Показать ещё» в «Матче в подборках» */}
-              <BlockMore href="/bookmakers" className="keep-size">Все букмекеры</BlockMore>
+              {/* поля и шрифт — как у строк букмекеров над ней (`px-4 sm:px-5`) и «Показать ещё» в «Матче в подборках» */}
+              <BlockMore href="/bookmakers">Все букмекеры</BlockMore>
             </div>
           </section>
           {related.length ? (
@@ -753,8 +753,8 @@ export default async function MatchPage({ params, searchParams }: Props) {
             <section>
               <BlockTitle title="Другие матчи" />
               {/* шрифт и поля — как у «Где поставить» над ним (владелец: «я вижу что тут различие по размеру шрифтов»):
-                  `keep-size`, строки `px-4 sm:px-5`, названия 16px, «Все матчи дня» — как «Все букмекеры» */}
-              <div className="keep-size @container card overflow-hidden">
+                  строки `px-4 sm:px-5`, названия 16px (от lg 17,5 — как на `/bookmakers`), «Все матчи дня» — как «Все букмекеры» */}
+              <div className="@container card overflow-hidden">
               {/* две колонки заполняются сверху вниз — сначала левая, потом правая (по строкам порядок читался зигзагом) */}
               <div className={`grid @2xl:grid-flow-col @2xl:grid-cols-2 ${['', '@2xl:grid-rows-1', '@2xl:grid-rows-2', '@2xl:grid-rows-3'][Math.ceil(related.length / 2)]}`}>
                 {related.map((o, i, all) => (
@@ -766,7 +766,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
                   </div>
                 ))}
               </div>
-              <BlockMore href={listHref(matchDay, today)} className="keep-size">Все матчи дня</BlockMore>
+              <BlockMore href={listHref(matchDay, today)}>Все матчи дня</BlockMore>
             </div>
             </section>
           ) : null}
