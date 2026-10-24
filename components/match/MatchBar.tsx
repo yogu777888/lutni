@@ -3,16 +3,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { BackButton } from '../BackButton'
 import { HeaderRow } from '../HeaderRow'
-import { TeamLogo } from '../TeamLogo'
 import { teamCode } from '@/lib/i18n/codes'
 
-type Side = { name: string; logo: string | null }
+type Side = { name: string; logo?: string | null }
 
 /**
  * Верх страницы матча — одна закреплённая панель под шапкой (владелец: «странно, что первый верхний блок пропадает,
  * потом появляется другой и потом ещё с кэфами — как будто 3 разных верхних блока»): «←» на месте всегда, а содержимое
  * сменяется на том же месте — наверху страницы хлебные крошки («Матчи / Ла Лига / Севилья — Осасуна»), когда верх
- * табло доходит до панели — мини-табло: эмблемы, коды команд и «3 : 1 ● 59′» (до начала — время, после — «итог»), без кэфов
+ * табло доходит до панели — мини-табло: коды команд и «3:1», справа «59′» (до начала — время, после — «итог»), без кэфов
  * (к букмекеру ведут «Прогноз», «Где поставить» и нижняя плашка на телефоне). Раньше крошки уезжали,
  * потом из-под шапки выезжала отдельная полоска, а кэфы в ней появлялись третьим шагом.
  */
@@ -62,61 +61,33 @@ export function MatchBar({
     }
   }, [])
 
-  // и в шапке телефона, и в плашке от lg — код, как на табло трансляций: «АРС 1:0 ЧЕЛ» (владелец: «чтоб там всегда коды были
-  // без полных названий», потом «а можно на телефоне тоже коды сверху?»), полное — в подсказке и для диктора
+  // компактная строка «БАР 2:0 ЛЕВ» (владелец прислал ТЗ: «тонкая, аккуратная sticky-панель… убери эмблемы… отдельную
+  // красную LIVE-плашку… строго центрируй блок со счётом»): коды по краям, счёт — в средней колонке `auto` между двумя `1fr`,
+  // ровно по центру, и виден всегда — без «—» и подмены при прокрутке, высота и места элементов не меняются; полное
+  // название — в подсказке и для диктора
   const team = (t: Side, right = false) => (
-    <span title={t.name} className={`flex min-w-0 items-center justify-end gap-2 ${right ? 'flex-row-reverse text-right' : ''}`}>
-      <span className="shrink-0">
-        <TeamLogo name={t.name} src={t.logo} size={22} />
-      </span>
+    <span title={t.name} className={`min-w-0 truncate ${right ? 'text-left' : 'text-right'}`}>
       <span className="sr-only">{t.name}</span>
-      <span aria-hidden className="whitespace-nowrap text-[15px] font-semibold tracking-[0.04em]">
+      <span aria-hidden className="text-[14px] font-semibold tracking-[0.04em] text-dim">
         {teamCode(t.name)}
       </span>
     </span>
   )
-
-  // середина: пока карточка матча на экране — тихое «—» между командами (счёт уже крупно на табло, два одинаковых счёта
-  // подряд не показываем), когда карточка ушла под шапку — на его месте счёт или время; минута — справа отдельной меткой
-  const mid = (cls: string) => (
-    <span className="relative grid place-items-center leading-none">
-      <span aria-hidden={show} className={`col-start-1 row-start-1 text-mute transition-opacity duration-200 ${cls} ${show ? 'opacity-0' : ''}`}>
-        —
-      </span>
-      <span
-        aria-hidden={!show}
-        className={`num display-num col-start-1 row-start-1 whitespace-nowrap font-semibold transition-[opacity,transform] duration-200 ${cls} ${show ? '' : 'translate-y-1 opacity-0'}`}
-      >
-        {center}
-      </span>
-    </span>
-  )
-  const badge = (pill: boolean) =>
-    minute ? (
-      <span
-        aria-hidden={!show}
-        className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[13px] font-semibold leading-none transition-opacity duration-200 ${
-          minute.live ? `text-live ${pill ? 'h-7 rounded-full bg-live/15 px-2.5' : ''}` : 'text-mute'
-        } ${show ? '' : 'opacity-0'}`}
-      >
-        {minute.live ? <span className="h-1.5 w-1.5 rounded-full bg-live" /> : null}
-        {minute.text}
-      </span>
-    ) : null
-  // эмблемы и коды по краям, счёт — в средней колонке `auto` между двумя `1fr`: ровно по центру, как бы ни отличались коды
   const bar = (cls: string) => (
     <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2.5 sm:gap-3">
       {team(home)}
-      {mid(cls)}
+      <span className={`num display-num whitespace-nowrap font-semibold leading-none ${cls}`}>{center}</span>
       {team(away, true)}
     </div>
   )
+  // справа — минута обычным тихим текстом («59′»; у сыгранного — «итог», до начала — ничего)
+  const badge = minute ? <span className="whitespace-nowrap text-[13px] font-medium leading-none text-dim">{minute.text}</span> : null
   return (
     <>
       {/* ниже lg — в самой шапке, как в Apple Sports (владелец: «мне не нравится двухэтажный хедер на мобильных» — «да»):
           слева «‹», по центру — команды, а когда крупный счёт ушёл под шапку — между ними счёт (`bar`), справа минута; кэфов там
           нет — внизу своя плашка */}
-      <HeaderRow fallback={{ href: back, label: backLabel }} idle={bar('text-[20px]')} right={badge(false)} />
+      <HeaderRow fallback={{ href: back, label: backLabel }} idle={bar('text-[18px]')} right={badge} />
       {/* от lg — закреплённая плашка над табло, видна всегда (владелец: «не нравится что сейчас стрелочка на время пропадает»,
           потом «может сразу названия команд и счет в самом верхнем блоке сделать? и убрать рядом со стрелкой название лиги?»):
           «‹», команды и счёт с самого начала и ничего не сменяется; турнир и минута — строкой в табло ниже; когда
@@ -131,9 +102,9 @@ export function MatchBar({
             {/* по центру плашки — команды и счёт (владелец: «по центру»), слева «‹»; кэфов нет (владелец: «а ты можешь кэфы
                 из самого верхнего блока убрать?») — правая колонка пустая той же ширины, что левая */}
             <BackButton fallback={back} className="justify-self-start" />
-            {bar('text-[22px]')}
-            {/* минута — справа компактной меткой «● 59′» (у сыгранного — «итог»): под счётом она сбивала его с середины по высоте */}
-            <span className="justify-self-end">{badge(true)}</span>
+            {bar('text-[19px]')}
+            {/* минута — справа тихим текстом «59′» (у сыгранного — «итог»): под счётом она сбивала его с середины по высоте */}
+            <span className="justify-self-end">{badge}</span>
           </div>
         </div>
       </div>
