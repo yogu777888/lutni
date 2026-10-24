@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { BlockMore } from '@/components/BlockMore'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
@@ -24,10 +23,10 @@ import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { hasMoves, OddsTable } from '@/components/match/OddsTable'
 import { PredictBlock } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
+import { MatchTags } from '@/components/match/MatchTags'
 import { PartnerCard } from '@/components/PartnerCard'
 import { BlockNote, BlockTitle, Section } from '@/components/Section'
 import { TeamLogo } from '@/components/TeamLogo'
-import { StorySymbol } from '@/components/story/StorySymbol'
 import { StandingsTable } from '@/components/StandingsTable'
 import { StickyCta } from '@/components/StickyCta'
 import { PARTNERS, partnerForApiBookmaker, primaryPartner } from '@/config/bookmakers'
@@ -41,7 +40,6 @@ import { matchNotes } from '@/lib/match-notes'
 import { appNow, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
-import { TAG_BY_SLUG } from '@/lib/tags'
 import type { Match } from '@/lib/types'
 import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
 
@@ -247,7 +245,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
     home: { rank: rankOf(m.home.id), form: [...(ins.homeForm?.last5 ?? [])].reverse() },
     away: { rank: rankOf(m.away.id), form: [...(ins.awayForm?.last5 ?? [])].reverse() },
   }
-  // «Выгодные ставки» до начала — уже в «Прогнозе tag.bet» с цифрами, в «В подборках» не повторяем
+  // «Выгодные ставки» до начала — уже в «Прогнозе tag.bet» с цифрами, в «Матче в подборках» не повторяем
   const shownTags = scheduled && (verdict || pick) ? tags.filter((t) => t.slug !== 'value') : tags
 
   const partner = pick?.candidate.bestPartner?.partner ?? primaryPartner()
@@ -268,32 +266,8 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const sec_tags = (
     <>
           {shownTags.length ? (
-            <Section outside title="В подборках" className="!py-1.5 sm:!py-2.5">
-              <ul className="divide-y divide-edge">
-                {shownTags.map((t) => {
-                  const fact = t.short ?? t.reason
-                  const side = [m.home, m.away].find((tm) => /^[:,]/.test(fact.slice(tm.name.length + 2)) && fact.startsWith(`«${tm.name}»`))
-                  const rest = side ? fact.slice(side.name.length + 2).replace(/^[:,]\s*/, '') : fact
-                  return (
-                    <li key={t.slug}>
-                      <Link href={`/tag/${t.slug}`} prefetch={false} title={TAG_BY_SLUG.get(t.slug)?.hint} className="group block py-3.5">
-                        <span className="inline-flex h-[30px] items-center gap-2 rounded-full bg-white/[0.07] pl-2.5 pr-3 text-[13px] font-semibold transition-colors group-hover:bg-white/[0.13]">
-                          <StorySymbol k={t.slug} tone="currentColor" className="h-3.5 w-3.5 shrink-0 text-dim" />
-                          {TAG_BY_SLUG.get(t.slug)?.title ?? t.slug}
-                        </span>
-                        <span className="mt-2 flex items-start gap-2 text-[15px] leading-snug">
-                          {side ? (
-                            <span className="mt-px shrink-0" title={`«${side.name}»`}>
-                              <TeamLogo name={side.name} src={side.logo ?? null} size={18} />
-                            </span>
-                          ) : null}
-                          <span className="min-w-0 first-letter:uppercase">{rest}</span>
-                        </span>
-                      </Link>
-                    </li>
-                  )
-                })}
-              </ul>
+            <Section outside title="Матч в подборках" className="!py-1.5 sm:!py-2.5">
+              <MatchTags tags={shownTags} home={m.home} away={m.away} started={!scheduled} injuries={ins.injuries ?? []} />
             </Section>
           ) : null}
 
