@@ -267,7 +267,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const sec_tags = (
     <>
           {shownTags.length ? (
-            <Section outside title="Матч в подборках" className="overflow-hidden !p-0">
+            <Section outside title="Матч в подборках" className="keep-size overflow-hidden !p-0">
               <MatchTags tags={shownTags} home={m.home} away={m.away} started={!scheduled} injuries={ins.injuries ?? []} />
             </Section>
           ) : null}
@@ -734,9 +734,9 @@ export default async function MatchPage({ params, searchParams }: Props) {
             {/* заголовок — над блоком, как у разделов страницы (`Section outside`) */}
             <BlockTitle title="Где поставить" />
             <div className="card overflow-hidden">
-              <div className="divide-y divide-edge">
+              <div className="keep-size divide-y divide-edge">
                 {PARTNERS.slice(0, 3).map((p, i) => (
-                  <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} className="px-5 sm:px-7" />
+                  <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} className="px-4 sm:px-5" />
                 ))}
               </div>
               {/* легальных букмекеров 17, здесь — три: остальные — на странице «Букмекеры» */}

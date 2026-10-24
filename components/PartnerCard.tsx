@@ -19,7 +19,7 @@ export function PartnerCard({ partner, placement, className = '' }: { partner: P
       href={goHref(partner, placement)}
       target="_blank"
       rel={SPONSORED_REL}
-      className={`group grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-x-4 py-3.5 transition-colors hover:bg-white/[0.02] ${className}`}
+      className={`group grid min-h-[72px] grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-x-4 py-3.5 transition-colors hover:bg-white/[0.02] ${className}`}
     >
       <PartnerBadge partner={partner} size={40} />
       <div className="min-w-0">

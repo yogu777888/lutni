@@ -1057,14 +1057,15 @@ html[data-shell-rc] .shell-r-rail {
    «да»): размеры подобраны под телефон, а в колонке ~1100px строки 15px и подписи 13px читались мелко, как в настройках.
    От lg одно правило на все блоки под табло (`.match-body`), а не lg:-варианты в каждом компоненте: 13 → 14,5, 15 → 17,
    заголовки разделов 20 → 24. Табло, мини-табло, значки (10–11px) и подписи графиков (`text` в SVG — поля графика
-   считаются по ширине подписей) не трогаем. */
+   считаются по ширине подписей) не трогаем; строки-списки как на страницах «Подборки» и «Букмекеры» (`.keep-size`) — тоже,
+   иначе они выше и крупнее тех же строк на страницах. */
 @media (min-width: 1024px) {
-  .match-body .text-\[12px\]:not(text) { font-size: 13px; }
-  .match-body .text-\[13px\]:not(text) { font-size: 14.5px; }
-  .match-body .text-\[14px\]:not(text) { font-size: 15.5px; }
-  .match-body .text-\[15px\]:not(text) { font-size: 17px; }
-  .match-body .text-\[16px\]:not(text) { font-size: 17.5px; }
-  .match-body .text-\[20px\]:not(text) { font-size: 24px; }
+  .match-body .text-\[12px\]:not(text):not(.keep-size *) { font-size: 13px; }
+  .match-body .text-\[13px\]:not(text):not(.keep-size *) { font-size: 14.5px; }
+  .match-body .text-\[14px\]:not(text):not(.keep-size *) { font-size: 15.5px; }
+  .match-body .text-\[15px\]:not(text):not(.keep-size *) { font-size: 17px; }
+  .match-body .text-\[16px\]:not(text):not(.keep-size *) { font-size: 17.5px; }
+  .match-body .text-\[20px\]:not(text):not(.keep-size *) { font-size: 24px; }
 }
 
 /* Полосы «Статистики» и линии «Давления команд» — цветами клубов (`ClubVars`), тёмный цвет клуба высветлен до читаемого

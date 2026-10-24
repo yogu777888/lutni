@@ -87,7 +87,7 @@ export function MatchTags({
   const rows = [...tags].sort((a, b) => b.score - a.score)
   // строка — как на странице «Подборки» (владелец: «блоки с букмекерами и подборками визуально сделать как на страницах?
   // чтоб единый стиль был»): значок в круге 36px, название 15px, пояснение 13px, справа «→», черта и подсветка — во всю
-  // ширину карточки; поля — `px-5 sm:px-7`, на одной линии с заголовком над блоком
+  // ширину карточки; поля и размеры — как на странице (`px-4 sm:px-5`, без увеличения `.match-body` — `keep-size`)
   const row = (t: TagHit) => {
     const def = TAG_BY_SLUG.get(t.slug)
     const body = (
@@ -101,7 +101,7 @@ export function MatchTags({
         </span>
       </>
     )
-    const cls = 'flex items-center gap-3 px-5 py-3.5 sm:px-7'
+    const cls = 'flex items-center gap-3 px-4 py-3.5 sm:px-5'
     return (
       <li key={t.slug}>
         {def ? (
@@ -124,7 +124,7 @@ export function MatchTags({
       {more.length ? (
         <details className="border-t border-edge [&[open]>summary]:hidden">
           {/* текст — с колонки названий (пустое место под значок), справа шеврон вниз — в колонке стрелок */}
-          <summary className="group flex cursor-pointer list-none items-center gap-3 px-5 py-3 text-[14px] text-dim transition-colors hover:bg-white/[0.02] hover:text-fg sm:px-7 [&::-webkit-details-marker]:hidden">
+          <summary className="group flex cursor-pointer list-none items-center gap-3 px-4 py-3 text-[14px] text-dim transition-colors hover:bg-white/[0.02] hover:text-fg sm:px-5 [&::-webkit-details-marker]:hidden">
             <span className="w-9 shrink-0" aria-hidden />
             <span className="flex-1">Показать ещё ({more.length})</span>
             <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4 shrink-0 text-mute transition-colors group-hover:text-fg">
