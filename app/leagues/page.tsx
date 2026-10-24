@@ -20,9 +20,9 @@ export const metadata: Metadata = {
 /** Сколько стран видно сразу; остальные — под «Ещё N стран» (на телефоне 170 раскрывашек давали ~12 000px). */
 const SHOWN = 20
 
-/** Знак кругом 22px, как в левой панели: у турнира — логотип лиги или флаг, у страны — флаг; международные — знак глобуса. */
+/** Знак 26px: у турнира — логотип лиги без круга (как в заголовках блоков лиг) или флаг кругом, у страны — флаг; международные — знак глобуса. */
 function Mark({ id = 0, flag }: { id?: number; flag: string | null }) {
-  return <LeagueMark id={id} flag={flag} size={22} fallback={<Globe />} />
+  return <LeagueMark id={id} flag={flag} size={26} bare fallback={<Globe />} />
 }
 
 function Globe() {

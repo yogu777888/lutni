@@ -245,11 +245,37 @@ const ASPECT: Record<string, number> = {
 /** Логотипы с непрозрачной квадратной подложкой (Бундеслига, Про Лига) — во весь круг, а не квадратом в круге. */
 const TILES = new Set(['belgian-pro-league', 'bundesliga-2-germany', 'bundesliga-germany', 'liga-3-portugal'])
 
-export type LeagueLogo = { src: string; aspect: number; tile: boolean }
+/** Тёмные знаки (больше 60% видимого — темнее OKLab L 0,45): на графите пропадают — показываем с перевёрнутой яркостью
+ * (`invert` + `hue-rotate(180deg)`: тёмно-синий становится светло-синим, белые детали — тёмными, оттенок остаётся). */
+const DARK = new Set([
+  'a-league-men-australia', 'armenian-premier-league', 'belarusian-premier-league', 'besta-deild',
+  'brasileirao-serie-d', 'chance-liga-czech-republic', 'chance-narodni-liga', 'copa-libertadores', 'cymru-premier',
+  'danish-1st-division', 'egyptian-premier-league', 'eliteserien-norway', 'eredivisie-netherlands', 'erovnuli-liga',
+  'europa-league', 'fifa-world-cup-2026', 'i-league-2', 'indonesian-super-league', 'iraq-stars-league',
+  'j1-league-japan', 'k-league-1-south-korea', 'k-league-2', 'leagues-cup', 'liga-futve-venezuela',
+  'liga-premier-a-mexico', 'ligapro-serie-a-ecuador', 'ligue-1-france', 'ligue-2-france', 'ligue-3',
+  'national-league-north', 'national-league-south', 'norwegian-first-division', 'premier-league-england',
+  'premium-liiga', 'primeira-liga-portugal', 'primera-divisin-uruguay', 'primera-division-costa-rica',
+  'regionalliga-sudwest', 'russian-first-league', 'russian-premier-league', 'scottish-championship',
+  'scottish-league-one', 'scottish-league-two', 'scottish-premiership', 'segunda-division-uruguay', 'serie-c-italy',
+  'singapore-premier-league', 'southern-league-division-one-central', 'southern-league-premier-central',
+  'southern-league-premier-south', 'superliga-denmark', 'swiss-challenge-league', 'thai-league-1',
+  'uefa-champions-league', 'uefa-conference-league', 'usl-championship', 'uzbekistan-super-league', 'virsliga',
+  'ykkosliiga-finland',
+  // светлые части есть, но знак на графите всё равно тонет — отобраны на глаз
+  '1-lig-turkey', 'afc-asian-cup', 'afc-champions-league-elite', 'afc-champions-league-two', 'bgl-ligue-luxembourg',
+  'botola-pro-1', 'brasileirao-serie-b', 'brasileirao-serie-c', 'canadian-premier-league', 'conmebol-sudamericana',
+  'indian-super-league', 'kazakhstan-premier-league', 'league-of-ireland', 'liga-de-ascenso-chile', 'liga-de-expansion-mx',
+  'liga-profesional-argentina', 'malaysia-super-league', 'nbc-premier-league', 'new-zealand-national-league',
+  'primera-nacional-argentina', 'serbian-superliga', 'serie-a-italy', 'super-league-greece-2', 'tff-second-league',
+  'uefa-nations-league', 'usl-league-one', 'v-league-1', 'veikkausliiga-finland',
+])
+
+export type LeagueLogo = { src: string; aspect: number; tile: boolean; dark: boolean }
 
 export function leagueLogoInfo(id: number): LeagueLogo | null {
   const f = LOGOS[id]
   if (!f) return null
   const key = f.replace(/\.\w+$/, '')
-  return { src: `/leagues/${f}`, aspect: ASPECT[key] ?? 1, tile: TILES.has(key) }
+  return { src: `/leagues/${f}`, aspect: ASPECT[key] ?? 1, tile: TILES.has(key), dark: DARK.has(key) }
 }

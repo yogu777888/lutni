@@ -53,14 +53,15 @@ export function LeagueBlock({
       <header className="mb-2.5 flex items-start justify-between gap-3 px-4 sm:items-center sm:px-5">
         <div className="min-w-0">
           <Link href={leagueHref(league)} prefetch={false} className="group flex min-w-0 items-center gap-2.5">
-            <Flag league={league} />
+            {/* логотип — без круга и крупнее (владелец: «в центре маленькие логотипы лиг»), флаг — кругом 28px */}
+            <Flag league={league} size={28} bare />
             {/* страну говорит флаг — в названии без неё («Испания. Ла Лига» → «Ла Лига»; владелец: «название страны убрать, если есть флаг?») */}
             <h2 className="truncate text-[20px] font-bold leading-tight tracking-[-0.01em]" title={league.name}>
               {flagCode(league) ? leagueTitle(league.name) : league.name}
             </h2>
           </Link>
           {/* на телефоне пометка — строкой под названием: справа она вместе с «идут 3 матча» и «Таблицей» сжимала «Ла Лигу» до «Л…» */}
-          <div className="mt-1 pl-[32px] text-[12px] sm:hidden">
+          <div className="mt-1 pl-[38px] text-[12px] sm:hidden">
             <AdNote items={items} lines={lines} full />
           </div>
         </div>
