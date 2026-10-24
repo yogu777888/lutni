@@ -12,7 +12,8 @@ export type TeamXg = { n: number; xgFor: number; xgAgainst: number; gf: number; 
 /** `key` — какая это сторона игры: по ней «Главное» идущего матча сверяет сегодняшние цифры (`historyNotes` в lib/match-notes.ts). */
 export type PointKey = 'attack+' | 'attack-' | 'defense+' | 'defense-' | 'finish+' | 'finish-' | 'goals'
 /** `xg` — средние за последние матчи: по ним «Главное» пишет «сегодня — в последних 5 матчах» своими словами */
-export type Point = { key: PointKey; title: string; text: string; xg?: TeamXg }
+/** `w` — насколько заметно (1 — на пороге): по нему блок выбирает одно место из двух (`mainPoint`) */
+export type Point = { key: PointKey; title: string; text: string; xg?: TeamXg; w?: number }
 export type TeamPoints = { strong: Point | null; weak: Point | null; byXg: boolean }
 
 const dec = (v: number, d = 1) => v.toFixed(d).replace('.', ',')
@@ -64,10 +65,20 @@ function byGoals(f: TeamForm): { strong: Cand[]; weak: Cand[] } {
 
 const best = (xs: Cand[]): Point | null => {
   const top = [...xs].sort((a, b) => b.w - a.w)[0]
-  return top ? { key: top.key, title: top.title, text: top.text, xg: top.xg } : null
+  return top ? { key: top.key, title: top.title, text: top.text, xg: top.xg, w: top.w } : null
 }
 
 export function teamPoints(xg: TeamXg | null, form: TeamForm | null): TeamPoints {
   const c = xg ? byXg(xg) : form ? byGoals(form) : { strong: [], weak: [] }
   return { strong: best(c.strong), weak: best(c.weak), byXg: Boolean(xg) }
+}
+
+/**
+ * Одно место на команду — самое заметное из сильного и слабого (владелец: «если у одной команды есть сильное место то
+ * писать только о нем»): два вывода на команду, четыре на блок, читались списком. Не случайно — иначе при обновлении
+ * страницы вывод менялся бы. Равные — сильное.
+ */
+export function mainPoint(t: TeamPoints): { kind: 'strong' | 'weak'; p: Point } | null {
+  if (t.strong && (!t.weak || (t.strong.w ?? 1) >= (t.weak.w ?? 1))) return { kind: 'strong', p: t.strong }
+  return t.weak ? { kind: 'weak', p: t.weak } : null
 }

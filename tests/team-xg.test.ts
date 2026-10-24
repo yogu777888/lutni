@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { teamPoints, teamXg } from '../lib/team-xg'
+import { mainPoint, teamPoints, teamXg } from '../lib/team-xg'
 import type { TeamForm } from '../lib/stats'
 
 const g = (xgFor: number, xgAgainst: number, gf: number, ga: number, id = 1) => ({ id, xgFor, xgAgainst, gf, ga })
@@ -30,5 +30,12 @@ describe('сильное и слабое место', () => {
     expect(p.byXg).toBe(false)
     expect(p.strong?.title).toBe('Много забивает')
     expect(p.weak?.title).toBe('Много пропускает')
+  })
+
+  it('в блоке — одно место на команду, самое заметное', () => {
+    const p = teamPoints(teamXg([g(1.8, 0.8, 1, 0), g(1.7, 1, 1, 1), g(1.8, 0.9, 0, 1)]), null)
+    // реализация (0,7 при xG 1,8: w ≈ 2,75) заметнее, чем «создаёт много» (w ≈ 1,2)
+    expect(mainPoint(p)).toMatchObject({ kind: 'weak', p: { title: 'Не реализует моменты' } })
+    expect(mainPoint({ strong: null, weak: null, byXg: true })).toBeNull()
   })
 })
