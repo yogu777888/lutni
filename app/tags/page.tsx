@@ -51,7 +51,8 @@ export default async function TagsPage() {
           title="Подборки"
           sub="Матчи, собранные по одному признаку: где ждём много голов, где есть явный фаворит, где упал кэф. Признак считается по данным — кэфам букмекеров, форме команд, травмам. Это подсказка, где посмотреть, а не гарантия."
         />
-        <section className="card overflow-hidden">
+        {/* .match-body — от lg строки крупнее, как на главной и странице подборки (app/globals.css); шапка — как была */}
+        <section className="match-body card overflow-hidden">
           <ul className="divide-y divide-edge">
             {rows.map(({ t, state, empty }) => (
               <li key={t.slug}>
