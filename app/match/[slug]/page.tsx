@@ -9,7 +9,7 @@ import { JsonLd } from '@/components/JsonLd'
 import { KeyEvents } from '@/components/match/EventsBlock'
 import { StatsPanel } from '@/components/match/StatsPanel'
 import { matchRows, type StatPeriod } from '@/lib/sstats/stat-rows'
-import { XgTerm, XgText } from '@/components/match/Xg'
+import { XgTerm } from '@/components/match/Xg'
 import { Strengths } from '@/components/match/Strengths'
 import { teamPoints } from '@/lib/team-xg'
 import { ClubVars } from '@/components/match/ClubVars'
@@ -551,13 +551,13 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const sec_notes = notes.length ? (
     <Section outside title="Главное">
       <div className="@container">
-        <ul className={`-my-1 divide-y divide-edge @3xl:grid @3xl:divide-x @3xl:divide-y-0 ${notes.length === 3 ? '@3xl:grid-cols-3' : notes.length === 2 ? '@3xl:grid-cols-2' : ''}`}>
+        {/* строками через черту: от 48rem — вывод слева, пояснение справа (тремя колонками заголовки рвались на две строки,
+            текст — на три-четыре; владелец: «как тебе блок главное?» — «да»); ⓘ у xG — в полосе под табло, здесь без него */}
+        <ul className="-my-1 divide-y divide-edge">
           {notes.map((n) => (
-            <li key={n.title} className="relative py-3 first:pt-1 last:pb-1 @3xl:px-5 @3xl:py-1 @3xl:first:pl-0 @3xl:last:pr-0">
+            <li key={n.title} className="py-3 first:pt-1 last:pb-1 @3xl:grid @3xl:grid-cols-2 @3xl:gap-6">
               <p className="text-[16px] font-semibold leading-snug">{n.title}</p>
-              <p className="mt-1 text-[14px] leading-snug text-dim">
-                <XgText text={n.text} />
-              </p>
+              <p className="mt-1 text-[14px] leading-snug text-dim @3xl:mt-0">{n.text}</p>
             </li>
           ))}
         </ul>

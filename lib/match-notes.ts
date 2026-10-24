@@ -144,7 +144,6 @@ function historyNote(side: 'home' | 'away', p: Point, c: Ctx, xg: StatPair, sc: 
   if (!h) return null
   // «Сегодня xG 1,90 — в последних 5 матчах в среднем 2,0 за игру.»: сначала сегодняшнее, потом прошлое — одной фразой
   const now = c.live ? 'Сегодня' : 'В этом матче'
-  const already = c.live ? 'уже ' : ''
   const past = lastN(h.n).replace(/^В/, 'в')
   const d1 = (v: number) => dec(v, 1)
   switch (p.key) {
@@ -164,19 +163,19 @@ function historyNote(side: 'home' | 'away', p: Point, c: Ctx, xg: StatPair, sc: 
         : null
     case 'attack+':
       return mine >= 1.5
-        ? { title: `«${name}», как обычно, создаёт много моментов`, text: `${now} ${already}xG\u00a0${dec(mine)}, ${past} — в среднем ${d1(h.xgFor)} за игру.` }
+        ? { title: `«${name}», как обычно, создаёт много моментов`, text: `И ${past} — в среднем xG\u00a0${d1(h.xgFor)} за игру.` }
         : null
     case 'attack-':
       return late && mine <= 0.5
-        ? { title: `«${name}» снова почти без моментов`, text: `${now} xG\u00a0${dec(mine)}, ${past} — в среднем ${d1(h.xgFor)} за игру.` }
+        ? { title: `«${name}» снова почти без моментов`, text: `И ${past} — в среднем xG\u00a0${d1(h.xgFor)} за игру.` }
         : null
     case 'defense+':
       return late && theirs <= 0.5
-        ? { title: `«${name}», как обычно, почти не даёт бить`, text: `${now} у соперника xG\u00a0${dec(theirs)}, ${past} у соперников — в среднем ${d1(h.xgAgainst)}.` }
+        ? { title: `«${name}», как обычно, почти не даёт бить`, text: `И ${past} у соперников — в среднем xG\u00a0${d1(h.xgAgainst)} за игру.` }
         : null
     case 'defense-':
       return theirs >= 1.5
-        ? { title: `«${name}» снова отдаёт много моментов`, text: `${now} у соперника ${already}xG\u00a0${dec(theirs)}, ${past} у соперников — в среднем ${d1(h.xgAgainst)}.` }
+        ? { title: `«${name}» снова отдаёт много моментов`, text: `И ${past} у соперников — в среднем xG\u00a0${d1(h.xgAgainst)} за игру.` }
         : null
     default:
       return null
@@ -209,22 +208,20 @@ export function matchNotes(c: Ctx): MatchNote[] {
     const top: 'home' | 'away' = xg.home > xg.away ? 'home' : 'away'
     const mine = top === 'home' ? sc.home : sc.away
     const theirs = top === 'home' ? sc.away : sc.home
-    const a = top === 'home' ? xg.home : xg.away
-    const b = top === 'home' ? xg.away : xg.home
     if (mine <= theirs)
       out.push({
         p: 10,
         g: `dom:${top}`,
         n: {
           title: `«${name(top)}» опаснее, но ${mine < theirs ? 'уступает' : 'не впереди'}`,
-          text: `xG: «${name(top)}» — ${dec(a)}, «${other(top)}» — ${dec(b)}. А на табло ${sc.home}:${sc.away}.`,
+          text: `По xG моменты заметно лучше у «${name(top)}», а на табло ${sc.home}:${sc.away}.`,
         },
       })
     else
       out.push({
         p: 6,
         g: `dom:${top}`,
-        n: { title: `«${name(top)}» ведёт по делу`, text: `По моментам тоже впереди: xG — ${dec(a)}, у «${other(top)}» — ${dec(b)}.` },
+        n: { title: `«${name(top)}» ведёт по делу`, text: `Счёт по игре: и по xG моменты заметно лучше, чем у «${other(top)}».` },
       })
   }
 
@@ -283,13 +280,36 @@ export function matchNotes(c: Ctx): MatchNote[] {
       const k = b ? Math.floor(a / b) : 0
       const times = k === 2 ? 'вдвое' : k === 3 ? 'втрое' : k === 4 ? 'вчетверо' : `в\u00a0${k}\u00a0раз`
       const title = !b ? `«${name(side)}» бьёт, соперник — нет` : a === b * k ? `«${name(side)}» бьёт ${times} чаще` : `«${name(side)}» бьёт больше чем ${times} чаще`
-      out.push({
-        p: 7,
-        g: `dom:${side}`,
-        n: { title, text: `Удары: «${name(side)}» — ${a}, «${other(side)}» — ${b || 'ни одного'}.` },
-      })
+      // сами удары — в полосе под табло; здесь — в створ, если есть, иначе вывода нет (не повторяем цифры с экрана)
+      const on = get('shotsOnGoal')
+      if (on)
+        out.push({
+          p: 7,
+          g: `dom:${side}`,
+          n: { title, text: `В створ — ${on[side]} против ${on[side === 'home' ? 'away' : 'home']}.` },
+        })
     }
   }
+
+  // 5½. про вторую команду: почти без моментов (владелец: «все три вывода про «Барселону»») — с 30-й минуты; выше
+  // «бьёт чаще» (7): удары и так в полосе под табло
+  const xgL = get('expectedGoals')
+  if (xgL && (!c.live || (c.minute ?? 0) >= 30))
+    for (const side of ['home', 'away'] as const) {
+      const v = xgL[side]
+      const on = get('shotsOnGoal')?.[side]
+      if (v <= 0.5 && xgL[side === 'home' ? 'away' : 'home'] >= 1 && !repeated.has(`${side}:attack-`))
+        out.push({
+          p: 7.5,
+          n: {
+            title: `«${name(side)}» почти без моментов`,
+            text:
+              on == null
+                ? `Атаки «${name(side)}» до ворот почти не доходят.`
+                : `${c.live ? `За ${c.minute}\u00a0${plural(c.minute ?? 0, 'минуту', 'минуты', 'минут')}` : 'За матч'} — ${on ? `${on}\u00a0${plural(on, 'удар', 'удара', 'ударов')} в створ` : 'ни одного удара в створ'}.`,
+          },
+        })
+    }
 
   // 6. владение: заметный перевес
   const poss = get('ballPossession')
