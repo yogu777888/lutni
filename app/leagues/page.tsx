@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { BlockHead } from '@/components/BlockHead'
+import { BlockTitle } from '@/components/Section'
 import { LeagueFilter } from '@/components/LeagueFilter'
 import { LeagueMark } from '@/components/LeagueMark'
 import { leagueLogo } from '@/lib/league-logos'
@@ -114,11 +114,13 @@ export default async function LeaguesPage() {
           }
         />
 
-        <div className="space-y-4 xl:space-y-2">
+        {/* заголовки блоков — на фоне страницы над карточкой, как на главной и странице матча (владелец: «заголовок топ турниры
+            и страны вынеси за блок что единый стиль был»); между блоками — 32px, как там */}
+        <div className="space-y-8 pt-4 xl:pt-6">
           {top.length ? (
-            <section className="card @container overflow-hidden">
-              <BlockHead title="Топ-турниры" />
-              <ul>
+            <section>
+              <BlockTitle rows title="Топ-турниры" />
+              <ul className="card @container overflow-hidden [&>li:first-child]:border-t-0">
                 {top.map((l) => (
                   <li key={l.id} data-top={l.name} data-q={l.q} className="border-t border-edge">
                     <Link href={l.href} prefetch={false} className="group/r flex min-h-[72px] items-center gap-3.5 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5">
@@ -137,16 +139,20 @@ export default async function LeaguesPage() {
           ) : null}
 
           {groups.length ? (
-            <section id="league-index" className="card @container overflow-hidden">
+            <section id="league-index">
               {/* одной колонкой, как «Букмекеры» (владелец: «лиги и страны в 1 строку… изза того что 2 на строке то логотипы еще меньше»);
-                  фильтр — в шапке блока, рядом с тем, что он сужает */}
-              <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-4 sm:px-5">
-                <h2 className="text-[20px] font-bold tracking-tight">
-                  Страны и турниры <span className="text-[12px] font-normal text-mute">{pluralN(countries, ['страна', 'страны', 'стран'])}</span>
-                </h2>
-                <LeagueFilter target="league-index" />
-              </header>
-              <ul>
+                  фильтр — в строке заголовка, рядом с тем, что он сужает */}
+              <BlockTitle
+                rows
+                title={
+                  <>
+                    Страны и турниры <span className="text-[13px] font-normal text-mute">{pluralN(countries, ['страна', 'страны', 'стран'])}</span>
+                  </>
+                }
+                aside={<LeagueFilter target="league-index" />}
+              />
+              <div className="card @container overflow-hidden">
+              <ul className="[&>li:first-child]:border-t-0">
                 {shown.map((g) => (
                   <Group key={g.key} g={g} />
                 ))}
@@ -166,6 +172,7 @@ export default async function LeaguesPage() {
               ) : null}
               {/* текст ставит фильтр: найденное среди топ-турниров (их фильтр не прячет — они в отдельном блоке выше) */}
               <p data-empty hidden className="border-t border-edge px-4 py-4 text-[14px] text-dim sm:px-5" />
+              </div>
             </section>
           ) : null}
 
