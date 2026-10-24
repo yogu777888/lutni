@@ -37,7 +37,7 @@ import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle
 import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
-import { matchNotes } from '@/lib/match-notes'
+import { lateNote, matchNotes } from '@/lib/match-notes'
 import { appNow, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
@@ -613,11 +613,13 @@ export default async function MatchPage({ params, searchParams }: Props) {
       outside
       title={
         // ⓘ — объяснение шкалы по наведению и нажатию; окошко — во всю ширину этой обёртки
-        <span className="relative inline-flex w-[min(24rem,calc(100vw-4rem))] items-center">
+        <span className="relative inline-flex w-[min(300px,calc(100vw-4rem))] items-center">
           Давление команд
-          <Hint title="Индекс давления" text="Индекс давления от 0 до 100 — интенсивность атак команды по данным матча, на графике — в среднем за 5 минут. Это не владение мячом и не вероятность гола. Распределение давления — доля минут с данными, когда перевес был у одной из команд или давление было примерно равным; минуты без данных не учитываются." />
+          <Hint title="Индекс давления" text="Показывает интенсивность атак по шкале 0–100. Проценты отражают распределение инициативы за проанализированное время." />
         </span>
       }
+      // вывод про последние 10 минут — под карточкой, обычной серой строкой
+      note={lateNote(ls.momentum, isLive, isLive ? m.elapsed : null, m.home.name, m.away.name)}
     >
       {clubVars(<Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} live={isLive} clock={isLive ? m.elapsed : null} />)}
     </Section>

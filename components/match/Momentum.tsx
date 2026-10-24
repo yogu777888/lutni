@@ -138,20 +138,6 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
     setAct(best >= 0 && d <= STEP ? best : null)
   }
 
-  // вывод под графиком: ровно последние 10 минут по данным, без пропусков; иначе — ничего не пишем
-  const tail = points.slice(-10)
-  // по ходу данные должны быть свежими (не дальше 3 минут от «сейчас»), иначе вывод не делаем
-  const whole = points.length >= 20 && (!live || xNow - xData <= 3) && tail.every((p, i) => !i || pt.pos(p.part, p.minute) - pt.pos(tail[i - 1].part, tail[i - 1].minute) === 1)
-  const th = (tail.reduce((s, p) => s + Math.max(p.v, 0), 0) / 10) * 100
-  const ta = (tail.reduce((s, p) => s + Math.max(-p.v, 0), 0) / 10) * 100
-  const lead = Math.abs(th - ta) < 8 ? null : th > ta ? home : away
-  const note = !whole
-    ? null
-    : lead
-      ? live
-        ? `В последние 10 минут сильнее давит «${lead.name}».`
-        : `В последние 10 минут матча сильнее давила команда «${lead.name}».`
-      : `${live ? 'В последние 10 минут' : 'В последние 10 минут матча'} — на равных.`
   const swatch = (k: 'h' | 'a') => (
     <svg width="18" height="8" aria-hidden className={`momentum-line ${k === 'h' ? 'club-stroke-h' : 'club-stroke-a'}`}>
       <path d="M1,4 L17,4" strokeWidth={2.5} strokeLinecap="round" />
@@ -165,7 +151,8 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
   return (
     <div>
       {/* доля проанализированных минут: перевес хозяев · на равных · перевес гостей, в сумме 100% */}
-      <div className="pb-1">
+      {/* распределение — своим внутренним блоком на тон светлее, график — ниже на фоне карточки */}
+      <div className="rounded-tile bg-white/[0.04] px-4 py-3.5">
         <p className="text-center text-[14px] text-dim">Распределение давления</p>
         <SplitBar home={share?.home ?? 0} away={share?.away ?? 0} even={share?.even ?? 0} className="mt-2.5 h-2" />
         <div className="mt-2.5 grid grid-cols-3 gap-3">
@@ -188,7 +175,7 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
         ) : null}
       </div>
 
-      <div ref={box} className="relative mt-4 border-t border-edge pt-2">
+      <div ref={box} className="relative mt-4">
         {w ? (
           <svg width={w} height={T + H + B} className="block select-none" role="img" aria-label={`Индекс давления команд по 5 минут, 0–100: «${home.name}» и «${away.name}».`}>
             {/* шкала силы давления и сетка */}
@@ -310,7 +297,6 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
           {away.name}
         </span>
       </div>
-      {note ? <p className="mt-3.5 border-t border-edge pt-3.5 text-[14px] leading-snug text-dim">{note}</p> : null}
     </div>
   )
 }

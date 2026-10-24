@@ -92,6 +92,26 @@ export function pressShares(points: MomentumPoint[]): { home: number; even: numb
 }
 
 /**
+ * Вывод под «Давлением команд» — по ровно последним 10 минутам данных, без пропусков (от 20 точек); по ходу — только
+ * если данные не отстают от часов матча больше чем на 3 минуты. Только перевес над соперником, без «давление выросло».
+ * Название — без кавычек, через «у команды» (именительный падеж).
+ */
+export function lateNote(points: MomentumPoint[], live: boolean, clock: number | null, home: string, away: string): string | null {
+  if (points.length < 20) return null
+  const pt = playedTime(points)
+  const tail = points.slice(-10)
+  const last = tail[tail.length - 1]
+  const xData = pt.pos(last.part, last.minute)
+  const clockPos = (m: number) => (m <= 45 ? m : m <= 90 ? pt.len1 + m - 45 : pt.len1 + pt.len2 + m - 90)
+  if (live && clock && clockPos(clock) - xData > 3) return null
+  if (!tail.every((p, i) => !i || pt.pos(p.part, p.minute) - pt.pos(tail[i - 1].part, tail[i - 1].minute) === 1)) return null
+  const th = (tail.reduce((s, p) => s + Math.max(p.v, 0), 0) / 10) * 100
+  const ta = (tail.reduce((s, p) => s + Math.max(-p.v, 0), 0) / 10) * 100
+  if (Math.abs(th - ta) < 8) return 'За последние 10 минут давление примерно равное.'
+  return `За последние 10 минут преимущество по давлению у команды ${th > ta ? home : away}.`
+}
+
+/**
  * Сыгранное время по точкам давления — одна точка на минуту, с добавленным временем (владелец: на 59′ «43 + 10 + 8 =
  * 61» — это 59 минут по часам и 2 добавленные к первому тайму). `pos` — минута на общей оси: первый тайм — 1…45+N,
  * второй — сразу за ним, дальше доп. время. `gap` — минуты без точек внутри сыгранного (не делим их между командами).
