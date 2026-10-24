@@ -158,24 +158,14 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
     </svg>
   )
 
-  const team = (t: Side, right: boolean) => (
-    <span className={`flex min-w-0 items-center gap-2.5 ${right ? 'flex-row-reverse text-right' : ''}`}>
-      <TeamLogo name={t.name} src={t.logo ?? null} size={28} />
-      <span className="truncate text-[16px] font-semibold">{t.name}</span>
-    </span>
-  )
   const hv = sum.minutes.home
   const av = sum.minutes.away
   const pct = (v: number) => `${(v / 10).toFixed(1).replace('.', ',')}%`
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-4 border-b border-edge pb-3.5">
-        {team(home, false)}
-        {team(away, true)}
-      </div>
       {/* доля проанализированных минут: перевес хозяев · на равных · перевес гостей, в сумме 100% */}
-      <div className="pb-1 pt-3.5">
+      <div className="pb-1">
         <p className="text-center text-[14px] text-dim">Распределение давления</p>
         <SplitBar home={share?.home ?? 0} away={share?.away ?? 0} even={share?.even ?? 0} className="mt-2.5 h-2" />
         <div className="mt-2.5 grid grid-cols-3 gap-3">
@@ -190,16 +180,12 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
             </div>
           ))}
         </div>
-        {/* знаменатель процентов — минуты с данными; с добавленным временем их больше минуты на часах (61 при «59′») */}
-        <p className="mt-2.5 text-center text-[13px] text-mute">
-          {[
-            share ? `по ${mins(share.n)} игры${pt.added > 0 ? ` с добавленным временем` : ''}` : null,
-            behind ? `Данные до ${minuteLabel(last)}` : null,
-            pt.gap > 0 ? `нет данных — ${mins(pt.gap)}` : null,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
+        {/* только ограничения данных: отставание и пропуски; знаменатель процентов — в ⓘ у заголовка */}
+        {behind || pt.gap > 0 ? (
+          <p className="mt-2.5 text-center text-[13px] text-mute">
+            {[behind ? `Данные до ${minuteLabel(last)}` : null, pt.gap > 0 ? `нет данных — ${mins(pt.gap)}` : null].filter(Boolean).join(' · ')}
+          </p>
+        ) : null}
       </div>
 
       <div ref={box} className="relative mt-4 border-t border-edge pt-2">
