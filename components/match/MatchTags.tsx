@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { StorySymbol } from '@/components/story/StorySymbol'
-import { MoreRows } from '@/components/match/MoreRows'
 import { TAG_BY_SLUG, type TagHit } from '@/lib/tags'
 import type { Injury } from '@/lib/types'
 
@@ -86,7 +85,7 @@ export function MatchTags({
   injuries: Injury[]
 }) {
   const rows = [...tags].sort((a, b) => b.score - a.score)
-  const row = (t: TagHit, extra = false) => {
+  const row = (t: TagHit) => {
     const def = TAG_BY_SLUG.get(t.slug)
     const body = (
       <>
@@ -102,13 +101,13 @@ export function MatchTags({
       </>
     )
     return (
-      <li key={t.slug} className={extra ? 'hidden' : undefined} data-more={extra || undefined}>
+      <li key={t.slug}>
         {def ? (
           <Link
             href={`/tag/${t.slug}`}
             prefetch={false}
             title={def.hint}
-            className="group flex min-h-16 items-center gap-3 rounded-tile px-3 py-3 transition-colors hover:bg-white/[0.04]"
+            className="group -mx-2 flex min-h-14 items-center gap-3 rounded-tile px-2 py-2.5 transition-colors hover:bg-white/[0.04]"
           >
             {body}
             <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4 shrink-0 text-mute/70 transition-colors group-hover:text-fg">
@@ -116,19 +115,23 @@ export function MatchTags({
             </svg>
           </Link>
         ) : (
-          <div className="flex min-h-16 items-center gap-3 px-3 py-3">{body}</div>
+          <div className="flex min-h-14 items-center gap-3 py-2.5">{body}</div>
         )}
       </li>
     )
   }
-  // одна сетка: у карточки поля 8px (`!p-2` в странице), у строки — 12px; черты и подложка при наведении — по одной
-  // ширине (от края ul), содержимое — в 20px от края карточки
   const more = rows.slice(SHOWN)
   return (
-    <ul className="divide-y divide-edge [&[data-open]>li[data-more]]:block">
-      {rows.slice(0, SHOWN).map((t) => row(t))}
-      {more.map((t) => row(t, true))}
-      {more.length ? <MoreRows count={more.length} /> : null}
-    </ul>
+    <>
+      <ul className="divide-y divide-edge">{rows.slice(0, SHOWN).map(row)}</ul>
+      {more.length ? (
+        <details className="border-t border-edge [&[open]>summary]:hidden">
+          <summary className="flex h-11 cursor-pointer list-none items-center text-[13px] text-dim transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
+            Показать ещё ({more.length})
+          </summary>
+          <ul className="divide-y divide-edge">{more.map(row)}</ul>
+        </details>
+      ) : null}
+    </>
   )
 }

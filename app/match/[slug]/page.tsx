@@ -266,7 +266,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const sec_tags = (
     <>
           {shownTags.length ? (
-            <Section outside title="Матч в подборках" className="!p-2">
+            <Section outside title="Матч в подборках" className="!py-1.5 sm:!py-2.5">
               <MatchTags tags={shownTags} home={m.home} away={m.away} started={!scheduled} injuries={ins.injuries ?? []} />
             </Section>
           ) : null}
