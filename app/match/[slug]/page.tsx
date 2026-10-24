@@ -621,7 +621,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
       // карточка — рамка для двух внутренних блоков: поля как зазор между ними (16px)
       className="!p-4"
     >
-      {clubVars(<Momentum points={ls.momentum} events={full.events} final={m.score ?? null} home={m.home} away={m.away} live={isLive} clock={isLive ? m.elapsed : null} />)}
+      {clubVars(<Momentum points={ls.momentum} events={full.events} final={m.score ?? null} url={`${SITE.url}${canonical}`} league={leagueTitle(m.league.name)} status={isLive ? (m.elapsed ? `${m.elapsed}′` : m.statusLabel) : m.status === 'finished' ? 'Матч завершён' : m.statusLabel} home={m.home} away={m.away} live={isLive} clock={isLive ? m.elapsed : null} />)}
     </Section>
   ) : null
   // статистика: матч целиком — строки `/Games` (обновляются со счётом) и всё остальное из `/Ls/GameInfo`; таймы и

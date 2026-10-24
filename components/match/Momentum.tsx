@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { lateNote, momentumSummary, playedTime, pressShares } from '@/lib/match-notes'
 import { minuteLabel, type MomentumPoint } from '@/lib/sstats/ls'
 import type { MatchEvent } from '@/lib/types'
-import { NavIcon } from '../NavIcon'
+import { ICONS, NavIcon } from '../NavIcon'
 import { withScore } from './EventsBlock'
 import { SplitBar } from './SplitBar'
 
@@ -57,7 +57,7 @@ const EV_WORD: Partial<Record<MatchEvent['kind'], string>> = { goal: 'гол', p
  * до текущей минуты с небольшим запасом, после матча — вся продолжительность. Голы — метка «эмблема 17′» и пунктир.
  * Сверху — «Сколько минут давила команда» с полосой и «ещё N мин — на равных · сыграно M мин» (`momentumSummary`).
  */
-export function Momentum({ points, events, final = null, home, away, live, clock = null }: { points: MomentumPoint[]; events: MatchEvent[]; /** счёт матча — чтобы понять, кому засчитан автогол */ final?: { home: number; away: number } | null; home: Side; away: Side; live: boolean; /** минута на часах по ходу (`elapsed`) */ clock?: number | null }) {
+export function Momentum({ points, events, final = null, url, league, status, home, away, live, clock = null }: { points: MomentumPoint[]; events: MatchEvent[]; /** счёт матча — чтобы понять, кому засчитан автогол */ final?: { home: number; away: number } | null; /** адрес матча на tag.bet — для картинки, «Поделиться» и копии */ url: string; league?: string; /** «59′» по ходу, «Матч завершён» после */ status?: string; home: Side; away: Side; live: boolean; /** минута на часах по ходу (`elapsed`) */ clock?: number | null }) {
   const box = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(0)
   const [act, setAct] = useState<number | null>(null)
@@ -108,8 +108,9 @@ export function Momentum({ points, events, final = null, home, away, live, clock
   const xMax = Math.max(live ? xNow : pt.total, 10)
   const behind = live && last && xNow > xData
   const top = Math.max(...bs.map((b) => Math.max(b.h, b.a)), 1)
-  const yMax = Math.min(100, Math.max(40, Math.ceil(top / 20) * 20))
-  const yTicks = Array.from({ length: yMax / 20 + 1 }, (_, i) => i * 20)
+  // шкала всегда 0–100: подписи только 0, 50, 100 (владелец: «основное внимание — на динамике, а не на сетке»)
+  const yMax = 100
+  const yTicks = [0, 50, 100]
 
   const evPos = (e: MatchEvent) => pt.pos(evPart(e), e.minute + (e.extra ?? 0))
   // размеры графика: слева — подписи шкалы, сверху — метки голов, снизу — минуты
@@ -133,7 +134,7 @@ export function Momentum({ points, events, final = null, home, away, live, clock
     goals.push({ x, e, label: evLabel(e), level, side, score: e.score })
   }
   const goalRows = goals.length ? Math.max(...goals.map((g) => g.level)) + 1 : 0
-  const T = goalRows * 28 + 12
+  const T = goalRows * 26 + 12
   const H = w >= 640 ? 170 : 140
   const B = 26
   const Y = (v: number) => T + H - (v / yMax) * H
@@ -146,6 +147,15 @@ export function Momentum({ points, events, final = null, home, away, live, clock
   // данных — разрыв, а не прямая
   const path = (k: 'h' | 'a') =>
     bs.map((b, i) => `${i && b.from <= bs[i - 1].to ? 'L' : 'M'}${X(b.x).toFixed(1)},${Y(b[k]).toFixed(1)}`).join(' ')
+  // едва заметная заливка под линией — по тем же отрезкам, с теми же разрывами
+  const area = (k: 'h' | 'a') => {
+    const runs: Bucket[][] = []
+    bs.forEach((b, i) => (i && b.from <= bs[i - 1].to ? runs[runs.length - 1].push(b) : runs.push([b])))
+    return runs
+      .filter((r) => r.length > 1)
+      .map((r) => `M${X(r[0].x).toFixed(1)},${Y(0)} ` + r.map((b) => `L${X(b.x).toFixed(1)},${Y(b[k]).toFixed(1)}`).join(' ') + ` L${X(r[r.length - 1].x).toFixed(1)},${Y(0)} Z`)
+      .join(' ')
+  }
   const cur = act != null ? bs[act] : null
   // события отрезка — только те, что есть в данных матча
   const curEvents = cur ? events.filter((e) => EV_WORD[e.kind] && evPos(e) > cur.from && evPos(e) <= cur.to) : []
@@ -166,7 +176,7 @@ export function Momentum({ points, events, final = null, home, away, live, clock
 
   const swatch = (k: 'h' | 'a') => (
     <svg width="18" height="8" aria-hidden className={`momentum-line ${k === 'h' ? 'club-stroke-h' : 'club-stroke-a'}`}>
-      <path d="M1,4 L17,4" strokeWidth={2.5} strokeLinecap="round" />
+      <path d="M1,4 L17,4" strokeWidth={2} strokeLinecap="round" />
     </svg>
   )
 
@@ -180,140 +190,154 @@ export function Momentum({ points, events, final = null, home, away, live, clock
     behind ? `данные до ${minuteLabel(last)}` : null,
     pt.gap > 0 ? `нет данных — ${mins(pt.gap)}` : null,
   ].filter(Boolean).join(' · ')
-  const pageUrl = () => location.origin + location.pathname
+  const pageUrl = () => url
 
-  /** Картинка для соцсетей — рисуем заново на canvas по тем же точкам (без подсказок и кнопок), цвета линий — с экрана. */
+  /**
+   * Картинка для соцсетей — рисуем заново на canvas по тем же точкам (без подсказок и кнопок), цвета линий — с экрана.
+   * 1080px в ширину, всё в 2× от экрана: линии 4px, текст от 22px. Мяч — тот же SVG-путь, что в метках (`ICONS['/']`).
+   */
   const png = async (): Promise<Blob | null> => {
+    await document.fonts?.ready
     const W = 1080
     const P = 64
     const font = getComputedStyle(document.body).fontFamily
     const css = (k: 'h' | 'a') => (lines.current[k] ? getComputedStyle(lines.current[k]!) : null)
     const col = (k: 'h' | 'a') => css(k)?.stroke || (k === 'h' ? '#dfe3e8' : '#7d8794')
     const dashed = css('a')?.strokeDasharray && css('a')!.strokeDasharray !== 'none'
-    const gl = 26 // шрифт меток голов
-    const rows: number[] = []
-    const cl = 120 // слева — шкала
+    const ball = new Path2D(ICONS['/'][1])
+    const cl = 96 // слева — шкала
     const cw = W - P - cl
     const cx = (x: number) => cl + (x / xMax) * cw
-    const lv = goals.map((g) => {
+    // ярусы меток голов — как на экране: ближе ~110px — выше
+    const lv: number[] = []
+    goals.forEach((o, i) => {
+      const near = lv.filter((_, j) => Math.abs(cx(goals[j].x) - cx(o.x)) < 110)
       let level = 0
-      const near = goals.filter((o, j) => j < goals.indexOf(g) && Math.abs(cx(o.x) - cx(g.x)) < 110).map((o) => rows[goals.indexOf(o)])
       while (near.includes(level)) level++
-      rows.push(level)
-      return level
+      lv.push(level)
     })
     const gRows = goals.length ? Math.max(...lv) + 1 : 0
-    const top = 250 + gRows * 48
-    const ch = 460
-    const Hh = top + ch + 60 + 70 + 90
+    const top = 300 + gRows * 52
+    const ch = 440
+    const Hh = top + ch + 210
     const c = document.createElement('canvas')
     c.width = W
     c.height = Hh
     const g = c.getContext('2d')
     if (!g) return null
+    const text = (t: string, x: number, y: number, f: string, color: string, align: CanvasTextAlign = 'left', max?: number) => {
+      g.font = `${f} ${font}`
+      g.fillStyle = color
+      g.textAlign = align
+      g.fillText(t, x, y, max)
+    }
     g.fillStyle = '#11161d'
     g.fillRect(0, 0, W, Hh)
-    g.textBaseline = 'alphabetic'
-    g.fillStyle = '#f2f4f7'
-    g.font = `700 52px ${font}`
-    g.fillText('Давление команд', P, P + 50)
-    g.font = `500 34px ${font}`
-    g.fillStyle = '#c3c9d1'
-    g.fillText(`${home.name} — ${away.name}`, P, P + 104)
-    if (share) {
-      g.font = `400 26px ${font}`
-      g.fillStyle = '#8a939e'
-      g.fillText(`${home.name} ${pct(share.home)} · на равных ${pct(share.even)} · ${away.name} ${pct(share.away)}`, P, P + 150, W - 2 * P)
-    }
+    // шапка: заголовок, матч со счётом, турнир и минута / статус, распределение
+    text('Давление команд', P, P + 44, '700 46px', '#f2f4f7')
+    const sc = final ? `  ${final.home}:${final.away}  ` : ' — '
+    text(`${home.name}${sc}${away.name}`, P, P + 102, '600 36px', '#e6e9ed', 'left', W - 2 * P)
+    text([league, status].filter(Boolean).join(' · '), P, P + 146, '400 26px', '#8a939e', 'left', W - 2 * P)
+    if (share) text(`${home.name} ${pct(share.home)} · на равных ${pct(share.even)} · ${away.name} ${pct(share.away)}`, P, P + 190, '400 24px', '#8a939e', 'left', W - 2 * P)
     const cy = (v: number) => top + ch - (v / yMax) * ch
-    g.font = `400 24px ${font}`
-    g.textAlign = 'right'
+    // сетка: только 0, 50, 100 — почти незаметная
     for (const v of yTicks) {
-      g.strokeStyle = v ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.25)'
-      g.setLineDash(v ? [6, 8] : [])
+      g.strokeStyle = v ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.16)'
       g.lineWidth = 2
       g.beginPath()
       g.moveTo(cl, cy(v))
       g.lineTo(cl + cw, cy(v))
       g.stroke()
-      g.fillStyle = '#8a939e'
-      g.fillText(String(v), cl - 16, cy(v) + 8)
+      text(String(v), cl - 18, cy(v) + 8, '400 22px', '#8a939e', 'right')
     }
-    g.textAlign = 'center'
+    if (pt.len2 > 0) {
+      g.strokeStyle = 'rgba(255,255,255,0.08)'
+      g.beginPath()
+      g.moveTo(cx(pt.len1), top)
+      g.lineTo(cx(pt.len1), top + ch)
+      g.stroke()
+    }
     for (const m of [0, 15, 30, 45, 60, 75, 90, 105, 120].filter((m) => (m <= 45 || pt.len2 > 0 || m === 0) && (m <= 90 || pt.total > pt.len1 + pt.len2))) {
       const x = clockPos(m)
-      if (x <= xMax) g.fillText(`${m}′`, Math.min(Math.max(cx(x), cl + 20), cl + cw - 20), top + ch + 42)
+      if (x <= xMax) text(`${m}′`, Math.min(Math.max(cx(x), cl + 18), cl + cw - 18), top + ch + 40, '400 22px', '#8a939e', 'center')
     }
+    // голы: тонкий пунктир цветом команды и метка «мяч 17′»
     goals.forEach((o, i) => {
       g.strokeStyle = o.side ? col(o.side === 'home' ? 'h' : 'a') : 'rgba(255,255,255,0.4)'
-      g.setLineDash([6, 6])
+      g.globalAlpha = 0.6
+      g.setLineDash([4, 6])
       g.lineWidth = 2
       g.beginPath()
-      g.moveTo(cx(o.x), top - 20 - lv[i] * 48)
+      g.moveTo(cx(o.x), top - 12 - lv[i] * 52)
       g.lineTo(cx(o.x), top + ch)
       g.stroke()
       g.setLineDash([])
-      g.font = `600 ${gl}px ${font}`
-      const t = `● ${o.label}`
-      const tw = g.measureText(t).width + 28
+      g.globalAlpha = 1
+      g.font = `500 24px ${font}`
+      const tw = g.measureText(o.label).width + 24 + 8 + 24
       const lx = Math.min(Math.max(cx(o.x) - tw / 2, cl), cl + cw - tw)
-      const ly = top - 62 - lv[i] * 48
-      g.fillStyle = '#232c36'
+      const ly = top - 56 - lv[i] * 52
+      g.fillStyle = 'rgba(255,255,255,0.08)'
       g.beginPath()
-      g.roundRect(lx, ly, tw, 42, 21)
+      g.roundRect(lx, ly, tw, 44, 22)
       g.fill()
-      g.fillStyle = '#f2f4f7'
-      g.fillText(t, lx + tw / 2, ly + 30)
+      g.save()
+      g.translate(lx + 12, ly + 10)
+      g.scale(24 / 256, 24 / 256)
+      g.fillStyle = '#e6e9ed'
+      g.fill(ball)
+      g.restore()
+      text(o.label, lx + 12 + 24 + 8, ly + 31, '500 24px', '#e6e9ed')
     })
+    // линии: 4px, скруглённые, без точек; под ними — заливка 5%, разрывы как на экране
+    const runs: Bucket[][] = []
+    bs.forEach((b, i) => (i && b.from <= bs[i - 1].to ? runs[runs.length - 1].push(b) : runs.push([b])))
     for (const k of ['a', 'h'] as const) {
+      g.fillStyle = col(k)
+      g.globalAlpha = 0.05
+      for (const r of runs.filter((r) => r.length > 1)) {
+        g.beginPath()
+        g.moveTo(cx(r[0].x), cy(0))
+        r.forEach((b) => g.lineTo(cx(b.x), cy(b[k])))
+        g.lineTo(cx(r[r.length - 1].x), cy(0))
+        g.fill()
+      }
+      g.globalAlpha = 1
       g.strokeStyle = col(k)
-      g.lineWidth = 6
+      g.lineWidth = 4
       g.lineJoin = 'round'
       g.lineCap = 'round'
-      g.setLineDash(k === 'a' && dashed ? [14, 12] : [])
+      g.setLineDash(k === 'a' && dashed ? [10, 8] : [])
       g.beginPath()
       bs.forEach((b, i) => (i && b.from <= bs[i - 1].to ? g.lineTo(cx(b.x), cy(b[k])) : g.moveTo(cx(b.x), cy(b[k]))))
       g.stroke()
       g.setLineDash([])
-      g.fillStyle = col(k)
-      for (const b of bs) {
-        g.beginPath()
-        g.arc(cx(b.x), cy(b[k]), 8, 0, Math.PI * 2)
-        g.fill()
-      }
     }
     // легенда
-    const ly = top + ch + 112
-    g.font = `500 28px ${font}`
-    g.textAlign = 'left'
+    const ly = top + ch + 100
+    g.font = `500 24px ${font}`
     let lx = P
     for (const [k, name] of [['h', home.name], ['a', away.name]] as const) {
       g.strokeStyle = col(k)
-      g.lineWidth = 6
-      g.setLineDash(k === 'a' && dashed ? [12, 8] : [])
+      g.lineWidth = 4
+      g.setLineDash(k === 'a' && dashed ? [10, 7] : [])
       g.beginPath()
-      g.moveTo(lx, ly - 9)
-      g.lineTo(lx + 44, ly - 9)
+      g.moveTo(lx, ly - 8)
+      g.lineTo(lx + 36, ly - 8)
       g.stroke()
       g.setLineDash([])
-      g.fillStyle = '#f2f4f7'
-      g.fillText(name, lx + 60, ly)
-      lx += 60 + g.measureText(name).width + 48
+      text(name, lx + 50, ly, '500 24px', '#e6e9ed')
+      lx += 50 + g.measureText(name).width + 40
     }
-    // подпись: охват данных и tag.bet
-    g.font = `400 22px ${font}`
-    g.fillStyle = '#8a939e'
-    g.fillText(['Индекс давления 0–100', scope].filter(Boolean).join(' · '), P, Hh - 44, W - 2 * P - 200)
+    // низ: шкала и адрес матча слева, tag.bet справа
+    text('Индекс давления · 0–100', P, Hh - 62, '400 22px', '#8a939e')
+    text(url.replace(/^https?:\/\//, ''), P, Hh - 30, '400 20px', '#6b747f', 'left', W - 2 * P - 200)
     g.font = `700 34px ${font}`
-    g.textAlign = 'right'
-    g.fillStyle = '#f2f4f7'
     const bw = g.measureText('bet').width
-    g.fillText('bet', W - P, Hh - 42)
-    g.fillStyle = '#c8ff2e'
     const dw = g.measureText('.').width
-    g.fillText('.', W - P - bw, Hh - 42)
-    g.fillStyle = '#f2f4f7'
-    g.fillText('tag', W - P - bw - dw, Hh - 42)
+    text('bet', W - P, Hh - 38, '700 34px', '#f2f4f7', 'right')
+    text('.', W - P - bw, Hh - 38, '700 34px', '#c8ff2e', 'right')
+    text('tag', W - P - bw - dw, Hh - 38, '700 34px', '#f2f4f7', 'right')
     return new Promise((ok) => c.toBlob(ok, 'image/png'))
   }
   const fileName = () => `davlenie-${location.pathname.split('/').pop() || 'match'}.png`
@@ -355,11 +379,19 @@ export function Momentum({ points, events, final = null, home, away, live, clock
       setFlash('Не удалось скопировать')
     }
   }
-  const items: [string, () => void][] = [
-    ['Сохранить изображение', save],
-    ['Поделиться', shareIt],
-    [table ? 'Показать график' : 'Табличный вид', () => setTable(!table)],
-    ['Скопировать данные', copy],
+  // значки пунктов меню — контуром 1.5px на сетке 16×16
+  const MI = {
+    save: 'M8 2.5v7.5M5 7l3 3 3-3M3 12.5h10',
+    share: 'M8 10V2.5M5 5.5 8 2.5l3 3M4.5 8H3.5v5.5h9V8h-1',
+    table: 'M2.5 3.5h11v9h-11zM2.5 6.5h11M2.5 9.5h11M6.5 6.5v6',
+    chart: 'M2.5 12.5l3.5-4 3 2.5 4.5-6',
+    copy: 'M5.5 5.5h7v7h-7zM10.5 5.5v-2h-7v7h2',
+  }
+  const items: [string, keyof typeof MI, () => void][] = [
+    ['Сохранить изображение', 'save', save],
+    ['Поделиться', 'share', shareIt],
+    [table ? 'Показать график' : 'Табличный вид', table ? 'chart' : 'table', () => setTable(!table)],
+    ['Скопировать данные', 'copy', copy],
   ]
 
   return (
@@ -407,8 +439,8 @@ export function Momentum({ points, events, final = null, home, away, live, clock
           </svg>
         </button>
         {menu ? (
-          <div role="menu" className="absolute right-0 top-full mt-1 w-56 overflow-hidden rounded-tile bg-panel-3 py-1 text-[14px] shadow-lg">
-            {items.map(([label, run]) => (
+          <div role="menu" className="absolute right-0 top-full mt-1 w-[min(14rem,calc(100vw-2rem))] overflow-hidden rounded-tile bg-panel-3 py-1 text-[14px] shadow-lg">
+            {items.map(([label, icon, run]) => (
               <button
                 key={label}
                 type="button"
@@ -417,8 +449,11 @@ export function Momentum({ points, events, final = null, home, away, live, clock
                   setMenu(false)
                   run()
                 }}
-                className="block w-full px-3.5 py-2 text-left hover:bg-white/[0.06]"
+                className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left hover:bg-white/[0.06]"
               >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-dim" aria-hidden>
+                  <path d={MI[icon]} />
+                </svg>
                 {label}
               </button>
             ))}
@@ -457,8 +492,8 @@ export function Momentum({ points, events, final = null, home, away, live, clock
             {/* шкала силы давления и сетка */}
             {yTicks.map((v) => (
               <g key={v}>
-                <line x1={L} x2={L + pw} y1={Y(v)} y2={Y(v)} className={v ? 'stroke-white/[0.07]' : 'stroke-white/20'} strokeDasharray={v ? '3 4' : undefined} />
-                <text x={L - 8} y={Y(v)} dy="0.35em" textAnchor="end" className="fill-mute text-[13px]">
+                <line x1={L} x2={L + pw} y1={Y(v)} y2={Y(v)} className={v ? 'stroke-white/[0.04]' : 'stroke-white/[0.14]'} />
+                <text x={L - 10} y={Y(v)} dy="0.35em" textAnchor="end" className="fill-mute text-[12px] tabular-nums">
                   {v}
                 </text>
               </g>
@@ -467,22 +502,22 @@ export function Momentum({ points, events, final = null, home, away, live, clock
             {pt.len2 > 0 ? <line x1={X(pt.len1)} x2={X(pt.len1)} y1={T} y2={T + H} className="stroke-white/10" /> : null}
             {/* голы — пунктир через график */}
             {goals.map((g, i) => (
-              <line key={i} x1={X(g.x)} x2={X(g.x)} y1={T - 8 - g.level * 28} y2={T + H} className={g.side === 'home' ? 'club-stroke-h' : g.side === 'away' ? 'club-stroke-a' : 'stroke-white/40'} strokeDasharray="3 3" />
+              <line key={i} x1={X(g.x)} x2={X(g.x)} y1={T - 6 - g.level * 26} y2={T + H} className={g.side === 'home' ? 'club-stroke-h' : g.side === 'away' ? 'club-stroke-a' : 'stroke-white/40'} strokeWidth={1} strokeDasharray="2 3" opacity={0.55} />
             ))}
             {/* наведённый отрезок */}
-            {cur ? <line x1={X(cur.x)} x2={X(cur.x)} y1={T} y2={T + H} className="stroke-white/35" /> : null}
+            {cur ? <line x1={X(cur.x)} x2={X(cur.x)} y1={T} y2={T + H} className="stroke-white/20" /> : null}
             {/* линии команд: сначала гости, сверху хозяева */}
             {(['a', 'h'] as const).map((k) => (
               <g key={k} className={`momentum-line ${k === 'h' ? 'club-stroke-h' : 'club-stroke-a'}`}>
-                <path ref={(el) => void (lines.current[k] = el)} d={path(k)} fill="none" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-                {bs.map((b, i) => (
-                  <circle key={i} cx={X(b.x)} cy={Y(b[k])} r={act === i ? 5 : 3.5} className="club-dot" strokeWidth={2} />
-                ))}
+                <path d={area(k)} stroke="none" fillOpacity={0.05} />
+                <path ref={(el) => void (lines.current[k] = el)} d={path(k)} fill="none" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+                {/* точка — только у выбранного отрезка, у обеих команд */}
+                {cur ? <circle cx={X(cur.x)} cy={Y(cur[k])} r={4} className="club-dot" strokeWidth={2} /> : null}
               </g>
             ))}
             {/* минуты матча */}
             {xTicks.map(({ m, x }, i) => (
-              <text key={m} x={X(x)} y={T + H + 19} textAnchor={i === 0 ? 'start' : X(x) > L + pw - 16 ? 'end' : 'middle'} className="fill-mute text-[13px]">
+              <text key={m} x={X(x)} y={T + H + 19} textAnchor={i === 0 ? 'start' : X(x) > L + pw - 16 ? 'end' : 'middle'} className="fill-mute text-[12px] tabular-nums">
                 {m}′
               </text>
             ))}
@@ -510,7 +545,7 @@ export function Momentum({ points, events, final = null, home, away, live, clock
               const team = g.side === 'home' ? home.name : g.side === 'away' ? away.name : null
               const what = g.e.kind === 'own-goal' ? 'Автогол' : g.e.kind === 'penalty' ? 'Гол с пенальти' : 'Гол'
               return (
-                <span key={i} className={`absolute z-[3] ${shift}`} style={{ left: x, top: 8 + T - 34 - g.level * 28 }}>
+                <span key={i} className={`absolute z-[3] ${shift}`} style={{ left: x, top: T - 28 - g.level * 26 }}>
                   <button
                     type="button"
                     aria-expanded={gAct === i}
@@ -520,9 +555,9 @@ export function Momentum({ points, events, final = null, home, away, live, clock
                     onBlur={() => setGAct(null)}
                     // мышь открыла наведением, касание — нажатием; закрывается уходом курсора или нажатием мимо (blur)
                     onClick={() => setGAct(i)}
-                    className="flex items-center gap-1 whitespace-nowrap rounded-full bg-panel-3 py-0.5 pl-1 pr-2 text-[13px] font-semibold tabular-nums"
+                    className={`flex h-[22px] items-center gap-1 whitespace-nowrap rounded-full px-1.5 text-[12px] font-medium tabular-nums transition-colors ${gAct === i ? 'bg-white/[0.12] text-fg' : 'bg-white/[0.06] text-dim hover:text-fg'}`}
                   >
-                    <NavIcon href="/" on size={14} className="text-fg" />
+                    <NavIcon href="/" on size={12} />
                     {g.label}
                     <span className="sr-only">, {what}{team ? ` «${team}»` : ''}{g.e.player ? `, ${g.e.player}` : ''}{g.score ? `, счёт ${g.score}` : ''}</span>
                   </button>
@@ -543,24 +578,30 @@ export function Momentum({ points, events, final = null, home, away, live, clock
         {/* подсказка: отрезок и сила давления обеих команд */}
         {cur && w ? (
           <div
-            className="pointer-events-none absolute z-[2] -translate-x-1/2 whitespace-nowrap rounded-ctl bg-panel-3 px-2.5 py-1.5 text-[13px] shadow-lg"
-            style={{ left: Math.min(Math.max(X(cur.x), 100), w - 100), top: T + 8 }}
+            // сбоку от выбранного отрезка, чтобы не закрывать его точки: в левой половине — справа, в правой — слева
+            className={`pointer-events-none absolute z-[2] whitespace-nowrap rounded-ctl bg-panel-3 px-2.5 py-1.5 text-[13px] shadow-lg w-max ${X(cur.x) < w / 2 ? '' : '-translate-x-full'}`}
+            // ~190px — ширина подсказки: у краёв графика не выходит за блок
+            style={{ left: X(cur.x) < w / 2 ? Math.min(X(cur.x) + 12, w - 190) : Math.max(X(cur.x) - 12, 190), top: T + 6 }}
           >
-            {/* отрезок — минуты, по которым усреднён индекс (одна минута — одна минута) */}
-            <div className="font-semibold">
-              {cur.label} <span className="font-normal text-mute">· Индекс давления</span>
+            {/* отрезок — минуты, по которым усреднён индекс (одна точка SStats — одна минута) */}
+            <div className="text-[12px] text-mute">
+              <span className="font-semibold text-fg tabular-nums">{cur.label}</span> · Давление
             </div>
-            <div className="mt-1 flex items-center gap-1.5">
-              {swatch('h')}
-              {home.name} — <span className="num font-semibold">{cur.h}/100</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              {swatch('a')}
-              {away.name} — <span className="num font-semibold">{cur.a}/100</span>
+            <div className="mt-1 grid grid-cols-[auto_auto_auto] items-center gap-x-2 gap-y-0.5">
+              {(['h', 'a'] as const).map((k) => (
+                <div key={k} className="contents">
+                  {swatch(k)}
+                  <span className="max-w-[9rem] truncate">{k === 'h' ? home.name : away.name}</span>
+                  <span className="num text-right font-semibold">
+                    {cur[k]}
+                    <span className="font-normal text-mute">/100</span>
+                  </span>
+                </div>
+              ))}
             </div>
             {/* события этого отрезка — отдельно от цифр давления */}
             {curEvents.length ? (
-              <div className="mt-1.5 border-t border-white/10 pt-1.5">
+              <div className="mt-1.5 border-t border-white/10 pt-1.5 text-[12px] text-dim">
                 {curEvents.map((e, i) => (
                   <div key={i}>
                     {EV_WORD[e.kind]!.replace(/^./, (c) => c.toUpperCase())} «{e.side === 'home' ? home.name : away.name}» · {evLabel(e)}
