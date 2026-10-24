@@ -186,7 +186,9 @@ function historyNote(side: 'home' | 'away', p: Point, c: Ctx, xg: StatPair, sc: 
 export function matchNotes(c: Ctx): MatchNote[] {
   const get = (k: string) => c.stats.find((s) => s.key === k) ?? null
   const name = (side: 'home' | 'away') => (side === 'home' ? c.home : c.away)
-  const out: { p: number; n: MatchNote }[] = []
+  // g — о чём вывод: «перевес команды» по xG, ударам и владению — одна мысль, из таких берём только самый важный
+  const out: { p: number; n: MatchNote; g?: string }[] = []
+  const other = (side: 'home' | 'away') => name(side === 'home' ? 'away' : 'home')
   const sc = c.score
   // 0. сильное / слабое место команды подтверждается сегодня — сразу за удалением по ходу (11) и «опаснее, но уступает» (10)
   const repeated = new Set<string>()
@@ -212,15 +214,17 @@ export function matchNotes(c: Ctx): MatchNote[] {
     if (mine <= theirs)
       out.push({
         p: 10,
+        g: `dom:${top}`,
         n: {
           title: `«${name(top)}» опаснее, но ${mine < theirs ? 'уступает' : 'не впереди'}`,
-          text: `По моментам перевес — xG\u00a0${dec(a)} против ${dec(b)}, а на табло ${sc.home}:${sc.away}.`,
+          text: `xG: «${name(top)}» — ${dec(a)}, «${other(top)}» — ${dec(b)}. А на табло ${sc.home}:${sc.away}.`,
         },
       })
     else
       out.push({
         p: 6,
-        n: { title: `«${name(top)}» ведёт по делу`, text: `По моментам тоже впереди — xG\u00a0${dec(a)} против ${dec(b)}.` },
+        g: `dom:${top}`,
+        n: { title: `«${name(top)}» ведёт по делу`, text: `По моментам тоже впереди: xG — ${dec(a)}, у «${other(top)}» — ${dec(b)}.` },
       })
   }
 
@@ -247,8 +251,8 @@ export function matchNotes(c: Ctx): MatchNote[] {
     out.push({
       p: c.live ? 9 : 4,
       n: c.live
-        ? { title: `«${name(side)}» давит последние 10 минут`, text: 'Атакует чаще и опаснее соперника — это видно на графике «Давление команд».' }
-        : { title: `Концовка — за «${name(side)}»`, text: 'В последние 10 минут атаковали чаще и опаснее — это видно на графике «Давление команд».' },
+        ? { title: `«${name(side)}» давит последние 10 минут`, text: `Атакует чаще и опаснее, чем «${other(side)}», — это видно на графике «Давление команд».` }
+        : { title: `Концовка — за «${name(side)}»`, text: `В последние 10 минут — больше атак и опаснее, чем у «${other(side)}»: это видно на графике «Давление команд».` },
     })
   }
 
@@ -269,24 +273,40 @@ export function matchNotes(c: Ctx): MatchNote[] {
     })
   }
 
-  // 5. удары: один бьёт вдвое чаще
+  // 5. удары: один бьёт хотя бы вдвое чаще — во сколько раз, считаем честно (12 и 3 — вчетверо, 10 и 4 — больше чем вдвое)
   const shots = get('totalShots')
   if (shots && Math.max(shots.home, shots.away) >= 8 && Math.abs(shots.home - shots.away) >= 6) {
     const side = shots.home > shots.away ? 'home' : 'away'
     const a = shots[side]
     const b = shots[side === 'home' ? 'away' : 'home']
-    if (a >= b * 2) out.push({ p: 7, n: { title: `«${name(side)}» бьёт вдвое чаще`, text: `${a} ${plural(a, 'удар', 'удара', 'ударов')} против ${b} у соперника.` } })
+    if (a >= b * 2) {
+      const k = b ? Math.floor(a / b) : 0
+      const times = k === 2 ? 'вдвое' : k === 3 ? 'втрое' : k === 4 ? 'вчетверо' : `в\u00a0${k}\u00a0раз`
+      const title = !b ? `«${name(side)}» бьёт, соперник — нет` : a === b * k ? `«${name(side)}» бьёт ${times} чаще` : `«${name(side)}» бьёт больше чем ${times} чаще`
+      out.push({
+        p: 7,
+        g: `dom:${side}`,
+        n: { title, text: `Удары: «${name(side)}» — ${a}, «${other(side)}» — ${b || 'ни одного'}.` },
+      })
+    }
   }
 
   // 6. владение: заметный перевес
   const poss = get('ballPossession')
   if (poss && Math.max(poss.home, poss.away) >= 62) {
     const side = poss.home > poss.away ? 'home' : 'away'
-    out.push({ p: 3, n: { title: `Мяч чаще у «${name(side)}»`, text: `Владение — ${poss[side]}% на ${poss[side === 'home' ? 'away' : 'home']}%.` } })
+    out.push({
+      p: 3,
+      g: `dom:${side}`,
+      n: { title: `Мяч чаще у «${name(side)}»`, text: `Владение: «${name(side)}» — ${poss[side]}%, «${other(side)}» — ${poss[side === 'home' ? 'away' : 'home']}%.` },
+    })
   }
 
+  // один вывод на мысль: «опаснее», «бьёт чаще» и «мяч чаще» про одну команду — не три вывода, а самый важный
+  const seen = new Set<string>()
   return out
     .sort((a, b) => b.p - a.p)
+    .filter((x) => !x.g || (!seen.has(x.g) && Boolean(seen.add(x.g))))
     .slice(0, 3)
     .map((x) => x.n)
 }

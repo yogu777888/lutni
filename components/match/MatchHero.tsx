@@ -124,17 +124,20 @@ export function MatchHero({
             {t.name}
           </div>
           {ctx?.[k].rank || ctx?.[k].form.length ? (
-            <div className="mt-1 flex items-center gap-2 text-[13px] text-dim">
-              {/* место — колонкой одной ширины у обеих команд: значки формы стоят ровно друг под другом
-                (владелец: «индикаторы побед и поражений не ровно друг над другом стоят» — «6-е» уже «20-е») */}
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-dim">
+              {/* место — колонкой одной ширины у обеих команд, тонкая черта, дальше форма: значки обеих команд стоят ровно
+                друг под другом, как бы ни отличались названия (владелец: «квадраты выглядят отдельно… не согласовано с позицией») */}
               {ctx.home.rank || ctx.away.rank ? <span className="num w-[5.6em] shrink-0 whitespace-nowrap">{ctx[k].rank ? `${ctx[k].rank}-е место` : ''}</span> : null}
-              {/* форма — последние 5 буквами В/Н/П, свежий справа (владелец: «а про победы поражения понятно?» — кружочки без
-                подписи не читались) */}
+              {/* форма — последние 5 буквами В/Н/П, свежий справа; это не кнопки — значки без наведения, подсказка у всей группы */}
               {ctx[k].form.length ? (
-                <span className="flex gap-1" title={`Последние ${ctx[k].form.length} матчей, свежий справа`}>
-                  {ctx[k].form.map((r, i) => (
-                    <ResBadge key={i} r={r} size="xs" />
-                  ))}
+                <span className="flex items-center gap-2" title={`Форма: последние ${ctx[k].form.length} матчей, свежий справа`}>
+                  {ctx.home.rank || ctx.away.rank ? <span aria-hidden className="h-3.5 w-px bg-edge max-[379px]:hidden" /> : null}
+                  <span className="sr-only">Форма:</span>
+                  <span className="flex gap-1">
+                    {ctx[k].form.map((r, i) => (
+                      <ResBadge key={i} r={r} size="xs" />
+                    ))}
+                  </span>
                 </span>
               ) : null}
             </div>

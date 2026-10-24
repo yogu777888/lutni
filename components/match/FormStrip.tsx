@@ -8,7 +8,7 @@ import type { Res } from '@/lib/stats'
  * «идёт» и с правилом «светофор не используем»; как в статистике матча — чем лучше, тем ярче.
  */
 const RES: Record<Res, { label: string; cls: string }> = {
-  W: { label: 'В', cls: 'bg-white/85 text-ink' },
+  W: { label: 'В', cls: 'bg-white/70 text-ink' },
   D: { label: 'Н', cls: 'bg-white/[0.16] text-fg/80' },
   L: { label: 'П', cls: 'text-mute ring-1 ring-inset ring-white/15' },
 }

@@ -3,6 +3,7 @@ import { BlockMore } from '@/components/BlockMore'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
 import { MatchBar } from '@/components/match/MatchBar'
+import { teamCode } from '@/lib/i18n/codes'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
 import { KeyEvents } from '@/components/match/EventsBlock'
@@ -681,30 +682,40 @@ export default async function MatchPage({ params, searchParams }: Props) {
         league={crumbs[1]}
         ctx={heroCtx}
         attendance={ls?.attendance ?? null}
-      />
-
-      {quick.length >= 2 ? (
-        <div className="card relative mt-3 grid grid-cols-3 divide-x divide-edge py-3" aria-label="Главные цифры матча">
-          {quick.map((st) => (
-            <div key={st.key} className="min-w-0 px-2 text-center">
-              <p className="num text-[18px] font-semibold leading-tight">
-                {st.key === 'expectedGoals' ? `${dec2(st.home)} : ${dec2(st.away)}` : `${st.home} : ${st.away}`}
-              </p>
-              <p className="mt-0.5 truncate text-[13px] text-dim">
-                {st.key === 'expectedGoals' ? (
-                  <>
-                    {/* на телефоне колонка ~120px — «Моменты xG ⓘ» обрезалось */}
-                    <span className="max-sm:hidden">Моменты </span>
-                    <XgTerm />
-                  </>
-                ) : (
-                  st.label
-                )}
-              </p>
-            </div>
-          ))}
-        </div>
-      ) : null}
+      >
+        {quick.length >= 2 ? (
+          // три главные цифры — внизу табло под чертой (владелец: «верх страницы — один цельный матч-центр»): у каждого числа
+          // под ним код команды, хозяева слева, гости справа — «1,90 : 0,38» без подписей не читалось, чьё какое
+          // на 320–379px колонкам ~80px тесно для «1,90 — 0,38»: сетка шире черты на 12px с каждой стороны (поле карточки 20px)
+          <div className="border-t border-edge">
+          <div className="grid grid-cols-3 divide-x divide-edge py-3 max-[379px]:-mx-3" aria-label="Главные цифры матча">
+            {quick.map((st) => {
+              const v = (x: number) => (st.key === 'expectedGoals' ? dec2(x) : String(x))
+              return (
+                <div key={st.key} className="min-w-0 px-1 text-center">
+                  <p className="truncate text-[13px] text-dim">{st.key === 'expectedGoals' ? <XgTerm /> : st.key === 'totalShots' ? 'Удары' : 'Угловые'}</p>
+                  {/* числа и коды — одной сеткой: хозяева по правому краю левой колонки, гости — по левому правой */}
+                  <div className="mt-1 grid grid-cols-[1fr_auto_1fr] items-baseline gap-x-1 min-[380px]:gap-x-1.5 sm:gap-x-2">
+                    <span className="num text-right text-[15px] font-semibold leading-tight min-[380px]:text-[17px] sm:text-[19px]">
+                      <span className="sr-only">{m.home.name}: </span>
+                      {v(st.home)}
+                    </span>
+                    <span aria-hidden className="text-[13px] text-mute">—</span>
+                    <span className="num text-left text-[15px] font-semibold leading-tight min-[380px]:text-[17px] sm:text-[19px]">
+                      <span className="sr-only">{m.away.name}: </span>
+                      {v(st.away)}
+                    </span>
+                    <span aria-hidden className="text-right text-[13px] leading-tight tracking-[0.04em] text-mute">{teamCode(m.home.name)}</span>
+                    <span aria-hidden />
+                    <span aria-hidden className="text-left text-[13px] leading-tight tracking-[0.04em] text-mute">{teamCode(m.away.name)}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          </div>
+        ) : null}
+      </MatchHero>
 
       {/* .match-body — на компьютере текст крупнее (app/globals.css) */}
       {/* между разделами 32px, а от заголовка до своей карточки 10px (`BlockTitle`): при 24 и 12 заголовок первого раздела
