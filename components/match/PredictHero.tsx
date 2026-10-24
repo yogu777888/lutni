@@ -8,7 +8,6 @@ import { AdMark } from '../AdMark'
 import { CtaLink } from '../CtaLink'
 import type { TagHit } from '@/lib/tags'
 import { StorySymbol } from '../story/StorySymbol'
-import { TeamLogo } from '../TeamLogo'
 
 /**
  * «Прогноз» — отдельный блок под табло до начала матча (владелец: «блок матча супер некрасивый» — вынесли из табло; потом
@@ -85,22 +84,23 @@ export function PredictBlock({
         // «Почему так» — факты подборок (владелец: «а может оставить пилюли а факты вынести красиво в прогноз?» — «да»):
         // серии, дома, травмы, падение кэфа, форма аутсайдера, личные встречи; шансы исходов и голов здесь не повторяем —
         // они на полосе и в «Голах и счёте»; команда в начале факта — эмблемой; до четырёх, сначала про команду ставки
-        <ul className="mt-5 space-y-2.5">
+        // плашками в ряд, команда — названием перед фактом (владелец прислал второй вариант блока: «как тебе?» — «да»;
+        // эмблемой 18px было непонятно, о ком речь); плашку «tag.bet оценивает матч как близкий» не делаем — повтор заголовка
+        <ul className="mt-5 flex flex-wrap gap-2">
           {facts(tags, m, pick).map((f) => (
-            <li key={f.slug} className="flex items-start gap-2.5 text-[15px] leading-snug">
+            <li key={f.slug} className="flex min-w-0 items-start gap-2.5 rounded-tile bg-white/[0.04] px-3.5 py-2.5 text-[15px] leading-snug">
               <StorySymbol k={f.slug} tone="currentColor" className="mt-[3px] h-4 w-4 shrink-0 text-mute" />
-              {f.side ? (
-                <span className="mt-px shrink-0" title={`«${f.side.name}»`}>
-                  <TeamLogo name={f.side.name} src={f.side.logo ?? null} size={18} />
-                </span>
-              ) : null}
-              <span className="min-w-0 first-letter:uppercase">{f.text}</span>
+              <span className="min-w-0">
+                {f.side ? <>{f.side.name} · </> : null}
+                {f.side ? f.text : <span className="inline-block first-letter:uppercase">{f.text}</span>}
+              </span>
             </li>
           ))}
         </ul>
       ) : null}
       {c ? (
-        <div className="mt-5 border-t border-edge pt-5">
+        // ставка — своей плашкой внутри блока: прогноз и ставка — две части, а не список через черту
+        <div className="mt-5 rounded-tile bg-white/[0.04] p-4 sm:p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <p className={`text-[13px] font-semibold ${value ? 'text-good' : 'text-dim'}`}>{value ? 'Выгодная ставка' : 'Наш выбор'}</p>
@@ -116,14 +116,20 @@ export function PredictBlock({
           </div>
           <p className="mt-3 text-[14px] leading-snug text-dim first-letter:uppercase">{why}.</p>
           {/* #pick-cta — по нему нижняя плашка на телефоне прячется, пока эта кнопка на экране (`StickyCta`) */}
-          <div id="pick-cta" className="mt-4 sm:max-w-sm">
-            <CtaLink href={goHref(partner, 'pick', m.id)} size="lg" className="w-full">
+          {/* во всю ширину плашки, стрелка у правого края (было — половина ширины, прижата влево) */}
+          <div id="pick-cta" className="mt-4">
+            <CtaLink href={goHref(partner, 'pick', m.id)} size="lg" className="relative w-full">
               {odd != null ? `Поставить в ${partner.name}` : `Сделать ставку в ${partner.name}`}
+              <svg viewBox="0 0 24 24" className="absolute right-5 h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
             </CtaLink>
             <AdMark partner={partner} className="mt-2 text-center" />
           </div>
         </div>
       ) : null}
+      {/* оговорка — внутри карточки, а не строкой под ней */}
+      <p className="mt-4 border-t border-edge pt-4 text-center text-[13px] text-mute">Оценка tag.bet, а не гарантия. Ставки — это риск · 18+</p>
     </div>
   )
 }

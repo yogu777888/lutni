@@ -533,7 +533,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const sec_predict = (
     <>
           {scheduled && (verdict || pick) ? (
-            <Section outside title="Прогноз" note="Оценка tag.bet, а не гарантия. Ставки — это риск · 18+">
+            <Section outside title="Прогноз">
               <PredictBlock m={m} v={verdict} pick={pick} probs={x} tags={tags} />
             </Section>
           ) : null}
