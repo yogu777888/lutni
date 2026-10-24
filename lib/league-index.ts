@@ -14,7 +14,7 @@ import type { LeagueInfo, Match } from './types'
 
 export type IndexLeague = { id: number; name: string; href: string; q: string }
 export type IndexGroup = { key: string; name: string; flag: string | null; leagues: IndexLeague[]; q: string }
-export type TopLeague = { id: number; name: string; href: string; flag: string | null; state: string | null; over: boolean; q: string }
+export type TopLeague = { id: number; name: string; href: string; flag: string | null; place: string; state: string | null; over: boolean; q: string }
 
 /** Строка для поиска на странице (оригинал; русское название поиск берёт из текста строки): без регистра и «ё». */
 export const searchText = (...parts: (string | null | undefined)[]) =>
@@ -82,7 +82,9 @@ export async function leagueIndex(leagues: LeagueInfo[]): Promise<{ top: TopLeag
     .map((l): TopLeague => {
       const state = stateOf(l.id, dayMatches, nextMatches)
       const over = !state && seasonOver(l, today)
-      return { id: l.id, name: displayName(l), href: leagueHref(l), flag: flagCode(l), state: over ? 'сейчас не играется' : state, over, q: searchText(l.original, l.country) }
+      // где играется — подпись есть у каждой строки (две «Премьер-лиги» — Англия и Россия) и при пустом состоянии
+      const place = isIntl(l) ? (isNationsCup(l.original) ? 'Турнир сборных' : 'Клубный турнир') : ruCountry(l.country)
+      return { id: l.id, name: displayName(l), href: leagueHref(l), flag: flagCode(l), place, state: over ? 'сейчас не играется' : state, over, q: searchText(l.original, l.country) }
     })
     .sort((a, b) => Number(a.over) - Number(b.over))
 

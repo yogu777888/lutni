@@ -21,46 +21,56 @@ export const metadata: Metadata = {
 /** Сколько стран видно сразу; остальные — под «Ещё N стран» (на телефоне 170 раскрывашек давали ~12 000px). */
 const SHOWN = 20
 
-/** Знак 32px (в списке страны — 28): у турнира — логотип лиги без круга (как в заголовках блоков лиг) или флаг кругом, у страны — флаг; международные — знак глобуса. */
-function Mark({ id = 0, flag, size = 32 }: { id?: number; flag: string | null; size?: number }) {
-  return <LeagueMark id={id} flag={flag} size={size} bare fallback={<Globe />} />
-}
-
-function Globe() {
+/**
+ * Знак в сером круге, как в Apple Sports (владелец: «добавь круглые подложки как в эппл спортс»): логотип турнира — во весь
+ * круг (`LeagueMark`, 64% круга), нет логотипа — флаг кругом поменьше внутри, у международных — глобус.
+ */
+function Disc({ id = 0, flag, size }: { id?: number; flag: string | null; size: number }) {
+  if (id && leagueLogo(id)) return <LeagueMark id={id} flag={flag} size={size} />
   return (
-    <span aria-hidden className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full bg-white/[0.08] text-mute">
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M3 12h18M12 3c2.5 2.8 2.5 15.2 0 18M12 3c-2.5 2.8-2.5 15.2 0 18" />
-      </svg>
+    <span aria-hidden className="grid shrink-0 place-items-center rounded-full bg-white/[0.1]" style={{ width: size, height: size }}>
+      <LeagueMark id={0} flag={flag} size={Math.round(size * 0.55)} fallback={<Globe size={Math.round(size * 0.5)} />} />
     </span>
   )
 }
+
+function Globe({ size }: { size: number }) {
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" className="text-dim" style={{ width: size, height: size }} fill="none" stroke="currentColor" strokeWidth="1.6">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.8 2.5 15.2 0 18M12 3c-2.5 2.8-2.5 15.2 0 18" />
+    </svg>
+  )
+}
+
+/** Шеврон у края строки — строка ведёт на страницу турнира, как в списках iOS. */
+const Chevron = ({ className = 'transition-colors group-hover/r:text-fg' }: { className?: string }) => (
+  <svg aria-hidden viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-mute ${className}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m9 6 6 6-6 6" />
+  </svg>
+)
 
 function Group({ g }: { g: IndexGroup }) {
   return (
     <li data-group data-q={g.q} className="border-t border-edge">
       <details className="group/c">
-        <summary className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5">
-          <Mark flag={g.flag} />
-          <span className="min-w-0 flex-1 truncate text-[16px] font-medium">{g.name}</span>
-          <span className="text-[13px] text-mute">{g.leagues.length}</span>
-          <span aria-hidden className="text-mute transition-transform group-open/c:rotate-180">
-            ▾
+        <summary className="flex min-h-[72px] items-center gap-3.5 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5">
+          <Disc flag={g.flag} size={44} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[16px] font-semibold">{g.name}</span>
+            <span className="block text-[13px] leading-snug text-mute">{pluralN(g.leagues.length, ['турнир', 'турнира', 'турниров'])}</span>
           </span>
+          {/* раскрывается — шеврон вниз, тем же значком, что у строк-ссылок */}
+          <Chevron className="rotate-90 transition-transform group-open/c:-rotate-90" />
         </summary>
-        {/* оформление ссылок — у списка, а не у каждой из 1249: страница и так ~1 МБ */}
-        {/* логотип турнира — в колонке знака страны (владелец: «в лигах и турнирах все логотипы турниров сделать»); нет логотипа —
-            флаг страны (владелец: «там где нет лого у турнира ставить флаг»), у международных — глобус */}
-        <ul className="pb-2 [&_a]:flex [&_a]:items-center [&_a]:gap-3 [&_a]:py-2 [&_a]:pl-4 [&_a]:pr-4 [&_a]:text-[15px] [&_a]:text-dim [&_a]:transition-colors [&_a:hover]:text-fg sm:[&_a]:pl-5">
+        {/* оформление ссылок — у списка, а не у каждой из 1249: страница и так ~1 МБ; знак — в круге 36px, под знаком страны */}
+        <ul className="pb-2 [&_a]:flex [&_a]:min-h-[56px] [&_a]:items-center [&_a]:gap-3.5 [&_a]:py-2 [&_a]:pl-[calc(1rem+4px)] [&_a]:pr-4 [&_a]:text-[15px] [&_a]:text-dim [&_a]:transition-colors [&_a:hover]:bg-white/[0.02] [&_a:hover]:text-fg [&_a:hover_svg]:text-fg sm:[&_a]:pl-[calc(1.25rem+4px)] sm:[&_a]:pr-5">
           {g.leagues.map((l) => (
             <li key={l.id} data-league data-q={l.q || undefined}>
               <Link href={l.href} prefetch={false}>
-                <span className="grid w-8 shrink-0 place-items-center">
-                  {/* флаг мельче логотипа — круг во всю ширину выглядел крупнее знаков без круга */}
-                  <Mark id={l.id} flag={g.flag} size={leagueLogo(l.id) ? 28 : 22} />
-                </span>
-                <span className="min-w-0">{l.name}</span>
+                <Disc id={l.id} flag={g.flag} size={36} />
+                <span className="min-w-0 flex-1">{l.name}</span>
+                <Chevron />
               </Link>
             </li>
           ))}
@@ -111,12 +121,14 @@ export default async function LeaguesPage() {
               <ul>
                 {top.map((l) => (
                   <li key={l.id} data-top={l.name} data-q={l.q} className="border-t border-edge">
-                    <Link href={l.href} prefetch={false} className="flex h-full items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5">
-                      <Mark id={l.id} flag={l.flag} />
-                      <span className="min-w-0">
+                    <Link href={l.href} prefetch={false} className="group/r flex min-h-[72px] items-center gap-3.5 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5">
+                      <Disc id={l.id} flag={l.flag} size={44} />
+                      <span className="min-w-0 flex-1">
                         <span className={`block truncate text-[16px] font-semibold ${l.over ? 'text-dim' : ''}`}>{l.name}</span>
-                        {l.state ? <span className="block text-[13px] leading-snug text-mute">{l.state}</span> : null}
+                        {/* подпись у каждой строки: страна (две «Премьер-лиги») и состояние, если есть матчи сегодня или завтра */}
+                        <span className="block text-[13px] leading-snug text-mute">{l.state ? `${l.place} · ${l.state}` : l.place}</span>
                       </span>
+                      <Chevron />
                     </Link>
                   </li>
                 ))}
@@ -143,9 +155,7 @@ export default async function LeaguesPage() {
                 <details data-more className="group/more border-t border-edge">
                   <summary className="flex items-center justify-between gap-3 px-4 py-3.5 text-[14px] text-dim transition-colors hover:text-fg sm:px-5">
                     <span>Ещё {pluralN(more.length, ['страна', 'страны', 'стран'])}</span>
-                    <span aria-hidden className="text-mute transition-transform group-open/more:rotate-180">
-                      ▾
-                    </span>
+                    <Chevron className="rotate-90 transition-transform group-open/more:-rotate-90" />
                   </summary>
                   <ul>
                     {more.map((g) => (
