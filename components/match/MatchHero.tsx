@@ -158,14 +158,12 @@ export function MatchHero({
     <section id="match-hero" className="card page-enter-2 relative overflow-hidden px-5 pb-2 pt-4 sm:px-7 sm:pb-3 sm:pt-5 lg:mt-2">
       {/* сверху строкой: флаг, турнир и тур, справа — минута пилюлей или «итог»; «‹» здесь — только ниже lg, на компьютере
           она в закреплённой плашке над табло (`MatchBar`) вместе с командами и счётом */}
-      <div className="mx-auto flex min-h-8 max-w-[44rem] items-center gap-3">
+      <div className="flex min-h-8 items-center gap-3">
         {back ? <div className="shrink-0 lg:hidden">{back}</div> : null}
         <MatchHead full={full} league={league} />
       </div>
 
-      {/* на широкой карточке строки не шире 44rem и по центру: иначе счёт стоял в ~900px от названия (владелец: «как тебе
-          блок матча» — «да» на «прижать счёт») */}
-      <div id="match-board" className="mx-auto mt-1 flex max-w-[44rem] items-center gap-4">
+      <div id="match-board" className="mt-1 flex items-center gap-4">
         {/* #match-score — по первой строке (хозяева) мини-табло в шапке сменяет надпись tag.bet */}
         <div id="match-score" className="min-w-0 flex-1 divide-y divide-edge">
           {row(m.home, 'home')}

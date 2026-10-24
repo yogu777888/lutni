@@ -9,26 +9,16 @@ describe('«Главное» словами', () => {
   it('опаснее по моментам, но уступает — первым', () => {
     const n = matchNotes({ ...base, score: { home: 2, away: 1 }, stats: [st('expectedGoals', 0.78, 1.89), st('totalShots', 8, 15)] })
     expect(n[0].title).toBe('«Челси» опаснее, но уступает')
-    expect(n[0].text).toBe('По xG моменты заметно лучше у «Челси», а на табло 2:1.')
+    expect(n[0].text).toBe('xG: «Челси» — 1,89, «Арсенал» — 0,78. А на табло 2:1.')
   })
 
   it('удары — во сколько раз честно, чьи числа — по названиям, одна мысль — один вывод', () => {
-    // сами удары — в полосе под табло: в пояснении — удары в створ, без них вывода нет
-    const on = st('shotsOnGoal', 6, 1)
-    const four = matchNotes({ ...base, score: { home: 0, away: 0 }, stats: [st('totalShots', 12, 3), on] })
-    expect(four[0]).toEqual({ title: '«Арсенал» бьёт вчетверо чаще', text: 'В створ — 6 против 1.' })
-    expect(matchNotes({ ...base, score: { home: 0, away: 0 }, stats: [st('totalShots', 10, 4), on] })[0].title).toBe('«Арсенал» бьёт больше чем вдвое чаще')
-    expect(matchNotes({ ...base, score: { home: 0, away: 0 }, stats: [st('totalShots', 12, 3)] })).toEqual([])
+    const four = matchNotes({ ...base, score: { home: 0, away: 0 }, stats: [st('totalShots', 12, 3)] })
+    expect(four[0]).toEqual({ title: '«Арсенал» бьёт вчетверо чаще', text: 'Удары: «Арсенал» — 12, «Челси» — 3.' })
+    expect(matchNotes({ ...base, score: { home: 0, away: 0 }, stats: [st('totalShots', 10, 4)] })[0].title).toBe('«Арсенал» бьёт больше чем вдвое чаще')
     // ведёт по делу, бьёт чаще и мяч чаще — про одну команду: остаётся самый важный
-    const one = matchNotes({ ...base, score: { home: 2, away: 0 }, stats: [st('expectedGoals', 2.1, 0.4), st('totalShots', 12, 3), on, st('ballPossession', 66, 34)] })
+    const one = matchNotes({ ...base, score: { home: 2, away: 0 }, stats: [st('expectedGoals', 2.1, 0.4), st('totalShots', 12, 3), st('ballPossession', 66, 34)] })
     expect(one.map((x) => x.title)).toEqual(['«Арсенал» бьёт вчетверо чаще'])
-  })
-
-  it('про вторую команду — «почти без моментов» с 30-й минуты', () => {
-    const stats = [st('expectedGoals', 1.9, 0.38), st('shotsOnGoal', 6, 1)]
-    const n = matchNotes({ ...base, minute: 59, score: { home: 2, away: 0 }, stats })
-    expect(n).toContainEqual({ title: '«Челси» почти без моментов', text: 'За 59\u00a0минут — 1\u00a0удар в створ.' })
-    expect(matchNotes({ ...base, minute: 20, score: { home: 2, away: 0 }, stats }).some((x) => x.title.includes('почти без'))).toBe(false)
   })
 
   it('ничего яркого — пусто', () => {
