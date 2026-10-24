@@ -37,7 +37,7 @@ import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle
 import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
-import { lateNote, matchNotes } from '@/lib/match-notes'
+import { matchNotes } from '@/lib/match-notes'
 import { appNow, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
@@ -618,10 +618,8 @@ export default async function MatchPage({ params, searchParams }: Props) {
           <Hint title="Индекс давления" text="Показывает интенсивность атак по шкале 0–100. Проценты отражают распределение инициативы за проанализированное время." />
         </span>
       }
-      // карточка — рамка для двух внутренних блоков: поля как зазор между ними (10px)
-      className="!p-2.5"
-      // вывод про последние 10 минут — под карточкой, обычной серой строкой
-      note={lateNote(ls.momentum, isLive, isLive ? m.elapsed : null, m.home.name, m.away.name)}
+      // карточка — рамка для двух внутренних блоков: поля как зазор между ними (16px)
+      className="!p-4"
     >
       {clubVars(<Momentum points={ls.momentum} events={full.events} home={m.home} away={m.away} live={isLive} clock={isLive ? m.elapsed : null} />)}
     </Section>

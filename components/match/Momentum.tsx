@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { momentumSummary, playedTime, pressShares } from '@/lib/match-notes'
+import { lateNote, momentumSummary, playedTime, pressShares } from '@/lib/match-notes'
 import { minuteLabel, type MomentumPoint } from '@/lib/sstats/ls'
 import type { MatchEvent } from '@/lib/types'
-import { TeamLogo } from '../TeamLogo'
+import { NavIcon } from '../NavIcon'
 import { SplitBar } from './SplitBar'
 
 type Side = { name: string; logo?: string | null }
@@ -60,6 +60,8 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
   const box = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(0)
   const [act, setAct] = useState<number | null>(null)
+  // открытая метка гола: наведение, фокус или нажатие
+  const [gAct, setGAct] = useState<number | null>(null)
   useEffect(() => {
     const el = box.current
     if (!el) return
@@ -87,27 +89,26 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
   const yTicks = Array.from({ length: yMax / 20 + 1 }, (_, i) => i * 20)
 
   const evPos = (e: MatchEvent) => pt.pos(evPart(e), e.minute + (e.extra ?? 0))
-  // голы: ярус выше, если рядом (ближе 8 минут) уже стоит метка
-  const goals: { x: number; side: 'home' | 'away'; label: string; level: number }[] = []
+  // размеры графика: слева — подписи шкалы, сверху — метки голов, снизу — минуты
+  const L = 40
+  const R = 6
+  const pw = Math.max(0, w - L - R)
+  const X = (x: number) => L + (x / xMax) * pw
+  // голы: метка «мяч 17′ · Гол» шириной ~96px — ярус выше, если рядом по экрану уже стоит метка
+  const goals: { x: number; e: MatchEvent; label: string; level: number }[] = []
   for (const e of events) {
     if (e.kind !== 'goal' && e.kind !== 'penalty' && e.kind !== 'own-goal') continue
     const x = evPos(e)
     if (x > xMax) continue
-    const near = goals.filter((g) => Math.abs(g.x - x) < 8).map((g) => g.level)
+    const near = goals.filter((g) => Math.abs(X(g.x) - X(x)) < 100).map((g) => g.level)
     let level = 0
     while (near.includes(level)) level++
-    goals.push({ x, side: e.side, label: evLabel(e), level })
+    goals.push({ x, e, label: evLabel(e), level })
   }
   const goalRows = goals.length ? Math.max(...goals.map((g) => g.level)) + 1 : 0
-
-  // размеры графика: слева — подписи шкалы, сверху — метки голов, снизу — минуты (высота — на ~23% ниже прежней)
-  const L = 40
-  const R = 6
   const T = goalRows * 28 + 12
   const H = w >= 640 ? 170 : 140
   const B = 26
-  const pw = Math.max(0, w - L - R)
-  const X = (x: number) => L + (x / xMax) * pw
   const Y = (v: number) => T + H - (v / yMax) * H
   const narrow = w < 480
   const xTicks = (narrow ? [0, 45, 90, 120] : [0, 15, 30, 45, 60, 75, 90, 105, 120])
@@ -147,12 +148,13 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
   const hv = sum.minutes.home
   const av = sum.minutes.away
   const pct = (v: number) => `${(v / 10).toFixed(1).replace('.', ',')}%`
+  const note = lateNote(points, live, clock, home.name, away.name)
 
   return (
     <div>
       {/* доля проанализированных минут: перевес хозяев · на равных · перевес гостей, в сумме 100% */}
       {/* распределение — своим внутренним блоком на тон светлее, график — ниже на фоне карточки */}
-      <div className="rounded-tile bg-white/[0.04] px-4 py-3.5">
+      <div className="rounded-tile bg-white/[0.04] p-4">
         <p className="text-center text-[14px] text-dim">Распределение давления</p>
         <SplitBar home={share?.home ?? 0} away={share?.away ?? 0} even={share?.even ?? 0} className="mt-2.5 h-2" />
         <div className="mt-2.5 grid grid-cols-3 gap-3">
@@ -176,7 +178,7 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
       </div>
 
       {/* график с легендой — вторым внутренним блоком того же фона */}
-      <div className="mt-2.5 rounded-tile bg-white/[0.04] px-4 py-3.5">
+      <div className="mt-4 rounded-tile bg-white/[0.04] p-4">
       <div ref={box} className="relative">
         {w ? (
           <svg width={w} height={T + H + B} className="block select-none" role="img" aria-label={`Индекс давления команд по 5 минут, 0–100: «${home.name}» и «${away.name}».`}>
@@ -237,21 +239,36 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
         ) : (
           <div style={{ height: T + 140 + B }} />
         )}
-        {/* метки голов: эмблема и минута — чей гол, видно по эмблеме */}
+        {/* метки голов: мяч и «17′ · Гол»; чей гол и кто забил — по наведению или нажатию (только из данных матча) */}
         {w
           ? goals.map((g, i) => {
-              const t = g.side === 'home' ? home : away
               const x = X(g.x)
-              const shift = x - L < 40 ? '' : L + pw - x < 40 ? '-translate-x-full' : '-translate-x-1/2'
+              const shift = x - L < 50 ? '' : L + pw - x < 50 ? '-translate-x-full' : '-translate-x-1/2'
+              const side = shift === '' ? 'left-0' : shift === '-translate-x-full' ? 'right-0' : 'left-1/2 -translate-x-1/2'
+              const team = g.e.side === 'home' ? home.name : away.name
+              const what = g.e.kind === 'own-goal' ? 'Автогол' : `${g.e.kind === 'penalty' ? 'Гол с пенальти' : 'Гол'} «${team}»`
               return (
-                <span
-                  key={i}
-                  className={`pointer-events-none absolute flex items-center gap-1 whitespace-nowrap rounded-full bg-panel-3 py-0.5 pl-0.5 pr-2 text-[13px] font-semibold ${shift}`}
-                  style={{ left: x, top: 8 + T - 34 - g.level * 28 }}
-                >
-                  <TeamLogo name={t.name} src={t.logo ?? null} size={18} />
-                  {g.label}
-                  <span className="sr-only">гол «{t.name}»</span>
+                <span key={i} className={`absolute z-[3] ${shift}`} style={{ left: x, top: 8 + T - 34 - g.level * 28 }}>
+                  <button
+                    type="button"
+                    aria-expanded={gAct === i}
+                    onPointerEnter={(ev) => ev.pointerType === 'mouse' && setGAct(i)}
+                    onPointerLeave={(ev) => ev.pointerType === 'mouse' && setGAct(null)}
+                    onFocus={() => setGAct(i)}
+                    onBlur={() => setGAct(null)}
+                    onClick={() => setGAct(gAct === i ? null : i)}
+                    className="flex items-center gap-1 whitespace-nowrap rounded-full bg-panel-3 py-0.5 pl-1 pr-2 text-[13px] font-semibold"
+                  >
+                    <NavIcon href="/" on size={14} className="text-fg" />
+                    {g.label} · Гол
+                    <span className="sr-only">, {what}{g.e.player ? `, ${g.e.player}` : ''}</span>
+                  </button>
+                  {gAct === i ? (
+                    <span className={`pointer-events-none absolute top-full mt-1 whitespace-nowrap rounded-ctl bg-panel-3 px-2.5 py-1.5 text-[13px] shadow-lg ${side}`} aria-hidden>
+                      <span className="block font-semibold">{what}</span>
+                      {g.e.player ? <span className="block text-dim">{g.e.player}</span> : null}
+                    </span>
+                  ) : null}
                 </span>
               )
             })
@@ -300,6 +317,8 @@ export function Momentum({ points, events, home, away, live, clock = null }: { p
         </span>
       </div>
       </div>
+      {/* вывод про последние 10 минут — внутри карточки, тихой строкой без фона */}
+      {note ? <p className="mt-3 px-1 text-[13px] leading-snug text-mute">{note}</p> : null}
     </div>
   )
 }

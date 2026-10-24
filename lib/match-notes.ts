@@ -108,7 +108,7 @@ export function lateNote(points: MomentumPoint[], live: boolean, clock: number |
   const th = (tail.reduce((s, p) => s + Math.max(p.v, 0), 0) / 10) * 100
   const ta = (tail.reduce((s, p) => s + Math.max(-p.v, 0), 0) / 10) * 100
   if (Math.abs(th - ta) < 8) return 'За последние 10 минут давление примерно равное.'
-  return `За последние 10 минут преимущество по давлению у команды ${th > ta ? home : away}.`
+  return `За последние 10 минут преимущество по давлению — у команды ${th > ta ? home : away}.`
 }
 
 /**
