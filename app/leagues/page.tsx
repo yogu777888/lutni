@@ -64,7 +64,7 @@ function Group({ g }: { g: IndexGroup }) {
           <Chevron className="rotate-90 transition-transform group-open/c:-rotate-90" />
         </summary>
         {/* оформление ссылок — у списка, а не у каждой из 1249: страница и так ~1 МБ; знак — в круге 36px, под знаком страны */}
-        <ul className="pb-2 [&_a]:flex [&_a]:min-h-[56px] [&_a]:items-center [&_a]:gap-3.5 [&_a]:py-2 [&_a]:pl-[calc(1rem+4px)] [&_a]:pr-4 [&_a]:text-[15px] [&_a]:text-dim [&_a]:transition-colors [&_a:hover]:bg-white/[0.02] [&_a:hover]:text-fg [&_a:hover_svg]:text-fg sm:[&_a]:pl-[calc(1.25rem+4px)] sm:[&_a]:pr-5">
+        <ul className="pb-2 text-[15px] [&_a]:flex [&_a]:min-h-[56px] [&_a]:items-center [&_a]:gap-3.5 [&_a]:py-2 [&_a]:pl-[calc(1rem+4px)] [&_a]:pr-4 [&_a]:text-dim [&_a]:transition-colors [&_a:hover]:bg-white/[0.02] [&_a:hover]:text-fg [&_a:hover_svg]:text-fg sm:[&_a]:pl-[calc(1.25rem+4px)] sm:[&_a]:pr-5">
           {g.leagues.map((l) => (
             <li key={l.id} data-league data-q={l.q || undefined}>
               <Link href={l.href} prefetch={false}>
@@ -115,8 +115,9 @@ export default async function LeaguesPage() {
         />
 
         {/* заголовки блоков — на фоне страницы над карточкой, как на главной и странице матча (владелец: «заголовок топ турниры
-            и страны вынеси за блок что единый стиль был»); между блоками — 32px, как там */}
-        <div className="space-y-8 pt-4 xl:pt-6">
+            и страны вынеси за блок что единый стиль был»); между блоками — 32px, как там; текст от lg крупнее (`match-body`), как
+            на главной — фильтр в заголовке без увеличения (`keep-size`) */}
+        <div className="match-body space-y-8 pt-4 xl:pt-6">
           {top.length ? (
             <section>
               <BlockTitle rows title="Топ-турниры" />
@@ -149,7 +150,7 @@ export default async function LeaguesPage() {
                     Страны и турниры <span className="text-[13px] font-normal text-mute">{pluralN(countries, ['страна', 'страны', 'стран'])}</span>
                   </>
                 }
-                aside={<LeagueFilter target="league-index" />}
+                aside={<div className="keep-size"><LeagueFilter target="league-index" /></div>}
               />
               <div className="card @container overflow-hidden">
               <ul className="[&>li:first-child]:border-t-0">
