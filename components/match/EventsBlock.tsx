@@ -12,7 +12,7 @@ type Flow = MatchEvent & { score: string | null }
  * Счёт после каждого гола. Автогол засчитываем по стороне события; если итог не сходится со счётом матча — пробуем
  * наоборот (поставщики пишут автогол то за команду игрока, то за получившую гол); не сходится и так — счёт не пишем.
  */
-function withScore(events: MatchEvent[], final: { home: number; away: number } | null): Flow[] {
+export function withScore(events: MatchEvent[], final: { home: number; away: number } | null): Flow[] {
   const run = (flipOwn: boolean) => {
     let h = 0
     let a = 0
