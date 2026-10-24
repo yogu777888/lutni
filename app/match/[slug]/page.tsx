@@ -750,9 +750,13 @@ export default async function MatchPage({ params, searchParams }: Props) {
               {/* шрифт и поля — как у «Где поставить» над ним (владелец: «я вижу что тут различие по размеру шрифтов»):
                   `keep-size`, строки `px-4 sm:px-5`, названия 16px, «Все матчи дня» — как «Все букмекеры» */}
               <div className="keep-size @container card overflow-hidden">
-              <div className="grid @2xl:grid-cols-2">
-                {related.map((o, i) => (
-                  <div key={o.id} className={`border-edge @2xl:even:border-l ${i ? 'border-t' : ''} ${i === 1 ? '@2xl:border-t-0' : ''}`}>
+              {/* две колонки заполняются сверху вниз — сначала левая, потом правая (по строкам порядок читался зигзагом) */}
+              <div className={`grid @2xl:grid-flow-col @2xl:grid-cols-2 ${['', '@2xl:grid-rows-1', '@2xl:grid-rows-2', '@2xl:grid-rows-3'][Math.ceil(related.length / 2)]}`}>
+                {related.map((o, i, all) => (
+                  <div
+                    key={o.id}
+                    className={`border-edge ${i ? 'border-t' : ''} ${i === Math.ceil(all.length / 2) ? '@2xl:border-t-0' : ''} ${i >= Math.ceil(all.length / 2) ? '@2xl:border-l' : ''}`}
+                  >
                     <MatchRow m={o} tags={[]} compact showLeague={o.league.id !== m.league.id} />
                   </div>
                 ))}

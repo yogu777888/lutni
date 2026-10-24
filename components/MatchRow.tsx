@@ -154,12 +154,13 @@ export function MatchRow({
       // матчи у матчей может справа сделать типа кнопочку стрелочку?»)
       <div className="group relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto_auto] items-center gap-x-3 px-4 py-3 sm:px-5 transition-colors hover:bg-white/[0.02]">
         <StatusCell m={m} />
-        <Link href={matchHref(m)} prefetch={false} className="min-w-0 after:absolute after:inset-0 after:content-['']">
-          <span className="block truncate text-[16px] font-semibold">{m.home.name}</span>
-          <span className="block truncate text-[16px] font-semibold">{m.away.name}</span>
+        {/* эмблемы и крупный счёт — как в строках главной (владелец: «как тебе нижний блок где другие матчи?» — «да») */}
+        <Link href={matchHref(m)} prefetch={false} className="flex min-w-0 flex-col gap-1 text-[16px] font-semibold after:absolute after:inset-0 after:content-['']">
+          {name(m.home, false)}
+          {name(m.away, false)}
           {showLeague ? <span className="block truncate text-[13px] text-mute">{m.league.name}</span> : null}
         </Link>
-        {played ? <Score m={m} /> : <span />}
+        {played ? <Score m={m} big /> : <span />}
         <svg viewBox="0 0 24 24" className="h-4 w-4 text-mute transition-colors group-hover:text-fg" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M9.5 6l6 6-6 6" />
         </svg>
