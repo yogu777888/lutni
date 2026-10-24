@@ -38,7 +38,7 @@ import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
 import { matchNotes } from '@/lib/match-notes'
-import { appNow, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
+import { appNow, dayLabel, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
 import type { Match } from '@/lib/types'
@@ -533,8 +533,8 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const sec_predict = (
     <>
           {scheduled && (verdict || pick) ? (
-            <Section outside title="Прогноз">
-              <PredictBlock m={m} v={verdict} pick={pick} probs={x} tags={tags} />
+            <Section outside title="Прогноз" className="!p-4">
+              <PredictBlock m={m} v={verdict} pick={pick} probs={x} tags={tags} url={`${SITE.url}${canonical}`} when={`${leagueTitle(m.league.name)} · ${dayLabel(ymdInTz(m.ts)).toLowerCase()} ${formatTime(m.ts)}`} />
             </Section>
           ) : null}
 

@@ -8,6 +8,8 @@ import { AdMark } from '../AdMark'
 import { CtaLink } from '../CtaLink'
 import type { TagHit } from '@/lib/tags'
 import { StorySymbol } from '../story/StorySymbol'
+import { TeamLogo } from '../TeamLogo'
+import { PredictShare, type PredictCard } from './PredictShare'
 
 /**
  * «Прогноз» — отдельный блок под табло до начала матча (владелец: «блок матча супер некрасивый» — вынесли из табло; потом
@@ -24,12 +26,18 @@ export function PredictBlock({
   pick,
   probs,
   tags = [],
+  when,
+  url,
 }: {
   m: Match
   v: Verdict | null
   pick: Pick | null
   probs: { home: number; draw: number; away: number } | null
   tags?: TagHit[]
+  /** «Ла Лига · сегодня 20:30» */
+  when: string
+  /** адрес матча на tag.bet — для картинки и «Поделиться» */
+  url: string
 }) {
   const n = probs ? split100(probs) : null
   const c = pick?.candidate
@@ -54,9 +62,58 @@ export function PredictBlock({
         .filter(Boolean)
         .join(', ')
     : ''
+  const fs = facts(tags, m, pick)
+  const card: PredictCard = {
+    home: m.home.name,
+    away: m.away.name,
+    when,
+    headline: v?.headline ?? null,
+    probs: n
+      ? (['home', 'draw', 'away'] as const).map((k) => ({
+          v: n[k],
+          label: k === 'home' ? m.home.name : k === 'away' ? m.away.name : 'Ничья',
+          top: k === (n.home >= n.draw && n.home >= n.away ? 'home' : n.away >= n.draw ? 'away' : 'draw'),
+        }))
+      : null,
+    facts: fs.map((f) => (f.side ? `${f.side.name} · ${f.text}` : f.text.charAt(0).toUpperCase() + f.text.slice(1))),
+    bet: c
+      ? {
+          label: value ? 'Выгодная ставка' : 'Наш выбор',
+          outcome: outcomeText(c.key, m).replace(/^./, (x) => x.toUpperCase()),
+          fair: `${x12 ? '' : `Шанс ${pct(c.prob)} · `}честная цена — ${c.fairOdd.toFixed(2)}`.replace(/^./, (x) => x.toUpperCase()),
+        }
+      : null,
+    url,
+  }
   const top = n ? (n.home >= n.draw && n.home >= n.away ? 'home' : n.away >= n.draw ? 'away' : 'draw') : null
   return (
     <div>
+      {/* шапка — матч, турнир и время, справа «···»: сохранить картинку или переслать (владелец: «сверху добавь счет и лигу
+          и время как на фото и справа кнопочку чтоб можно было фото сохранить или переслать»); до начала счёта нет — «—» */}
+      <div className="flex items-start gap-2 px-1 pt-1">
+        <span className="w-8 shrink-0" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 text-[16px] font-semibold">
+            {[m.home, null, m.away].map((t, i) =>
+              t ? (
+                // на телефоне эмблема над названием — в строку «Райо Валье…» обрезалось
+                <span key={i} className={`flex min-w-0 flex-col items-center gap-1 text-center sm:flex-row sm:gap-2 sm:text-left ${i === 0 ? 'sm:justify-end' : ''}`}>
+                  <span className="shrink-0">
+                    <TeamLogo name={t.name} src={t.logo} size={28} />
+                  </span>
+                  <span className="line-clamp-2 break-words leading-tight">{t.name}</span>
+                </span>
+              ) : (
+                <span key={i} className="text-mute">—</span>
+              ),
+            )}
+          </div>
+          <p className="mt-1.5 text-center text-[14px] text-dim">{when}</p>
+        </div>
+        <PredictShare card={card} />
+      </div>
+      {/* вывод, полоса шансов и доводы — своим внутренним блоком, как ставка ниже; поля и зазоры — как в «Давлении команд» */}
+      <div className="mt-4 rounded-tile bg-white/[0.04] p-4">
       {v ? <p className="text-[20px] font-bold leading-tight tracking-[-0.02em] sm:text-[22px]">{v.headline}</p> : null}
       {n ? (
         <div className="mt-4">
@@ -80,15 +137,15 @@ export function PredictBlock({
           </div>
         </div>
       ) : null}
-      {facts(tags, m, pick).length ? (
+      {fs.length ? (
         // «Почему так» — факты подборок (владелец: «а может оставить пилюли а факты вынести красиво в прогноз?» — «да»):
         // серии, дома, травмы, падение кэфа, форма аутсайдера, личные встречи; шансы исходов и голов здесь не повторяем —
         // они на полосе и в «Голах и счёте»; команда в начале факта — эмблемой; до четырёх, сначала про команду ставки
         // плашками в ряд, команда — названием перед фактом (владелец прислал второй вариант блока: «как тебе?» — «да»;
         // эмблемой 18px было непонятно, о ком речь); плашку «tag.bet оценивает матч как близкий» не делаем — повтор заголовка
         <ul className="mt-5 flex flex-wrap gap-2">
-          {facts(tags, m, pick).map((f) => (
-            <li key={f.slug} className="flex min-w-0 items-start gap-2.5 rounded-tile bg-white/[0.04] px-3.5 py-2.5 text-[15px] leading-snug">
+          {fs.map((f) => (
+            <li key={f.slug} className="flex min-w-0 items-start gap-2.5 rounded-tile bg-white/[0.06] px-3.5 py-2.5 text-[15px] leading-snug">
               <StorySymbol k={f.slug} tone="currentColor" className="mt-[3px] h-4 w-4 shrink-0 text-mute" />
               <span className="min-w-0">
                 {f.side ? <>{f.side.name} · </> : null}
@@ -98,9 +155,10 @@ export function PredictBlock({
           ))}
         </ul>
       ) : null}
+      </div>
       {c ? (
         // ставка — своей плашкой внутри блока: прогноз и ставка — две части, а не список через черту
-        <div className="mt-5 rounded-tile bg-white/[0.04] p-4 sm:p-5">
+        <div className="mt-4 rounded-tile bg-white/[0.04] p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <p className={`text-[13px] font-semibold ${value ? 'text-good' : 'text-dim'}`}>{value ? 'Выгодная ставка' : 'Наш выбор'}</p>
@@ -129,7 +187,7 @@ export function PredictBlock({
         </div>
       ) : null}
       {/* оговорка — внутри карточки, а не строкой под ней */}
-      <p className="mt-4 border-t border-edge pt-4 text-center text-[13px] text-mute">Оценка tag.bet, а не гарантия. Ставки — это риск · 18+</p>
+      <p className="mt-4 text-center text-[13px] text-mute">Оценка tag.bet, а не гарантия. Ставки — это риск · 18+</p>
     </div>
   )
 }
