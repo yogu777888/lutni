@@ -16,18 +16,32 @@ export function SplitBar({ home, away, className = 'h-[5px]' }: { home: number; 
 }
 
 /**
- * Проценты со своей шкалой у каждой команды (точность передач 82% и 77% — не доли одного целого): две дорожки от
- * центра, каждая — из 100%, хозяева растут влево, гости вправо.
+ * Ширина заливки каждой половины зеркальной полосы, 0–100. Количества — от большего в строке (удары 12 и 3 — 100% и
+ * 25%), проценты и владение (`abs`) — по своей шкале 0–100 (точность передач 85% и 72% — 85 и 72). Нет значения у
+ * кого-то или оно отрицательное — `null`: полосы нет (нулём не подменяем); 0 : 0 — обе пустые.
  */
-export function PctBars({ home, away, className = 'h-[5px]' }: { home: number | null; away: number | null; className?: string }) {
-  const w = (v: number | null) => `${Math.max(0, Math.min(100, v ?? 0))}%`
+export function mirrorWidths(home: number | null, away: number | null, abs: boolean): [number, number] | null {
+  if (home === null || away === null || !Number.isFinite(home) || !Number.isFinite(away) || home < 0 || away < 0) return null
+  const clamp = (v: number) => Math.max(0, Math.min(100, v))
+  if (abs) return [clamp(home), clamp(away)]
+  const max = Math.max(home, away)
+  return max > 0 ? [clamp((home / max) * 100), clamp((away / max) * 100)] : [0, 0]
+}
+
+/**
+ * Зеркальная полоса строки статистики: центр — неподвижная точка, у каждой команды своя половина, хозяева растут от
+ * центра влево, гости — вправо, зазор 3px; цвета клубов чуть приглушены (`saturate`), чтобы не спорили с цифрами.
+ * `widths === null` — только пустые дорожки.
+ */
+export function MirrorBars({ widths, className = 'h-[5px]' }: { widths: [number, number] | null; className?: string }) {
+  const [h, a] = widths ?? [0, 0]
   return (
-    <div aria-hidden className={`flex gap-[3px] ${className}`}>
+    <div aria-hidden className={`flex gap-[3px] saturate-[.8] ${className}`}>
       <div className="flex flex-1 justify-end overflow-hidden rounded-full bg-white/[0.06]">
-        <div className="club-bar-h rounded-full" style={{ width: w(home) }} />
+        {h > 0 ? <div className="club-bar-h rounded-full" style={{ width: `${h}%` }} /> : null}
       </div>
       <div className="flex flex-1 overflow-hidden rounded-full bg-white/[0.06]">
-        <div className="club-bar-a rounded-full" style={{ width: w(away) }} />
+        {a > 0 ? <div className="club-bar-a rounded-full" style={{ width: `${a}%` }} /> : null}
       </div>
     </div>
   )
