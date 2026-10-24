@@ -1075,3 +1075,6 @@ html[data-shell-rc] .shell-r-rail {
 .club-stroke-a { stroke: var(--club-a, #7d8794); stroke: oklch(from var(--club-a, #7d8794) max(l, 0.62) c h); fill: var(--club-a, #7d8794); fill: oklch(from var(--club-a, #7d8794) max(l, 0.62) c h); }
 /* точки на линиях «Давления команд» — с кольцом цвета карточки, чтобы не сливались на пересечениях */
 .club-dot { stroke: var(--color-panel); }
+/* «Давление команд»: цвета клубов похожи — у гостей линия пунктиром и точки пустые (`data-alike` от `ClubVars`) */
+[data-alike] .momentum-line.club-stroke-a path { stroke-dasharray: 5 4; }
+[data-alike] .momentum-line.club-stroke-a .club-dot { fill: var(--color-panel); stroke: inherit; }

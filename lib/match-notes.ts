@@ -75,6 +75,24 @@ export function momentumSummary(points: MomentumPoint[]): MomentumSummary {
 }
 
 /**
+ * Сыгранное время по точкам давления — одна точка на минуту, с добавленным временем (владелец: на 59′ «43 + 10 + 8 =
+ * 61» — это 59 минут по часам и 2 добавленные к первому тайму). `pos` — минута на общей оси: первый тайм — 1…45+N,
+ * второй — сразу за ним, дальше доп. время. `gap` — минуты без точек внутри сыгранного (не делим их между командами).
+ */
+export function playedTime(points: MomentumPoint[]) {
+  const max = (part: number) => Math.max(0, ...points.filter((p) => p.part === part).map((p) => p.minute))
+  const has = (part: number) => points.some((p) => p.part === part)
+  const len1 = has(2) || has(3) ? Math.max(45, max(1)) : max(1)
+  const len2 = has(2) ? (has(3) ? Math.max(90, max(2)) : max(2)) - 45 : 0
+  const len3 = has(3) ? max(3) - 90 : 0
+  const pos = (part: number, minute: number) => (part === 1 ? minute : part === 2 ? len1 + minute - 45 : len1 + len2 + minute - 90)
+  const total = len1 + len2 + Math.max(0, len3)
+  /** добавленные минуты: сверх 45 у таймов основного времени, сверх 30 у доп. времени */
+  const added = Math.max(0, len1 - 45) + Math.max(0, len2 - 45) + Math.max(0, len3 - 30)
+  return { len1, len2, total, pos, gap: Math.max(0, total - points.length), added }
+}
+
+/**
  * Прошлое против сегодняшнего (владелец: «а в идущем матче будем писать?» — «да»): если сегодняшние цифры повторяют
  * сильное или слабое место команды по последним матчам (только по xG — у «по голам» нет сегодняшней пары), — одна
  * строка: «„Эвертон“ снова не реализует моменты». Не повторяет — ничего не пишем.

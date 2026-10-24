@@ -53,6 +53,12 @@ export function ClubVars({ id, ymd, children }: { id: number; ymd: string; child
   const t = useMatchTint(id, ymd, null)
   const h = t ? hsl(t.home) : null
   const a = t ? hsl(t.away) : null
+  const same = !t || !h || !a || alike(h, a)
   const away = t && h && a && alike(h, a) ? shade(h, a) : t?.away
-  return <div style={t ? ({ '--club-h': t.home, '--club-a': away } as React.CSSProperties) : undefined}>{children}</div>
+  // `data-alike` — цвета похожи (или их нет — две серые): линии «Давления команд» у гостей пунктиром
+  return (
+    <div data-alike={same ? '' : undefined} style={t ? ({ '--club-h': t.home, '--club-a': away } as React.CSSProperties) : undefined}>
+      {children}
+    </div>
+  )
 }

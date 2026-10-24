@@ -195,12 +195,21 @@ export function normalizeLineups(raw: RawLsLineups | null | undefined): Lineups 
  * второй снова начинается с 45-й (eventStage 12 — первый тайм, 13 — второй, дальше — дополнительное время).
  */
 export function normalizeMomentum(raw: RawLsMomentum): MomentumPoint[] | null {
-  const out: MomentumPoint[] = []
+  // одна минута тайма — одна точка: повторы (несколько отметок в минуту) усредняем, иначе минута считалась бы дважды
+  const acc = new Map<string, { part: 1 | 2 | 3; minute: number; sum: number; n: number }>()
   for (const p of raw?.points ?? []) {
     if (typeof p.momentumValue !== 'number' || !Number.isFinite(p.momentumValue)) continue
     const part = p.eventStage === 12 ? 1 : p.eventStage === 13 ? 2 : 3
-    out.push({ part, minute: n0(p.elapsedMinute) + 1, v: Math.max(-1, Math.min(1, p.momentumValue)) })
+    const minute = n0(p.elapsedMinute) + 1
+    const k = `${part}:${minute}`
+    const b = acc.get(k) ?? { part, minute, sum: 0, n: 0 }
+    b.sum += Math.max(-1, Math.min(1, p.momentumValue))
+    b.n++
+    acc.set(k, b)
   }
+  const out: MomentumPoint[] = [...acc.values()]
+    .sort((a, b) => a.part - b.part || a.minute - b.minute)
+    .map((b) => ({ part: b.part, minute: b.minute, v: b.sum / b.n }))
   return out.length >= 10 ? out : null
 }
 
