@@ -106,12 +106,12 @@ export function StandingsTable({
                   <tr className="text-[13px] font-medium text-mute">
                     <th className="w-11 py-1.5 pl-4 pr-2 text-right sm:w-9 sm:pl-1">#</th>
                     <th className="py-1.5 text-left">Команда</th>
-                    <th className="w-8 py-1.5 text-center" title="Игры">И</th>
-                    <th className="hidden w-8 py-1.5 text-center sm:table-cell" title="Победы">В</th>
-                    <th className="hidden w-8 py-1.5 text-center sm:table-cell" title="Ничьи">Н</th>
-                    <th className="hidden w-8 py-1.5 text-center sm:table-cell" title="Поражения">П</th>
-                    <th className="w-14 py-1.5 text-center" title="Мячи">М</th>
-                    <th className="w-10 py-1.5 pr-4 text-center sm:pr-1" title="Очки">О</th>
+                    <th className="w-10 py-1.5 text-center" title="Игры">И</th>
+                    <th className="hidden w-10 py-1.5 text-center sm:table-cell" title="Победы">В</th>
+                    <th className="hidden w-10 py-1.5 text-center sm:table-cell" title="Ничьи">Н</th>
+                    <th className="hidden w-10 py-1.5 text-center sm:table-cell" title="Поражения">П</th>
+                    <th className="w-16 py-1.5 text-center" title="Мячи">М</th>
+                    <th className="w-12 py-1.5 pr-4 text-center sm:pr-1" title="Очки">О</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -122,25 +122,25 @@ export function StandingsTable({
                     return (
                       <Fragment key={r.teamId}>
                         {i - prev > 1 ? gap(`gap-${i}`) : null}
-                        <tr className={`border-t border-edge ${hl ? 'bg-white/[0.04]' : ''}`}>
-                          <td className="relative py-2 pl-4 pr-2 text-right sm:pl-1">
-                            {r.zone && ZONE[r.zone] ? <span className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${ZONE[r.zone]}`} /> : null}
+                        <tr className={`border-t border-edge text-[15px] ${hl ? 'bg-white/[0.04]' : ''}`}>
+                          <td className="relative py-2.5 pl-4 pr-2 text-right sm:pl-1">
+                            {r.zone && ZONE[r.zone] ? <span className={`absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full ${ZONE[r.zone]}`} /> : null}
                             <span className="num font-medium text-mute">{r.rank}</span>
                           </td>
-                          <td className="py-2">
-                            <span className="flex min-w-0 items-center gap-2">
-                              <TeamLogo name={r.team} src={r.logo} size={18} />
+                          <td className="py-2.5">
+                            <span className="flex min-w-0 items-center gap-2.5">
+                              <TeamLogo name={r.team} src={r.logo} size={22} />
                               <span className={`truncate ${hl ? 'font-semibold text-fg' : 'text-fg/90'}`}>{r.team}</span>
                             </span>
                           </td>
-                          <td className="num py-2 text-center text-dim">{r.played}</td>
-                          <td className="num hidden py-2 text-center sm:table-cell">{r.wins}</td>
-                          <td className="num hidden py-2 text-center sm:table-cell">{r.draws}</td>
-                          <td className="num hidden py-2 text-center sm:table-cell">{r.losses}</td>
-                          <td className="num py-2 text-center text-dim">
+                          <td className="num py-2.5 text-center text-dim">{r.played}</td>
+                          <td className="num hidden py-2.5 text-center sm:table-cell">{r.wins}</td>
+                          <td className="num hidden py-2.5 text-center sm:table-cell">{r.draws}</td>
+                          <td className="num hidden py-2.5 text-center sm:table-cell">{r.losses}</td>
+                          <td className="num py-2.5 text-center text-dim">
                             {r.goalsFor}:{r.goalsAgainst}
                           </td>
-                          <td className="num py-2 pr-4 text-center font-semibold sm:pr-1">{r.points}</td>
+                          <td className="num py-2.5 pr-4 text-center font-semibold sm:pr-1">{r.points}</td>
                         </tr>
                       </Fragment>
                     )
