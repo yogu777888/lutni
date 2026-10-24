@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
+import { LeagueMark } from './LeagueMark'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
 
 type Suggest = {
-  leagues: { href: string; name: string; flag: string | null; live: number }[]
+  leagues: { id: number; href: string; name: string; flag: string | null; live: number }[]
   teams: { name: string; logo: string | null }[]
 }
 
@@ -150,12 +151,7 @@ export function Search() {
                             onClick={() => setOpen(false)}
                             className="flex items-center gap-2 rounded-full bg-white/[0.06] py-1.5 pl-1.5 pr-3 text-[13.5px] transition-colors hover:bg-white/[0.12]"
                           >
-                            {l.flag ? (
-                              // eslint-disable-next-line @next/next/no-img-element -- маленький SVG
-                              <img src={`/flags/${l.flag}.svg`} alt="" width={18} height={18} className="h-[18px] w-[18px] rounded-full object-cover" />
-                            ) : (
-                              <span className="w-1" />
-                            )}
+                            <LeagueMark id={l.id} flag={l.flag} size={18} fallback={<span className="w-1" />} />
                             {l.name}
                             {l.live ? <span className="h-1.5 w-1.5 rounded-full bg-live" title="Идут матчи" /> : null}
                           </Link>

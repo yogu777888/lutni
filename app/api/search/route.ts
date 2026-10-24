@@ -25,7 +25,7 @@ function whenText(ts: number, today: string): string {
 async function suggest(): Promise<Response> {
   const today = todayYmd()
   const [day, ms] = await Promise.all([dayLeagues(), settle(getMatchesByDate(today), [] as Match[])])
-  const leagues = day.leagues.slice(0, 8).map((l) => ({ href: `/#league-${l.id}`, name: l.name, flag: l.flag, live: l.live }))
+  const leagues = day.leagues.slice(0, 8).map((l) => ({ id: l.id, href: `/#league-${l.id}`, name: l.name, flag: l.flag, live: l.live }))
   const seen = new Set<number>()
   const teams: { name: string; logo: string | null }[] = []
   for (const m of ms.filter((m) => featuredRank(m.league) >= 0 && !isMinor(m)).sort((a, b) => featuredRank(a.league) - featuredRank(b.league) || a.ts - b.ts))

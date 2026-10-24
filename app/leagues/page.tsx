@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BlockHead } from '@/components/BlockHead'
 import { LeagueFilter } from '@/components/LeagueFilter'
+import { LeagueMark } from '@/components/LeagueMark'
 import { PageHead } from '@/components/PageHead'
 import { getLeagues } from '@/lib/data'
 import { pluralN } from '@/lib/format'
@@ -19,11 +20,12 @@ export const metadata: Metadata = {
 /** Сколько стран видно сразу; остальные — под «Ещё N стран» (на телефоне 170 раскрывашек давали ~12 000px). */
 const SHOWN = 20
 
-/** Флаг кругом 22px, как в левой панели; международные — знак глобуса. */
-function Mark({ flag }: { flag: string | null }) {
-  if (flag)
-    // eslint-disable-next-line @next/next/no-img-element -- маленький SVG, оптимизация next/image не нужна
-    return <img src={`/flags/${flag}.svg`} alt="" width={22} height={22} loading="lazy" className="h-[22px] w-[22px] shrink-0 rounded-full object-cover ring-1 ring-white/15" />
+/** Знак кругом 22px, как в левой панели: у турнира — логотип лиги или флаг, у страны — флаг; международные — знак глобуса. */
+function Mark({ id = 0, flag }: { id?: number; flag: string | null }) {
+  return <LeagueMark id={id} flag={flag} size={22} fallback={<Globe />} />
+}
+
+function Globe() {
   return (
     <span aria-hidden className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full bg-white/[0.08] text-mute">
       <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -103,7 +105,7 @@ export default async function LeaguesPage() {
                 {top.map((l) => (
                   <li key={l.id} data-top={l.name} data-q={l.q} className="border-t border-edge">
                     <Link href={l.href} prefetch={false} className="flex h-full items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5">
-                      <Mark flag={l.flag} />
+                      <Mark id={l.id} flag={l.flag} />
                       <span className="min-w-0">
                         <span className={`block truncate text-[15px] font-semibold ${l.over ? 'text-dim' : ''}`}>{l.name}</span>
                         {l.state ? <span className="block text-[12.5px] leading-snug text-mute">{l.state}</span> : null}

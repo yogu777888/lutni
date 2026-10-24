@@ -35,7 +35,7 @@ export function MatchHead({ full, league = null }: { full: MatchFull; league?: {
   return (
     <>
       <p className="flex min-w-0 flex-1 items-center gap-2 text-[13px] text-dim sm:text-[14px]">
-        <Flag league={m.league} className="!h-[18px] !w-[18px]" />
+        <Flag league={m.league} size={18} />
         <span className="min-w-0 truncate">
           {league ? (
             <Link href={league.href} className="font-medium text-fg/90 transition-colors hover:text-fg">

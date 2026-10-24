@@ -6,7 +6,9 @@ import { useEffect, useState } from 'react'
 import { SITE } from '@/config/site'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayLeague, DayLeagues } from '@/lib/day-leagues'
+import { leagueLogo } from '@/lib/league-logos'
 import { useFavorites } from '../favorites'
+import { LeagueMark } from '../LeagueMark'
 import { TeamLogo } from '../TeamLogo'
 import type { StoryGroup } from '@/lib/story-groups'
 import { openStory } from '../story/events'
@@ -41,16 +43,12 @@ function reveal(id: string): boolean {
   return true
 }
 
-/** Флаг турнира кругом в плашке 36px — как значки подборок в правой панели; нет флага (еврокубки) — первая буква. */
-function LeagueFlag({ l }: { l: Pick<DayLeague, 'flag' | 'name'> }) {
+/** Знак турнира в плашке 36px — как значки подборок в правой панели: логотип лиги кругом во всю плашку, флаг — 20px; нет ни того, ни другого (еврокубки без логотипа) — первая буква. */
+function LeagueFlag({ l }: { l: Pick<DayLeague, 'id' | 'flag' | 'name'> }) {
+  if (leagueLogo(l.id)) return <LeagueMark id={l.id} flag={l.flag} size={36} />
   return (
     <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
-      {l.flag ? (
-        // eslint-disable-next-line @next/next/no-img-element -- маленький SVG
-        <img src={`/flags/${l.flag}.svg`} alt="" width={20} height={20} loading="lazy" className="h-5 w-5 rounded-full object-cover ring-1 ring-white/15" />
-      ) : (
-        <span className="text-[12px] font-semibold text-dim">{l.name.charAt(0)}</span>
-      )}
+      <LeagueMark id={l.id} flag={l.flag} size={20} fallback={<span className="text-[12px] font-semibold text-dim">{l.name.charAt(0)}</span>} />
     </span>
   )
 }

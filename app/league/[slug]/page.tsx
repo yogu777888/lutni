@@ -126,7 +126,7 @@ export default async function LeaguePage({ params }: Props) {
         <div className="min-w-0 space-y-4 xl:space-y-2">
           <PageHead
             crumbs={[{ href: '/leagues', label: 'Лиги' }, { href: canonical, label: league.name }]}
-            lead={<Flag league={league} className="!h-9 !w-9" />}
+            lead={<Flag league={league} size={36} />}
             title={title}
             sub={country || season ? <span className="block first-letter:uppercase">{[country, season].filter(Boolean).join(' · ')}</span> : null}
           />
