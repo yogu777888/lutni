@@ -107,7 +107,7 @@ export function MatchTags({
             href={`/tag/${t.slug}`}
             prefetch={false}
             title={def.hint}
-            className="group -mx-2 flex min-h-14 items-center gap-3 rounded-tile px-2 py-2.5 transition-colors hover:bg-white/[0.04]"
+            className="group -mx-1 flex min-h-14 items-center gap-3 rounded-tile px-1 py-2.5 sm:-mx-3 sm:px-3 transition-colors hover:bg-white/[0.04]"
           >
             {body}
             <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4 shrink-0 text-mute/70 transition-colors group-hover:text-fg">
@@ -126,8 +126,12 @@ export function MatchTags({
       <ul className="divide-y divide-edge">{rows.slice(0, SHOWN).map(row)}</ul>
       {more.length ? (
         <details className="border-t border-edge [&[open]>summary]:hidden">
-          <summary className="flex h-11 cursor-pointer list-none items-center text-[13px] text-dim transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
-            Показать ещё ({more.length})
+          <summary className="group -mx-1 mt-1 flex h-11 cursor-pointer list-none items-center gap-3 rounded-tile px-1 text-[14px] text-dim transition-colors hover:bg-white/[0.04] hover:text-fg sm:-mx-3 sm:px-3 [&::-webkit-details-marker]:hidden">
+            <span className="w-8 shrink-0" aria-hidden />
+            <span className="flex-1">Показать ещё ({more.length})</span>
+            <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4 shrink-0 text-mute/70 transition-colors group-hover:text-fg">
+              <path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </summary>
           <ul className="divide-y divide-edge">{more.map(row)}</ul>
         </details>
