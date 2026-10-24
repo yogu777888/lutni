@@ -47,7 +47,7 @@ function reveal(id: string): boolean {
 function LeagueFlag({ l }: { l: Pick<DayLeague, 'id' | 'flag' | 'name'> }) {
   if (leagueLogo(l.id)) return <LeagueMark id={l.id} flag={l.flag} size={36} />
   return (
-    <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
+    <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.1]">
       <LeagueMark id={l.id} flag={l.flag} size={20} fallback={<span className="text-[12px] font-semibold text-dim">{l.name.charAt(0)}</span>} />
     </span>
   )
@@ -201,7 +201,6 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
       className="relative shrink-0 rounded-full transition-opacity hover:opacity-80"
     >
       <LeagueFlag l={l} />
-      <StoryRing group={`league-${l.id}`} ids={l.items.map((m) => m.id)} seen={seen} />
     </button>
   )
   // у турниров «Завтра» подписи нет (владелец: «не слишком много мелкого текста из-за подписей?» — пять одинаковых
@@ -252,7 +251,6 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
               <LeagueFlag l={l} />
             </span>
             <PlayOverlay />
-            <StoryRing group={id} ids={l.items.map((m) => m.id)} seen={seen} muted={!jump} />
           </button>
           <a
             href={l.href}
