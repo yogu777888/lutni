@@ -3,7 +3,7 @@ import { TeamLogo } from '../TeamLogo'
 
 export function InjuriesBlock({ injuries, home, away }: { injuries: Injury[]; home: Team; away: Team }) {
   if (!injuries.length) {
-    return <p className="text-sm text-dim">Информации о травмированных и дисквалифицированных игроках нет.</p>
+    return <p className="text-[14px] text-dim">Информации о травмированных и дисквалифицированных игроках нет.</p>
   }
   return (
     <div className="grid gap-3 sm:grid-cols-2">
@@ -11,8 +11,8 @@ export function InjuriesBlock({ injuries, home, away }: { injuries: Injury[]; ho
         const list = injuries.filter((i) => i.teamId === t.id)
         return (
           <div key={t.id}>
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <TeamLogo name={t.name} src={t.logo} size={18} />
+            <div className="mb-2 flex items-center gap-2 text-[16px] font-semibold">
+              <TeamLogo name={t.name} src={t.logo} size={22} />
               {t.name}
               <span className="num ml-auto text-[13px] font-semibold text-dim">{list.length}</span>
             </div>
