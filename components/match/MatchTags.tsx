@@ -123,13 +123,10 @@ export function MatchTags({
       <ul className="divide-y divide-edge">{rows.slice(0, SHOWN).map(row)}</ul>
       {more.length ? (
         <details className="border-t border-edge [&[open]>summary]:hidden">
-          {/* текст — с колонки названий (пустое место под значок), справа шеврон вниз — в колонке стрелок */}
-          <summary className="group flex cursor-pointer list-none items-center gap-3 px-4 py-3 text-[14px] text-dim transition-colors hover:bg-white/[0.02] hover:text-fg sm:px-5 [&::-webkit-details-marker]:hidden">
-            <span className="w-9 shrink-0" aria-hidden />
-            <span className="flex-1">Показать ещё ({more.length})</span>
-            <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4 shrink-0 text-mute transition-colors group-hover:text-fg">
-              <path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+          {/* как «Все … →» внизу блоков-списков (`BlockMore`; владелец: «кнопки нижние … по разному выглядят»): 13px серым
+              от левого края строк, значок сразу после текста — «↓» вместо «→» */}
+          <summary className="cursor-pointer list-none px-4 py-3 text-[13px] font-medium text-dim transition-colors hover:text-fg sm:px-5 [&::-webkit-details-marker]:hidden">
+            Показать ещё ({more.length}) ↓
           </summary>
           <ul className="divide-y divide-edge border-t border-edge">{more.map(row)}</ul>
         </details>

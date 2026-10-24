@@ -1060,12 +1060,12 @@ html[data-shell-rc] .shell-r-rail {
    считаются по ширине подписей) не трогаем; строки-списки как на страницах «Подборки» и «Букмекеры» (`.keep-size`) — тоже,
    иначе они выше и крупнее тех же строк на страницах. */
 @media (min-width: 1024px) {
-  .match-body .text-\[12px\]:not(text):not(.keep-size *) { font-size: 13px; }
-  .match-body .text-\[13px\]:not(text):not(.keep-size *) { font-size: 14.5px; }
-  .match-body .text-\[14px\]:not(text):not(.keep-size *) { font-size: 15.5px; }
-  .match-body .text-\[15px\]:not(text):not(.keep-size *) { font-size: 17px; }
-  .match-body .text-\[16px\]:not(text):not(.keep-size *) { font-size: 17.5px; }
-  .match-body .text-\[20px\]:not(text):not(.keep-size *) { font-size: 24px; }
+  .match-body .text-\[12px\]:not(text):not(.keep-size, .keep-size *) { font-size: 13px; }
+  .match-body .text-\[13px\]:not(text):not(.keep-size, .keep-size *) { font-size: 14.5px; }
+  .match-body .text-\[14px\]:not(text):not(.keep-size, .keep-size *) { font-size: 15.5px; }
+  .match-body .text-\[15px\]:not(text):not(.keep-size, .keep-size *) { font-size: 17px; }
+  .match-body .text-\[16px\]:not(text):not(.keep-size, .keep-size *) { font-size: 17.5px; }
+  .match-body .text-\[20px\]:not(text):not(.keep-size, .keep-size *) { font-size: 24px; }
 }
 
 /* Полосы «Статистики» и линии «Давления команд» — цветами клубов (`ClubVars`), тёмный цвет клуба высветлен до читаемого

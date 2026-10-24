@@ -740,7 +740,8 @@ export default async function MatchPage({ params, searchParams }: Props) {
                 ))}
               </div>
               {/* легальных букмекеров 17, здесь — три: остальные — на странице «Букмекеры» */}
-              <BlockMore href="/bookmakers" className="!px-5 !py-3.5 sm:!px-7">Все букмекеры</BlockMore>
+              {/* поля и шрифт — как у строк букмекеров над ней (`keep-size`, `px-4 sm:px-5`) и «Показать ещё» в «Матче в подборках» */}
+              <BlockMore href="/bookmakers" className="keep-size">Все букмекеры</BlockMore>
             </div>
           </section>
           {related.length ? (
