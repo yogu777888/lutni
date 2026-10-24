@@ -808,12 +808,6 @@ html[data-shell-rc] .shell-r-rail {
     border-color: transparent;
     background: var(--color-panel);
   }
-  .shell-center:has(.bare-page) #matches details .card {
-    border-radius: 0;
-    border-width: 1px 0 0;
-    border-color: var(--color-edge);
-    background: transparent;
-  }
 }
 
 /* нижняя плашка к букмекеру на телефоне (StickyCta) закрывает низ страницы — место под неё в конце подвала,

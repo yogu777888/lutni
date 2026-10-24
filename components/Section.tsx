@@ -45,14 +45,27 @@ export function Section({
 }
 
 /** Заголовок раздела над блоком: Onest 20px жирным, подпись справа серым; отступ слева — как у содержимого блока. */
-export function BlockTitle({ title, aside, className = '' }: { title: React.ReactNode; aside?: React.ReactNode; className?: string }) {
+export function BlockTitle({
+  title,
+  aside,
+  className = '',
+  rows = false,
+  id,
+}: {
+  title: React.ReactNode
+  aside?: React.ReactNode
+  className?: string
+  /** блок строками (главная: лиги, «Сейчас в игре»): поля строк `px-4 sm:px-5` — заголовок на линии с ними */
+  rows?: boolean
+  id?: string
+}) {
   return (
     // отступ слева — как у содержимого карточки (`p-5 sm:p-7`): заголовок стоит над текстом блока, как в Настройках iPhone
     // (владелец: «в айфоне заголовок выровнен вместе с текстом в блоке а тут левее распологается»); цвет — белый, как
     // текст в блоках (серым он сливался с серыми подписями внутри — владелец: «может цвет заголовков сделать как цвет
     // текста белого внутри блоков?»)
-    <div className={`mb-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-5 sm:px-7 ${className}`}>
-      <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em] text-fg">{title}</h2>
+    <div className={`mb-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 ${rows ? 'px-4 sm:px-5' : 'px-5 sm:px-7'} ${className}`}>
+      <h2 id={id} className="min-w-0 text-[20px] font-bold leading-tight tracking-[-0.01em] text-fg">{title}</h2>
       {aside ? <div className="text-[13px] text-mute">{aside}</div> : null}
     </div>
   )

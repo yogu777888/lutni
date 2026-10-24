@@ -66,8 +66,9 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
   // не влезало в 288px: «Марафон · Реклама · 18+» переносилось вместе с «Выгодно сегодня»)
   const onlyPari = rows.length > 0 && rows.every((r) => r.slug === 'pari')
   return (
-    <section className={card ? 'card relative px-4 py-4 sm:px-5' : 'relative mt-6 border-t border-edge pt-4'}>
-      <h3 className={`flex items-baseline justify-between ${card ? 'text-[20px] font-bold tracking-tight' : 'text-[15px] font-semibold'}`}>
+    // карточкой (под списком ниже xl) — заголовок над ней, на фоне страницы, как блоки лиг и разделы матча
+    <section className={card ? 'relative min-w-0' : 'relative mt-6 border-t border-edge pt-4'}>
+      <h3 className={`flex items-baseline justify-between ${card ? 'mb-2.5 px-4 text-[20px] font-bold leading-tight tracking-[-0.01em] sm:px-5' : 'text-[15px] font-semibold'}`}>
         {/* ⓘ — почему «выгодно» (владелец согласился: объяснение было только в подсказке плашки, её почти никто не находит);
             простыми словами и с примером, без «заработать»: оценка, а не гарантия */}
         <span className="group/vh flex items-baseline gap-1.5">
@@ -83,7 +84,7 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
           <span
             id={hintId}
             role="tooltip"
-            className={`pointer-events-none absolute z-20 ${card ? 'inset-x-4 top-14' : 'inset-x-0 top-11'} rounded-tile border border-edge bg-panel-2 p-3 text-[13px] font-normal leading-snug text-dim opacity-0 shadow-[0_10px_30px_rgb(0_0_0/0.45)] transition-opacity group-focus-within/vh:opacity-100 group-hover/vh:opacity-100`}
+            className={`pointer-events-none absolute z-20 ${card ? 'inset-x-0 top-9' : 'inset-x-0 top-11'} rounded-tile border border-edge bg-panel-2 p-3 text-[13px] font-normal leading-snug text-dim opacity-0 shadow-[0_10px_30px_rgb(0_0_0/0.45)] transition-opacity group-focus-within/vh:opacity-100 group-hover/vh:opacity-100`}
           >
             <b className="mb-1 block font-semibold text-fg">Почему «выгодно»</b>
             Кэф выше, чем стоит исход по оценке tag.bet. Например, мы даём победе 40% — честный кэф для неё 2.50, а букмекер платит 2.68.
@@ -92,6 +93,7 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
         </span>
         {rows.length ? <span className="text-[11.5px] font-normal tracking-normal text-mute">{onlyPari ? 'PARI · ' : ''}Реклама · 18+</span> : null}
       </h3>
+      <div className={card ? 'card px-4 pb-4 pt-2 sm:px-5' : ''}>
       {rows.length ? null : <p className="mt-2 text-[13px] text-dim">Сегодня выгодных ставок нет.</p>}
       {/* у PARI пусто, а у других есть — так и пишем: главного партнёра в блоке не видно, и это не поломка */}
       {rows.length && !rows.some((r) => r.slug === 'pari') ? (
@@ -132,6 +134,7 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
       <BlockMore href="/tag/value" panel={!card} className={card ? '-mx-4 -mb-4 mt-3 sm:-mx-5' : ''}>
         Все выгодные ставки
       </BlockMore>
+      </div>
     </section>
   )
 }

@@ -13,6 +13,7 @@ import { DateTabs } from './DateTabs'
 import { LiveRefresh } from './Live'
 import { FavMatches } from './FavMatches'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
+import { BlockTitle } from './Section'
 import { Sidebar } from './Sidebar'
 import { dayPicks } from '@/lib/day-picks'
 import { MatchFilter } from './MatchFilter'
@@ -321,25 +322,29 @@ export async function DayView({
             телефоне истории в свой отдельный блок сделать а то они как сами по себе» — «да»): на фоне между днями и
             «Сейчас в игре» кружки висели отдельно от остальной страницы из карточек */}
         {view === 'home' && storyGroups.length ? (
-          <section aria-labelledby="picks-title" className="card mt-3 overflow-hidden sm:mt-4 xl:hidden">
-            <header className="flex items-baseline justify-between gap-3 px-4 pb-1 pt-4 sm:px-5">
-              <h2 id="picks-title" className="text-[20px] font-bold tracking-tight">
-                Подборки дня
-              </h2>
-              <Link href="/tags" className="text-[13px] font-medium text-dim transition-colors hover:text-fg">
-                Все →
-              </Link>
-            </header>
-            <div className="px-4 pb-3 sm:px-5">
+          // заголовок над карточкой, как у лиг и разделов страницы матча
+          <section aria-labelledby="picks-title" className="mt-4 min-w-0 sm:mt-6 xl:hidden">
+            <BlockTitle
+              rows
+              id="picks-title"
+              title="Подборки дня"
+              aside={
+                <Link href="/tags" className="font-medium text-dim transition-colors hover:text-fg">
+                  Все →
+                </Link>
+              }
+            />
+            <div className="card overflow-hidden px-4 pb-3 pt-3 sm:px-5">
               <StoryCircles groups={storyGroups} />
             </div>
           </section>
         ) : null}
         <div
-          className={`mt-3 grid gap-3 sm:mt-6 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-2 xl:!grid-cols-1 xl:gap-2' : ''}`}
+          className={`mt-6 grid gap-8 sm:mt-8 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-6 xl:!grid-cols-1 xl:gap-8' : ''}`}
         >
-          {/* между блоками на телефоне 12px — тот же шаг, что у ряда дней и кружков сверху (было 20) */}
-          <div className={`min-w-0 space-y-3 sm:space-y-5 ${view === 'home' ? 'xl:space-y-2' : ''}`}>
+          {/* между блоками 32px, от заголовка до карточки 10px — как на странице матча: заголовки теперь над карточками, и при
+              12px заголовок читался подписью к блоку выше */}
+          <div className="min-w-0 space-y-8">
             {failed ? (
               <div className="card p-5 text-[15px] text-dim">
                 Не удалось загрузить матчи: источник данных временно недоступен. Обновите страницу через минуту.
@@ -353,21 +358,22 @@ export async function DayView({
               <LeagueBlock key={g.league.id} league={g.league} items={g.items} lines={lines} live={liveIn.get(g.league.id) ?? 0} featured />
             ))}
             {!byTime && others.length ? (
-              <details className="card group overflow-hidden" open={!featured.length}>
-                <summary className="flex cursor-pointer items-center justify-between px-5 py-4 transition-colors hover:bg-white/[0.02]">
-                  <span className="text-[20px] font-bold tracking-tight">{featured.length ? 'Другие турниры' : 'Все турниры'}</span>
-                  <span className="flex items-center gap-2 text-[13px] text-mute">
+              // «Другие турниры» — раскрывашкой заголовком на фоне, внутри — те же блоки лиг с заголовками над карточками
+              // (было — карточка с турнирами-карточками внутри, «блок в блоке»)
+              <details className="group" open={!featured.length}>
+                <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 sm:px-5 [&::-webkit-details-marker]:hidden">
+                  <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">{featured.length ? 'Другие турниры' : 'Все турниры'}</h2>
+                  <span className="flex items-center gap-2 text-[13px] text-mute transition-colors group-hover:text-fg">
                     {pluralN(totalOthers, ['матч', 'матча', 'матчей'])}
                     <span className="transition group-open:rotate-180">▾</span>
                   </span>
                 </summary>
-                {/* карточки турниров внутри общей — на тон темнее, иначе без обводки они сольются с ней */}
-                <div className="space-y-4 border-t border-edge p-3 sm:p-4 [&_.card]:bg-panel">
+                <div className="mt-6 space-y-8">
                   {others.map((g) => (
                     <LeagueBlock key={g.league.id} league={g.league} items={g.items} lines={lines} live={liveIn.get(g.league.id) ?? 0} />
                   ))}
                   {shownOthers < totalOthers ? (
-                    <p className="px-1 text-[13px] text-dim">
+                    <p className="px-4 text-[13px] text-dim sm:px-5">
                       Показаны {shownOthers} из {totalOthers} матчей. Остальные — на страницах{' '}
                       <Link href="/leagues" className="border-b border-acid text-fg">
                         турниров

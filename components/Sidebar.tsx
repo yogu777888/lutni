@@ -2,7 +2,7 @@ import { BlockMore } from './BlockMore'
 import { PARTNERS } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import type { ValueRow } from '@/lib/day-picks'
-import { BlockHead } from './BlockHead'
+import { BlockTitle } from './Section'
 import { PartnerCard } from './PartnerCard'
 import { ValueBlock } from './shell/RightPanel'
 
@@ -13,10 +13,12 @@ import { ValueBlock } from './shell/RightPanel'
  */
 export function Sidebar({ values = [] }: { values?: ValueRow[] }) {
   return (
-    <aside className="space-y-3 sm:space-y-5 lg:sticky lg:top-24 lg:self-start">
+    <aside className="space-y-8 lg:sticky lg:top-24 lg:self-start">
       {values.length ? <ValueBlock rows={values} card /> : null}
-      <section className="card overflow-hidden">
-        <BlockHead title="Где ставить" line />
+      {/* заголовок над карточкой, как «Где поставить» на странице матча */}
+      <section className="min-w-0">
+        <BlockTitle rows title="Где ставить" />
+        <div className="card overflow-hidden">
         <div className="divide-y divide-edge">
           {PARTNERS.slice(0, 3).map((p) => (
             <PartnerCard key={p.slug} partner={p} placement="sidebar" className="px-4 sm:px-5" />
@@ -25,6 +27,7 @@ export function Sidebar({ values = [] }: { values?: ValueRow[] }) {
         {/* про лицензию — над чертой, у списка; под чертой — только ссылка, как во всех блоках-списках (`BlockMore`) */}
         <p className="border-t border-edge px-4 py-3 text-[12px] text-mute sm:px-5">Только букмекеры с лицензией ФНС России.</p>
         <BlockMore href="/bookmakers">Все букмекеры</BlockMore>
+        </div>
       </section>
       {SITE.telegramUrl ? (
         <a href={SITE.telegramUrl} target="_blank" rel="noopener" className="card flex items-center gap-3 p-6 transition-colors hover:bg-panel-3">

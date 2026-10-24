@@ -7,6 +7,7 @@ import type { League } from '@/lib/types'
 import { flagCode, leagueTitle } from '@/lib/flags'
 import { Flag } from './Flag'
 import { MatchRow } from './MatchRow'
+import { BlockTitle } from './Section'
 import { liveText } from './shell/StateLine'
 
 /**
@@ -45,23 +46,25 @@ export function LeagueBlock({
 }) {
   return (
     // id — для «Турниров дня» в левой панели (клик прокручивает сюда)
-    <section id={`league-${league.id}`} className="card scroll-mt-36 overflow-hidden xl:scroll-mt-24">
+    // заголовок — над карточкой, на фоне страницы, как разделы страницы матча (владелец: «как визуально сделать блоки на
+    // главной похожими на блоки в матче чтоб заголовок вне блока»): в карточке — только строки матчей
+    <section id={`league-${league.id}`} className="min-w-0 scroll-mt-36 xl:scroll-mt-24">
       {/* справа — на линии названия (под ним на телефоне ещё строка «Кэфы PARI · Реклама»: по центру двух строк «● 3 · Таблица» висели посередине) */}
-      <header className="flex items-start justify-between gap-3 border-b border-edge px-4 py-3.5 sm:items-center sm:px-5 sm:py-4">
+      <header className="mb-2.5 flex items-start justify-between gap-3 px-4 sm:items-center sm:px-5">
         <div className="min-w-0">
           <Link href={leagueHref(league)} prefetch={false} className="group flex min-w-0 items-center gap-2.5">
             <Flag league={league} />
             {/* страну говорит флаг — в названии без неё («Испания. Ла Лига» → «Ла Лига»; владелец: «название страны убрать, если есть флаг?») */}
-            <span className="truncate text-[20px] font-bold tracking-tight" title={league.name}>
+            <h2 className="truncate text-[20px] font-bold leading-tight tracking-[-0.01em]" title={league.name}>
               {flagCode(league) ? leagueTitle(league.name) : league.name}
-            </span>
+            </h2>
           </Link>
           {/* на телефоне пометка — строкой под названием: справа она вместе с «идут 3 матча» и «Таблицей» сжимала «Ла Лигу» до «Л…» */}
           <div className="mt-1 pl-[32px] text-[12px] sm:hidden">
             <AdNote items={items} lines={lines} full />
           </div>
         </div>
-        <div className="mt-[5px] flex shrink-0 items-center gap-3 text-[13px] font-medium sm:mt-0 sm:gap-4">
+        <div className="mt-[3px] flex shrink-0 items-center gap-3 text-[13px] font-medium sm:mt-0 sm:gap-4">
           <span className="hidden sm:inline">
             <AdNote items={items} lines={lines} />
           </span>
@@ -84,7 +87,7 @@ export function LeagueBlock({
           </Link>
         </div>
       </header>
-      <div className="divide-y divide-edge">
+      <div className="card divide-y divide-edge overflow-hidden">
         {[...items].sort(byState).map((it) => (
           <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} line={lines[it.match.id] ?? null} />
         ))}
@@ -100,23 +103,27 @@ export function LeagueBlock({
  */
 export function LiveBlock({ items, total, rest = [] }: { items: FeedItem[]; total: number; rest?: FeedItem[] }) {
   return (
-    <section id="live" className="card scroll-mt-36 overflow-hidden xl:scroll-mt-24">
-      <header className={`flex items-baseline justify-between gap-3 px-4 py-4 sm:px-5 ${items.length ? 'border-b border-edge' : ''}`}>
-        {/* без плашки LIVE — «LIVE» и «Сейчас в игре» говорили одно и то же */}
-        <span className="flex items-center gap-2.5 text-[20px] font-bold tracking-tight">
-          <span className="h-2 w-2 animate-pulse-live rounded-full bg-live" aria-hidden />
-          Сейчас в игре
-        </span>
-        {/* число матчей не пишем (владелец: «число матчей справа убрать?») — только если показаны не все */}
-        {total > items.length ? <span className="text-[12px] text-mute">{`${items.length} из ${total}`}</span> : null}
-      </header>
-      <div className="divide-y divide-edge">
-        {items.map((it) => (
-          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} />
-        ))}
-      </div>
+    <section id="live" className="min-w-0 scroll-mt-36 xl:scroll-mt-24">
+      {/* заголовок над карточкой, как у лиг и разделов матча; без плашки LIVE — «LIVE» и «Сейчас в игре» говорили одно и то же */}
+      <BlockTitle
+        rows
+        title={
+          <span className="flex items-center gap-2.5">
+            <span className="h-2 w-2 animate-pulse-live rounded-full bg-live" aria-hidden />
+            Сейчас в игре
+          </span>
+        }
+        // число матчей не пишем (владелец: «число матчей справа убрать?») — только если показаны не все
+        aside={total > items.length ? `${items.length} из ${total}` : null}
+      />
+      <div className="card overflow-hidden">
+        <div className="divide-y divide-edge">
+          {items.map((it) => (
+            <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} />
+          ))}
+        </div>
       {rest.length ? (
-        <details className="group/rest border-t border-edge">
+        <details className={`group/rest ${items.length ? 'border-t border-edge' : ''}`}>
           <summary className="flex items-center justify-between gap-3 px-4 py-3.5 text-[14px] text-dim transition-colors hover:text-fg sm:px-5">
             <span>
               {items.length
@@ -134,6 +141,7 @@ export function LiveBlock({ items, total, rest = [] }: { items: FeedItem[]; tota
           </div>
         </details>
       ) : null}
+      </div>
     </section>
   )
 }

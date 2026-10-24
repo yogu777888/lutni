@@ -53,17 +53,18 @@ export function FavMatches({ ymd }: { ymd: string }) {
       </p>
     )
   return (
-    <section className="card overflow-hidden" aria-label="Ваши команды">
-      <div className="flex items-center gap-2 border-b border-edge px-5 py-3.5">
-        <svg viewBox="0 0 24 24" className="h-4 w-4 text-acid" fill="currentColor" aria-hidden>
+    // заголовок над карточкой, как у блоков лиг
+    <section className="min-w-0" aria-label="Ваши команды">
+      <div className="mb-2.5 flex items-center gap-2 px-4 sm:px-5">
+        <svg viewBox="0 0 24 24" className="h-4 w-4 text-fg" fill="currentColor" aria-hidden>
           <path d="M12 3.6l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.5l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z" />
         </svg>
-        <h3 className="text-[16px] font-bold tracking-tight">Ваши команды</h3>
+        <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">Ваши команды</h2>
       </div>
-      <ul>
+      <ul className="card overflow-hidden">
         {items.map((m) => (
           <li key={m.id} className="relative border-b border-edge last:border-b-0 transition-colors hover:bg-white/[0.02]">
-            <StoryLink id={m.id} href={m.href} className="grid grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-3 px-5 py-3">
+            <StoryLink id={m.id} href={m.href} className="grid grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:px-5">
               <span className={`num text-[14px] font-semibold ${m.live ? 'text-live' : m.finished ? 'text-mute' : 'text-fg'}`}>
                 {m.live ? m.minute : m.finished ? 'итог' : m.time}
               </span>
