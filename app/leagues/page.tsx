@@ -21,9 +21,9 @@ export const metadata: Metadata = {
 /** Сколько стран видно сразу; остальные — под «Ещё N стран» (на телефоне 170 раскрывашек давали ~12 000px). */
 const SHOWN = 20
 
-/** Знак 26px: у турнира — логотип лиги без круга (как в заголовках блоков лиг) или флаг кругом, у страны — флаг; международные — знак глобуса. */
-function Mark({ id = 0, flag }: { id?: number; flag: string | null }) {
-  return <LeagueMark id={id} flag={flag} size={26} bare fallback={<Globe />} />
+/** Знак 32px (в списке страны — 28): у турнира — логотип лиги без круга (как в заголовках блоков лиг) или флаг кругом, у страны — флаг; международные — знак глобуса. */
+function Mark({ id = 0, flag, size = 32 }: { id?: number; flag: string | null; size?: number }) {
+  return <LeagueMark id={id} flag={flag} size={size} bare fallback={<Globe />} />
 }
 
 function Globe() {
@@ -43,20 +43,23 @@ function Group({ g }: { g: IndexGroup }) {
       <details className="group/c">
         <summary className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5">
           <Mark flag={g.flag} />
-          <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{g.name}</span>
-          <span className="text-[12.5px] text-mute">{g.leagues.length}</span>
+          <span className="min-w-0 flex-1 truncate text-[16px] font-medium">{g.name}</span>
+          <span className="text-[13px] text-mute">{g.leagues.length}</span>
           <span aria-hidden className="text-mute transition-transform group-open/c:rotate-180">
             ▾
           </span>
         </summary>
         {/* оформление ссылок — у списка, а не у каждой из 1249: страница и так ~1 МБ */}
-        {/* логотип турнира, если он есть, — в колонке знака страны (владелец: «в лигах и турнирах все логотипы турниров сделать»);
-            нет — место пустое, названия стоят ровной колонкой */}
-        <ul className="pb-2 [&_a]:flex [&_a]:items-center [&_a]:gap-3 [&_a]:py-1.5 [&_a]:pl-4 [&_a]:pr-4 [&_a]:text-[14px] [&_a]:text-dim [&_a]:transition-colors [&_a:hover]:text-fg sm:[&_a]:pl-5">
+        {/* логотип турнира — в колонке знака страны (владелец: «в лигах и турнирах все логотипы турниров сделать»); нет логотипа —
+            флаг страны (владелец: «там где нет лого у турнира ставить флаг»), у международных — глобус */}
+        <ul className="pb-2 [&_a]:flex [&_a]:items-center [&_a]:gap-3 [&_a]:py-2 [&_a]:pl-4 [&_a]:pr-4 [&_a]:text-[15px] [&_a]:text-dim [&_a]:transition-colors [&_a:hover]:text-fg sm:[&_a]:pl-5">
           {g.leagues.map((l) => (
             <li key={l.id} data-league data-q={l.q || undefined}>
               <Link href={l.href} prefetch={false}>
-                <span className="grid w-[26px] shrink-0 place-items-center">{leagueLogo(l.id) ? <LeagueMark id={l.id} flag={null} size={22} bare /> : null}</span>
+                <span className="grid w-8 shrink-0 place-items-center">
+                  {/* флаг мельче логотипа — круг во всю ширину выглядел крупнее знаков без круга */}
+                  <Mark id={l.id} flag={g.flag} size={leagueLogo(l.id) ? 28 : 22} />
+                </span>
                 <span className="min-w-0">{l.name}</span>
               </Link>
             </li>
@@ -105,14 +108,14 @@ export default async function LeaguesPage() {
           {top.length ? (
             <section className="card @container overflow-hidden">
               <BlockHead title="Топ-турниры" />
-              <ul className="grid @xl:grid-cols-2">
+              <ul>
                 {top.map((l) => (
                   <li key={l.id} data-top={l.name} data-q={l.q} className="border-t border-edge">
                     <Link href={l.href} prefetch={false} className="flex h-full items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5">
                       <Mark id={l.id} flag={l.flag} />
                       <span className="min-w-0">
-                        <span className={`block truncate text-[15px] font-semibold ${l.over ? 'text-dim' : ''}`}>{l.name}</span>
-                        {l.state ? <span className="block text-[12.5px] leading-snug text-mute">{l.state}</span> : null}
+                        <span className={`block truncate text-[16px] font-semibold ${l.over ? 'text-dim' : ''}`}>{l.name}</span>
+                        {l.state ? <span className="block text-[13px] leading-snug text-mute">{l.state}</span> : null}
                       </span>
                     </Link>
                   </li>
@@ -123,7 +126,7 @@ export default async function LeaguesPage() {
 
           {groups.length ? (
             <section id="league-index" className="card @container overflow-hidden">
-              {/* колонки — по ширине самого блока: на 1280 с панелями в три колонки обрезались «Саудовская Аравия», «Турниры сборных»;
+              {/* одной колонкой, как «Букмекеры» (владелец: «лиги и страны в 1 строку… изза того что 2 на строке то логотипы еще меньше»);
                   фильтр — в шапке блока, рядом с тем, что он сужает */}
               <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-4 sm:px-5">
                 <h2 className="text-[20px] font-bold tracking-tight">
@@ -131,7 +134,7 @@ export default async function LeaguesPage() {
                 </h2>
                 <LeagueFilter target="league-index" />
               </header>
-              <ul className="grid items-start @xl:grid-cols-2 @5xl:grid-cols-3">
+              <ul>
                 {shown.map((g) => (
                   <Group key={g.key} g={g} />
                 ))}
@@ -144,7 +147,7 @@ export default async function LeaguesPage() {
                       ▾
                     </span>
                   </summary>
-                  <ul className="grid items-start @xl:grid-cols-2 @5xl:grid-cols-3">
+                  <ul>
                     {more.map((g) => (
                       <Group key={g.key} g={g} />
                     ))}
