@@ -11,7 +11,7 @@ import { StatsPanel } from '@/components/match/StatsPanel'
 import { matchRows, type StatPeriod } from '@/lib/sstats/stat-rows'
 import { XgTerm, XgText } from '@/components/match/Xg'
 import { Strengths } from '@/components/match/Strengths'
-import { teamPoints } from '@/lib/team-xg'
+import { mainPoint, teamPoints } from '@/lib/team-xg'
 import { ClubVars } from '@/components/match/ClubVars'
 import { FormBlock } from '@/components/match/FormBlock'
 import { H2HBlock } from '@/components/match/H2HBlock'
@@ -574,10 +574,13 @@ export default async function MatchPage({ params, searchParams }: Props) {
   // «Сильное и слабое место» — по xG прошлых матчей (`getTeamXg`), без него — по голам формы
   const anyPoint = [points.home, points.away].some((p) => p.strong || p.weak)
   const byXg = points.home.byXg || points.away.byXg
+  // заголовок — о том, что в блоке: у «Эльче» сильное, у «Атлетико» ничего — «Сильное место»
+  const kinds = new Set([points.home, points.away].map((p) => mainPoint(p)?.kind).filter(Boolean))
+  const pointsTitle = kinds.size === 2 ? 'Сильное и слабое место' : kinds.has('strong') ? 'Сильное место' : 'Слабое место'
   const sec_points = anyPoint ? (
     <Section
       outside
-      title="Сильное и слабое место"
+      title={pointsTitle}
       note={byXg ? 'xG — сколько голов обычно забивают с таких моментов. Считаем по последним матчам команды.' : 'Считаем по голам в последних матчах команды.'}
     >
       <Strengths home={m.home} away={m.away} points={points} />
