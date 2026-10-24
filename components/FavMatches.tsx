@@ -52,9 +52,14 @@ export function FavMatches({ ymd }: { ymd: string }) {
         ★ Ваши команды в этот день не играют: {fav.map((t) => t.name).join(', ')}.
       </p>
     )
+  // эти матчи ниже не повторяем (владелец: «лучше в центре не дублировать один и тот же матч»): избранное — в браузере, а
+  // список рисует сервер, поэтому прячем стилем — строки с `data-mid` и блок, где кроме них строк нет
+  const own = items.map((m) => `[data-mid="${m.id}"]`).join(',')
+  const hide = `#matches :is(${own}){display:none}#matches [data-block]:not(:has([data-mid]:not(${own}))){display:none}#matches .divide-y>:has(+:is(${own}):last-child){border-bottom-width:0}`
   return (
     // заголовок над карточкой, как у блоков лиг
     <section className="min-w-0" aria-label="Ваши команды">
+      <style>{hide}</style>
       <div className="mb-2.5 flex items-center gap-2 px-4 sm:px-5">
         <svg viewBox="0 0 24 24" className="h-4 w-4 text-fg" fill="currentColor" aria-hidden>
           <path d="M12 3.6l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.5l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z" />

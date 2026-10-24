@@ -313,7 +313,44 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
           <PanelToggle side="l" open />
         </h2>
 
-        <ul className="mt-2 space-y-0.5">
+        {/* избранные команды (звёздочка на странице матча) — первыми, как «Ваши команды» в центре (владелец: «было бы логичнее если
+            бы в левом меню мои команды были сверху») */}
+        {favs.length ? (
+          <section className="mt-2">
+            <h3 className="text-[12px] font-medium text-mute">Мои команды</h3>
+            <ul className="mt-1.5 space-y-0.5">
+              {favs.map((t) => {
+                const g = gameOf(t.id)
+                const body = (
+                  <>
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
+                      <TeamLogo name={t.name} src={t.logo ?? null} size={20} />
+                    </span>
+                    <span className="min-w-0 flex-1 leading-tight">
+                      <span className="block truncate">{t.name}</span>
+                      <span className={`mt-0.5 block truncate text-[12.5px] font-normal ${g?.live ? 'text-live' : 'text-dim'}`}>{lineOf(g)}</span>
+                    </span>
+                  </>
+                )
+                return (
+                  <li key={t.id}>
+                    {g ? (
+                      <Link href={g.href} prefetch={false} className={`-mx-2 ${row} hover:bg-white/[0.04]`}>
+                        {body}
+                      </Link>
+                    ) : (
+                      <div className={`-mx-2 ${row}`}>{body}</div>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        ) : null}
+
+        {/* с избранными сверху — подпись «Сегодня», иначе турниры читались бы продолжением «Моих команд» */}
+        {favs.length ? <h3 className="mt-5 text-[12px] font-medium text-mute">Сегодня</h3> : null}
+        <ul className={`${favs.length ? 'mt-1.5' : 'mt-2'} space-y-0.5`}>
           {day.live ? (
             // «Сейчас в игре» — тоже история (владелец: «а почему у сейчас в игре нет сторис?»): значок — сторис идущих
             // матчей подряд (группа 'live', как у прежних кружков), кольцо — непросмотренные; название — к блоку
@@ -345,40 +382,6 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             <League key={l.id} l={l} list={day.leagues} />
           ))}
         </ul>
-
-        {/* избранные команды (звёздочка на странице матча) — если есть */}
-        {favs.length ? (
-          <section className="mt-5">
-            <h3 className="text-[12px] font-medium text-mute">Мои команды</h3>
-            <ul className="mt-1.5 space-y-0.5">
-              {favs.map((t) => {
-                const g = gameOf(t.id)
-                const body = (
-                  <>
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/[0.08]">
-                      <TeamLogo name={t.name} src={t.logo ?? null} size={20} />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-[14px] font-medium">{t.name}</span>
-                      <span className={`block truncate text-[12.5px] ${g?.live ? 'text-live' : 'text-dim'}`}>{lineOf(g)}</span>
-                    </span>
-                  </>
-                )
-                return (
-                  <li key={t.id}>
-                    {g ? (
-                      <Link href={g.href} prefetch={false} className="-mx-2 flex items-center gap-3 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.05]">
-                        {body}
-                      </Link>
-                    ) : (
-                      <div className="-mx-2 flex items-center gap-3 px-2 py-1.5">{body}</div>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-          </section>
-        ) : null}
 
         {rest.length ? (
           <section className="mt-5">

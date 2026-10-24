@@ -152,7 +152,7 @@ export function MatchRow({
     return (
       // справа — шеврон, как у строк списка в iOS: видно, что строка ведёт на страницу матча (владелец: «в блоке другие
       // матчи у матчей может справа сделать типа кнопочку стрелочку?»)
-      <div className="group relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto_auto] items-center gap-x-3 px-4 py-3 sm:px-5 transition-colors hover:bg-white/[0.02]">
+      <div data-mid={m.id} className="group relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto_auto] items-center gap-x-3 px-4 py-3 sm:px-5 transition-colors hover:bg-white/[0.02]">
         <StatusCell m={m} />
         {/* эмблемы и крупный счёт — как в строках главной (владелец: «как тебе нижний блок где другие матчи?» — «да») */}
         <Link href={matchHref(m)} prefetch={false} className="flex min-w-0 flex-col gap-1 text-[16px] font-semibold after:absolute after:inset-0 after:content-['']">
@@ -172,6 +172,7 @@ export function MatchRow({
   // не везде есть, счёт не везде есть»). Выгодный кэф — только лаймовой ячейкой, без подписи (объяснение — в подсказке).
   return (
     <div
+      data-mid={m.id}
       className={`relative grid items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:gap-x-4 sm:gap-y-2.5 sm:py-2.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : ROW_COLS}`}
     >
       <div className="self-start pt-0.5 sm:self-center sm:pt-0">
