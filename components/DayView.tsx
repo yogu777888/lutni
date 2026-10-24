@@ -344,7 +344,7 @@ export async function DayView({
         >
           {/* между блоками 32px, от заголовка до карточки 10px — как на странице матча: заголовки теперь над карточками, и при
               12px заголовок читался подписью к блоку выше */}
-          <div className="min-w-0 space-y-8">
+          <div className="match-body min-w-0 space-y-8">
             {failed ? (
               <div className="card p-5 text-[15px] text-dim">
                 Не удалось загрузить матчи: источник данных временно недоступен. Обновите страницу через минуту.
