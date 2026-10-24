@@ -203,3 +203,53 @@ const LOGOS: Record<number, string> = {
 }
 
 export const leagueLogo = (id: number): string | null => (LOGOS[id] ? `/leagues/${LOGOS[id]}` : null)
+
+/** Пропорции знака (ширина / высота по видимому содержимому; около 1 — не пишем) — чтобы в круге знаки были одной площади: широкие надписи («Эредивизи», MLS) шире, узкие щиты — выше. */
+const ASPECT: Record<string, number> = {
+  '1-lig-turkey': 0.79, '2-liga-austria': 0.88, 'a-league-men-australia': 5.85, 'afc-asian-cup': 0.73,
+  'afc-champions-league-elite': 0.6, 'afc-champions-league-two': 0.62, 'africa-cup-of-nations-2025': 0.86,
+  'algerian-ligue-1': 0.82, 'allsvenskan': 0.79, 'armenian-premier-league': 2.12, 'austrian-bundesliga': 0.58,
+  'besta-deild': 3.08, 'bgl-ligue-luxembourg': 2.04, 'bosnian-premier-league': 0.81, 'botola-pro-1': 0.75,
+  'brasileirao-serie-a': 0.89, 'brasileirao-serie-b': 0.83, 'brasileirao-serie-c': 0.87, 'brasileirao-serie-d': 0.87,
+  'campeonato-de-portugal': 0.85, 'challenger-pro-league': 1.34, 'chance-liga-czech-republic': 2.21,
+  'chance-narodni-liga': 1.45, 'chinese-super-league': 2.1, 'concacaf-gold-cup': 2.68,
+  'concacaf-nations-league': 0.73, 'conmebol-sudamericana': 1.26, 'copa-america-2024': 0.92,
+  'copa-libertadores': 1.28, 'cymru-premier': 0.72, 'cyprus-league': 0.91, 'efl-championship-england': 0.76,
+  'efl-league-one': 0.76, 'efl-league-two': 0.76, 'egyptian-premier-league': 2.06, 'eliteserien-norway': 2.16,
+  'eredivisie-netherlands': 1.71, 'erovnuli-liga': 1.13, 'europa-league': 0.68, 'fifa-world-cup-2026': 0.65,
+  'iraq-stars-league': 0.38, 'israeli-premier-league': 0.79, 'j1-league-japan': 0.74, 'j2-league-japan': 0.72,
+  'j3-league-japan': 0.71, 'k-league-1-south-korea': 0.82, 'k-league-2': 0.85, 'kazakhstan-premier-league': 0.83,
+  'league-of-ireland': 0.63, 'leagues-cup': 3.35, 'liga-1-peru': 0.71, 'liga-bolivia': 1.31,
+  'liga-de-expansion-mx': 2.52, 'liga-de-primera-chile': 2.83, 'liga-futve-venezuela': 0.73, 'liga-mx': 1.27,
+  'liga-premier-a-mexico': 1.25, 'liga-profesional-argentina': 0.58, 'ligapro-serie-a-ecuador': 0.88,
+  'ligue-1-france': 0.79, 'ligue-1-tunisia': 1.21, 'ligue-2-france': 0.85, 'ligue-3': 0.66,
+  'malaysia-super-league': 0.56, 'national-league-north': 0.83, 'national-league-south': 0.83, 'nb-ii-hungary': 0.68,
+  'nbc-premier-league': 0.63, 'new-zealand-national-league': 0.92, 'norwegian-first-division': 1.44, 'nwsl': 1.09,
+  'parva-liga': 0.92, 'pegadaian-championship': 0.75, 'persian-gulf-pro-league': 1.49, 'polish-i-liga': 0.72,
+  'premier-league-england': 0.79, 'premier-soccer-league': 0.8, 'primeira-liga-portugal': 0.8,
+  'primera-b-metropolitana-argentina': 0.84, 'primera-c-metropolitana-argentina': 0.88,
+  'primera-divisin-uruguay': 0.73, 'primera-division-costa-rica': 0.84, 'primera-federacion-spain': 0.66,
+  'primera-nacional-argentina': 0.89, 'qatar-stars-league': 0.63, 'regionalliga-bayern': 3.01,
+  'regionalliga-nord': 0.87, 'regionalliga-nordost': 1.5, 'regionalliga-sudwest': 1.08, 'regionalliga-west': 0.79,
+  'russian-first-league': 0.87, 'saudi-pro-league': 1.12, 'scottish-championship': 2.23, 'scottish-league-one': 1.47,
+  'scottish-league-two': 1.5, 'scottish-premiership': 1.97, 'segunda-division-uruguay': 0.86,
+  'segunda-federacion-spain': 0.67, 'serbian-superliga': 1.43, 'serie-a-italy': 0.64, 'serie-b-italy': 0.69,
+  'serie-c-italy': 0.68, 'singapore-premier-league': 0.68, 'slovenian-prvaliga': 3.05,
+  'southern-league-division-one-central': 1.37, 'southern-league-premier-central': 1.36,
+  'southern-league-premier-south': 1.36, 'super-league-greece-2': 1.55, 'super-league-greece': 0.87,
+  'super-lig-turkey': 0.85, 'superliga-denmark': 1.14, 'superliga-romania': 1.8, 'tff-second-league': 0.51,
+  'tweede-divisie': 2.52, 'uae-pro-league': 0.66, 'uefa-euro-2028': 0.6, 'uefa-nations-league': 0.64,
+  'ukrainian-premier-league': 0.71, 'usl-championship': 3.39, 'usl-league-one': 3.36,
+  'uzbekistan-super-league': 1.32, 'virsliga': 2.03, 'ykkosliiga-finland': 0.65,
+}
+/** Логотипы с непрозрачной квадратной подложкой (Бундеслига, Про Лига) — во весь круг, а не квадратом в круге. */
+const TILES = new Set(['belgian-pro-league', 'bundesliga-2-germany', 'bundesliga-germany', 'liga-3-portugal'])
+
+export type LeagueLogo = { src: string; aspect: number; tile: boolean }
+
+export function leagueLogoInfo(id: number): LeagueLogo | null {
+  const f = LOGOS[id]
+  if (!f) return null
+  const key = f.replace(/\.\w+$/, '')
+  return { src: `/leagues/${f}`, aspect: ASPECT[key] ?? 1, tile: TILES.has(key) }
+}
