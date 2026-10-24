@@ -85,37 +85,34 @@ export function MatchTags({
   injuries: Injury[]
 }) {
   const rows = [...tags].sort((a, b) => b.score - a.score)
+  // строка — как на странице «Подборки» (владелец: «блоки с букмекерами и подборками визуально сделать как на страницах?
+  // чтоб единый стиль был»): значок в круге 36px, название 15px, пояснение 13px, справа «→», черта и подсветка — во всю
+  // ширину карточки; поля — `px-5 sm:px-7`, на одной линии с заголовком над блоком
   const row = (t: TagHit) => {
     const def = TAG_BY_SLUG.get(t.slug)
     const body = (
       <>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/[0.06]">
-          <StorySymbol k={t.slug} tone="currentColor" className="h-4 w-4 text-dim" />
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
+          <StorySymbol k={t.slug} tone="currentColor" className="h-[18px] w-[18px]" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[15px] font-semibold leading-snug">{def?.title ?? t.slug}</span>
-          <span className="mt-0.5 block text-[13px] leading-snug text-dim first-letter:uppercase">
-            {tagLine(t, home, away, started, injuries)}
-          </span>
+          <span className="block text-[15px] font-semibold">{def?.title ?? t.slug}</span>
+          <span className="block text-[13px] leading-snug text-mute first-letter:uppercase">{tagLine(t, home, away, started, injuries)}</span>
         </span>
       </>
     )
+    const cls = 'flex items-center gap-3 px-5 py-3.5 sm:px-7'
     return (
       <li key={t.slug}>
         {def ? (
-          <Link
-            href={`/tag/${t.slug}`}
-            prefetch={false}
-            title={def.hint}
-            className="group -mx-1 flex min-h-14 items-center gap-3 rounded-tile px-1 py-2.5 sm:-mx-3 sm:px-3 transition-colors hover:bg-white/[0.04]"
-          >
+          <Link href={`/tag/${t.slug}`} prefetch={false} title={def.hint} className={`group ${cls} transition-colors hover:bg-white/[0.02]`}>
             {body}
-            <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4 shrink-0 text-mute/70 transition-colors group-hover:text-fg">
-              <path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <span aria-hidden className="text-mute transition-colors group-hover:text-fg">
+              →
+            </span>
           </Link>
         ) : (
-          <div className="flex min-h-14 items-center gap-3 py-2.5">{body}</div>
+          <div className={cls}>{body}</div>
         )}
       </li>
     )
@@ -126,14 +123,15 @@ export function MatchTags({
       <ul className="divide-y divide-edge">{rows.slice(0, SHOWN).map(row)}</ul>
       {more.length ? (
         <details className="border-t border-edge [&[open]>summary]:hidden">
-          <summary className="group -mx-1 mt-1 flex h-11 cursor-pointer list-none items-center gap-3 rounded-tile px-1 text-[14px] text-dim transition-colors hover:bg-white/[0.04] hover:text-fg sm:-mx-3 sm:px-3 [&::-webkit-details-marker]:hidden">
-            <span className="w-8 shrink-0" aria-hidden />
+          {/* текст — с колонки названий (пустое место под значок), справа шеврон вниз — в колонке стрелок */}
+          <summary className="group flex cursor-pointer list-none items-center gap-3 px-5 py-3 text-[14px] text-dim transition-colors hover:bg-white/[0.02] hover:text-fg sm:px-7 [&::-webkit-details-marker]:hidden">
+            <span className="w-9 shrink-0" aria-hidden />
             <span className="flex-1">Показать ещё ({more.length})</span>
-            <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4 shrink-0 text-mute/70 transition-colors group-hover:text-fg">
+            <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4 shrink-0 text-mute transition-colors group-hover:text-fg">
               <path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </summary>
-          <ul className="divide-y divide-edge">{more.map(row)}</ul>
+          <ul className="divide-y divide-edge border-t border-edge">{more.map(row)}</ul>
         </details>
       ) : null}
     </>

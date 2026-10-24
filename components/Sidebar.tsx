@@ -17,13 +17,13 @@ export function Sidebar({ values = [] }: { values?: ValueRow[] }) {
       {values.length ? <ValueBlock rows={values} card /> : null}
       <section className="card overflow-hidden">
         <BlockHead title="Где ставить" line />
-        <div className="divide-y divide-edge px-4 py-1 sm:px-5">
+        <div className="divide-y divide-edge">
           {PARTNERS.slice(0, 3).map((p) => (
-            <PartnerCard key={p.slug} partner={p} placement="sidebar" />
+            <PartnerCard key={p.slug} partner={p} placement="sidebar" className="px-4 sm:px-5" />
           ))}
         </div>
         {/* про лицензию — над чертой, у списка; под чертой — только ссылка, как во всех блоках-списках (`BlockMore`) */}
-        <p className="px-4 pb-3.5 text-[12px] text-mute sm:px-5">Только букмекеры с лицензией ФНС России.</p>
+        <p className="border-t border-edge px-4 py-3 text-[12px] text-mute sm:px-5">Только букмекеры с лицензией ФНС России.</p>
         <BlockMore href="/bookmakers">Все букмекеры</BlockMore>
       </section>
       {SITE.telegramUrl ? (

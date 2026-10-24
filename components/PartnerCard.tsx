@@ -9,30 +9,29 @@ import { PartnerBadge } from './PartnerBadge'
  * подкрученным списком; оценки со звёздами — на странице «Букмекеры». Бонус — только настоящий (`AFF_<SLUG>_BONUS`),
  * заглушка «Бонус для новых клиентов» у всех одна — её не показываем.
  */
-export function PartnerCard({ partner, placement }: { partner: Partner; placement: Placement; rank?: number }) {
+export function PartnerCard({ partner, placement, className = '' }: { partner: Partner; placement: Placement; rank?: number; className?: string }) {
   const bonus = realBonus(partner)
-  // «Реклама · 18+» — второй строкой под названием, в той же колонке: кнопка стоит по центру всей строки (владелец: «кнопки
-  // на сайт как будто криво отцентрованы?» — пометка шла отдельной строкой под всей ссылкой, и кнопка висела выше середины);
-  // кнопка — 36px, жирнее, со стрелкой «↗» (уводит на сайт букмекера), при наведении — лаймом, как все переходы к букмекеру
+  // строка — как на странице «Букмекеры» (владелец: «блоки с букмекерами и подборками визуально сделать как на страницах?»):
+  // знак 40px, название 16px, справа «Реклама · 18+» и тихая плашка «На сайт» (лаймом при наведении); на телефоне пометка —
+  // под кнопкой; подсветка строки — во всю ширину, поля задаёт место (`className`)
   return (
     <a
       href={goHref(partner, placement)}
       target="_blank"
       rel={SPONSORED_REL}
-      className="group flex min-h-16 items-center gap-3 py-3"
+      className={`group grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-x-4 py-3.5 transition-colors hover:bg-white/[0.02] ${className}`}
     >
       <PartnerBadge partner={partner} size={40} />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[15px] font-semibold">{partner.name}</div>
+      <div className="min-w-0">
+        <div className="truncate text-[16px] font-semibold tracking-tight">{partner.name}</div>
         {bonus ? <div className="truncate text-[13px] text-dim">{bonus}</div> : null}
-        <AdMark partner={partner} className="mt-0.5 !text-[12px]" />
       </div>
-      <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white/[0.08] pl-4 pr-3 text-[14px] font-semibold text-fg transition-colors group-hover:bg-btn group-hover:text-btn-ink">
-        На сайт
-        <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M7 17 17 7M8 7h9v9" />
-        </svg>
-      </span>
+      <div className="flex flex-col-reverse items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
+        <AdMark partner={partner} className="max-w-[12rem] text-right" />
+        <span className="inline-flex h-[34px] shrink-0 items-center rounded-ctl bg-white/[0.08] px-3.5 text-[13px] font-semibold transition-colors group-hover:bg-btn group-hover:text-btn-ink">
+          На сайт
+        </span>
+      </div>
     </a>
   )
 }
