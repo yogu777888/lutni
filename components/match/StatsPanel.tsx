@@ -59,7 +59,8 @@ function Label({ r }: { r: StatRow }) {
 
 function Row({ r, first }: { r: StatRow; first: boolean }) {
   const both = r.home !== null && r.away !== null
-  const lead = (v: number | null, o: number | null) => both && !r.neutral && v! > o!
+  // у кого лучше: больше, а где больше — хуже (`neutral`: фолы, карточки, ошибки), — меньше, как «Пропускает» в «Форме»
+  const lead = (v: number | null, o: number | null) => both && (r.neutral ? v! < o! : v! > o!)
   const key = KEY_ROWS.includes(r.key)
   const num = (v: number | null, o: number | null, right: boolean, detail: string | null | undefined) => (
     <span className={`num min-w-0 ${key ? 'text-[17px]' : 'text-[16px]'} leading-snug ${right ? 'text-right' : ''} ${lead(v, o) ? 'font-bold text-fg' : lead(o, v) ? 'font-semibold text-dim' : 'font-semibold text-fg'}`}>
@@ -67,7 +68,8 @@ function Row({ r, first }: { r: StatRow; first: boolean }) {
       {detail ? <span className="block text-[13px] font-normal text-mute">{detail}</span> : null}
     </span>
   )
-  const bar = <MirrorBars widths={mirrorWidths(r.home, r.away, r.kind !== 'count')} />
+  const tone = !both || r.home === r.away ? null : lead(r.home, r.away) ? 'home' : 'away'
+  const bar = <MirrorBars widths={mirrorWidths(r.home, r.away, r.kind !== 'count')} lead={tone} />
   return (
     <li className={`relative py-2 ${first ? '' : 'border-t border-edge'}`}>
       {/* боковые колонки одной ширины — подпись ровно по центру при любой длине чисел; длинная переносится */}
@@ -78,17 +80,16 @@ function Row({ r, first }: { r: StatRow; first: boolean }) {
         </span>
         {num(r.away, r.home, true, r.detail?.away)}
       </div>
-      {/* там, где больше — хуже (карточки, фолы, ошибки), — тише: лидера нет */}
-      <div className={`mt-1.5 ${r.neutral ? 'opacity-60' : ''}`}>{bar}</div>
+      <div className="mt-1.5">{bar}</div>
     </li>
   )
 }
 
 /**
  * Блок «Статистика» — как «Статистика команд» в Apple Sports: сверху эмблема и название хозяев слева, гостей справа;
- * строка — цифра хозяев слева, подпись по центру, гостей справа, под ней зеркальная полоса цветами клубов (`MirrorBars`:
- * количества — от большего в строке, проценты и владение — по шкале 0–100). У кого больше — белым жирным, у другого — серым; где
- * больше — хуже (`neutral`) и при равенстве — обе обычные.
+ * строка — цифра хозяев слева, подпись по центру, гостей справа, под ней зеркальная полоса, как в «Форме команд» (`MirrorBars`: у кого лучше — белая, у другого — серая;
+ * количества — от большего в строке, проценты и владение — по шкале 0–100). У кого лучше — белым жирным, у другого — серым; где
+ * больше — хуже (`neutral`), лучше меньше; при равенстве — обе обычные.
  * Переключатели — период («Матч · 1-й тайм · 2-й тайм · Доп. время», если они есть в `/Ls/GameInfo`) и «Основные»
  * (шесть ключевых строк одним списком, `MAIN_KEYS`) / «Все показатели» (всё, что отдал SStats, по группам `GROUP_ORDER`).
  * Режим не сбрасывается при смене тайма и при обновлении идущего матча (`router.refresh` сохраняет состояние).

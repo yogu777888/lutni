@@ -32,18 +32,20 @@ export function mirrorWidths(home: number | null, away: number | null, abs: bool
 
 /**
  * Зеркальная полоса строки статистики: центр — неподвижная точка, у каждой команды своя половина, хозяева растут от
- * центра влево, гости — вправо, зазор 3px; цвета клубов чуть приглушены (`saturate`), чтобы не спорили с цифрами.
- * `widths === null` — только пустые дорожки.
+ * центра влево, гости — вправо, зазор 3px. Цвет — как в «Форме команд»: у кого лучше (`lead`) — белая, у другого —
+ * серая, равно — обе средние (владелец: «как будто график из форма команд легче читается?» — цвета клубов одной яркости
+ * говорили только «чья сторона»). `widths === null` — только пустые дорожки.
  */
-export function MirrorBars({ widths, className = 'h-[5px]' }: { widths: [number, number] | null; className?: string }) {
+export function MirrorBars({ widths, lead, className = 'h-[5px]' }: { widths: [number, number] | null; lead: 'home' | 'away' | null; className?: string }) {
   const [h, a] = widths ?? [0, 0]
+  const fill = (side: 'home' | 'away') => (lead === null ? 'bg-white/45' : lead === side ? 'bg-white/85' : 'bg-white/30')
   return (
-    <div aria-hidden className={`flex gap-[3px] saturate-[.8] ${className}`}>
+    <div aria-hidden className={`flex gap-[3px] ${className}`}>
       <div className="flex flex-1 justify-end overflow-hidden rounded-full bg-white/[0.06]">
-        {h > 0 ? <div className="club-bar-h rounded-full" style={{ width: `${h}%` }} /> : null}
+        {h > 0 ? <div className={`${fill('home')} rounded-full`} style={{ width: `${h}%` }} /> : null}
       </div>
       <div className="flex flex-1 overflow-hidden rounded-full bg-white/[0.06]">
-        {a > 0 ? <div className="club-bar-a rounded-full" style={{ width: `${a}%` }} /> : null}
+        {a > 0 ? <div className={`${fill('away')} rounded-full`} style={{ width: `${a}%` }} /> : null}
       </div>
     </div>
   )
