@@ -4,20 +4,22 @@ import { useEffect, useRef, useState } from 'react'
 import type { Res } from '@/lib/stats'
 
 /**
- * Результат — яркостью, а не светофором (владелец: «а форма команд как?»): зелёная «В» и красная «П» спорили с красным
- * «идёт» и с правилом «светофор не используем»; как в статистике матча — чем лучше, тем ярче.
+ * Результат — цветом, как на табло у Flashscore и Sofascore (владелец: «наверное победы и поражения надо цветом
+ * выделять?»): победа — зелёная, ничья — серая, поражение — красная, буква остаётся (цвет не единственный признак).
+ * Вид один везде — кружок (владелец: «последние матчи в разном стиле»: в табло были квадратики, в «Форме» — кружки).
+ * Ниже «яркостью, а не светофором» — история.
  */
 const RES: Record<Res, { label: string; cls: string }> = {
-  W: { label: 'В', cls: 'bg-white/70 text-ink' },
-  D: { label: 'Н', cls: 'bg-white/[0.16] text-fg/80' },
-  L: { label: 'П', cls: 'text-mute ring-1 ring-inset ring-white/15' },
+  W: { label: 'В', cls: 'bg-win text-ink' },
+  D: { label: 'Н', cls: 'bg-white/[0.22] text-fg' },
+  L: { label: 'П', cls: 'bg-loss text-ink' },
 }
 
-export function ResBadge({ r, size = 'sm' }: { r: Res; size?: 'md' | 'sm' | 'xs' }) {
+export function ResBadge({ r, size = 'md' }: { r: Res; size?: 'md' | 'xs' }) {
   return (
     <span
-      className={`inline-flex items-center justify-center font-semibold ${RES[r].cls} ${
-        size === 'md' ? 'h-6 w-6 rounded-full text-[12px]' : size === 'sm' ? 'h-6 w-6 rounded-[6px] text-[11px]' : 'h-5 w-5 rounded-[6px] text-[10px]'
+      className={`inline-flex items-center justify-center rounded-full font-bold ${RES[r].cls} ${
+        size === 'md' ? 'h-6 w-6 text-[12px]' : 'h-5 w-5 text-[11px]'
       }`}
       title={r === 'W' ? 'Победа' : r === 'D' ? 'Ничья' : 'Поражение'}
     >
@@ -71,12 +73,12 @@ export function FormStrip({ home, away }: { home: StripGame[] | null; away: Stri
     </span>
   )
   return (
-    <div ref={ref} className="relative mt-1 border-t border-edge pt-3">
-      <p className="mb-2.5 text-center text-[14px] text-dim">Последние 5 матчей</p>
-      <div className="flex items-center justify-between gap-4">
-        {cell(home)}
-        {cell(away, true)}
-      </div>
+    // одной строкой, как остальные строки блока: значки хозяев · подпись по центру · значки гостей (владелец: «в форме
+    // команд они ниже текста посередине»); на телефоне три части не влезают — подпись строкой выше
+    <div ref={ref} className="relative mt-1 grid grid-cols-2 items-center gap-x-3 gap-y-2.5 border-t border-edge pt-3 sm:grid-cols-[1fr_auto_1fr]">
+      <p className="col-span-2 text-center text-[14px] text-dim sm:col-span-1 sm:col-start-2 sm:row-start-1">Последние 5 матчей</p>
+      <span className="sm:col-start-1 sm:row-start-1">{cell(home)}</span>
+      <span className="sm:col-start-3 sm:row-start-1">{cell(away, true)}</span>
       {act ? (
         <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 w-max max-w-full -translate-x-1/2 rounded-tile bg-panel-3 px-3 py-1.5 text-center text-[13px] text-fg shadow-lg">
           {tip(act)}

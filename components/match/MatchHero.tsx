@@ -126,8 +126,15 @@ export function MatchHero({
           {ctx?.[k].rank || ctx?.[k].form.length ? (
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-dim">
               {/* место — колонкой одной ширины у обеих команд, тонкая черта, дальше форма: значки обеих команд стоят ровно
-                друг под другом, как бы ни отличались названия (владелец: «квадраты выглядят отдельно… не согласовано с позицией») */}
-              {ctx.home.rank || ctx.away.rank ? <span className="num w-[5.6em] shrink-0 whitespace-nowrap">{ctx[k].rank ? `${ctx[k].rank}-е место` : ''}</span> : null}
+                друг под другом, как бы ни отличались названия (владелец: «квадраты выглядят отдельно… не согласовано с позицией»);
+                место — по правому краю колонки: от текста до черты одинаково у «4-е» и «17-е» (владелец: «отступ от текста разные») */}
+              {ctx.home.rank || ctx.away.rank ? (
+                <span className="num grid shrink-0 whitespace-nowrap text-right">
+                  {/* ширина колонки — по более длинной подписи из двух («17-е место»), невидимой; видимая — по правому краю */}
+                  <span aria-hidden className="invisible col-start-1 row-start-1">{`${Math.max(ctx.home.rank ?? 0, ctx.away.rank ?? 0)}-е место`}</span>
+                  <span className="col-start-1 row-start-1">{ctx[k].rank ? `${ctx[k].rank}-е место` : ''}</span>
+                </span>
+              ) : null}
               {/* форма — последние 5 буквами В/Н/П, свежий справа; это не кнопки — значки без наведения, подсказка у всей группы */}
               {ctx[k].form.length ? (
                 <span className="flex items-center gap-2" title={`Форма: последние ${ctx[k].form.length} матчей, свежий справа`}>
