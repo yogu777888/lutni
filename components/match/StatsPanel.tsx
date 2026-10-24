@@ -80,7 +80,7 @@ function Row({ r, first }: { r: StatRow; first: boolean }) {
         </span>
         {num(r.away, r.home, true, r.detail?.away)}
       </div>
-      <div className="mt-1.5">{bar}</div>
+      <div className="mt-2">{bar}</div>
     </li>
   )
 }

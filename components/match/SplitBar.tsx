@@ -32,20 +32,22 @@ export function mirrorWidths(home: number | null, away: number | null, abs: bool
 
 /**
  * Зеркальная полоса строки статистики: центр — неподвижная точка, у каждой команды своя половина, хозяева растут от
- * центра влево, гости — вправо, зазор 3px. Цвет — как в «Форме команд»: у кого лучше (`lead`) — белая, у другого —
+ * центра влево, гости — вправо. Цвет — как в «Форме команд»: у кого лучше (`lead`) — белая, у другого —
  * серая, равно — обе средние (владелец: «как будто график из форма команд легче читается?» — цвета клубов одной яркости
  * говорили только «чья сторона»). `widths === null` — только пустые дорожки.
  */
-export function MirrorBars({ widths, lead, className = 'h-[5px]' }: { widths: [number, number] | null; lead: 'home' | 'away' | null; className?: string }) {
+export function MirrorBars({ widths, lead, className = 'h-1.5' }: { widths: [number, number] | null; lead: 'home' | 'away' | null; className?: string }) {
   const [h, a] = widths ?? [0, 0]
   const fill = (side: 'home' | 'away') => (lead === null ? 'bg-white/45' : lead === side ? 'bg-white/85' : 'bg-white/30')
+  // вид — как полоса «Формы команд»: 6px, зазор 2px, дорожка `white/9`, скругления только снаружи — одна капсула,
+  // разрезанная по центру (владелец: «графики визуально сделать как в форме команд»)
   return (
-    <div aria-hidden className={`flex gap-[3px] ${className}`}>
-      <div className="flex flex-1 justify-end overflow-hidden rounded-full bg-white/[0.06]">
-        {h > 0 ? <div className={`${fill('home')} rounded-full`} style={{ width: `${h}%` }} /> : null}
+    <div aria-hidden className={`flex gap-0.5 ${className}`}>
+      <div className="flex flex-1 justify-end overflow-hidden rounded-l-full bg-white/[0.09]">
+        {h > 0 ? <div className={`h-full rounded-l-full ${fill('home')}`} style={{ width: `${h}%` }} /> : null}
       </div>
-      <div className="flex flex-1 overflow-hidden rounded-full bg-white/[0.06]">
-        {a > 0 ? <div className={`${fill('away')} rounded-full`} style={{ width: `${a}%` }} /> : null}
+      <div className="flex-1 overflow-hidden rounded-r-full bg-white/[0.09]">
+        {a > 0 ? <div className={`h-full rounded-r-full ${fill('away')}`} style={{ width: `${a}%` }} /> : null}
       </div>
     </div>
   )
