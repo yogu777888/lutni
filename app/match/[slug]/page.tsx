@@ -443,12 +443,14 @@ export default async function MatchPage({ params, searchParams }: Props) {
 
     </>
   )
+  // цвета клубов (`--club-h/-a`) — полосам «Формы» и «Статистики», линиям «Давления», номерам в «Составах»
+  const clubVars = (node: React.ReactNode) => <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>{node}</ClubVars>
   const sec_form = (
     <>
           {ins.homeForm || ins.awayForm ? (
             // цифры — по последним (до 10) матчам: выборку называем числом (было «последние матчи», а в карточке — три разные выборки)
             <Section outside title="Форма команд">
-              <FormBlock home={m.home} away={m.away} homeForm={ins.homeForm} awayForm={ins.awayForm} />
+              {clubVars(<FormBlock home={m.home} away={m.away} homeForm={ins.homeForm} awayForm={ins.awayForm} />)}
             </Section>
           ) : null}
 
@@ -541,7 +543,6 @@ export default async function MatchPage({ params, searchParams }: Props) {
 
 
   const started = !scheduled && m.status !== 'postponed' && m.status !== 'cancelled'
-  const clubVars = (node: React.ReactNode) => <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>{node}</ClubVars>
   // «Главное» — два-три вывода словами из статистики и давления (как «Главное за минуту» в прототипе владельца)
   // сильное и слабое место по прошлым матчам — и для блока, и для «Главного» идущего матча («снова не реализует»)
   const points = { home: teamPoints(xg.home, ins.homeForm), away: teamPoints(xg.away, ins.awayForm) }

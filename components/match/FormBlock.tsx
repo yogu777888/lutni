@@ -21,7 +21,9 @@ export function FormBlock({ home, away, homeForm, awayForm }: { home: Team; away
       me == null ? 'text-mute' : them == null || me === them || (lowerBetter ? me < them : me > them) ? 'font-semibold text-fg' : 'font-medium text-dim'
     const better = (me: number | null, them: number | null) => me != null && them != null && me !== them && (lowerBetter ? me < them : me > them)
     const eq = h != null && h === a
-    const bar = (good: boolean) => (eq ? 'bg-white/45' : good ? 'bg-white/85' : 'bg-white/30')
+    // у кого лучше — цветом своего клуба (`ClubVars`), другая — серая (владелец: «если где то команда лучше то вместо
+    // белого их цвет как был в графиках»)
+    const bar = (good: boolean, club: string) => (eq ? 'bg-white/45' : good ? club : 'bg-white/30')
     const total = (h ?? 0) + (a ?? 0) || 1
     return (
       <div className="border-t border-edge py-3">
@@ -35,10 +37,10 @@ export function FormBlock({ home, away, homeForm, awayForm }: { home: Team; away
         {h != null && a != null ? (
           <div className="mt-2 flex h-1.5 gap-0.5" aria-hidden>
             <div className="flex flex-1 justify-end overflow-hidden rounded-l-full bg-white/[0.09]">
-              <div className={`h-full rounded-l-full ${bar(better(h, a))}`} style={{ width: `${(h / total) * 100}%` }} />
+              <div className={`h-full rounded-l-full ${bar(better(h, a), 'club-bar-h')}`} style={{ width: `${(h / total) * 100}%` }} />
             </div>
             <div className="flex-1 overflow-hidden rounded-r-full bg-white/[0.09]">
-              <div className={`h-full rounded-r-full ${bar(better(a, h))}`} style={{ width: `${(a / total) * 100}%` }} />
+              <div className={`h-full rounded-r-full ${bar(better(a, h), 'club-bar-a')}`} style={{ width: `${(a / total) * 100}%` }} />
             </div>
           </div>
         ) : null}
