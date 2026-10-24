@@ -55,15 +55,17 @@ function seasonOver(l: LeagueInfo, today: string): boolean {
   return Boolean(last.end) && last.end.slice(0, 10) < today
 }
 
-/** Подпись топ-турнира по матчам сегодня и завтра — из того же кэша, что главная и левая панель. */
-function stateOf(id: number, today: Match[], tomorrow: Match[]): string | null {
+/** Подпись топ-турнира по матчам сегодня и завтра — из того же кэша, что главная и левая панель; `rank` — порядок в
+ * списке: идут (0), сегодня ещё будут (1), завтра (2), матчей нет (3). */
+function stateOf(id: number, today: Match[], tomorrow: Match[]): { text: string | null; rank: number } {
   const day = today.filter((m) => m.league.id === id)
   const live = day.filter((m) => m.status === 'live').length
-  if (live) return liveText(live)
+  if (live) return { text: liveText(live), rank: 0 }
   const ahead = day.filter((m) => m.status === 'scheduled').length
-  if (ahead) return day.some((m) => m.status === 'finished') ? `ещё ${pluralN(ahead, ['матч', 'матча', 'матчей'])} сегодня` : `сегодня ${pluralN(ahead, ['матч', 'матча', 'матчей'])}`
+  if (ahead)
+    return { text: day.some((m) => m.status === 'finished') ? `ещё ${pluralN(ahead, ['матч', 'матча', 'матчей'])} сегодня` : `сегодня ${pluralN(ahead, ['матч', 'матча', 'матчей'])}`, rank: 1 }
   const next = tomorrow.filter((m) => m.league.id === id && m.status === 'scheduled').length
-  return next ? `завтра ${pluralN(next, ['матч', 'матча', 'матчей'])}` : null
+  return next ? { text: `завтра ${pluralN(next, ['матч', 'матча', 'матчей'])}`, rank: 2 } : { text: null, rank: 3 }
 }
 
 const displayName = (l: LeagueInfo) => (flagCode(l) ? leagueTitle(l.name) : l.name)
@@ -75,18 +77,21 @@ export async function leagueIndex(leagues: LeagueInfo[]): Promise<{ top: TopLeag
     settle(getMatchesByDate(addDays(today, 1), { priority: 'low' }), [] as Match[]),
   ])
 
-  // топ: идущие и предстоящие — по порядку топ-турниров, закончившиеся (ЧМ, Евро) — в конце с «сейчас не играется»
+  // топ: сначала где матчи идут сейчас, потом сегодня, завтра, без матчей (владелец: «сейчас идут / сегодня первыми»),
+  // внутри — по порядку топ-турниров; закончившиеся (ЧМ, Евро) — в конце с «сейчас не играется»
   const top = leagues
     .filter((l) => featuredRank(l) >= 0)
     .sort((a, b) => featuredRank(a) - featuredRank(b))
-    .map((l): TopLeague => {
-      const state = stateOf(l.id, dayMatches, nextMatches)
+    .map((l) => {
+      const { text: state, rank } = stateOf(l.id, dayMatches, nextMatches)
       const over = !state && seasonOver(l, today)
       // где играется — подпись есть у каждой строки (две «Премьер-лиги» — Англия и Россия) и при пустом состоянии
       const place = isIntl(l) ? (isNationsCup(l.original) ? 'Турнир сборных' : 'Клубный турнир') : ruCountry(l.country)
-      return { id: l.id, name: displayName(l), href: leagueHref(l), flag: flagCode(l), place, state: over ? 'сейчас не играется' : state, over, q: searchText(l.original, l.country) }
+      const row: TopLeague = { id: l.id, name: displayName(l), href: leagueHref(l), flag: flagCode(l), place, state: over ? 'сейчас не играется' : state, over, q: searchText(l.original, l.country) }
+      return { row, rank: over ? 4 : rank }
     })
-    .sort((a, b) => Number(a.over) - Number(b.over))
+    .sort((a, b) => a.rank - b.rank) // сортировка устойчивая — внутри ранга порядок топ-турниров
+    .map((x) => x.row)
 
   // страны — без топ-турниров (они выше), международные — двумя группами: клубные турниры и сборные
   const byKey = new Map<string, { name: string; flag: string | null; rank: number; en: string; list: LeagueInfo[] }>()

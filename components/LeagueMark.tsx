@@ -14,17 +14,22 @@ function fit(aspect: number, bare: boolean) {
   return { width: `${(w * 100).toFixed(1)}%`, height: `${(h * 100).toFixed(1)}%` }
 }
 
+/** Логотип с квадратной подложкой (Бундеслига) — скруглённым квадратом внутри круга, как иконка приложения: во весь круг
+ * круг срезал надпись «BUNDESLIGA» внизу (владелец: «логотип бундеслиги почему-то кругло обрезается»). 70% — углы не
+ * выходят за круг. */
+const tile = (bare: boolean) => ({ width: bare ? '86%' : '70%', height: bare ? '86%' : '70%', borderRadius: '22%' })
+
 /**
  * Знак турнира: логотип лиги (lib/league-logos.ts) в сером круге `white/10`, как в Apple Sports (логотип — 64% круга) (светлый круг владелец
  * отверг: «не нравится белый фон у логотипов»); тёмные знаки (лев АПЛ, Лига чемпионов, Шотландия) — с перевёрнутой
- * яркостью (`dark`), иначе на графите пропадают; логотип с квадратной подложкой (Бундеслига) — во весь круг; `bare` —
+ * яркостью (`dark`), иначе на графите пропадают; логотип с квадратной подложкой (Бундеслига) — скруглённым квадратом в круге; `bare` —
  * без круга и крупнее (заголовки блоков лиг); нет логотипа — флаг страны, нет и его — `fallback`.
  */
 export function LeagueMark({ id, flag, size, bare = false, fallback = null, className = '' }: { id: number; flag: string | null; size: number; bare?: boolean; fallback?: ReactNode; className?: string }) {
   const logo = leagueLogoInfo(id)
   if (logo)
     return (
-      <span aria-hidden className={`grid shrink-0 place-items-center ${bare && !logo.tile ? '' : 'overflow-hidden rounded-full bg-white/[0.1]'} ${className}`} style={{ width: size, height: size }}>
+      <span aria-hidden className={`grid shrink-0 place-items-center ${bare ? '' : 'overflow-hidden rounded-full bg-white/[0.1]'} ${className}`} style={{ width: size, height: size }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- маленькая картинка, оптимизация next/image не нужна */}
         <img
           src={logo.src}
@@ -32,8 +37,8 @@ export function LeagueMark({ id, flag, size, bare = false, fallback = null, clas
           width={size}
           height={size}
           loading="lazy"
-          className={logo.tile ? 'h-full w-full object-cover' : 'object-contain'}
-          style={{ ...(logo.tile ? {} : fit(logo.aspect, bare)), ...(logo.dark ? { filter: 'invert(1) hue-rotate(180deg)' } : {}) }}
+          className={logo.tile ? 'object-cover' : 'object-contain'}
+          style={{ ...(logo.tile ? tile(bare) : fit(logo.aspect, bare)), ...(logo.dark ? { filter: 'invert(1) hue-rotate(180deg)' } : {}) }}
         />
       </span>
     )
