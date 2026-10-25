@@ -178,8 +178,10 @@ export const symbolColor = (key: string) => (SYMBOLS[key] ?? FALLBACK).color
  * Цвет подборки, приглушённый до общей светлоты и насыщенности (OKLCH L 0,74, C 0,12 — оттенок свой): в боковой
  * панели восемь ярких цветов разной силы стояли радугой, оранжевый кричал, индиго терялся (владелец выбрал вариант 4).
  */
-export function symbolSoft(key: string): string {
-  const hex = symbolColor(key)
+export const symbolSoft = (key: string) => softTone(symbolColor(key))
+
+/** Любой цвет `#rrggbb` — тем же приглушением (кольца турниров в левой панели — цвет логотипа). */
+export function softTone(hex: string): string {
   const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
   const [r, g, b] = [1, 3, 5].map((i) => lin(parseInt(hex.slice(i, i + 2), 16) / 255))
   const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b)

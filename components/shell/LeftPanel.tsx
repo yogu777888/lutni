@@ -20,6 +20,16 @@ import { useRailTip } from './RailTip'
 import { matchesN, StateLine } from './StateLine'
 import { LIVE, StoryRing } from './StoryRing'
 
+/** Кольцо турнира — оттенок логотипа, светлота и насыщенность общие (OKLCH L 0,74, C 0,12), как подборки справа
+ * (владелец: «остальные истории в левом меню тоже как-то не очень» — цвета логотипов разной силы, красные спорили с «В игре») */
+const ringTone = (id: number) => {
+  const h = leagueColor(id)?.match(/oklch\([\d.]+ [\d.]+ ([\d.]+)\)/)?.[1]
+  // чёрно-белый логотип или флаг — серый той же светлоты (белое кольцо было ярче цветных)
+  return h ? `oklch(0.74 0.12 ${h})` : 'oklch(0.74 0 0)'
+}
+/** заливка круга «Сейчас в игре» — красным 14%, как круги подборок справа их цветом */
+const LIVE_FILL = { background: `color-mix(in oklch, ${LIVE} 14%, transparent)` }
+
 /** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас в игре». */
 const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'турнире' : 'турнирах'}`
 
@@ -201,7 +211,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
       className="relative shrink-0 rounded-full transition-opacity hover:opacity-80"
     >
       <LeagueFlag l={l} />
-      <StoryRing group={`league-${l.id}`} ids={l.items.map((m) => m.id)} seen={seen} color={leagueColor(l.id)} />
+      <StoryRing group={`league-${l.id}`} ids={l.items.map((m) => m.id)} seen={seen} color={ringTone(l.id)} />
     </button>
   )
   // у турниров «Завтра» подписи нет (владелец: «не слишком много мелкого текста из-за подписей?» — пять одинаковых
@@ -252,7 +262,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
               <LeagueFlag l={l} />
             </span>
             <PlayOverlay />
-            <StoryRing group={id} ids={l.items.map((m) => m.id)} seen={seen} muted={!jump} color={leagueColor(l.id)} />
+            <StoryRing group={id} ids={l.items.map((m) => m.id)} seen={seen} muted={!jump} color={ringTone(l.id)} />
           </button>
           <a
             href={l.href}
@@ -283,7 +293,8 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             onClick={playLive}
             {...tipProps('Сейчас в игре', `${matchesN(day.live)} ${inLeagues(day.liveLeagues)} · нажмите — разбор`)}
             aria-label="Сейчас в игре: смотреть разбор матчей"
-            className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
+            style={LIVE_FILL}
+            className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full transition-[filter] hover:brightness-150"
           >
             <StorySymbol k="live" tone={LIVE} className="h-[18px] w-[18px]" />
             <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} live />
@@ -356,7 +367,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
               <div className={`group -mx-2 ${row} ${active === 'live' ? 'bg-white/[0.07]' : 'hover:bg-white/[0.04]'}`}>
                 <button type="button" data-story-key="live"
             onClick={playLive} aria-label="Сейчас в игре: смотреть разбор матчей" className="relative shrink-0 rounded-full">
-                  <span aria-hidden className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.06]">
+                  <span aria-hidden className="grid h-9 w-9 place-items-center rounded-full" style={LIVE_FILL}>
                     <StorySymbol k="live" tone={LIVE} className="h-[18px] w-[18px]" />
                   </span>
                   <PlayOverlay />
