@@ -24,13 +24,21 @@ export const dynamic = 'force-dynamic'
 
 type Props = { params: Promise<{ slug: string }>; searchParams?: Promise<Record<string, string | undefined>> }
 
+/** Описание для поисковиков — целыми предложениями (описания подборок длиннее 200 знаков: на полуслове не режем). */
+function clip(text: string, max: number): string {
+  if (text.length <= max) return text
+  const cut = text.slice(0, max)
+  const end = cut.lastIndexOf('. ')
+  return end > 60 ? cut.slice(0, end + 1) : `${cut.slice(0, cut.lastIndexOf(' '))}…`
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const t = TAG_BY_SLUG.get(slug)
   if (!t) return {}
   return {
     title: `${t.title}: матчи и прогнозы на сегодня и завтра`,
-    description: `${t.hint}. ${t.about}`.slice(0, 200),
+    description: clip(`${t.hint}. ${t.about}`, 200),
     alternates: { canonical: `/tag/${t.slug}` },
   }
 }
