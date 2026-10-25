@@ -231,11 +231,12 @@ export default async function TagPage({ params, searchParams }: Props) {
             )
           }
           sub={t.about}
-        >
-          {isValue ? (
-            values.length > 1 ? (
+          // порядок — справа в строке заголовка (на телефоне — под подписью во всю ширину, половинами): висел под подписью
+          // слева, с пустотой справа (владелец: «кнопки сортировки как то не очень удачно сейчас стоят»)
+          aside={
+            isValue && values.length > 1 ? (
               // порядок — обычными ссылками, как «По турнирам / По времени» на главной: без JS, canonical прежний
-              <nav aria-label="Порядок ставок" className="inline-flex items-center gap-1 rounded-ctl bg-white/[0.04] p-1 text-[14px] font-medium">
+              <nav aria-label="Порядок ставок" className="grid grid-cols-2 gap-1 rounded-ctl bg-white/[0.04] p-1 text-[14px] font-medium sm:inline-flex">
                 {(
                   [
                     [false, 'По преимуществу', '/tag/value'],
@@ -248,14 +249,16 @@ export default async function TagPage({ params, searchParams }: Props) {
                     prefetch={false}
                     scroll={false}
                     aria-current={time === byTime ? 'true' : undefined}
-                    className={`rounded-md px-3.5 py-1.5 transition-colors ${time === byTime ? 'bg-white/[0.08] text-fg' : 'text-dim hover:text-fg'}`}
+                    className={`rounded-md px-3.5 py-1.5 text-center whitespace-nowrap transition-colors ${time === byTime ? 'bg-white/[0.08] text-fg' : 'text-dim hover:text-fg'}`}
                   >
                     {label}
                   </Link>
                 ))}
               </nav>
-            ) : null
-          ) : (
+            ) : undefined
+          }
+        >
+          {isValue ? null : (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               {t.bet ? (
                 <span className="text-[13px] text-mute">
@@ -279,7 +282,15 @@ export default async function TagPage({ params, searchParams }: Props) {
           values.length ? (
             [...days].map(([ymd, list]) => (
               <section key={ymd}>
-                <BlockTitle rows title={dayHead(ymd, list[0].match.ts, today)} aside={`${pluralN(list.length, ['ставка', 'ставки', 'ставок'])} · Реклама · 18+`} />
+                <BlockTitle rows title={dayHead(ymd, list[0].match.ts, today)} aside={
+                    // на телефоне — только число: «Завтра · 5 октября» с «3 ставки · Реклама · 18+» не влезали в строку, и подпись
+                    // уходила под заголовок (владелец: «у завтра под заголовком почему-то описание»); «Реклама · 18+» — у кэфа в строке
+                    <span className="whitespace-nowrap">
+                      {pluralN(list.length, ['ставка', 'ставки', 'ставок'])}
+                      <span className="max-sm:hidden"> · Реклама · 18+</span>
+                    </span>
+                  }
+                />
                 <div className="card divide-y divide-edge overflow-hidden">
                   {list.map((it) => (
                     <ValueRow key={it.match.id} it={it} />
