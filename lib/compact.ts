@@ -3,7 +3,7 @@ import { matchHref } from './links'
 import { isLive } from './rank'
 import type { Match } from './types'
 
-/** Матч одной строкой — для клиентских виджетов (избранное, «Сейчас в игре» в боковой панели). */
+/** Матч одной строкой — для клиентских виджетов (избранное, «Сейчас идут» в боковой панели). */
 export type CompactMatch = {
   id: number
   href: string

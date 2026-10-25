@@ -55,7 +55,7 @@ export function BlockTitle({
   title: React.ReactNode
   aside?: React.ReactNode
   className?: string
-  /** блок строками (главная: лиги, «Сейчас в игре»): поля строк `px-4 sm:px-5` — заголовок на линии с ними */
+  /** блок строками (главная: лиги, «Сейчас идут»): поля строк `px-4 sm:px-5` — заголовок на линии с ними */
   rows?: boolean
   id?: string
 }) {

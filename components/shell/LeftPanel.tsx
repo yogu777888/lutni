@@ -29,10 +29,10 @@ const ringTone = (id: number) => {
 }
 /** заливка круга турнира — оттенок кольца 14%, как круги подборок справа; без цвета (чёрно-белый логотип, флаг) — серый круг, как был */
 const discFill = (id: number) => (leagueColor(id) ? `color-mix(in oklch, ${ringTone(id)} 14%, transparent)` : undefined)
-/** заливка круга «Сейчас в игре» — красным 14%, как круги подборок справа их цветом */
+/** заливка круга «Сейчас идут» — красным 14%, как круги подборок справа их цветом */
 const LIVE_FILL = { background: `color-mix(in oklch, ${LIVE} 14%, transparent)` }
 
-/** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас в игре». */
+/** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас идут». */
 const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'турнире' : 'турнирах'}`
 
 /** При наведении на строку — белая ▶ на месте значка, как у подборок справа. */
@@ -67,7 +67,7 @@ function LeagueFlag({ l }: { l: Pick<DayLeague, 'id' | 'flag' | 'name'> }) {
 
 /**
  * Левая панель каркаса (от xl) — «Турниры дня», оглавление списка в центре (владелец согласился: вместо «Моих команд»
- * с пустым экраном для новичка): «Сейчас в игре», топ-лиги и другие турниры с флагом, справа — сколько идёт (красным)
+ * с пустым экраном для новичка): «Сейчас идут», топ-лиги и другие турниры с флагом, справа — сколько идёт (красным)
  * или сколько всего матчей. Клик прокручивает центр к блоку лиги (свёрнутые «Другие турниры» раскрываются); блока на
  * странице нет — страница турнира. Пока листаешь центр, текущая лига подсвечена. Избранные команды (звёздочка на странице
  * матча) — сверху, если есть. Свёрнута — полоска с флагами топ-лиг.
@@ -155,7 +155,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     if (!blocks.length) return setActive(null)
     const io = new IntersectionObserver(
       (entries) => {
-        // пока страницу не листали — ничего не подсвечено (иначе «Сейчас в игре» выглядит выбранным пунктом)
+        // пока страницу не листали — ничего не подсвечено (иначе «Сейчас идут» выглядит выбранным пунктом)
         if (window.scrollY < 40) return setActive(null)
         const top = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
         if (top) setActive(top.target.id)
@@ -227,8 +227,8 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
   // турниры как истории: клик по флагу — сторис матчей лиги подряд, дальше — следующих лиг (как у подборок справа)
   const asGroups = (ls: DayLeague[]): StoryGroup[] =>
     ls.map((l) => ({ key: `league-${l.id}`, label: l.name, kind: 'top', hint: '', href: l.href, stat: '', items: l.items.map((m) => ({ ...m, focus: null })) }))
-  const liveGroup = (): StoryGroup => ({ key: 'live', label: 'Сейчас в игре', short: 'В игре', kind: 'live', hint: '', href: '/#live', stat: '', items: day.liveItems.map((m) => ({ ...m, focus: null })) })
-  // ряд кружков над историей на компьютере — те же круги, что в панели: «Сейчас в игре» и турниры дня; у «Завтра» — свои, серыми кольцами
+  const liveGroup = (): StoryGroup => ({ key: 'live', label: 'Сейчас идут', short: 'Идут', kind: 'live', hint: '', href: '/#live', stat: '', items: day.liveItems.map((m) => ({ ...m, focus: null })) })
+  // ряд кружков над историей на компьютере — те же круги, что в панели: «Сейчас идут» и турниры дня; у «Завтра» — свои, серыми кольцами
   const todayRow = (): StoryRow => ({
     title: 'Турниры дня',
     groups: [...(day.live ? [liveGroup()] : []), ...asGroups(day.leagues)],
@@ -310,17 +310,17 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
   return (
     // overflow-hidden — иначе квадратный фон закреплённого заголовка перекрывает скруглённые углы панели
     <div className="h-full overflow-hidden rounded-card bg-panel">
-      {/* свёрнута — полоска: «развернуть», «Сейчас в игре» и флаги — истории с кольцами, как в правой полоске */}
+      {/* свёрнута — полоска: «развернуть», «Сейчас идут» и флаги — истории с кольцами, как в правой полоске */}
       <div className="shell-l-rail scrollbar-none h-full flex-col items-center gap-3 overflow-y-auto py-3">
         <PanelToggle side="l" open={false} />
-        {/* «Сейчас в игре» — первым, как в развёрнутой */}
+        {/* «Сейчас идут» — первым, как в развёрнутой */}
         {day.live ? (
           <button
             type="button"
             data-story-key="live"
             onClick={playLive}
-            {...tipProps('Сейчас в игре', `${matchesN(day.live)} ${inLeagues(day.liveLeagues)} · нажмите — разбор`)}
-            aria-label="Сейчас в игре: смотреть разбор матчей"
+            {...tipProps('Сейчас идут', `${matchesN(day.live)} ${inLeagues(day.liveLeagues)} · нажмите — разбор`)}
+            aria-label="Сейчас идут: смотреть разбор матчей"
             style={LIVE_FILL}
             className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full transition-[filter] hover:brightness-150"
           >
@@ -389,12 +389,12 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
         {favs.length ? <h3 className="mt-5 text-[12px] font-medium text-mute">Сегодня</h3> : null}
         <ul className={`${favs.length ? 'mt-1.5' : 'mt-2'} space-y-0.5`}>
           {day.live ? (
-            // «Сейчас в игре» — тоже история (владелец: «а почему у сейчас в игре нет сторис?»): значок — сторис идущих
+            // «Сейчас идут» — тоже история (владелец: «а почему у сейчас в игре нет сторис?»): значок — сторис идущих
             // матчей подряд (группа 'live', как у прежних кружков), кольцо — непросмотренные; название — к блоку
             <li>
               <div className={`group -mx-2 ${row} ${active === 'live' ? 'bg-white/[0.07]' : 'hover:bg-white/[0.04]'}`}>
                 <button type="button" data-story-key="live"
-            onClick={playLive} aria-label="Сейчас в игре: смотреть разбор матчей" className="relative shrink-0 rounded-full">
+            onClick={playLive} aria-label="Сейчас идут: смотреть разбор матчей" className="relative shrink-0 rounded-full">
                   <span aria-hidden className="grid h-9 w-9 place-items-center rounded-full" style={LIVE_FILL}>
                     <StorySymbol k="live" tone={LIVE} className="h-[18px] w-[18px]" />
                   </span>
@@ -408,7 +408,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                   className="flex min-w-0 flex-1 items-center self-stretch"
                 >
                   <span className="min-w-0 flex-1 leading-tight">
-                    <span className="block truncate">Сейчас в игре</span>
+                    <span className="block truncate">Сейчас идут</span>
                     <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">{`${matchesN(day.live)} ${inLeagues(day.liveLeagues)}`}</span>
                   </span>
                 </a>

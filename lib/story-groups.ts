@@ -131,12 +131,18 @@ const storyLabel = (label: string) => {
 /** Короткие подписи под кружками на телефоне (80px, одна строка): длинные названия обрезались многоточием или шли в две
  *  строки, и ряд был неровным; полное название — в шапке историй и подсказке. */
 const CIRCLE_LABEL: Record<string, string> = {
-  'явный фаворит': 'Фаворит',
-  'аутсайдер в форме': 'Аутсайдер',
-  'серии побед и неудач': 'Серии',
-  'дома не проигрывают': 'Дома',
-  'много травм': 'Травмы',
   'личные встречи': 'Встречи',
+}
+
+/** Названия историй — словами владельца (прислал правку панели «Подборки дня»: «истории изменить как я написал»):
+ *  одно короткое слово и в панели, и в шапке историй, и под кружком; на страницах подборок — полные `title` из `TAGS`. */
+const STORY_NAME: Record<string, string> = {
+  'явный фаворит': 'Фаворит',
+  'аутсайдер в форме': 'Андердог',
+  'серии побед и неудач': 'Серия',
+  'дома не проигрывают': 'Крепость',
+  'много травм': 'Травмы',
+  'кэф упал': 'Прогруз',
 }
 
 export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
@@ -160,7 +166,7 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
     .filter((i) => isLive(i.match))
     .sort((a, b) => liveRank(a.match) - liveRank(b.match) || a.match.ts - b.match.ts)
   add(
-    { key: 'live', label: 'В игре', kind: 'live', hint: `Сейчас идут: ${pluralN(live.length, MATCHES)}`, stat: String(live.length) },
+    { key: 'live', label: 'Идут', kind: 'live', hint: `Сейчас идут: ${pluralN(live.length, MATCHES)}`, stat: String(live.length) },
     live.slice(0, LIVE_LIMIT).map((it) => ({ it, tag: null })),
   )
 
@@ -170,7 +176,7 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
     .sort((a, b) => b.score - a.score || a.it.match.ts - b.it.match.ts)
     .slice(0, TOP_LIMIT)
   add(
-    { key: 'top', label: 'Главные матчи', short: 'Главные', kind: 'top', hint: 'Самые интересные матчи дня', stat: '#' },
+    { key: 'top', label: 'Главные', short: 'Главные', kind: 'top', hint: 'Самые интересные матчи дня', stat: '#' },
     top.map(({ it }) => ({ it, tag: bestTag(it.tags) })),
   )
 
@@ -195,7 +201,7 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
       .sort((a, b) => b.tag.score - a.tag.score || b.i - a.i)
       .slice(0, TAG_LIMIT)
     add(
-      { key: slug, label: storyLabel(def.label), short: CIRCLE_LABEL[def.label.replace(/^#/, '')], kind: def.kind, hint: `${def.title}: ${pluralN(list.length, MATCHES)}`, href: `/tag/${slug}` },
+      { key: slug, label: STORY_NAME[def.label.replace(/^#/, '')] ?? storyLabel(def.label), short: CIRCLE_LABEL[def.label.replace(/^#/, '')], kind: def.kind, hint: `${def.title}: ${pluralN(list.length, MATCHES)}`, href: `/tag/${slug}` },
       sorted.map(({ it, tag }) => ({ it, tag })),
     )
   }

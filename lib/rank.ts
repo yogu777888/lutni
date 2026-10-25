@@ -1,4 +1,4 @@
-/** Насколько матч интересен аудитории: для «Сейчас в игре», «Топ дня» и порядка в историях. */
+/** Насколько матч интересен аудитории: для «Сейчас идут», «Топ дня» и порядка в историях. */
 import { countryRank, featuredRank } from '@/config/leagues'
 import type { FeedItem } from './data'
 import type { TagHit } from './tags'
