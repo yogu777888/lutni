@@ -66,6 +66,9 @@ export async function apiGet<T>(pathname: string, query: Query = {}, opts: Reque
     const { mockFetch } = await import('./mock')
     return unwrap<T>(await mockFetch(pathname, params))
   }
+  // при сборке сайта в API не ходим: собранная тогда главная всё равно заменяется на старте сервера
+  // (instrumentation.ts), а сборка в Docker — без ключа и с лимитом 30 в минуту
+  if (process.env.NEXT_PHASE === 'phase-production-build') throw new ApiError('Сборка сайта: запросов к API нет')
   if (API_KEY) params.set('apikey', API_KEY)
   const prio = opts.priority ?? 'high'
   const release = await limiter.acquire(prio, WAIT_MS[prio])

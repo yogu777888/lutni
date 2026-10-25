@@ -290,7 +290,8 @@ export async function DayView({
             (() => {
               const orders = [
                 ['league', 'По турнирам', view === 'list' ? `${list}${fq ? `?${fq}` : ''}` : `${base}#matches`],
-                ['time', 'По времени', view === 'list' ? `${list}?sort=time${fq ? `&${fq}` : ''}` : `${base}?sort=time#matches`],
+                // главная хранится готовой одной на всех и параметров адреса не читает: «По времени» сегодня — своя страница
+                ['time', 'По времени', view === 'list' ? `${list}?sort=time${fq ? `&${fq}` : ''}` : ymd === today ? '/matches/po-vremeni#matches' : `${base}?sort=time#matches`],
               ] as const
               const [cur, other] = byTime ? [orders[1], orders[0]] : [orders[0], orders[1]]
               return (

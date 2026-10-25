@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import { DayView, dayTitle } from '@/components/DayView'
 import { todayYmd } from '@/lib/format'
 
-export const dynamic = 'force-dynamic'
+// готовая главная хранится 30 с и отдаётся всем (ISR; владелец: «если будет 10000 посетителей…»); «По времени»
+// (`/?sort=time`) — отдельная страница всегда свежей сборки (`app/matches/po-vremeni`, подмена адреса в next.config.ts)
+export const revalidate = 30
 
 export async function generateMetadata(): Promise<Metadata> {
   const today = todayYmd()
@@ -14,8 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ sort?: string }> }) {
+export default async function Home() {
   const today = todayYmd()
-  const { sort } = await searchParams
-  return <DayView ymd={today} today={today} sort={sort === 'time' ? 'time' : 'league'} />
+  return <DayView ymd={today} today={today} sort="league" />
 }

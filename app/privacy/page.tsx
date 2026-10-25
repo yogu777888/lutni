@@ -4,6 +4,9 @@ import { Section } from '@/components/Section'
 import { SITE } from '@/config/site'
 import { ConsentReset } from '@/components/CookieNotice'
 
+// на каждый запрос, как все страницы: в шапке и подвале — настройки партнёров из env (см. app/layout.tsx)
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Cookie и конфиденциальность',
   description: 'Какие данные собирает tag.bet: cookie Яндекс Метрики, учёт переходов к букмекерам и настройки в браузере.',

@@ -14,7 +14,11 @@ import { x12For, type X12Line } from '@/lib/lines'
 import { leagueHref } from '@/lib/links'
 import type { Match } from '@/lib/types'
 
-export const dynamic = 'force-dynamic'
+// готовая страница хранится 30 с и отдаётся всем (ISR), собирается при первом открытии — как страница матча
+export const revalidate = 30
+export function generateStaticParams() {
+  return []
+}
 
 type Props = { params: Promise<{ slug: string }> }
 

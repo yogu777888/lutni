@@ -5,6 +5,9 @@ import { Section } from '@/components/Section'
 /** Когда сверяли текст с источниками — показываем в шапке: правила меняются (порог 15 000 ₽ отменили с 2026 года). */
 const TAX_CHECKED = '18 октября 2026'
 
+// на каждый запрос, как все страницы: в шапке и подвале — настройки партнёров из env (см. app/layout.tsx)
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Налог на выигрыш в букмекерской конторе',
   description:

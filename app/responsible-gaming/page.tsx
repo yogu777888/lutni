@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import { PageHead } from '@/components/PageHead'
 import { Section } from '@/components/Section'
 
+// на каждый запрос, как все страницы: в шапке и подвале — настройки партнёров из env (см. app/layout.tsx)
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Ответственная игра',
   description: 'Как делать ставки ответственно: лимиты, признаки зависимости и куда обратиться за помощью.',

@@ -22,9 +22,10 @@ import { SITE } from '@/config/site'
 import { Suspense } from 'react'
 import { IS_MOCK } from '@/lib/sstats/client'
 
-// Всё рендерим на запросе: настройки партнёров, erid и URL сайта читаются из env
-// в рантайме (в Docker-сборке .env недоступен). Данные кэширует lib/cache.ts.
-export const dynamic = 'force-dynamic'
+// Настройки партнёров, erid и URL сайта читаются из env в рантайме (в Docker-сборке .env недоступен), поэтому при
+// сборке сайта страницы с ними не собираем: у каждой своя настройка — `force-dynamic` (на каждый запрос) или хранение
+// готовой страницы 30 с, собранной при первом открытии на работающем сервере (ISR: матч, лига, подборка, главная —
+// её заготовку со сборки убирает instrumentation.ts). Данные кэширует lib/cache.ts.
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),

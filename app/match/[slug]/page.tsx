@@ -45,9 +45,16 @@ import type { Match } from '@/lib/types'
 import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
 import { Icon } from '@/components/Icon'
 
-export const dynamic = 'force-dynamic'
+// готовая страница хранится 30 с и отдаётся всем (ISR; владелец: «если будет 10000 посетителей…»): данные и так
+// обновляются не чаще раза в минуту (кэш и прогрев), а сборка страницы на каждого посетителя — главная нагрузка на
+// сервер. Страницы собираются при первом открытии, не при сборке сайта (`generateStaticParams` — пусто); вкладка
+// из `?tab=` — в браузере (`Tabs`), параметров адреса страница не читает
+export const revalidate = 30
+export function generateStaticParams() {
+  return []
+}
 
-type Props = { params: Promise<{ slug: string }>; searchParams?: Promise<{ tab?: string | string[] }> }
+type Props = { params: Promise<{ slug: string }> }
 
 const load = cache((id: number) => getMatchInsights(id))
 
@@ -121,10 +128,8 @@ async function RelatedMatches({ m, matchDay, today }: { m: Match; matchDay: stri
     ) : null
 }
 
-export default async function MatchPage({ params, searchParams }: Props) {
+export default async function MatchPage({ params }: Props) {
   const { slug } = await params
-  const rawTab = (await searchParams)?.tab
-  const tab = typeof rawTab === 'string' ? rawTab : undefined
   const id = idFromSlug(slug)
   if (!id) notFound()
   const ins = await load(id)
@@ -758,7 +763,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
             просто и понятно» — «давай без входа делай то что ты до этого хотел»): вместо 14 разделов лентой — 2–4 вкладки;
             всё содержимое — в разметке с сервера (поисковикам — страница целиком), выбранная — в адресе `?tab=` */}
         <div className="min-w-0">
-          <Tabs param="tab" initial={tab} items={tabs} panelClassName="mt-6 space-y-8" />
+          <Tabs param="tab" items={tabs} panelClassName="mt-6 space-y-8" />
           {/* оговорка — последней строкой разбора; разбора нет — под вкладками */}
           {ins.preview.length ? null : <BlockNote className="!mt-8">{disclaimer}</BlockNote>}
         </div>

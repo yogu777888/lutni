@@ -1065,3 +1065,8 @@ html[data-shell-rc] .shell-r-rail {
 /* «Давление команд»: цвета клубов похожи — у гостей линия пунктиром и точки пустые (`data-alike` от `ClubVars`) */
 [data-alike] .momentum-line.club-stroke-a path { stroke-dasharray: 5 4; }
 [data-alike] .momentum-line.club-stroke-a .club-dot { fill: var(--color-panel); stroke: inherit; }
+
+/* «Выгодные ставки»: порядок по времени — в браузере (`ValueSort`), строки переставляет `order` */
+[data-vsort='time'] [data-ot] {
+  order: var(--ot);
+}

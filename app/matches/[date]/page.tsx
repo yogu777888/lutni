@@ -30,6 +30,6 @@ export default async function DayPage({ params, searchParams }: Props) {
   const { sort } = await searchParams
   if (!valid(date)) notFound()
   const today = todayYmd()
-  if (date === today) redirect(sort === 'time' ? '/?sort=time' : '/')
+  if (date === today) redirect(sort === 'time' ? '/matches/po-vremeni' : '/')
   return <DayView ymd={date} today={today} sort={sort === 'time' ? 'time' : 'league'} />
 }

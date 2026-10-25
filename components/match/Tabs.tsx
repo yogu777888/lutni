@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useLayoutEffect, useState, type ReactNode } from 'react'
 
 export type TabItem = { key: string; label: string; content: ReactNode }
 
@@ -8,7 +8,8 @@ export type TabItem = { key: string; label: string; content: ReactNode }
  * Переключатель в стиле iOS: капсула (главный — на всю ширину колонки, внутри карточки — `small`, не шире 24rem), выбранный — белый с тёмным текстом, как выбранный день в ряду дней. Все вкладки
  * — в разметке с сервера (поисковики видят страницу целиком), невыбранные скрыты `hidden`. С `param` выбранная
  * вкладка пишется в адрес (`?tab=stats`, без новой записи в историю) — ссылкой можно поделиться, а обновление идущего
- * матча (`router.refresh`) остаётся на ней.
+ * матча (`router.refresh`) остаётся на ней. Выбранную из адреса читаем в браузере до показа (`useLayoutEffect`):
+ * страница матча хранится готовой одной на всех (ISR), сервер параметров адреса не видит.
  */
 export function Tabs({
   items,
@@ -30,6 +31,13 @@ export function Tabs({
 }) {
   const uid = useId()
   const [cur, setCur] = useState(items.some((t) => t.key === initial) ? initial! : items[0]?.key)
+  useLayoutEffect(() => {
+    if (!param || initial) return
+    const k = new URLSearchParams(window.location.search).get(param)
+    if (k && items.some((t) => t.key === k)) setCur(k)
+    // только при появлении: дальше вкладку выбирает человек
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const pick = (key: string) => {
     setCur(key)
     if (!param) return

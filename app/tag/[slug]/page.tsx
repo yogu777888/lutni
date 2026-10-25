@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { ValueSort } from '@/components/ValueSort'
 import { notFound } from 'next/navigation'
 import { AdMark } from '@/components/AdMark'
 import { BlockMore } from '@/components/BlockMore'
@@ -20,9 +21,14 @@ import { outcomeText } from '@/lib/verdict'
 import { TAGS, TAG_BY_SLUG } from '@/lib/tags'
 import { enqueueAnalysis } from '@/lib/warmer'
 
-export const dynamic = 'force-dynamic'
+// готовая страница хранится 30 с и отдаётся всем (ISR), собирается при первом открытии; порядок «Выгодных ставок»
+// (`?sort=time`) переключается в браузере (`ValueSort`) — параметров адреса страница не читает
+export const revalidate = 30
+export function generateStaticParams() {
+  return []
+}
 
-type Props = { params: Promise<{ slug: string }>; searchParams?: Promise<Record<string, string | undefined>> }
+type Props = { params: Promise<{ slug: string }> }
 
 /** Описание для поисковиков — целыми предложениями (описания подборок длиннее 200 знаков: на полуслове не режем). */
 function clip(text: string, max: number): string {
@@ -149,9 +155,8 @@ function TagRow({ it, hit, bet }: { it: FeedItem; hit: TagHit; bet: ReturnType<t
   )
 }
 
-export default async function TagPage({ params, searchParams }: Props) {
+export default async function TagPage({ params }: Props) {
   const { slug } = await params
-  const byTime = (await searchParams)?.sort === 'time'
   const t = TAG_BY_SLUG.get(slug)
   if (!t) notFound()
 
@@ -171,10 +176,11 @@ export default async function TagPage({ params, searchParams }: Props) {
   const now = appNow()
   const isValue = t.slug === 'value'
   // «Выгодно»: только не начавшиеся (по ходу матча эти кэфы уже не действуют) и ставки у легального партнёра; по дням,
-  // внутри дня — по преимуществу (по умолчанию) или по времени (`?sort=time`); равные — по времени, потом по id: порядок стабилен
+  // внутри дня — по преимуществу; место по времени (`?sort=time`) — у строки (`--ot`), переключает браузер (`ValueSort`);
+  // равные — по времени, потом по id: порядок стабилен
   const evOf = (it: FeedItem) => it.summary!.pick!.ev ?? -Infinity
-  const within = (a: FeedItem, b: FeedItem) =>
-    (byTime ? a.match.ts - b.match.ts || evOf(b) - evOf(a) : evOf(b) - evOf(a) || a.match.ts - b.match.ts) || a.match.id - b.match.id
+  const within = (a: FeedItem, b: FeedItem) => evOf(b) - evOf(a) || a.match.ts - b.match.ts || a.match.id - b.match.id
+  const byTimeCmp = (a: FeedItem, b: FeedItem) => a.match.ts - b.match.ts || evOf(b) - evOf(a) || a.match.id - b.match.id
   const values = isValue
     ? items
         .filter((it) => {
@@ -234,28 +240,7 @@ export default async function TagPage({ params, searchParams }: Props) {
           // порядок — справа в строке заголовка (на телефоне — под подписью во всю ширину, половинами): висел под подписью
           // слева, с пустотой справа (владелец: «кнопки сортировки как то не очень удачно сейчас стоят»)
           aside={
-            isValue && values.length > 1 ? (
-              // порядок — обычными ссылками, как «По турнирам / По времени» на главной: без JS, canonical прежний
-              <nav aria-label="Порядок ставок" className="grid grid-cols-2 gap-1 rounded-ctl bg-white/[0.04] p-1 text-[14px] font-medium sm:inline-flex">
-                {(
-                  [
-                    [false, 'По преимуществу', '/tag/value'],
-                    [true, 'По времени', '/tag/value?sort=time'],
-                  ] as const
-                ).map(([time, label, href]) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    prefetch={false}
-                    scroll={false}
-                    aria-current={time === byTime ? 'true' : undefined}
-                    className={`rounded-md px-3.5 py-1.5 text-center whitespace-nowrap transition-colors ${time === byTime ? 'bg-white/[0.08] text-fg' : 'text-dim hover:text-fg'}`}
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </nav>
-            ) : undefined
+            isValue && values.length > 1 ? <ValueSort target="value-list" /> : undefined
           }
         >
           {isValue ? null : (
@@ -275,7 +260,7 @@ export default async function TagPage({ params, searchParams }: Props) {
 
         {/* .match-body — от lg текст списка крупнее, как на главной и странице матча (app/globals.css); шапка — как была */}
         {/* заголовки дней и «Другие подборки» — над карточками на фоне страницы, как на главной и «Лигах»; между блоками 32px */}
-        <div className="match-body space-y-8 pt-4 xl:pt-6">
+        <div id="value-list" className="match-body space-y-8 pt-4 xl:pt-6">
         {!ok ? <div className="card px-4 py-4 text-[14px] text-dim sm:px-5">Источник данных временно недоступен — список может быть неполным.</div> : null}
 
         {isValue ? (
@@ -291,10 +276,19 @@ export default async function TagPage({ params, searchParams }: Props) {
                     </span>
                   }
                 />
-                <div className="card divide-y divide-edge overflow-hidden">
-                  {list.map((it) => (
-                    <ValueRow key={it.match.id} it={it} />
-                  ))}
+                {/* строки — колонкой с порядком (`order`): по времени их переставляет CSS, черта — у каждой строки сверху,
+                    у первой на экране её срезает край карточки (`-mt-px` и `overflow-hidden`) */}
+                <div className="card overflow-hidden">
+                  <div className="-mt-px flex flex-col">
+                    {list.map((it) => {
+                      const ot = [...list].sort(byTimeCmp).indexOf(it)
+                      return (
+                        <div key={it.match.id} data-ot className="border-t border-edge" style={{ '--ot': ot } as React.CSSProperties}>
+                          <ValueRow it={it} />
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               </section>
             )).concat(
