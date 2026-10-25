@@ -43,7 +43,7 @@ export default async function TagsPage() {
         ? `${pluralN(ahead.length, W)} в ближайшие дни`
         : live
           ? `${live % 10 === 1 && live % 100 !== 11 ? 'идёт' : 'идут'} ${pluralN(live, MATCHES)}`
-          : 'сейчас матчей нет'
+          : 'Нет матчей в ближайшие дни'
     return { t, state, empty: !ahead.length && !live }
   }).sort((a, b) => Number(a.empty) - Number(b.empty))
 
@@ -54,7 +54,7 @@ export default async function TagsPage() {
         <PageHead
           section="/tags"
           title="Подборки"
-          sub="Матчи, собранные по одному признаку: где ждём много голов, где есть явный фаворит, где упал кэф. Признаки находим по кэфам букмекеров, форме команд и травмам. Это подсказка, где посмотреть, а не гарантия."
+          sub="Матчи, сгруппированные по форме команд, статистике и коэффициентам. Находите интересные встречи по конкретным признакам — от явных фаворитов до затяжных серий."
         />
         {/* .match-body — от lg строки крупнее, как на главной и странице подборки (app/globals.css); шапка — как была */}
         <section className="match-body card overflow-hidden">

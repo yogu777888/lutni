@@ -119,24 +119,10 @@ export function statFor(slug: string, reason: string): string {
 
 type Entry = { it: FeedItem; tag: TagHit | null }
 
-/**
- * Подпись истории — без решётки и с большой буквы («Кэф упал», «50 на 50»): так решил владелец.
- * У тегов в строках матчей и на страницах тегов решётка остаётся.
- */
-const storyLabel = (label: string) => {
-  const s = label.replace(/^#/, '')
-  return s.charAt(0).toUpperCase() + s.slice(1)
-}
-
 /** Короткие подписи под кружками на телефоне (80px, одна строка): длинные названия обрезались многоточием или шли в две
  *  строки, и ряд был неровным; полное название — в шапке историй и подсказке. */
 const CIRCLE_LABEL: Record<string, string> = {
   'личные встречи': 'Встречи',
-}
-
-/** Названия историй — словами владельца (прислал правку панели «Подборки дня»: «истории изменить как я написал»):
- *  одно короткое слово и в панели, и в шапке историй, и под кружком; на страницах подборок — полные `title` из `TAGS`. */
-const STORY_NAME: Record<string, string> = {
   'явный фаворит': 'Фаворит',
   'аутсайдер в форме': 'Андердог',
   'серии побед и неудач': 'Серия',
@@ -201,7 +187,7 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
       .sort((a, b) => b.tag.score - a.tag.score || b.i - a.i)
       .slice(0, TAG_LIMIT)
     add(
-      { key: slug, label: STORY_NAME[def.label.replace(/^#/, '')] ?? storyLabel(def.label), short: CIRCLE_LABEL[def.label.replace(/^#/, '')], kind: def.kind, hint: `${def.title}: ${pluralN(list.length, MATCHES)}`, href: `/tag/${slug}` },
+      { key: slug, label: def.title, short: CIRCLE_LABEL[def.label.replace(/^#/, '')], kind: def.kind, hint: `${def.title}: ${pluralN(list.length, MATCHES)}`, href: `/tag/${slug}` },
       sorted.map(({ it, tag }) => ({ it, tag })),
     )
   }
