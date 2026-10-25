@@ -19,6 +19,9 @@ import { StoryRing } from './StoryRing'
 import { Icon } from '@/components/Icon'
 
 const BETS = ['ставка', 'ставки', 'ставок'] as const
+/** «Выгодно сегодня» — названия без кавычек (владелец: «может в блоке выгодно сегодня не писать названия команд в скобках?»):
+ *  в узкой панели кавычки вокруг каждого названия — лишний шум; в подсказке плашки — как было */
+const plain = (s: string) => s.replace(/[«»]/g, '')
 
 const Play = ({ className = '' }: { className?: string }) => (
   <Icon k="play-fill" className={className} />
@@ -105,13 +108,13 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
           <li key={r.id} className="-mx-2 flex items-center gap-3 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.04]">
             {/* главное — на что ставка (сверху, белым, в узкой панели — в две строки, не обрезаем); матч и время — ниже серым: обрезается второстепенное */}
             <Link href={r.href} prefetch={false} className="min-w-0 flex-1 leading-tight">
-              <span className="line-clamp-2 text-[13.5px] font-medium first-letter:uppercase">{r.outcome}</span>
+              <span className="line-clamp-2 text-[13.5px] font-medium first-letter:uppercase">{plain(r.outcome)}</span>
               {/* вторая строка — время и матч (владелец: «как тебе выгодно сегодня, только честно?» — «Марафон · 22:00 ·
                   Саутгемпт…» обрезало матч, а букмекер посетителю важен меньше всего) */}
               <span className="mt-0.5 line-clamp-2 text-[12.5px] text-dim">
                 {/* ставка на победу команды — она уже названа строкой выше, здесь только соперник («с «Мидлсбро»»): в 288px
                     «Саутгемптон — Мидлсбро» и даже «против «Мидлсбро»» обрезались; длинное — переносом, не многоточием */}
-                {r.time} · {r.side === 'home' ? `против «${r.away}»` : r.side === 'away' ? `против «${r.home}»` : `${r.home} — ${r.away}`}
+                {r.time} · {r.side === 'home' ? `против ${r.away}` : r.side === 'away' ? `против ${r.home}` : `${r.home} — ${r.away}`}
               </span>
             </Link>
             <span className="flex shrink-0 flex-col items-center gap-0.5">

@@ -219,8 +219,8 @@ export default async function TagPage({ params }: Props) {
           section={isValue ? '/tag/value' : undefined}
           lead={
             isValue ? null : (
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.06]">
-                <StorySymbol k={t.slug} tone="currentColor" className="h-[18px] w-[18px]" />
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-white/[0.06]">
+                <StorySymbol k={t.slug} tone="currentColor" className="h-6 w-6" />
               </span>
             )
           }

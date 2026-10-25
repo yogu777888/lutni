@@ -48,8 +48,8 @@ export function PageHead({
                 (значок по центру всего блока висел посреди абзаца) */}
             <div className="flex items-center gap-3">
               {section && !lead ? (
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.08] text-fg">
-                  <NavIcon href={section} on size={20} />
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white/[0.08] text-fg">
+                  <NavIcon href={section} on size={26} />
                 </span>
               ) : null}
               <h1 data-bar-title className="h1-block min-w-0 text-[24px] leading-tight sm:text-[28px]">

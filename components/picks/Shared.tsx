@@ -80,7 +80,7 @@ export function PickHead({
       lead={
         <span
           aria-hidden
-          className="story-disc grid h-9 w-9 place-items-center rounded-full"
+          className="story-disc grid h-12 w-12 place-items-center rounded-full"
           style={{ background: discBackground(symbolColor(icon)) }}
         >
           <StorySymbol k={icon} tone="#ffffff" className="h-[56%] w-[56%]" />
