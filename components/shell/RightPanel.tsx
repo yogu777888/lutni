@@ -10,7 +10,7 @@ import { TeamLogo } from '../TeamLogo'
 import { openStory } from '../story/events'
 import { circleQueue } from '../story/queue'
 import { readSeen, SEEN_EVENT } from '../story/seen'
-import { StorySymbol } from '../story/StorySymbol'
+import { StorySymbol, symbolColor } from '../story/StorySymbol'
 import { pluralN } from '@/lib/format'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
@@ -205,8 +205,8 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
             )}
             className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
           >
-            <StorySymbol k={g.key} tone="currentColor" className="h-[18px] w-[18px]" />
-            <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} />
+            <StorySymbol k={g.key} className="h-[18px] w-[18px]" />
+            <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} color={symbolColor(g.key)} />
           </button>
         ))}
         {/* «Выгодно сегодня» не пропадает целиком: лаймовый круг со знаком процента внизу (лайм — деньги и «выгодно») */}
@@ -255,14 +255,13 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                       >
                         <StorySymbol
                           k={g.key}
-                          tone="currentColor"
                           className="h-[18px] w-[18px] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"
                         />
                         <span className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                           <Play className="ml-0.5 h-3.5 w-3.5" />
                         </span>
-                        {/* кольцо, как вокруг сторис: непросмотренные матчи подборки — белые, просмотренные — серые */}
-                        <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} />
+                        {/* кольцо, как вокруг сторис: непросмотренные матчи подборки — цветом подборки (как знак), просмотренные — серые */}
+                        <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} color={symbolColor(g.key)} />
                         {/* точки «идёт» на значках подборок нет: при многих идущих их было шесть подряд; «3 идут» — в подписи,
                             а сигнал «идёт» — в центре и у турниров слева (владелец согласился) */}
                       </button>
