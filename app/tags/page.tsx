@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 }
 
 const MATCHES = ['матч', 'матча', 'матчей'] as const
+const BETS = ['ставка', 'ставки', 'ставок'] as const
 
 /**
  * «Подборки» — как правая панель (владелец: «страница подборки как?», согласился): было «ТЕГИ СТАВОК» плакатом при пункте
@@ -32,10 +33,14 @@ export default async function TagsPage() {
     const ahead = list.filter((it) => it.match.status === 'scheduled' && it.match.ts > now)
     const live = list.filter((it) => it.match.status === 'live').length
     const todayN = ahead.filter((it) => ymdInTz(it.match.ts) === today).length
+    // у «Выгодных ставок» — «ставки», как на их странице; сегодня мало, а дальше есть — «ещё 6 позже», чтобы «4 матча
+    // сегодня» не прятали десяток завтрашних
+    const W = t.slug === 'value' ? BETS : MATCHES
+    const later = ahead.length - todayN
     const state = todayN
-      ? `${pluralN(todayN, MATCHES)} сегодня`
+      ? `${pluralN(todayN, W)} сегодня${later ? `, ещё ${later} позже` : ''}`
       : ahead.length
-        ? `${pluralN(ahead.length, MATCHES)} в ближайшие дни`
+        ? `${pluralN(ahead.length, W)} в ближайшие дни`
         : live
           ? `${live % 10 === 1 && live % 100 !== 11 ? 'идёт' : 'идут'} ${pluralN(live, MATCHES)}`
           : 'сейчас матчей нет'
@@ -49,7 +54,7 @@ export default async function TagsPage() {
         <PageHead
           section="/tags"
           title="Подборки"
-          sub="Матчи, собранные по одному признаку: где ждём много голов, где есть явный фаворит, где упал кэф. Признак считается по данным — кэфам букмекеров, форме команд, травмам. Это подсказка, где посмотреть, а не гарантия."
+          sub="Матчи, собранные по одному признаку: где ждём много голов, где есть явный фаворит, где упал кэф. Признаки находим по кэфам букмекеров, форме команд и травмам. Это подсказка, где посмотреть, а не гарантия."
         />
         {/* .match-body — от lg строки крупнее, как на главной и странице подборки (app/globals.css); шапка — как была */}
         <section className="match-body card overflow-hidden">
