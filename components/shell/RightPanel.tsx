@@ -10,7 +10,7 @@ import { TeamLogo } from '../TeamLogo'
 import { openStory } from '../story/events'
 import { circleQueue } from '../story/queue'
 import { readSeen, SEEN_EVENT } from '../story/seen'
-import { StorySymbol, symbolColor } from '../story/StorySymbol'
+import { StorySymbol, symbolSoft } from '../story/StorySymbol'
 import { pluralN } from '@/lib/format'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
@@ -203,10 +203,11 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                 'Нажмите — разбор'
               ),
             )}
-            className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
+            className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full transition-[filter] hover:brightness-150"
+            style={{ background: `color-mix(in oklch, ${symbolSoft(g.key)} 14%, transparent)` }}
           >
-            <StorySymbol k={g.key} className="h-[18px] w-[18px]" />
-            <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} color={symbolColor(g.key)} />
+            <StorySymbol k={g.key} tone={symbolSoft(g.key)} className="h-[18px] w-[18px]" />
+            <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} color={symbolSoft(g.key)} />
           </button>
         ))}
         {/* «Выгодно сегодня» не пропадает целиком: лаймовый круг со знаком процента внизу (лайм — деньги и «выгодно») */}
@@ -251,17 +252,19 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                         onClick={(e) => play(gi, e)}
                         aria-label={`${g.label}: смотреть разбор матчей`}
                         title="Смотреть разбор"
-                        className="relative my-1.5 ml-2 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]"
+                        className="relative my-1.5 ml-2 grid h-9 w-9 shrink-0 place-items-center rounded-full"
+                        style={{ background: `color-mix(in oklch, ${symbolSoft(g.key)} 14%, transparent)` }}
                       >
                         <StorySymbol
                           k={g.key}
+                          tone={symbolSoft(g.key)}
                           className="h-[18px] w-[18px] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"
                         />
                         <span className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                           <Play className="ml-0.5 h-3.5 w-3.5" />
                         </span>
-                        {/* кольцо, как вокруг сторис: непросмотренные матчи подборки — цветом подборки (как знак), просмотренные — серые */}
-                        <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} color={symbolColor(g.key)} />
+                        {/* кольцо, как вокруг сторис: непросмотренные матчи подборки — приглушённым цветом подборки (как знак и заливка круга), просмотренные — серые */}
+                        <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} color={symbolSoft(g.key)} />
                         {/* точки «идёт» на значках подборок нет: при многих идущих их было шесть подряд; «3 идут» — в подписи,
                             а сигнал «идёт» — в центре и у турниров слева (владелец согласился) */}
                       </button>
