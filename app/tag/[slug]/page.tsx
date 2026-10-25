@@ -7,6 +7,7 @@ import { BlockTitle } from '@/components/Section'
 import { PageHead } from '@/components/PageHead'
 import { StorySymbol } from '@/components/story/StorySymbol'
 import { CtaLink } from '@/components/CtaLink'
+import { Hint } from '@/components/match/Hint'
 import { getPartner, primaryPartner } from '@/config/bookmakers'
 import { isFeatured } from '@/config/leagues'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
@@ -21,7 +22,7 @@ import { enqueueAnalysis } from '@/lib/warmer'
 
 export const dynamic = 'force-dynamic'
 
-type Props = { params: Promise<{ slug: string }> }
+type Props = { params: Promise<{ slug: string }>; searchParams?: Promise<Record<string, string | undefined>> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
@@ -33,6 +34,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: { canonical: `/tag/${t.slug}` },
   }
 }
+
+/** ⓘ у «Выгодных ставок»: пример расчёта (был в подписи страницы) — без обещания заработка. */
+const VALUE_HINT =
+  'Справедливый кэф = 1 / вероятность: при вероятности 40% это 2.50. Букмекер оценивает шансы по-своему, поэтому его кэф иногда выше нашей оценки — например, 2.68. Преимущество — математическое ожидание по модели: 0,40 × 2,68 − 1 = +7,2%. Это оценка, а не гарантированная прибыль; ставки — это риск · 18+'
 
 /** «Сегодня», «Завтра · 18 октября», «пн, 19 октября». */
 function dayHead(ymd: string, ts: number, today: string) {
@@ -50,6 +55,9 @@ function ValueRow({ it }: { it: FeedItem }) {
   const m = it.match
   const p = it.summary!.pick!
   const partner = getPartner(p.partnerSlug!)!
+  // вероятность — точная из модели (`prob`), округляем только при показе; преимущество — `prob × кэф − 1` (`ev`, `buildCandidates`)
+  const prob = Number.isFinite(p.prob) && p.prob > 0 && p.prob < 1 ? p.prob : null
+  const ev = p.ev != null && Number.isFinite(p.ev) ? p.ev : null
   return (
     <div className="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-4 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:grid-cols-[3.75rem_minmax(0,1fr)_auto] sm:px-5">
       <span className="num display-num self-start pt-0.5 text-[18px]">{formatTime(m.ts)}</span>
@@ -60,9 +68,22 @@ function ValueRow({ it }: { it: FeedItem }) {
         <p className="mt-0.5 truncate text-[13px] text-dim">
           {m.home.name} — {m.away.name} · {m.league.name}
         </p>
+        {/* на телефоне — «Справедливый 1.83»: строка короче, смысл тот же */}
         <p className="mt-0.5 text-[13px] text-mute">
-          шанс {pct(p.prob)} · честная цена {(1 / p.prob).toFixed(2)}
-          {p.ev != null ? <span className="text-good"> · выгода {signedPct(p.ev)}</span> : null}
+          {prob != null ? (
+            <>
+              <span className="whitespace-nowrap">Вероятность {pct(prob)}</span> ·{' '}
+              <span className="whitespace-nowrap">
+                Справедливый<span className="max-sm:hidden"> кэф</span> {(1 / prob).toFixed(2)}
+              </span>
+            </>
+          ) : null}
+          {ev != null ? (
+            // на телефоне — своей строкой: в одну с «Вероятностью» не влезает рядом с плашкой кэфа
+            <span className="whitespace-nowrap text-good max-sm:block">
+              {prob != null ? <span className="max-sm:hidden"> · </span> : null}Преимущество {signedPct(ev)}
+            </span>
+          ) : null}
         </p>
       </div>
       <div className="relative z-10 flex flex-col items-end gap-1">
@@ -71,7 +92,7 @@ function ValueRow({ it }: { it: FeedItem }) {
           target="_blank"
           rel={SPONSORED_REL}
           title={`${outcomeText(p.key, m)}: ${p.odd!.toFixed(2)} в ${partner.name} · Реклама 18+`}
-          className="flex h-11 min-w-[76px] flex-col items-center justify-center rounded-ctl bg-acid px-3 leading-none text-acid-ink transition-colors hover:bg-acid/85"
+          className="flex h-10 min-w-[72px] flex-col items-center justify-center rounded-ctl bg-acid px-2.5 leading-none text-acid-ink transition-colors hover:bg-acid/85"
         >
           <span className="num text-[16px] font-bold">{p.odd!.toFixed(2)}</span>
           <span className="mt-0.5 text-[11px] font-medium">{partner.name}</span>
@@ -120,8 +141,9 @@ function TagRow({ it, hit, bet }: { it: FeedItem; hit: TagHit; bet: ReturnType<t
   )
 }
 
-export default async function TagPage({ params }: Props) {
+export default async function TagPage({ params, searchParams }: Props) {
   const { slug } = await params
+  const byTime = (await searchParams)?.sort === 'time'
   const t = TAG_BY_SLUG.get(slug)
   if (!t) notFound()
 
@@ -141,14 +163,17 @@ export default async function TagPage({ params }: Props) {
   const now = appNow()
   const isValue = t.slug === 'value'
   // «Выгодно»: только не начавшиеся (по ходу матча эти кэфы уже не действуют) и ставки у легального партнёра; по дням,
-  // внутри дня — по выгоде (было вперемешку «Сегодня 21:00, Завтра 21:30, Сегодня 22:00»)
+  // внутри дня — по преимуществу (по умолчанию) или по времени (`?sort=time`); равные — по времени, потом по id: порядок стабилен
+  const evOf = (it: FeedItem) => it.summary!.pick!.ev ?? -Infinity
+  const within = (a: FeedItem, b: FeedItem) =>
+    (byTime ? a.match.ts - b.match.ts || evOf(b) - evOf(a) : evOf(b) - evOf(a) || a.match.ts - b.match.ts) || a.match.id - b.match.id
   const values = isValue
     ? items
         .filter((it) => {
           const p = it.summary?.pick
           return it.match.status === 'scheduled' && it.match.ts > now && p?.kind === 'value' && p.odd && p.partnerSlug && getPartner(p.partnerSlug)
         })
-        .sort((a, b) => ymdInTz(a.match.ts).localeCompare(ymdInTz(b.match.ts)) || (b.summary!.pick!.ev ?? 0) - (a.summary!.pick!.ev ?? 0))
+        .sort((a, b) => ymdInTz(a.match.ts).localeCompare(ymdInTz(b.match.ts)) || within(a, b))
     : []
   const days = new Map<string, FeedItem[]>()
   for (const it of values) days.set(ymdInTz(it.match.ts), [...(days.get(ymdInTz(it.match.ts)) ?? []), it])
@@ -185,10 +210,44 @@ export default async function TagPage({ params }: Props) {
               </span>
             )
           }
-          title={t.title}
+          title={
+            isValue ? (
+              <>
+                {t.title}
+                <span className="align-middle text-[15px] font-normal">
+                  <Hint title="Как считаем преимущество" text={VALUE_HINT} />
+                </span>
+              </>
+            ) : (
+              t.title
+            )
+          }
           sub={t.about}
         >
-          {isValue ? null : (
+          {isValue ? (
+            values.length > 1 ? (
+              // порядок — обычными ссылками, как «По турнирам / По времени» на главной: без JS, canonical прежний
+              <nav aria-label="Порядок ставок" className="inline-flex items-center gap-1 rounded-ctl bg-white/[0.04] p-1 text-[14px] font-medium">
+                {(
+                  [
+                    [false, 'По преимуществу', '/tag/value'],
+                    [true, 'По времени', '/tag/value?sort=time'],
+                  ] as const
+                ).map(([time, label, href]) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    prefetch={false}
+                    scroll={false}
+                    aria-current={time === byTime ? 'true' : undefined}
+                    className={`rounded-md px-3.5 py-1.5 transition-colors ${time === byTime ? 'bg-white/[0.08] text-fg' : 'text-dim hover:text-fg'}`}
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </nav>
+            ) : null
+          ) : (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               {t.bet ? (
                 <span className="text-[13px] text-mute">
@@ -219,7 +278,11 @@ export default async function TagPage({ params }: Props) {
                   ))}
                 </div>
               </section>
-            ))
+            )).concat(
+              <p key="note" className="-mt-5 px-4 text-[13px] text-mute sm:px-5">
+                Вероятность — оценка tag.bet, кэф — предложение букмекера. Не гарантия выигрыша: ставки — это риск · 18+
+              </p>,
+            )
           ) : (
             <p className="card px-4 py-4 text-[14px] leading-relaxed text-dim sm:px-5">
               Сейчас выгодных ставок нет: кэфы легальных букмекеров не выше нашей оценки. Список обновляется в течение дня.

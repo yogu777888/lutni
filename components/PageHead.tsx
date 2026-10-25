@@ -41,7 +41,8 @@ export function PageHead({
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {crumbs ? <NavBack fallback={upOf(crumbs)} className="mr-1 max-lg:hidden" /> : null}
           {lead ? <div className="shrink-0">{lead}</div> : null}
-          <div className="min-w-0">
+          {/* relative — окошко ⓘ у заголовка (`Hint`) встаёт под заголовком и подписью */}
+          <div className="relative min-w-0">
             {/* у разделов меню — тот же значок, что в нижнем меню, в строке заголовка (владелец: «может на других страницах кроме
                 главной надо рядом с заголовком сделать иконку?» — «да»): белый в круге 36px; подпись — под ними во всю ширину
                 (значок по центру всего блока висел посреди абзаца) */}
