@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { PageHead } from '@/components/PageHead'
 import { Section } from '@/components/Section'
 import { SITE } from '@/config/site'
+import { ConsentReset } from '@/components/CookieNotice'
 
 export const metadata: Metadata = {
   title: 'Cookie и конфиденциальность',
@@ -31,7 +32,8 @@ export default function PrivacyPage() {
         />
         <Section plain title="Яндекс Метрика">
           <p className="text-[14px] leading-relaxed text-fg/85">
-            Чтобы понимать, какие разделы полезны, а какие нет, на сайте работает Яндекс Метрика. Она ставит cookie и собирает обезличенную
+            Чтобы понимать, какие разделы полезны, а какие нет, на сайте работает Яндекс Метрика — только если вы нажали «Принять» в
+            плашке про cookie. Она ставит cookie и собирает обезличенную
             статистику: какие страницы открывали, сколько времени на них провели, с какого устройства и из какого региона пришли, куда кликали.
             Включён Вебвизор — он записывает действия на странице (прокрутку, клики) без того, что вы вводите в поля. Данные обрабатывает
             ООО «Яндекс» по своей{' '}
@@ -51,18 +53,19 @@ export default function PrivacyPage() {
         <Section plain title="Настройки в вашем браузере">
           <p className="text-[14px] leading-relaxed text-fg/85">
             В памяти браузера (localStorage) хранятся только удобства: какие истории вы уже посмотрели, выбранная цветовая версия сайта и
-            то, что вы закрыли плашку про cookie. На наш сервер это не отправляется.
+            ваш выбор в плашке про cookie. На наш сервер это не отправляется.
           </p>
         </Section>
         <Section plain title="Как отказаться">
           <p className="text-[14px] leading-relaxed text-fg/85">
-            Cookie можно удалить или запретить в настройках браузера — сайт продолжит работать. Отключить сбор данных Метрикой можно
-            расширением{' '}
+            Нажмите «Отказаться» в плашке про cookie — Метрика не загрузится, сайт продолжит работать. Передумали — выбор можно изменить
+            кнопкой ниже. Ещё cookie можно удалить или запретить в настройках браузера, а Метрику отключить на всех сайтах — расширением{' '}
             <a href="https://yandex.ru/support/metrica/general/opt-out.html" target="_blank" rel="noopener" className="border-b border-edge-2 text-fg hover:border-fg">
               «Блокировщик Яндекс Метрики»
             </a>
             .{SITE.contactEmail ? ` Вопросы — на ${SITE.contactEmail}.` : ''}
           </p>
+          <ConsentReset />
         </Section>
       </div>
     </>
