@@ -25,11 +25,11 @@ const tile = (bare: boolean) => ({ width: bare ? '86%' : '70%', height: bare ? '
  * яркостью (`dark`), иначе на графите пропадают; логотип с квадратной подложкой (Бундеслига) — скруглённым квадратом в круге; `bare` —
  * без круга и крупнее (заголовки блоков лиг); нет логотипа — флаг страны, нет и его — `fallback`.
  */
-export function LeagueMark({ id, flag, size, bare = false, fallback = null, className = '' }: { id: number; flag: string | null; size: number; bare?: boolean; fallback?: ReactNode; className?: string }) {
+export function LeagueMark({ id, flag, size, bare = false, fill, fallback = null, className = '' }: { id: number; flag: string | null; size: number; bare?: boolean; fill?: string; fallback?: ReactNode; className?: string }) {
   const logo = leagueLogoInfo(id)
   if (logo)
     return (
-      <span aria-hidden className={`grid shrink-0 place-items-center ${bare ? '' : 'overflow-hidden rounded-full bg-white/[0.1]'} ${className}`} style={{ width: size, height: size }}>
+      <span aria-hidden className={`grid shrink-0 place-items-center ${bare ? '' : `overflow-hidden rounded-full ${fill ? '' : 'bg-white/[0.1]'}`} ${className}`} style={{ width: size, height: size, ...(fill && !bare ? { background: fill } : {}) }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- маленькая картинка, оптимизация next/image не нужна */}
         <img
           src={logo.src}
