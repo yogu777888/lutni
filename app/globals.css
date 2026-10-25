@@ -762,10 +762,10 @@ html[data-shell-rc] .shell-r-rail {
     /* сама строка — квадратная цвета фона, скругление — у плашки внутри: иначе в нижних углах строки просвечивал список */
     background: #090c10;
   }
+  /* дни и порядок — на фоне страницы, без своей плашки (владелец: «меню с сортировкой … сделать на прозрачном фоне под
+     хедером»): строка цвета фона, текст — на линии со строками карточек */
   .shell-center:has(.bare-page) .bare-panel > div {
-    border-radius: var(--radius-card);
-    background: var(--color-panel);
-    padding: 8px 10px 8px 22px;
+    padding: 8px 0 8px 20px;
   }
   /* под строкой — как рамка под шапкой (ShellFrame): ровная полоска цвета фона 8px и под ней два «уголка» радиусом
      карточки — уезжающий список уходит под строку со скруглённым верхом, без щелей по краям (раньше тень повторяла
@@ -970,6 +970,22 @@ html[data-shell-rc] .shell-r-rail {
 /* дни и порядок на главной ниже lg — второй ряд шапки (`.hdr-sub` в DayView, только на главной, как чипы у YouTube):
    наверху — на фоне, как сама шапка; после прокрутки у шапки и ряда — один сплошной фон, черта одна — под рядом (два слоя
    стекла расходились тоном, и на стыке был шов); уходит вместе с шапкой при прокрутке вниз */
+/* lg–xl — так же: дни и порядок на прозрачном фоне под шапкой, после прокрутки у шапки и ряда один сплошной фон */
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .hdr-sub {
+    border-bottom: 1px solid transparent;
+    transition: background-color 0.3s, border-color 0.3s;
+  }
+  body:has(.site-header[data-scrolled]) .hdr-sub {
+    background-color: #090c10;
+    border-bottom-color: var(--color-edge);
+  }
+  body:has(.hdr-sub) .site-header[data-scrolled] {
+    border-bottom-color: #090c10;
+    background-color: #090c10;
+    backdrop-filter: none;
+  }
+}
 @media (max-width: 1023.98px) {
   .hdr-sub {
     border-bottom: 1px solid transparent;
