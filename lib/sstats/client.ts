@@ -9,8 +9,8 @@ import type { ApiEnvelope } from './types'
  * Env:
  *  SSTATS_API_URL — базовый адрес (по умолчанию https://api.sstats.net)
  *  SSTATS_API_KEY — ключ (передаётся как ?apikey=…); без ключа лимит 30 запросов/мин на IP
- *  SSTATS_RPM     — наш собственный потолок запросов в минуту (по умолчанию 25 без ключа, 60 с ключом;
- *                   если квота вашего ключа выше — поднимите, при ответе 429 клиент сам притормозит)
+ *  SSTATS_RPM     — наш собственный потолок запросов в минуту (по умолчанию 25 без ключа, 250 с ключом — у ключа
+ *                   SStats до 300, держим запас; при ответе 429 клиент сам притормозит)
  *  SSTATS_MOCK=1  — демо-режим без сети (синтетические данные)
  *  SSTATS_MOCK=design — то же самое (часы в демо стоят: всегда 4 октября, 19:30 — см. lib/format.ts)
  */
@@ -19,11 +19,14 @@ const API_KEY = process.env.SSTATS_API_KEY || ''
 export const IS_MOCK = process.env.SSTATS_MOCK === '1' || process.env.SSTATS_MOCK === 'design'
 /** Демо со стоящими часами: прогрев разбирает все матчи дня (и идущие) — у главных есть форма. */
 export const IS_DESIGN = CLOCK_FROZEN
-const RPM = Number(process.env.SSTATS_RPM || (API_KEY ? 60 : 25))
+/** Есть ключ — прогрев обходит всё, что открывают люди (lib/warmer.ts); без ключа — только главное. */
+export const HAS_KEY = Boolean(API_KEY)
+// с ключом до 300 в минуту (владелец: «лучше чуть меньше делать») — 250
+const RPM = Number(process.env.SSTATS_RPM || (API_KEY ? 250 : 25))
 
 export const limiter = singleton(
   'limiter',
-  () => new SlidingWindowLimiter({ limit: RPM, lowShare: 0.6, maxConcurrent: 4 }),
+  () => new SlidingWindowLimiter({ limit: RPM, lowShare: 0.6, maxConcurrent: RPM > 100 ? 8 : 4 }),
 )
 
 export class ApiError extends Error {
