@@ -19,14 +19,22 @@ const STATE_ORDER: Record<string, number> = { live: 0, suspended: 0, scheduled: 
 const byState = (a: FeedItem, b: FeedItem) =>
   (STATE_ORDER[a.match.status] ?? 2) - (STATE_ORDER[b.match.status] ?? 2) || a.match.ts - b.match.ts
 
-/** Пометка рекламы у кэфов-ссылок: «Кэфы Winline · Реклама» — какие букмекеры стоят в строках блока (закон о рекламе). */
-function AdNote({ items, lines, full }: { items: FeedItem[]; lines: Record<number, X12Line>; full?: boolean }) {
+/**
+ * Пометка рекламы у кэфов-ссылок: «Кэфы PARI · Реклама · 18+» — какие букмекеры стоят в строках (закон о рекламе).
+ * `under` — строкой под карточкой лиги справа, под колонкой кэфов (не рядом с логотипом лиги в заголовке).
+ */
+function AdNote({ items, lines, under }: { items: FeedItem[]; lines: Record<number, X12Line>; under?: boolean }) {
   const books = [...new Set(items.map((i) => lines[i.match.id]?.bookmaker).filter(Boolean))]
   if (!books.length) return null
-  return (
-    // `full` — строкой под названием на телефоне: «Кэфы PARI · Реклама · 18+»
-    <span className="text-mute" title={`Кэфы ${books.join(', ')} — ссылки к букмекеру-партнёру`}>
-      Кэфы {books.join(', ')} · Реклама{full ? ' · 18+' : ''}
+  const text = `Кэфы ${books.join(', ')} · Реклама · 18+`
+  const title = `Кэфы ${books.join(', ')} — ссылки к букмекеру-партнёру`
+  return under ? (
+    <p className="mt-2 px-4 text-right text-[12px] text-mute sm:px-5" title={title}>
+      {text}
+    </p>
+  ) : (
+    <span className="text-mute" title={title}>
+      {text}
     </span>
   )
 }
@@ -49,26 +57,18 @@ export function LeagueBlock({
     // заголовок — над карточкой, на фоне страницы, как разделы страницы матча (владелец: «как визуально сделать блоки на
     // главной похожими на блоки в матче чтоб заголовок вне блока»): в карточке — только строки матчей
     <section data-block id={`league-${league.id}`} className="min-w-0 scroll-mt-36 xl:scroll-mt-24">
-      {/* справа — на линии названия (под ним на телефоне ещё строка «Кэфы PARI · Реклама»: по центру двух строк «● 3 · Таблица» висели посередине) */}
-      <header className="mb-2.5 flex items-start justify-between gap-3 px-4 sm:items-center sm:px-5">
-        <div className="min-w-0">
-          <Link href={leagueHref(league)} prefetch={false} className="group flex min-w-0 items-center gap-2.5">
-            {/* логотип — без круга и крупнее (владелец: «в центре маленькие логотипы лиг»), флаг — кругом 28px */}
-            <Flag league={league} size={28} bare />
-            {/* страну говорит флаг — в названии без неё («Испания. Ла Лига» → «Ла Лига»; владелец: «название страны убрать, если есть флаг?») */}
-            <h2 className="truncate text-[20px] font-bold leading-tight tracking-[-0.01em]" title={league.name}>
-              {flagCode(league) ? leagueTitle(league.name) : league.name}
-            </h2>
-          </Link>
-          {/* на телефоне пометка — строкой под названием: справа она вместе с «идут 3 матча» и «Таблицей» сжимала «Ла Лигу» до «Л…» */}
-          <div className="mt-1 pl-[38px] text-[12px] sm:hidden">
-            <AdNote items={items} lines={lines} full />
-          </div>
-        </div>
-        <div className="mt-[3px] flex shrink-0 items-center gap-3 text-[13px] font-medium sm:mt-0 sm:gap-4">
-          <span className="hidden sm:inline">
-            <AdNote items={items} lines={lines} />
-          </span>
+      <header className="mb-2.5 flex items-center justify-between gap-3 px-4 sm:px-5">
+        <Link href={leagueHref(league)} prefetch={false} className="group flex min-w-0 items-center gap-2.5">
+          {/* логотип — без круга и крупнее (владелец: «в центре маленькие логотипы лиг»), флаг — кругом 28px */}
+          <Flag league={league} size={28} bare />
+          {/* страну говорит флаг — в названии без неё («Испания. Ла Лига» → «Ла Лига»; владелец: «название страны убрать, если есть флаг?») */}
+          <h2 className="truncate text-[20px] font-bold leading-tight tracking-[-0.01em]" title={league.name}>
+            {flagCode(league) ? leagueTitle(league.name) : league.name}
+          </h2>
+        </Link>
+        {/* пометки рекламы здесь нет — она под карточкой у кэфов: логотип лиги в одной строке с «Кэфы PARI · Реклама»
+            читался как совместная реклама лиги и букмекера */}
+        <div className="flex shrink-0 items-center gap-3 text-[13px] font-medium sm:gap-4">
           {/* идущие матчи лиги — наверху, в «Сейчас в игре»: здесь только пометка со ссылкой туда */}
           {live ? (
             // серым, как «Таблица →», красная — только точка (как в боковых панелях; красные слова тянули взгляд сильнее названия лиги);
@@ -93,6 +93,8 @@ export function LeagueBlock({
           <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} line={lines[it.match.id] ?? null} />
         ))}
       </div>
+      {/* пометка — у самих кэфов: под карточкой справа, под их колонкой */}
+      <AdNote items={items} lines={lines} under />
     </section>
   )
 }
