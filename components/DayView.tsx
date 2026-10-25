@@ -1,9 +1,7 @@
 import Link from 'next/link'
 import { PageHead } from './PageHead'
 import { countryRank, FEATURED_LEAGUES, featuredRank } from '@/config/leagues'
-import { daySnaps, getMatchesByDate, tagsFor, waitMatchFull, type FeedItem } from '@/lib/data'
-import { mainMatches } from '@/lib/day-summary'
-import { FocusMatch } from './FocusMatch'
+import { daySnaps, getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { x12For, type X12Line } from '@/lib/lines'
 import { dayHref, listHref } from '@/lib/links'
 import { applyListFilter, filterQuery, isEmptyFilter, type ListFilter } from '@/lib/list-filter'
@@ -102,21 +100,16 @@ export async function DayView({
   // в «Сейчас в игре» сверху — только топ-турниры (владелец согласился: на настоящих данных в субботу утром первый экран
   // занимали «Petřín Plzeň — Rokycany» и «6 из 42» без ссылки на остальные), остальные идущие — под раскрывашкой
   // «Ещё 36 матчей в других турнирах» в том же блоке; топ-лиги сверх шести — в своих блоках, как были
-  // «Матч в фокусе» (владелец прислал прототип: «Сегодня в футболе», под ним один главный матч, ниже матчи): главный из
-  // идущих, нет идущих — главный предстоящий (`mainMatches`); в списке ниже он не повторяется
-  const focus =
-    view === 'home' && !filtered ? (mainMatches(items.filter((i) => isLive(i.match)), 1)[0] ?? mainMatches(items, 1)[0] ?? null) : null
-  const focusFull = focus && focus.match.status !== 'scheduled' ? await waitMatchFull(focus.match.id) : null
-  const liveMain = liveSorted.filter((i) => featuredRank(i.match.league) >= 0 && i.match.id !== focus?.match.id)
+  const liveMain = liveSorted.filter((i) => featuredRank(i.match.league) >= 0)
   const liveTop = liveMain.slice(0, LIVE_LIMIT)
-  const liveRest = liveSorted.filter((i) => featuredRank(i.match.league) < 0 && i.match.id !== focus?.match.id)
+  const liveRest = liveSorted.filter((i) => featuredRank(i.match.league) < 0)
   // идущие из «Сейчас в игре» в блоках лиг не повторяем (владелец: матчи дублировались); в шапке лиги — «● N в игре»
   const liveShown = new Set([...liveTop, ...liveRest].map((i) => i.match.id))
   const liveIn = new Map<number, number>()
   for (const i of liveTop) liveIn.set(i.match.league.id, (liveIn.get(i.match.league.id) ?? 0) + 1)
   const groups = new Map<number, { league: League; items: FeedItem[]; rank: number }>()
   for (const it of listItems) {
-    if (liveShown.has(it.match.id) || it.match.id === focus?.match.id) continue
+    if (liveShown.has(it.match.id)) continue
     const l = it.match.league
     let g = groups.get(l.id)
     if (!g) groups.set(l.id, (g = { league: l, items: [], rank: featuredRank(l) }))
@@ -201,6 +194,16 @@ export async function DayView({
           страницы, как боковые панели (владелец: «чтобы не делать блок в блоке»; правила — .bare-page в app/globals.css) */}
       {/* «Матчи» — так же, с шапкой PageHead (владелец: «на всех страницах разные по размеру заголовки?») */}
       <span hidden className="bare-page" />
+      {view === 'home' ? (
+        <>
+          {/* заголовок — тихая строка с датой (на xl — только для поисковиков): главное на экране — матчи */}
+          {/* на телефоне — тоже только для поисковиков: день видно во вкладках, а строка отодвигала список (владелец: «а на телефоне главная как?») */}
+          <h1 className="sr-only">
+            {heading.title} · {heading.date.charAt(0).toLowerCase() + heading.date.slice(1)}
+          </h1>
+
+        </>
+      ) : null}
       {/* без сводки (в этот день нет ни одного «взрослого» матча) список идёт сразу под заголовком страницы — второй заголовок не нужен */}
       {/* светлая плита (ритм страницы плитами, как у reg.ru): класс bg-panel даёт внутри токены светлой поверхности
           (тёмный текст), фон — на тон темнее карточек, чтобы карточки турниров на ней читались */}
@@ -248,7 +251,7 @@ export async function DayView({
             типа как на ютубе там тоже только на главной они есть»; на остальных страницах шапка — одной строкой, `HeaderRow`);
             на «Матчах» — первой строкой страницы; lg–xl — плашкой цвета панели, липкой под шапкой; от xl — правила
             .bare-panel в app/globals.css */}
-        <div className={`bare-panel max-lg:-mx-4 ${view === 'home' ? 'hdr-sub max-lg:sticky max-lg:top-[53px] max-lg:z-30' : 'lg:max-xl:bg-[#090c10]'} lg:max-xl:sticky lg:max-xl:top-[65px] lg:max-xl:z-30`}>
+        <div className={`bare-panel max-lg:-mx-4 ${view === 'home' ? 'hdr-sub max-lg:sticky max-lg:top-[53px] max-lg:z-30' : ''} lg:max-xl:sticky lg:max-xl:top-[65px] lg:max-xl:z-30 lg:max-xl:bg-[#090c10] lg:max-xl:pb-2`}>
         {listHead ? (
           // заголовок — как у полок выше: одна схема на всю страницу
           <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
@@ -257,7 +260,7 @@ export async function DayView({
         {/* на телефоне дни и порядок — одной строкой: порядок значками (список / часы) слева (владелец: «может сортировку по времени
             влево перенести?»), дни листаются вбок до края экрана */}
         <div
-          className={`flex items-center justify-between gap-x-3 gap-y-3 max-lg:py-[5px] max-lg:pl-4 max-lg:pr-0 lg:flex-wrap lg:gap-x-6 lg:max-xl:py-2 lg:max-xl:pl-5 lg:max-xl:pr-0 ${listHead ? 'mt-5' : ''}`}
+          className={`flex items-center justify-between gap-x-3 gap-y-3 max-lg:py-[5px] max-lg:pl-4 max-lg:pr-0 lg:flex-wrap lg:gap-x-6 lg:max-xl:rounded-card lg:max-xl:bg-panel lg:max-xl:py-1.5 lg:max-xl:pl-4 lg:max-xl:pr-1.5 lg:max-xl:shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${listHead ? 'mt-5' : ''}`}
         >
           <div className="min-w-0 flex-1 lg:w-auto lg:flex-none">
             <DateTabs
@@ -313,31 +316,6 @@ export async function DayView({
           )}
         </div>
         </div>
-        {view === 'home' ? (
-          // заголовок дня и «Матч в фокусе» — под днями и порядком (владелец: «вместо сейчас в игре сделать типа сегодня в
-          // футболе и ниже матчи»); заголовок — h1 страницы, дата — подписью
-          <div className="mt-4 sm:mt-6">
-            <div className="flex items-start justify-between gap-3 px-4 sm:px-5">
-              <div className="min-w-0">
-                <h1 className="h1-block text-[20px] leading-tight">
-                  {diffDays(ymd, today) === 0 ? 'Сегодня в футболе' : heading.title}
-                </h1>
-                <p className="mt-1 text-[13px] text-dim first-letter:uppercase">{heading.date}</p>
-              </div>
-              {liveAll.length ? (
-                <a href="#live" className="mt-0.5 flex shrink-0 items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-[13px] font-medium text-dim transition-colors hover:text-fg">
-                  <span aria-hidden className="size-1.5 rounded-full bg-live" />
-                  {pluralN(liveAll.length, ['идёт', 'идут', 'идут'])}
-                </a>
-              ) : null}
-            </div>
-            {focus ? (
-              <div className="mt-2.5">
-                <FocusMatch item={focus} full={focusFull} />
-              </div>
-            ) : null}
-          </div>
-        ) : null}
         {/* кружки историй — под днями и порядком (владелец: «а может на главной сортировки перенести под хедер?»): истории
             собраны из матчей выбранного дня, переключатель управляет и ими; на xl — подборки в правой панели каркаса */}
         {/* своей карточкой «Подборки дня», как правая панель на компьютере с теми же историями (владелец: «а может на
