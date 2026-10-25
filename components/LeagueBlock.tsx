@@ -110,9 +110,15 @@ export function LiveBlock({ items, total, rest = [] }: { items: FeedItem[]; tota
       {/* заголовок над карточкой, как у лиг и разделов матча; без плашки LIVE — «LIVE» и «Сейчас идут» говорили одно и то же */}
       <BlockTitle
         rows
-        // точка — по центру места шириной логотипа лиги (28px): название на одной линии с «Ла Лигой» ниже
-        mark={<span className="h-2 w-2 animate-pulse-live rounded-full bg-live" />}
-        title="Сейчас идут"
+        title={
+          // точка — по центру места шириной логотипа лиги (28px): название на одной линии с «Ла Лигой» ниже
+          <span className="flex items-center gap-2.5">
+            <span className="grid w-7 shrink-0 place-items-center" aria-hidden>
+              <span className="h-2 w-2 animate-pulse-live rounded-full bg-live" />
+            </span>
+            Сейчас идут
+          </span>
+        }
         // число матчей не пишем (владелец: «число матчей справа убрать?») — только если показаны не все
         aside={total > items.length ? `${items.length} из ${total}` : null}
       />

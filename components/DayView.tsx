@@ -16,8 +16,7 @@ import { Interesting, pickFacts } from './Interesting'
 import { LiveRefresh } from './Live'
 import { FavMatches } from './FavMatches'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
-import { NavIcon } from './NavIcon'
-import { BlockTitle, TitleMark } from './Section'
+import { BlockTitle } from './Section'
 import { Sidebar } from './Sidebar'
 import { dayPicks } from '@/lib/day-picks'
 import { MatchFilter } from './MatchFilter'
@@ -338,7 +337,6 @@ export async function DayView({
             <BlockTitle
               rows
               id="picks-title"
-              mark={<NavIcon href="/tags" on size={22} />}
               title="Подборки дня"
               aside={
                 <Link href="/tags" className="font-medium text-dim transition-colors hover:text-fg">
@@ -381,12 +379,7 @@ export async function DayView({
               // (было — карточка с турнирами-карточками внутри, «блок в блоке»)
               <details className="group" open={!featured.length}>
                 <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 sm:px-5 [&::-webkit-details-marker]:hidden">
-                  <h2 className="flex items-center gap-2.5 text-[20px] font-bold leading-tight tracking-[-0.01em]">
-                    <TitleMark>
-                      <NavIcon href="/leagues" on size={22} />
-                    </TitleMark>
-                    {featured.length ? 'Другие турниры' : 'Все турниры'}
-                  </h2>
+                  <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">{featured.length ? 'Другие турниры' : 'Все турниры'}</h2>
                   <span className="flex items-center gap-2 text-[13px] text-mute transition-colors group-hover:text-fg">
                     {pluralN(totalOthers, ['матч', 'матча', 'матчей'])}
                     <span className="transition group-open:rotate-180">▾</span>

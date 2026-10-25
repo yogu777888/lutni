@@ -51,13 +51,10 @@ export function BlockTitle({
   className = '',
   rows = false,
   id,
-  mark,
 }: {
   title: React.ReactNode
   aside?: React.ReactNode
   className?: string
-  /** знак перед названием (`TitleMark`): логотип лиги, значок раздела — текст заголовков в ленте начинается с одной линии */
-  mark?: React.ReactNode
   /** блок строками (главная: лиги, «Сейчас идут»): поля строк `px-4 sm:px-5` — заголовок на линии с ними */
   rows?: boolean
   id?: string
@@ -68,25 +65,9 @@ export function BlockTitle({
     // текст в блоках (серым он сливался с серыми подписями внутри — владелец: «может цвет заголовков сделать как цвет
     // текста белого внутри блоков?»)
     <div className={`mb-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 ${rows ? 'px-4 sm:px-5' : 'px-5 sm:px-7'} ${className}`}>
-      <h2 id={id} className={`min-w-0 text-[20px] font-bold leading-tight tracking-[-0.01em] text-fg ${mark ? 'flex items-center gap-2.5' : ''}`}>
-        {mark ? <TitleMark>{mark}</TitleMark> : null}
-        {title}
-      </h2>
+      <h2 id={id} className="min-w-0 text-[20px] font-bold leading-tight tracking-[-0.01em] text-fg">{title}</h2>
       {aside ? <div className="text-[13px] text-mute">{aside}</div> : null}
     </div>
-  )
-}
-
-/**
- * Место знака перед заголовком блока — шириной логотипа лиги (28px), знак по центру. У всех заголовков ленты главной есть
- * знак (владелец: «сейчас заголовки без иконок левее стоят… бросается в глаза» — из «знаки всем» и «без логотипов лиг»
- * выбрал первое): текст «Подборок дня», «Сейчас идут», «Ла Лиги» начинается с одной линии. Значки разделов — серые, 22px.
- */
-export function TitleMark({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="grid w-7 shrink-0 place-items-center text-dim" aria-hidden>
-      {children}
-    </span>
   )
 }
 

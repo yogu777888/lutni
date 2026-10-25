@@ -6,7 +6,6 @@ import { useFavorites } from './favorites'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
 import { Icon } from '@/components/Icon'
-import { TitleMark } from '@/components/Section'
 
 type Item = {
   id: number
@@ -62,10 +61,8 @@ export function FavMatches({ ymd }: { ymd: string }) {
     // заголовок над карточкой, как у блоков лиг
     <section className="min-w-0" aria-label="Ваши команды">
       <style>{hide}</style>
-      <div className="mb-2.5 flex items-center gap-2.5 px-4 sm:px-5">
-        <TitleMark>
-          <Icon k="star-fill" size={22} />
-        </TitleMark>
+      <div className="mb-2.5 flex items-center gap-2 px-4 sm:px-5">
+        <Icon k="star-fill" className="h-4 w-4 text-fg" />
         <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">Ваши команды</h2>
       </div>
       {/* строки — той же разметкой, что `MatchRow` в блоках ниже (владелец: «смотри как отличается матч сохраненной команды»):
