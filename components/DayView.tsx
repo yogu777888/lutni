@@ -7,11 +7,14 @@ import { FocusMatch } from './FocusMatch'
 import { x12For, type X12Line } from '@/lib/lines'
 import { dayHref, listHref } from '@/lib/links'
 import { applyListFilter, filterQuery, isEmptyFilter, type ListFilter } from '@/lib/list-filter'
-import { diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
+import { addDays, diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { isLive, liveRank } from '@/lib/rank'
 import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
-import { DateTabs } from './DateTabs'
+import { DateTabs, shortDay } from './DateTabs'
+import { Interesting, pickFacts } from './Interesting'
+import { MatchesMenu } from './MatchesMenu'
+import { SITE } from '@/config/site'
 import { LiveRefresh } from './Live'
 import { FavMatches } from './FavMatches'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
@@ -75,6 +78,7 @@ export async function DayView({
   sort = 'league',
   view = 'home',
   filter,
+  live = false,
 }: {
   ymd: string
   today: string
@@ -83,6 +87,8 @@ export async function DayView({
   filter?: ListFilter
   /** home — витрина дня (табло, подборки, полки), list — страница «Матчи»: полный список дня */
   view?: 'home' | 'list'
+  /** главная на телефоне, вкладка «LIVE»: только идущие матчи (`/?live=1`) */
+  live?: boolean
 }) {
   let matches: Match[] = []
   let failed = false
@@ -193,6 +199,25 @@ export async function DayView({
 
   // главная — тоже все матчи дня по лигам (владелец: «в центре просто матчи по лигам, а подборки — в боковой виджет»)
   const showList = true
+  // вкладка «LIVE» — только у сегодняшнего дня на главной
+  const liveMode = view === 'home' && live && ymd === today
+  // телефон и планшет, главная: «Матчи» с вкладками «Сегодня · LIVE · Завтра» и воронкой справа (порядок, другие дни)
+  const sortQ = byTime ? '?sort=time' : ''
+  const tomorrow = addDays(today, 1)
+  const tabs = [
+    { label: 'Сегодня', href: `${dayHref(today, today)}${sortQ}#list`, active: ymd === today && !liveMode, dot: false },
+    { label: 'LIVE', href: '/?live=1#list', active: liveMode, dot: liveToday },
+    { label: 'Завтра', href: `${dayHref(tomorrow, today)}${sortQ}#list`, active: ymd === tomorrow, dot: false },
+  ]
+  const menuOrders = [
+    { label: 'По турнирам', href: `${base}#list`, active: !byTime },
+    ...(past ? [] : [{ label: 'По времени', href: `${base}?sort=time#list`, active: byTime }]),
+  ]
+  const menuDays = Array.from({ length: SITE.daysAhead + 2 }, (_, i) => addDays(today, i - 1))
+    .filter((d) => d !== today && d !== tomorrow)
+    .map((d) => ({ label: shortDay(d, today), href: `${dayHref(d, today)}#list`, active: d === ymd }))
+  // «Интересно сегодня» — два факта дня под списком (телефон и планшет)
+  const facts = view === 'home' && !past ? pickFacts(items, focus?.match.id ?? null) : []
   return (
     <>
       {/* пока на этой странице идут матчи — счёт и минуты обновляются сами, без перезагрузки */}
@@ -251,14 +276,14 @@ export async function DayView({
       {showList ? (
       <section
         id="matches"
-        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : view === 'home' ? '-mt-4 sm:-mt-6 lg:mt-0' : 'mt-3 sm:mt-6'} xl:mt-0`}
+        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : view === 'home' ? '' : 'mt-3 sm:mt-6'} xl:mt-0`}
       >
         {/* ниже lg (телефон, планшет) на главной — второй ряд шапки, как чипы у YouTube: только на главной, липкий вплотную
             под шапкой и уходит вместе с ней при прокрутке вниз (владелец: «а может сортировки вернуть в хедер на главной?
             типа как на ютубе там тоже только на главной они есть»; на остальных страницах шапка — одной строкой, `HeaderRow`);
             на «Матчах» — первой строкой страницы; lg–xl — плашкой цвета панели, липкой под шапкой; от xl — правила
             .bare-panel в app/globals.css */}
-        <div className={`bare-panel max-lg:-mx-4 ${view === 'home' ? 'hdr-sub max-lg:sticky max-lg:top-[53px] max-lg:z-30' : ''} lg:max-xl:sticky lg:max-xl:top-[65px] lg:max-xl:z-30 lg:max-xl:bg-[#090c10] lg:max-xl:pb-2`}>
+        <div className={`bare-panel max-lg:-mx-4 ${view === 'home' ? 'max-lg:hidden' : ''} lg:max-xl:sticky lg:max-xl:top-[65px] lg:max-xl:z-30 lg:max-xl:bg-[#090c10] lg:max-xl:pb-2`}>
         {listHead ? (
           // заголовок — как у полок выше: одна схема на всю страницу
           <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
@@ -353,8 +378,30 @@ export async function DayView({
             <FocusMatch item={focus} full={focusFull} />
           </div>
         ) : null}
+        {view === 'home' ? (
+          // как в прототипе ChatGPT владельца: «Матчи», вкладки «Сегодня · LIVE · Завтра», справа воронка — порядок и другие
+          // дни; от lg — прежний ряд дней и порядка над списком
+          <div id="list" className="mt-8 scroll-mt-16 lg:hidden">
+            <BlockTitle rows title="Матчи" aside={<MatchesMenu orders={menuOrders} days={menuDays} />} />
+            <nav aria-label="Матчи" className="grid grid-cols-3 gap-1 rounded-full bg-white/[0.06] p-1 text-[15px] font-medium">
+              {tabs.map((t) => (
+                <Link
+                  key={t.label}
+                  href={t.href}
+                  prefetch={false}
+                  scroll={false}
+                  aria-current={t.active ? 'page' : undefined}
+                  className={`flex h-9 items-center justify-center gap-1.5 rounded-full transition-colors ${t.active ? 'bg-white text-ink' : 'text-dim hover:text-fg'}`}
+                >
+                  {t.dot ? <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-live" /> : null}
+                  {t.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        ) : null}
         <div
-          className={`mt-6 grid gap-8 sm:mt-8 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-6 xl:!grid-cols-1 xl:gap-8' : ''}`}
+          className={`${view === 'home' ? 'mt-6 lg:mt-8' : 'mt-6 sm:mt-8'} grid gap-8 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-6 xl:!grid-cols-1 xl:gap-8' : ''}`}
         >
           {/* между блоками 32px, от заголовка до карточки 10px — как на странице матча: заголовки теперь над карточками, и при
               12px заголовок читался подписью к блоку выше */}
@@ -366,12 +413,20 @@ export async function DayView({
             ) : null}
             {/* матчи избранных команд (звёздочка на странице матча) — первыми; нет избранных — блока нет */}
             <FavMatches ymd={ymd} />
-            {liveTop.length || liveRest.length ? <LiveBlock items={liveTop} total={liveMain.length} rest={liveRest} /> : null}
-            {byTime && timeList.length ? <TimeBlock items={timeList} lines={lines} /> : null}
-            {byTime ? null : featured.map((g) => (
+            {liveMode ? (
+              liveSorted.length ? (
+                <LiveBlock items={liveMain} total={liveMain.length} rest={liveRest} />
+              ) : (
+                <div className="card p-5 text-[15px] text-dim">Сейчас матчи не идут.</div>
+              )
+            ) : liveTop.length || liveRest.length ? (
+              <LiveBlock items={liveTop} total={liveMain.length} rest={liveRest} />
+            ) : null}
+            {!liveMode && byTime && timeList.length ? <TimeBlock items={timeList} lines={lines} /> : null}
+            {byTime || liveMode ? null : featured.map((g) => (
               <LeagueBlock key={g.league.id} league={g.league} items={g.items} lines={lines} live={liveIn.get(g.league.id) ?? 0} featured />
             ))}
-            {!byTime && others.length ? (
+            {!byTime && !liveMode && others.length ? (
               // «Другие турниры» — раскрывашкой заголовком на фоне, внутри — те же блоки лиг с заголовками над карточками
               // (было — карточка с турнирами-карточками внутри, «блок в блоке»)
               <details className="group" open={!featured.length}>
@@ -397,6 +452,11 @@ export async function DayView({
                   ) : null}
                 </div>
               </details>
+            ) : null}
+            {facts.length ? (
+              <div className="lg:hidden">
+                <Interesting facts={facts} />
+              </div>
             ) : null}
             {!matches.length && !failed ? (
               <div className="card p-10 text-center">

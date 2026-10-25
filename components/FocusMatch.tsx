@@ -101,6 +101,11 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
           ) : null}
         </div>
       ) : null}
+      {/* вся карточка — ссылка; «кнопка» — подсказка, куда ведёт (владелец: «забыл добавить кнопку открыть обзор матча») */}
+      <span className="mt-4 flex h-11 items-center justify-center gap-1.5 rounded-full border border-white/15 text-[15px] font-medium text-fg/90">
+        Открыть обзор матча
+        <Icon k="arrow-right" size={16} />
+      </span>
     </Link>
   )
 }
