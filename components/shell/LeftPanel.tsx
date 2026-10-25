@@ -11,7 +11,7 @@ import { useFavorites } from '../favorites'
 import { LeagueMark } from '../LeagueMark'
 import { TeamLogo } from '../TeamLogo'
 import type { StoryGroup } from '@/lib/story-groups'
-import { openStory } from '../story/events'
+import { openStory, type StoryRow } from '../story/events'
 import { circleQueue } from '../story/queue'
 import { readSeen, SEEN_EVENT } from '../story/seen'
 import { StorySymbol } from '../story/StorySymbol'
@@ -227,18 +227,44 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
   // турниры как истории: клик по флагу — сторис матчей лиги подряд, дальше — следующих лиг (как у подборок справа)
   const asGroups = (ls: DayLeague[]): StoryGroup[] =>
     ls.map((l) => ({ key: `league-${l.id}`, label: l.name, kind: 'top', hint: '', href: l.href, stat: '', items: l.items.map((m) => ({ ...m, focus: null })) }))
+  const liveGroup = (): StoryGroup => ({ key: 'live', label: 'Сейчас в игре', short: 'В игре', kind: 'live', hint: '', href: '/#live', stat: '', items: day.liveItems.map((m) => ({ ...m, focus: null })) })
+  // ряд кружков над историей на компьютере — те же круги, что в панели: «Сейчас в игре» и турниры дня; у «Завтра» — свои, серыми кольцами
+  const todayRow = (): StoryRow => ({
+    title: 'Турниры дня',
+    groups: [...(day.live ? [liveGroup()] : []), ...asGroups(day.leagues)],
+    disc: (g, s) => storyDisc(g, s, false),
+  })
+  const storyDisc = (g: StoryGroup, s: Set<string>, muted: boolean) => {
+    const ids = g.items.map((m) => m.id)
+    if (g.key === 'live')
+      return (
+        <span className="relative grid h-9 w-9 place-items-center rounded-full" style={LIVE_FILL}>
+          <StorySymbol k="live" tone={LIVE} className="h-[18px] w-[18px]" />
+          <StoryRing group="live" ids={ids} seen={s} live />
+        </span>
+      )
+    const l = [...day.leagues, ...day.tomorrow].find((x) => `league-${x.id}` === g.key)
+    return (
+      <span className="relative block h-9 w-9 rounded-full">
+        {l ? <LeagueFlag l={l} /> : null}
+        <StoryRing group={g.key} ids={ids} seen={s} muted={muted} color={l ? ringTone(l.id) : null} />
+      </span>
+    )
+  }
   const play = (ls: DayLeague[], i: number) => (e: React.MouseEvent<HTMLButtonElement>) => {
     const groups = asGroups(ls)
     const { queue, startId } = circleQueue(groups, i, seen)
     const first = groups[i].items.find((m) => m.id === startId) ?? groups[i].items[0]
-    if (first) openStory({ id: startId, href: first.href, opener: e.currentTarget, queue })
+    const circles: StoryRow =
+      ls === day.leagues ? todayRow() : { title: 'Завтра', groups, disc: (g, s) => storyDisc(g, s, true) }
+    if (first) openStory({ id: startId, href: first.href, opener: e.currentTarget, queue, circles })
   }
   const playLive = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const live: StoryGroup = { key: 'live', label: 'В игре', kind: 'live', hint: '', href: '/#live', stat: '', items: day.liveItems.map((m) => ({ ...m, focus: null })) }
+    const live = liveGroup()
     const groups = [live, ...asGroups(day.leagues)]
     const { queue, startId } = circleQueue(groups, 0, seen)
     const first = live.items.find((m) => m.id === startId) ?? live.items[0]
-    if (first) openStory({ id: startId, href: first.href, opener: e.currentTarget, queue })
+    if (first) openStory({ id: startId, href: first.href, opener: e.currentTarget, queue, circles: todayRow() })
   }
   // строка: флаг — кнопка сторис (кольцо — непросмотренные матчи, при наведении — белая ▶), название — переход к блоку лиги
   const League = ({ l, list, jump = true }: { l: DayLeague; list: DayLeague[]; jump?: boolean }) => {

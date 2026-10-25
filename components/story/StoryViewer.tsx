@@ -5,8 +5,9 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { SPONSORED_REL } from '@/lib/affiliate'
 import type { StoryData } from '@/lib/story'
 import { artFor, artGlow } from '@/lib/story-art'
-import { OPEN_STORY, openStory, type OpenStoryDetail, type StoryQueueItem } from './events'
-import { markSeen, type SeenMark } from './seen'
+import { OPEN_STORY, openStory, type OpenStoryDetail, type StoryQueueItem, type StoryRow } from './events'
+import { circleQueue } from './queue'
+import { markSeen, readSeen, SEEN_EVENT, type SeenMark } from './seen'
 import { Slide, SLIDE_MS } from './slides'
 
 type Item = StoryQueueItem
@@ -60,6 +61,20 @@ function focusFor(item: Item | null, story: StoryData | null) {
 /** Название истории в шапке просмотрщика — как подпись кружка («Кэф упал»); красным — только «В игре». */
 function GroupLabel({ label, kind }: { label: string; kind: NonNullable<Item['group']>['kind'] }) {
   return <span className={`font-bold ${kind === 'live' ? 'text-live' : 'text-fg'}`}>{label}</span>
+}
+
+/** Компьютер: история с рядом кружков — широким блоком (`StoryRow`), а не вертикальной карточкой телефона. */
+const WIDE = '(min-width: 1024px)'
+function useWide() {
+  const [wide, setWide] = useState(false)
+  useEffect(() => {
+    const m = window.matchMedia(WIDE)
+    const on = () => setWide(m.matches)
+    on()
+    m.addEventListener('change', on)
+    return () => m.removeEventListener('change', on)
+  }, [])
+  return wide
 }
 
 const btn = 'flex h-9 w-9 items-center justify-center rounded-full text-fg/90 transition hover:bg-white/10 active:scale-95'
@@ -131,6 +146,10 @@ export function StoryViewer() {
   const [hidden, setHidden] = useState(false)
   const [ended, setEnded] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [row, setRow] = useState<StoryRow | null>(null)
+  const [seen, setSeen] = useState<Set<string>>(() => new Set())
+  const wide = useWide()
+  const strip = useRef<HTMLDivElement>(null)
 
   const cache = useRef(new Map<number, Promise<StoryData | null>>())
   const req = useRef(0)
@@ -165,6 +184,7 @@ export function StoryViewer() {
     setOpen(false)
     setStory(null)
     setItems([])
+    setRow(null)
     setLoading(false)
     setEnded(false)
     setHolding(false)
@@ -277,6 +297,8 @@ export function StoryViewer() {
       opener.current = d.opener ?? null
       deep.current = Boolean(d.deep)
       setItems(list)
+      setRow(d.circles ?? null)
+      setSeen(readSeen())
       setStory(null)
       setPaused(false)
       setOpen(true)
@@ -382,6 +404,34 @@ export function StoryViewer() {
     groupKey.current = items[pos]?.group?.key ?? null
   }, [items, pos])
 
+  // кольца ряда гаснут сразу, как матч посмотрели
+  useEffect(() => {
+    if (!open || !row) return
+    const on = () => setSeen(readSeen())
+    window.addEventListener(SEEN_EVENT, on)
+    return () => window.removeEventListener(SEEN_EVENT, on)
+  }, [open, row])
+
+  // выбранный кружок ряда — всегда на виду (очередь сама переходит к следующей подборке)
+  const rowKey = items[pos]?.group?.key
+  useEffect(() => {
+    const el = rowKey ? strip.current?.querySelector(`[data-row="${CSS.escape(rowKey)}"]`) : null
+    el?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+  }, [rowKey])
+
+  /** Кружок ряда: история этой подборки с первого непросмотренного матча, дальше — следующие, как из панели. */
+  const pickGroup = (gi: number) => {
+    if (!row) return
+    const { queue, startId } = circleQueue(row.groups, gi, readSeen())
+    if (!queue.length) return
+    const at = Math.max(0, queue.findIndex((i) => i.id === startId))
+    setItems(queue)
+    setPos(at)
+    setPaused(false)
+    setEnded(false)
+    void show(queue, at, 1, { fallbackHref: row.groups[gi].href })
+  }
+
   // открытие: панель вырастает из кружка (см. `asCircle`), фон затемняется, содержимое проявляется в последней трети
   useLayoutEffect(() => {
     if (!open) return
@@ -443,6 +493,8 @@ export function StoryViewer() {
   // цвет кружка известен до загрузки матча — панель сразу в нём, а не перекрашивается через 0,1–0,3 с («мерцает»)
   const artKey = group?.key ?? items[pos]?.group?.key ?? focus?.slug ?? null
   const panelBg = artKey ? artGlow(artFor(artKey)) : undefined
+  // на компьютере с рядом кружков — широкий блок: «Подборки дня» сверху, ниже слайды и «Назад / Дальше»
+  const wideRow = wide ? row : null
   const duration = (k: NonNullable<typeof current>['kind']) => (k === 'cover' && focus ? 6500 : SLIDE_MS[k])
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -500,6 +552,171 @@ export function StoryViewer() {
     leaveTo(story.href)
   }
 
+  const progressBar = (
+    <>
+      {/* прогресс по слайдам */}
+      <div className={wideRow ? 'flex gap-1 px-4 pt-3.5' : 'flex gap-1 px-3 pt-[max(10px,env(safe-area-inset-top))]'}>
+        {(story?.slides ?? [null]).map((s, i) => (
+          <div key={i} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/20">
+            {story && (i < slide || (i === slide && ended)) ? (
+              <div className="h-full w-full bg-fg" />
+            ) : story && s && i === slide ? (
+              <div
+                key={`${story.id}-${slide}-${nonce}`}
+                className="st-progress h-full w-full bg-fg"
+                style={{ animationDuration: `${duration(s.kind)}ms`, animationPlayState: running ? 'running' : 'paused' }}
+                onAnimationEnd={(e) => {
+                  if (e.target === e.currentTarget) next()
+                }}
+              />
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </>
+  )
+  const slideArea = (
+    <>
+      {/* слайд: тап справа — дальше, слева — назад, удержание — пауза; в широком блоке на невысоком окне слайд прокручивается
+          внутри, а не наезжает на «Назад / Дальше» */}
+      <div
+        className={`relative min-h-0 flex-1 touch-none ${wideRow ? 'scrollbar-none overflow-y-auto' : ''}`}
+        onPointerDown={onPointerDown}
+        onPointerUp={(e) => endGesture(e)}
+        onPointerCancel={(e) => endGesture(e, true)}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        {story && current ? (
+          <div key={`${story.id}-${slide}-${nonce}`} className={wideRow ? 'mx-auto flex min-h-full max-w-[34rem] flex-col [&>*]:flex-1' : 'h-full'} aria-live="polite">
+            <Slide slide={current} story={story} focus={focus} />
+          </div>
+        ) : null}
+        {loading && !story ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-acid" aria-label="Загрузка" />
+          </div>
+        ) : null}
+      </div>
+    </>
+  )
+  const ctaNode =
+  story && last && story.cta ? (
+    <div className="st-rise">
+      <a
+        href={story.cta.href}
+        target="_blank"
+        rel={SPONSORED_REL}
+        className="flex w-full items-center justify-center rounded-tile bg-acid px-3 py-3.5 text-[15px] font-bold text-acid-ink transition hover:bg-acid/90 active:scale-[0.98]"
+      >
+        {/* переход к букмекеру — лаймом, как «Поставить за 3.12 в PARI» на странице матча */}
+        {story.cta.text}
+      </a>
+      <p className="mt-1.5 text-center text-[11px] text-dim">{story.cta.ad}</p>
+    </div>
+  ) : null
+
+  const controls = (
+    <>
+      <button type="button" className={btn} onClick={() => setPaused((p) => !p)} aria-label={paused ? 'Продолжить' : 'Пауза'}>
+        <Icon d={paused ? ICONS.play : ICONS.pause} className={paused ? 'fill-current' : ''} />
+      </button>
+      <button type="button" className={btn} onClick={share} aria-label="Поделиться">
+        <Icon d={ICONS.share} />
+      </button>
+      <button type="button" className={btn} onClick={close} aria-label="Закрыть">
+        <Icon d={ICONS.close} />
+      </button>
+    </>
+  )
+  /*
+   * На компьютере — широким блоком, как в прототипе владельца (ChatGPT): «теперь сами истории мне как-то не нравятся, может
+   * типа такого блока открывать при нажатии на историю чтоб там ещё сверху были истории и их можно было листать, а вместо
+   * надписи «Истории» — «Подборки дня», только на ПК»: сверху название ряда и кружки той же панели, из которой открыли
+   * (кольца гаснут по ходу просмотра, выбранный — подписью белым), ниже — карточка: прогресс слайдов, матч и его место в
+   * подборке, слайд по центру (не шире 34rem — слайды рассчитаны на колонку телефона), «Назад» и «Дальше».
+   */
+  const wideBody = (r: StoryRow) => (
+    <>
+      <div className="flex items-center gap-1 pl-6 pr-4 pt-3">
+        <h2 className="flex-1 text-[20px] font-bold">{r.title}</h2>
+        {controls}
+      </div>
+      <div ref={strip} className="scrollbar-none flex shrink-0 gap-1 overflow-x-auto px-3 pb-3 pt-2">
+        {r.groups.map((g, gi) => {
+          const on = g.key === rowKey
+          return (
+            <button
+              key={g.key}
+              type="button"
+              data-row={g.key}
+              onClick={() => pickGroup(gi)}
+              aria-current={on ? 'true' : undefined}
+              aria-label={`${g.label}: смотреть разбор матчей`}
+              className="group flex w-[100px] shrink-0 flex-col items-center gap-2 rounded-tile pt-1.5 pb-1"
+            >
+              {/* круг из панели (36px с кольцом) — крупнее масштабом: кольцо и знак остаются чёткими */}
+              <span className="grid h-[52px] w-[52px] place-items-center transition-transform group-hover:scale-105">
+                <span className="scale-[1.444]">{r.disc(g, seen)}</span>
+              </span>
+              <span className={`w-full truncate px-0.5 text-center text-[13px] ${on ? 'font-semibold text-fg' : 'text-dim group-hover:text-fg'}`}>
+                {g.short ?? g.label}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <div className="mx-4 mb-4 flex min-h-0 flex-1 flex-col rounded-card bg-white/[0.04]">
+        {progressBar}
+        <div className="flex items-center gap-3 px-5 pt-3">
+          {story ? (
+            <span className="min-w-0 flex-1 leading-tight">
+              <span className="block truncate text-[15px] font-bold">
+                {story.home.name} — {story.away.name}
+              </span>
+              {group ? (
+                <span className="mt-0.5 block truncate text-[13px] text-dim">
+                  <GroupLabel label={group.label} kind={group.kind} />
+                  {group.total > 1 ? ` · матч ${group.pos} из ${group.total}` : ''}
+                </span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="flex-1" />
+          )}
+          {story ? (
+            <a href={story.href} onClick={goFull} className="flex shrink-0 items-center gap-1 text-[13px] font-semibold text-dim transition-colors hover:text-fg">
+              Полный разбор матча
+              <Icon d={ICONS.next} className="h-3.5 w-3.5" />
+            </a>
+          ) : null}
+        </div>
+        {slideArea}
+        <div className="space-y-3 px-4 pb-4 pt-2">
+          {ctaNode ? <div className="mx-auto max-w-[34rem]">{ctaNode}</div> : null}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={prev}
+              className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-white/[0.06] text-[15px] font-semibold text-fg/90 transition hover:bg-white/10 active:scale-[0.98]"
+            >
+              <Icon d={ICONS.prev} className="h-4 w-4" />
+              Назад
+            </button>
+            {/* «Дальше» — белая: навигация, не переход к букмекеру (лайм — только деньги) */}
+            <button
+              type="button"
+              onClick={next}
+              className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-white text-[15px] font-semibold text-ink transition hover:bg-white/90 active:scale-[0.98]"
+            >
+              Дальше
+              <Icon d={ICONS.next} className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+
   return (
     <div
       ref={dialog}
@@ -514,13 +731,17 @@ export function StoryViewer() {
     >
       {/* затемнение отдельным слоем: появляется прозрачностью, размытие постоянное (анимация размытия мерцала) */}
       <div ref={shade} aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-black/[0.88] backdrop-blur-md" />
-      <button type="button" onClick={prev} className={`${btn} mr-5 hidden h-11 w-11 bg-white/5 sm:flex`} aria-label="Назад">
+      <button type="button" onClick={prev} className={`${btn} mr-5 hidden h-11 w-11 bg-white/5 ${wideRow ? '' : 'sm:flex'}`} aria-label="Назад">
         <Icon d={ICONS.prev} />
       </button>
 
       <div
         ref={panel}
-        className="st-glow relative isolate flex h-dvh w-full select-none flex-col overflow-hidden transition-[background] duration-500 sm:h-[min(92dvh,860px)] sm:w-auto sm:aspect-[9/16] sm:rounded-card sm:shadow-2xl sm:ring-1 sm:ring-edge-2"
+        className={`st-glow relative isolate flex select-none flex-col overflow-hidden transition-[background] duration-500 ${
+          wideRow
+            ? 'h-[min(calc(100dvh-40px),880px)] w-[min(960px,calc(100vw-48px))] rounded-card shadow-2xl ring-1 ring-edge-2'
+            : 'h-dvh w-full sm:h-[min(92dvh,860px)] sm:w-auto sm:aspect-[9/16] sm:rounded-card sm:shadow-2xl sm:ring-1 sm:ring-edge-2'
+        }`}
         style={panelBg ? { background: panelBg } : undefined}
       >
         {group?.cover ? (
@@ -533,104 +754,61 @@ export function StoryViewer() {
             }}
           />
         ) : null}
-        {/* прогресс по слайдам */}
-        <div className="flex gap-1 px-3 pt-[max(10px,env(safe-area-inset-top))]">
-          {(story?.slides ?? [null]).map((s, i) => (
-            <div key={i} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/20">
-              {story && (i < slide || (i === slide && ended)) ? (
-                <div className="h-full w-full bg-fg" />
-              ) : story && s && i === slide ? (
-                <div
-                  key={`${story.id}-${slide}-${nonce}`}
-                  className="st-progress h-full w-full bg-fg"
-                  style={{ animationDuration: `${duration(s.kind)}ms`, animationPlayState: running ? 'running' : 'paused' }}
-                  onAnimationEnd={(e) => {
-                    if (e.target === e.currentTarget) next()
-                  }}
-                />
-              ) : null}
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center gap-2.5 px-3 pt-2.5">
-          {story ? (
-            <>
-              {/* без эмблем (они крупно на обложке): название матча целиком, длинное — в две строки, а не «Реал Сось…» */}
-              <span className="min-w-0 flex-1 pl-1 leading-tight">
-                <span className="line-clamp-2 text-[13px] font-bold">
-                  {story.home.name} — {story.away.name}
-                </span>
-                {/* одна полоса прогресса — слайды матча; место матча в подборке — словами («матч 2 из 8», было второй
-                    полосой «1 / 8» под первой); турнир — на обложке, здесь не повторяем */}
-                {group ? (
-                  <span className="block truncate text-[11px] text-dim">
-                    <GroupLabel label={group.label} kind={group.kind} />
-                    {group.total > 1 ? ` · матч ${group.pos} из ${group.total}` : ''}
+        {wideRow ? (
+          wideBody(wideRow)
+        ) : (
+          <>
+            {progressBar}
+            <div className="flex items-center gap-2.5 px-3 pt-2.5">
+              {story ? (
+                <>
+                  {/* без эмблем (они крупно на обложке): название матча целиком, длинное — в две строки, а не «Реал Сось…» */}
+                  <span className="min-w-0 flex-1 pl-1 leading-tight">
+                    <span className="line-clamp-2 text-[13px] font-bold">
+                      {story.home.name} — {story.away.name}
+                    </span>
+                    {/* одна полоса прогресса — слайды матча; место матча в подборке — словами («матч 2 из 8», было второй
+                        полосой «1 / 8» под первой); турнир — на обложке, здесь не повторяем */}
+                    {group ? (
+                      <span className="block truncate text-[11px] text-dim">
+                        <GroupLabel label={group.label} kind={group.kind} />
+                        {group.total > 1 ? ` · матч ${group.pos} из ${group.total}` : ''}
+                      </span>
+                    ) : null}
                   </span>
-                ) : null}
-              </span>
-            </>
-          ) : (
-            <span className="flex-1" />
-          )}
-          <button type="button" className={btn} onClick={() => setPaused((p) => !p)} aria-label={paused ? 'Продолжить' : 'Пауза'}>
-            <Icon d={paused ? ICONS.play : ICONS.pause} className={paused ? 'fill-current' : ''} />
-          </button>
-          <button type="button" className={btn} onClick={share} aria-label="Поделиться">
-            <Icon d={ICONS.share} />
-          </button>
-          <button type="button" className={btn} onClick={close} aria-label="Закрыть">
-            <Icon d={ICONS.close} />
-          </button>
-        </div>
-
-        {/* слайд: тап справа — дальше, слева — назад, удержание — пауза */}
-        <div
-          className="relative min-h-0 flex-1 touch-none"
-          onPointerDown={onPointerDown}
-          onPointerUp={(e) => endGesture(e)}
-          onPointerCancel={(e) => endGesture(e, true)}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          {story && current ? (
-            <div key={`${story.id}-${slide}-${nonce}`} className="h-full" aria-live="polite">
-              <Slide slide={current} story={story} focus={focus} />
+                </>
+              ) : (
+                <span className="flex-1" />
+              )}
+              <button type="button" className={btn} onClick={() => setPaused((p) => !p)} aria-label={paused ? 'Продолжить' : 'Пауза'}>
+                <Icon d={paused ? ICONS.play : ICONS.pause} className={paused ? 'fill-current' : ''} />
+              </button>
+              <button type="button" className={btn} onClick={share} aria-label="Поделиться">
+                <Icon d={ICONS.share} />
+              </button>
+              <button type="button" className={btn} onClick={close} aria-label="Закрыть">
+                <Icon d={ICONS.close} />
+              </button>
             </div>
-          ) : null}
-          {loading && !story ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-acid" aria-label="Загрузка" />
-            </div>
-          ) : null}
-        </div>
 
-        {story ? (
-          <div className="space-y-2 px-4 pb-[max(14px,env(safe-area-inset-bottom))] pt-2">
-            {last && story.cta ? (
-              <div className="st-rise">
+            {slideArea}
+
+            {story ? (
+              <div className="space-y-2 px-4 pb-[max(14px,env(safe-area-inset-bottom))] pt-2">
+                {ctaNode}
+                {/* тихой ссылкой: кнопка в рамке на каждом слайде была тяжелее самих данных, а на последнем — второй кнопкой под ставкой */}
                 <a
-                  href={story.cta.href}
-                  target="_blank"
-                  rel={SPONSORED_REL}
-                  className="flex w-full items-center justify-center rounded-tile bg-acid px-3 py-3.5 text-[15px] font-bold text-acid-ink transition hover:bg-acid/90 active:scale-[0.98]"
+                  href={story.href}
+                  onClick={goFull}
+                  className="flex items-center justify-center gap-1 py-1.5 text-[13px] font-semibold text-dim transition-colors hover:text-fg"
                 >
-                  {/* переход к букмекеру — лаймом, как «Поставить за 3.12 в PARI» на странице матча */}
-                  {story.cta.text}
+                  Полный разбор матча
+                  <Icon d={ICONS.next} className="h-3.5 w-3.5" />
                 </a>
-                <p className="mt-1.5 text-center text-[11px] text-dim">{story.cta.ad}</p>
               </div>
             ) : null}
-            {/* тихой ссылкой: кнопка в рамке на каждом слайде была тяжелее самих данных, а на последнем — второй кнопкой под ставкой */}
-            <a
-              href={story.href}
-              onClick={goFull}
-              className="flex items-center justify-center gap-1 py-1.5 text-[13px] font-semibold text-dim transition-colors hover:text-fg"
-            >
-              Полный разбор матча
-              <Icon d={ICONS.next} className="h-3.5 w-3.5" />
-            </a>
-          </div>
-        ) : null}
+          </>
+        )}
 
         {toast ? (
           <div className="pointer-events-none absolute left-1/2 top-16 -translate-x-1/2 rounded-full bg-white px-3 py-1.5 text-[13px] font-semibold text-ink shadow-lg">
@@ -639,11 +817,11 @@ export function StoryViewer() {
         ) : null}
       </div>
 
-      <button type="button" onClick={next} className={`${btn} ml-5 hidden h-11 w-11 bg-white/5 sm:flex`} aria-label="Дальше">
+      <button type="button" onClick={next} className={`${btn} ml-5 hidden h-11 w-11 bg-white/5 ${wideRow ? '' : 'sm:flex'}`} aria-label="Дальше">
         <Icon d={ICONS.next} />
       </button>
 
-      <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-[12px] text-white/45 sm:block">
+      <p className={`pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-[12px] text-white/45 ${wideRow ? '' : 'sm:block'}`}>
         ← → слайды · ↑ ↓ матчи · пробел — пауза · Esc — закрыть
       </p>
     </div>

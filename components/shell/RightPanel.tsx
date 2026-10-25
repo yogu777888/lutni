@@ -7,7 +7,7 @@ import type { CompactMatch } from '@/lib/compact'
 import type { DayPicks, ValueRow } from '@/lib/day-picks'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import { TeamLogo } from '../TeamLogo'
-import { openStory } from '../story/events'
+import { openStory, type StoryRow } from '../story/events'
 import { circleQueue } from '../story/queue'
 import { readSeen, SEEN_EVENT } from '../story/seen'
 import { StorySymbol, symbolSoft } from '../story/StorySymbol'
@@ -174,10 +174,21 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
   const done = (k: string) => !states[k]?.pending
   const { tipProps, tipNode } = useRailTip('r', 'shell-r-rail')
   const fold = groups.length >= FOLD_FROM
+  // ряд кружков над историей на компьютере — те же круги подборок, что в панели
+  const row: StoryRow = {
+    title: 'Подборки дня',
+    groups,
+    disc: (g, s) => (
+      <span className="relative grid h-9 w-9 place-items-center rounded-full" style={{ background: `color-mix(in oklch, ${symbolSoft(g.key)} 14%, transparent)` }}>
+        <StorySymbol k={g.key} tone={symbolSoft(g.key)} className="h-[18px] w-[18px]" />
+        <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={s} color={symbolSoft(g.key)} />
+      </span>
+    ),
+  }
   const play = (gi: number, e: React.MouseEvent<HTMLButtonElement>) => {
     const { queue, startId } = circleQueue(groups, gi, seen)
     const first = groups[gi].items.find((it) => it.id === startId) ?? groups[gi].items[0]
-    openStory({ id: startId, href: first.href, opener: e.currentTarget, queue })
+    openStory({ id: startId, href: first.href, opener: e.currentTarget, queue, circles: row })
   }
   const moreHref = (key: string) => (key === 'soon' ? '/matches?sort=time' : key === 'top' ? null : `/tag/${key}`)
 
@@ -315,7 +326,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                               onClick={(e) => {
                                 if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
                                 e.preventDefault()
-                                openStory({ id: it.id, href: m.href, opener: e.currentTarget, queue: circleQueue(groups, gi, seen).queue })
+                                openStory({ id: it.id, href: m.href, opener: e.currentTarget, queue: circleQueue(groups, gi, seen).queue, circles: row })
                               }}
                               className="-mx-2 flex items-center gap-2.5 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.05]"
                             >

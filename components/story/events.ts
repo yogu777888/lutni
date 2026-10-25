@@ -1,4 +1,5 @@
-import type { CircleKind, StoryFocus } from '@/lib/story-groups'
+import type { ReactNode } from 'react'
+import type { CircleKind, StoryFocus, StoryGroup } from '@/lib/story-groups'
 import type { SeenMark } from './seen'
 
 /** Открыть сторис из любого места страницы: StoryLink, кружки на главной, кнопка на странице матча, ?story=<id>. */
@@ -23,7 +24,15 @@ export type OpenStoryDetail = {
   deep?: boolean
   /** Готовая очередь (кружки). Без неё листаем матчи в порядке ссылок на странице. */
   queue?: StoryQueueItem[]
+  /** Ряд кружков над историей на компьютере («Подборки дня», «Турниры дня»): переключать подборку, не закрывая историю. */
+  circles?: StoryRow
 }
+
+/**
+ * Кружки ряда — те же, что в панели, из которой открыли: `disc` рисует круг 36px с кольцом по свежим отметкам `seen`
+ * (без `data-story-key` — иначе история при закрытии сворачивалась бы в кружок внутри себя).
+ */
+export type StoryRow = { title: string; groups: StoryGroup[]; disc: (g: StoryGroup, seen: Set<string>) => ReactNode }
 
 export function openStory(detail: OpenStoryDetail) {
   window.dispatchEvent(new CustomEvent<OpenStoryDetail>(OPEN_STORY, { detail }))

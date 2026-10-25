@@ -74,6 +74,7 @@ export const dayPicks = cache(async (): Promise<DayPicks> => {
       groups.splice(at < 0 ? groups.length : at, 0, {
         key: 'soon',
         label: 'Скоро начнутся',
+        short: 'Скоро',
         kind: 'top',
         hint: `Скоро начнутся: ${soon.length}`,
         href: '/matches?sort=time',
