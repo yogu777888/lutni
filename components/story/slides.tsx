@@ -180,11 +180,15 @@ function TeamBig({ team, cls }: { team: StoryTeam; cls: string }) {
   )
 }
 
-function Cover({ s, story, focus }: { s: S<'cover'>; story: StoryData; focus: StoryFocus | null }) {
+function Cover({ s, story, focus, lead }: { s: S<'cover'>; story: StoryData; focus: StoryFocus | null; lead: boolean }) {
   const live = story.status === 'live' || story.status === 'suspended'
   const score = story.score && (live || story.status === 'finished') ? story.score : null
-  // подборки строками «название — факт»; та, из которой открыли, — первой
-  const tags = [...s.tags].sort((a, b) => Number(b.slug === focus?.slug) - Number(a.slug === focus?.slug)).slice(0, 3)
+  // открыли из подборки («Серия», «Кэф упал»…) — первым крупно ответ, почему матч в ней (владелец: «чтобы был ответ на вопрос,
+  // а не просто статистика»): «Команда «Барселона» выиграла 5 матчей подряд»; вывод — строкой ниже, подборка в списке не повторяется
+  // только у историй-подборок (`lead`): у «Главных» повод — лучший тег матча, а не признак истории — там крупно вывод
+  const hit = lead && focus ? s.tags.find((t) => t.slug === focus.slug) : undefined
+  const answer = hit ? (hit.slug === 'value' ? hit.short : hit.reason) : lead ? focus?.reason || null : null
+  const tags = s.tags.filter((t) => t.slug !== focus?.slug).slice(0, answer ? 2 : 3)
   const time = story.when.match(/\d{1,2}:\d{2}/)?.[0] ?? null
   const day = story.when.split(',')[0]
   const b = s.before
@@ -213,7 +217,16 @@ function Cover({ s, story, focus }: { s: S<'cover'>; story: StoryData; focus: St
           </div>
           <TeamBig team={story.away} cls="st-slide-r" />
         </div>
-        {s.verdict ? (
+        {answer ? (
+          <p className="st-rise mx-auto mt-6 max-w-[21rem] text-[20px] font-bold leading-snug" style={wait(500)}>
+            {answer}
+          </p>
+        ) : null}
+        {s.verdict && answer ? (
+          <p className="st-rise mx-auto mt-3 max-w-[21rem] text-[15px] leading-snug text-dim" style={wait(600)}>
+            {s.verdict}
+          </p>
+        ) : s.verdict ? (
           <p className="st-rise mx-auto mt-6 max-w-[20rem] text-[20px] font-bold leading-snug" style={wait(500)}>
             {s.verdict}
           </p>
@@ -535,19 +548,19 @@ function PickSlide({ s }: { s: S<'pick'> }) {
   )
 }
 
-export function Slide({ slide, story, focus = null }: { slide: StorySlide; story: StoryData; focus?: StoryFocus | null }) {
+export function Slide({ slide, story, focus = null, lead = false }: { slide: StorySlide; story: StoryData; focus?: StoryFocus | null; lead?: boolean }) {
   // цвета клубов матча — переменными для полос (`.club-bar-h/-a`), как на странице матча; пока не догрузились — серые
   return (
     <ClubVars id={story.id} ymd={story.ymd} className="h-full">
-      <SlideBody slide={slide} story={story} focus={focus} />
+      <SlideBody slide={slide} story={story} focus={focus} lead={lead} />
     </ClubVars>
   )
 }
 
-function SlideBody({ slide, story, focus }: { slide: StorySlide; story: StoryData; focus: StoryFocus | null }) {
+function SlideBody({ slide, story, focus, lead }: { slide: StorySlide; story: StoryData; focus: StoryFocus | null; lead: boolean }) {
   switch (slide.kind) {
     case 'cover':
-      return <Cover s={slide} story={story} focus={focus} />
+      return <Cover s={slide} story={story} focus={focus} lead={lead} />
     case 'odds':
       return <Odds s={slide} story={story} />
     case 'goals':

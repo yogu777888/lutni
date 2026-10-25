@@ -588,7 +588,7 @@ export function StoryViewer() {
       >
         {story && current ? (
           <div key={`${story.id}-${slide}-${nonce}`} className={wideRow ? 'mx-auto flex min-h-full max-w-[34rem] flex-col [&>*]:flex-1' : 'h-full'} aria-live="polite">
-            <Slide slide={current} story={story} focus={focus} />
+            <Slide slide={current} story={story} focus={focus} lead={!!focus && group?.key === focus.slug} />
           </div>
         ) : null}
         {loading && !story ? (
