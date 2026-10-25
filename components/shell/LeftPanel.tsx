@@ -18,7 +18,7 @@ import { StorySymbol } from '../story/StorySymbol'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
 import { matchesN, StateLine } from './StateLine'
-import { StoryRing } from './StoryRing'
+import { LIVE, StoryRing } from './StoryRing'
 
 /** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас в игре». */
 const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'турнире' : 'турнирах'}`
@@ -285,7 +285,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             aria-label="Сейчас в игре: смотреть разбор матчей"
             className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
           >
-            <StorySymbol k="live" tone="currentColor" className="h-[18px] w-[18px]" />
+            <StorySymbol k="live" tone={LIVE} className="h-[18px] w-[18px]" />
             <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} live />
           </button>
         ) : null}
@@ -357,7 +357,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                 <button type="button" data-story-key="live"
             onClick={playLive} aria-label="Сейчас в игре: смотреть разбор матчей" className="relative shrink-0 rounded-full">
                   <span aria-hidden className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.06]">
-                    <StorySymbol k="live" tone="currentColor" className="h-[18px] w-[18px]" />
+                    <StorySymbol k="live" tone={LIVE} className="h-[18px] w-[18px]" />
                   </span>
                   <PlayOverlay />
                   <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} live />
