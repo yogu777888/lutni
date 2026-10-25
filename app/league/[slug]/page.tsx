@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache } from 'react'
-import { BlockHead } from '@/components/BlockHead'
+import { BlockTitle } from '@/components/Section'
 import { PageHead } from '@/components/PageHead'
 import { Flag } from '@/components/Flag'
 import { MatchRow } from '@/components/MatchRow'
@@ -79,7 +79,7 @@ function Rows({ list, prev, lines, today }: { list: Match[]; prev?: Match; lines
 /**
  * Страница турнира — в виде главной (владелец: «страница лиги как?», согласился на пять правок): от xl без подложки
  * центра (`.bare-sub`), разделы — панелями; шапка — флаг, название и «Англия · сезон 2026/27» вместо плаката Oswald 56px;
- * заголовки блоков — как у блоков на главной (`BlockHead`); кэфы — линия партнёра (`x12For`, как `DayView`): раньше
+ * заголовки блоков — над карточками, как на главной (`BlockTitle rows`); кэфы — линия партнёра (`x12For`, как `DayView`): раньше
  * строки брали кэфы из списка сезона — на настоящем API их там нет, и у всех матчей стояли прочерки, а в демо горел
  * лаймом кэф, которого нет ни у одного легального букмекера.
  */
@@ -135,8 +135,11 @@ export default async function LeaguePage({ params }: Props) {
             sub={country || season ? <span className="block first-letter:uppercase">{[country, season].filter(Boolean).join(' · ')}</span> : null}
           />
 
-          <section className="match-body card overflow-hidden">
-            <BlockHead title="Ближайшие матчи" aside={books.length ? `Кэфы ${books.join(', ')} · Реклама` : null} line />
+          {/* заголовки — над карточками, на фоне страницы, как на главной, «Лигах» и странице матча; между блоками 32px */}
+          <div className="match-body space-y-8 pt-4 xl:pt-6">
+          <section>
+            <BlockTitle rows title="Ближайшие матчи" aside={books.length ? `Кэфы ${books.join(', ')} · Реклама` : null} />
+            <div className="card overflow-hidden">
             {upcoming.length ? (
               <>
                 <div className="divide-y divide-edge">
@@ -161,26 +164,28 @@ export default async function LeaguePage({ params }: Props) {
             ) : (
               <p className="px-4 py-4 text-[14px] text-dim sm:px-5">Ближайших матчей нет.</p>
             )}
+            </div>
           </section>
 
           {standings ? (
-            <section className="match-body card overflow-hidden">
-              <BlockHead title="Турнирная таблица" />
-              <div className="px-4 pb-5 sm:px-5">
+            <section>
+              <BlockTitle rows title="Турнирная таблица" />
+              <div className="card overflow-hidden px-4 py-4 sm:px-5">
                 <StandingsTable standings={standings} />
               </div>
             </section>
           ) : null}
 
           {results.length ? (
-            <section className="match-body card overflow-hidden">
+            <section>
               {/* по дням, как ближайшие: без дат время скакало 22:00, 18:30, 16:00, 19:30… и было непонятно, когда игрались */}
-              <BlockHead title="Последние результаты" line />
-              <div className="divide-y divide-edge">
+              <BlockTitle rows title="Последние результаты" />
+              <div className="card divide-y divide-edge overflow-hidden">
                 <Rows list={results} lines={{}} today={today} />
               </div>
             </section>
           ) : null}
+          </div>
         </div>
         {/* «Где ставить» — ниже xl (от xl справа панель с «Выгодно сегодня», как на главной); «Как читать теги» не нужен —
             тегов в строках нет */}
