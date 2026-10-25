@@ -17,8 +17,9 @@ import { ShellFrame } from '@/components/shell/ShellFrame'
 import { ResizeHandle } from '@/components/shell/ResizeHandle'
 import { SHELL_SCRIPT } from '@/components/shell/shell-state'
 import { todayYmd } from '@/lib/format'
-import { StoryViewer } from '@/components/story/StoryViewer'
+import { StoryViewerLazy } from '@/components/story/StoryViewerLazy'
 import { SITE } from '@/config/site'
+import { Suspense } from 'react'
 import { IS_MOCK } from '@/lib/sstats/client'
 
 // Всё рендерим на запросе: настройки партнёров, erid и URL сайта читаются из env
@@ -53,8 +54,22 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [day, picks] = await Promise.all([dayLeagues(), dayPicks()])
+// боковые панели догружаются следом (владелец: «чтоб не все сразу грузилось»): страница не ждёт их данных, а на телефоне
+// и планшете их и не видно
+async function LeftPanelData() {
+  return <LeftPanel today={todayYmd()} day={await dayLeagues()} />
+}
+
+async function RightPanelData() {
+  return <RightPanel picks={await dayPicks()} />
+}
+
+/** Пока панель грузится — её пустая плашка того же цвета. */
+function PanelSkeleton() {
+  return <div className="h-full rounded-card bg-panel" />
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // suppressHydrationWarning: ширину и свёрнутость боковых панелей скрипт ниже ставит до отрисовки
     <html lang="ru" suppressHydrationWarning>
@@ -71,7 +86,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <aside aria-label="Турниры дня" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
               <ResizeHandle side="l" />
-              <LeftPanel today={todayYmd()} day={day} />
+              <Suspense fallback={<PanelSkeleton />}>
+                <LeftPanelData />
+              </Suspense>
             </div>
           </aside>
           <div className="shell-center min-w-0">
@@ -81,14 +98,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <aside aria-label="Подборки дня" className="hidden xl:block">
             <div className="sticky top-[72px] h-[calc(100dvh-80px)]">
               <ResizeHandle side="r" />
-              <RightPanel picks={picks} />
+              <Suspense fallback={<PanelSkeleton />}>
+                <RightPanelData />
+              </Suspense>
             </div>
           </aside>
         </div>
         <TabBar />
         <BarsAutoHide />
         <CookieNotice />
-        <StoryViewer />
+        <StoryViewerLazy />
         {SITE.metrikaId ? <Metrika id={SITE.metrikaId} /> : null}
       </body>
     </html>

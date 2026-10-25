@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { BlockMore } from '@/components/BlockMore'
 import { notFound, permanentRedirect } from 'next/navigation'
-import { cache } from 'react'
+import { cache, Suspense } from 'react'
 import { MatchBar } from '@/components/match/MatchBar'
 import { teamCode } from '@/lib/i18n/codes'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
@@ -81,6 +81,46 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 
+/** «Другие матчи» — отдельно от страницы, догружаются следом (`Suspense`): список дня бывает не в кэше. */
+async function RelatedMatches({ m, matchDay, today }: { m: Match; matchDay: string; today: string }) {
+  const sameDay = await settle(getMatchesByDate(matchDay), [] as Match[])
+  // «Другие матчи» (владелец: «а другие матчи как?»): своя лига первой, внутри — идущие, предстоящие (ближайший первым),
+  // сыгранные (свежий первым) в конце: сверху стояли три итога в 16:00, а предстоящий матч — последним
+  const stateRank = (o: Match) => (o.status === 'live' || o.status === 'suspended' ? 0 : o.status === 'scheduled' ? 1 : o.status === 'finished' ? 2 : 3)
+  const related = sameDay
+    .filter((o) => o.id !== m.id)
+    .sort(
+      (a, b) =>
+        Number(b.league.id === m.league.id) - Number(a.league.id === m.league.id) ||
+        stateRank(a) - stateRank(b) ||
+        (stateRank(a) === 2 ? b.ts - a.ts : a.ts - b.ts),
+    )
+    .slice(0, 6)
+  return related.length ? (
+      // какие это матчи — справа от заголовка; широкий блок (от xl до 2xl он уходит под основную колонку на всю ширину)
+      // — две колонки, иначе название слева и счёт в 1500px справа; внизу — весь список дня
+      <section>
+        <BlockTitle title="Другие матчи" />
+        {/* шрифт и поля — как у «Где поставить» над ним (владелец: «я вижу что тут различие по размеру шрифтов»):
+            строки `px-4 sm:px-5`, названия 16px (от lg 17,5 — как на `/bookmakers`), «Все матчи дня» — как «Все букмекеры» */}
+        <div className="@container card overflow-hidden">
+        {/* две колонки заполняются сверху вниз — сначала левая, потом правая (по строкам порядок читался зигзагом) */}
+        <div className={`grid @2xl:grid-flow-col @2xl:grid-cols-2 ${['', '@2xl:grid-rows-1', '@2xl:grid-rows-2', '@2xl:grid-rows-3'][Math.ceil(related.length / 2)]}`}>
+          {related.map((o, i, all) => (
+            <div
+              key={o.id}
+              className={`border-edge ${i ? 'border-t' : ''} ${i === Math.ceil(all.length / 2) ? '@2xl:border-t-0' : ''} ${i >= Math.ceil(all.length / 2) ? '@2xl:border-l' : ''}`}
+            >
+              <MatchRow m={o} tags={[]} compact showLeague={o.league.id !== m.league.id} />
+            </div>
+          ))}
+        </div>
+        <BlockMore href={listHref(matchDay, today)}>Все матчи дня</BlockMore>
+      </div>
+      </section>
+    ) : null
+}
+
 export default async function MatchPage({ params, searchParams }: Props) {
   const { slug } = await params
   const rawTab = (await searchParams)?.tab
@@ -97,19 +137,23 @@ export default async function MatchPage({ params, searchParams }: Props) {
   // Flashscore-раздел SStats (`/Ls/*`): составы, давление по минутам, лишние строки статистики, стадион и зрители —
   // ждём не дольше 1,5 с, дальше ответ дозаполнит кэш к следующему открытию (владелец: «сделай всё»)
   // xG прошлых матчей обеих команд — для «Сильного и слабого места» (тоже ≤1,5 с, параллельно)
-  const [ls, xg] = await Promise.all([waitLsExtra(m, new Set(base.stats.map((s) => s.key))), waitTeamXg(ins.homeForm, ins.awayForm)])
+  // все ожидания — одновременно (владелец: «чтоб не все сразу грузилось»): по очереди они складывались в 5–6 с
+  // на холодном кэше, вместе — не дольше самого долгого (2 с); «Другие матчи» догружаются отдельно (`RelatedMatches`)
+  const isLive = m.status === 'live' || m.status === 'suspended'
+  const [ls, xg, pari, liveOdds] = await Promise.all([
+    waitLsExtra(m, new Set(base.stats.map((s) => s.key))),
+    waitTeamXg(ins.homeForm, ins.awayForm),
+    // история доматчевой линии PARI (легальный букмекер): ждём не дольше 2 с, иначе — без графика
+    Promise.race([getPariHistory(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 2000))]),
+    // идёт матч — на табло кэфы PARI по ходу матча (доматчевые там уже история, поставить по ним нельзя)
+    isLive ? Promise.race([getLiveOdds(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))]) : null,
+  ])
   const full = ls && (ls.stats.length || (ls.venue && !base.venue))
     ? { ...base, stats: [...base.stats, ...ls.stats], venue: base.venue ?? (ls.venue ? { ...ls.venue, capacity: null } : null) }
     : base
   // в таблице кэфов — только легальные партнёры (владелец: «оставь легал»): зарубежных букмекеров в РФ рекламировать
   // нельзя, а строка без ссылки — реклама конкурента; в честной цене (консенсус) они по-прежнему участвуют
   const legalBooks = books.filter((b) => partnerForApiBookmaker(b.bookmakerId, b.bookmakerName))
-  // цвета клубов для свечения за командами (не дольше 1,5 с) и метки-факты над эмблемами — как в «Главных матчах»
-  // история доматчевой линии PARI (легальный букмекер): ждём не дольше 2 с, иначе — без графика
-  const pari = await Promise.race([getPariHistory(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 2000))])
-  // идёт матч — на табло кэфы PARI по ходу матча (доматчевые там уже история, поставить по ним нельзя)
-  const isLive = m.status === 'live' || m.status === 'suspended'
-  const liveOdds = isLive ? await Promise.race([getLiveOdds(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))]) : null
   const liveX12 = liveOdds?.home && liveOdds.draw && liveOdds.away ? liveOdds : null
   const pariPartner = PARTNERS.find((p) => p.slug === 'pari') ?? null
   const scheduled = m.status === 'scheduled'
@@ -175,19 +219,6 @@ export default async function MatchPage({ params, searchParams }: Props) {
   const over25 = model?.over['2.5'] ?? cons.over['2.5']
   const btts = model?.btts ?? cons.btts
 
-  const sameDay = await settle(getMatchesByDate(ymdInTz(m.ts)), [] as Match[])
-  // «Другие матчи» (владелец: «а другие матчи как?»): своя лига первой, внутри — идущие, предстоящие (ближайший первым),
-  // сыгранные (свежий первым) в конце: сверху стояли три итога в 16:00, а предстоящий матч — последним
-  const stateRank = (o: Match) => (o.status === 'live' || o.status === 'suspended' ? 0 : o.status === 'scheduled' ? 1 : o.status === 'finished' ? 2 : 3)
-  const related = sameDay
-    .filter((o) => o.id !== m.id)
-    .sort(
-      (a, b) =>
-        Number(b.league.id === m.league.id) - Number(a.league.id === m.league.id) ||
-        stateRank(a) - stateRank(b) ||
-        (stateRank(a) === 2 ? b.ts - a.ts : a.ts - b.ts),
-    )
-    .slice(0, 6)
   const matchDay = ymdInTz(m.ts)
   const today = ymdInTz(appNow())
 
@@ -746,29 +777,10 @@ export default async function MatchPage({ params, searchParams }: Props) {
               <BlockMore href="/bookmakers">Все букмекеры</BlockMore>
             </div>
           </section>
-          {related.length ? (
-            // какие это матчи — справа от заголовка; широкий блок (от xl до 2xl он уходит под основную колонку на всю ширину)
-            // — две колонки, иначе название слева и счёт в 1500px справа; внизу — весь список дня
-            <section>
-              <BlockTitle title="Другие матчи" />
-              {/* шрифт и поля — как у «Где поставить» над ним (владелец: «я вижу что тут различие по размеру шрифтов»):
-                  строки `px-4 sm:px-5`, названия 16px (от lg 17,5 — как на `/bookmakers`), «Все матчи дня» — как «Все букмекеры» */}
-              <div className="@container card overflow-hidden">
-              {/* две колонки заполняются сверху вниз — сначала левая, потом правая (по строкам порядок читался зигзагом) */}
-              <div className={`grid @2xl:grid-flow-col @2xl:grid-cols-2 ${['', '@2xl:grid-rows-1', '@2xl:grid-rows-2', '@2xl:grid-rows-3'][Math.ceil(related.length / 2)]}`}>
-                {related.map((o, i, all) => (
-                  <div
-                    key={o.id}
-                    className={`border-edge ${i ? 'border-t' : ''} ${i === Math.ceil(all.length / 2) ? '@2xl:border-t-0' : ''} ${i >= Math.ceil(all.length / 2) ? '@2xl:border-l' : ''}`}
-                  >
-                    <MatchRow m={o} tags={[]} compact showLeague={o.league.id !== m.league.id} />
-                  </div>
-                ))}
-              </div>
-              <BlockMore href={listHref(matchDay, today)}>Все матчи дня</BlockMore>
-            </div>
-            </section>
-          ) : null}
+          {/* догружается следом, не задерживая страницу: список дня бывает не в кэше */}
+          <Suspense fallback={null}>
+            <RelatedMatches m={m} matchDay={matchDay} today={today} />
+          </Suspense>
         </aside>
       </div>
 

@@ -107,7 +107,6 @@ export async function DayView({
   // «Матч в фокусе» (ниже xl, под «Подборками дня»): главный из идущих, нет идущих — главный за день (`mainMatches`); в
   // списке ниже остаётся — на компьютере виджета нет
   const focus = view === 'home' ? (mainMatches(items.filter((i) => isLive(i.match)), 1)[0] ?? mainMatches(items, 1)[0] ?? null) : null
-  const focusFull = focus && focus.match.status !== 'scheduled' ? await waitMatchFull(focus.match.id) : null
   const liveMain = liveSorted.filter((i) => featuredRank(i.match.league) >= 0)
   const liveTop = liveMain.slice(0, LIVE_LIMIT)
   const liveRest = liveSorted.filter((i) => featuredRank(i.match.league) < 0)
@@ -150,13 +149,18 @@ export async function DayView({
 
   // кэфы в строках — линия конкретного легального партнёра (ячейки — ссылки к нему, реклама): снимки линии из кэша,
   // топ-турниры без снимка догружаем, но ждём не дольше 1,2 с — остальное дойдёт к следующему открытию
-  const lines: Record<number, X12Line> = {}
-  {
-    const pre = listItems.filter((i) => i.match.status === 'scheduled')
-    const { snaps } = await daySnaps(
+  // все ожидания — одновременно (владелец: «чтоб не все сразу грузилось»): по очереди они складывались
+  const pre = listItems.filter((i) => i.match.status === 'scheduled')
+  const [focusFull, { snaps }, picks] = await Promise.all([
+    focus && focus.match.status !== 'scheduled' ? waitMatchFull(focus.match.id) : null,
+    daySnaps(
       pre.map((i) => i.match),
       1200,
-    )
+    ),
+    ymd === today ? dayPicks() : null,
+  ])
+  const lines: Record<number, X12Line> = {}
+  {
     for (const it of pre) {
       // линия главного партнёра (PARI — первым в PARTNERS), а не того, у кого выгодна ставка (владелец: «выгодно сегодня тебе
       // как?» — лайм в центре был у Марафона, а «Выгодно сегодня» справа — по PARI: два «выгодно» по одному матчу); нет у
@@ -167,7 +171,7 @@ export async function DayView({
   }
   const heading = dayHeading(ymd, today)
   // «Выгодно сегодня» в колонке под списком (ниже xl правой панели нет) — только у сегодняшнего дня
-  const values = ymd === today ? (await dayPicks()).values : []
+  const values = picks?.values ?? []
   const past = diffDays(ymd, today) < 0
   // заголовок «Все матчи дня» над списком не нужен: на главной в центре — только матчи (владелец: «по центру только лайв
   // и матчи лиг, без матча дня и выгодно сегодня»; «Матч дня» — DayHero, «Выгодно сегодня» — ValueBoard остались в коде)
