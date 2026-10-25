@@ -81,9 +81,15 @@ const dec = (v: number, d = 1) => v.toFixed(d).replace('.', ',')
 const intFmt = (v: number) => String(Math.round(v))
 const wait = (ms: number) => ({ animationDelay: `${ms}ms` })
 
-/** Слайд с данными: заголовок сверху, данные сразу под ним (не по центру оставшегося места — висели в пустоте). */
+/** Слайд с данными: заголовок и данные — одной группой, данные сразу под заголовком (не по центру оставшегося места —
+ *  висели в пустоте). На телефоне и планшете группа — по середине экрана: сверху она оставляла пустыми три четверти
+ *  высокого экрана (владелец: «истории на телефоне как то коряво выглядят»); не влезает — прокрутки нет, отступы 0. */
 function Frame({ children }: { children: React.ReactNode }) {
-  return <div className="flex h-full flex-col px-5 pb-2 pt-3">{children}</div>
+  return (
+    <div className="flex h-full flex-col px-5 pb-2 pt-3">
+      <div className="max-lg:my-auto max-lg:pb-6">{children}</div>
+    </div>
+  )
 }
 
 function Head({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {

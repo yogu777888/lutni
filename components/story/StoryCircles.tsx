@@ -30,7 +30,9 @@ const SEEN = 'rgb(255 255 255 / 0.22)'
 function Ring({ kind, n, seen }: { kind: CircleKind; n: number; seen: number }) {
   const color = kind === 'live' ? LIVE : UNSEEN
   const done = Math.round((seen / Math.max(1, n)) * 100)
-  const c = { cx: D / 2, cy: D / 2, r: R, fill: 'none', strokeWidth: 2, pathLength: 100, vectorEffect: 'non-scaling-stroke' } as const
+  // без `vector-effect: non-scaling-stroke`: с ним Chrome считал штрихи в пикселях экрана, а не в долях `pathLength` —
+  // дуги выходили неровными, а сверху торчал обрубок; толщина 2,6 единицы — 2px на круге 58px
+  const c = { cx: D / 2, cy: D / 2, r: R, fill: 'none', strokeWidth: (2 * D) / 58, pathLength: 100 } as const
   // зазор ~3px на экране: круг 58px из 76 единиц, окружность r 36,5 — ~229 единиц
   const segs = ringSegments(n, 12, ((3 * D) / 58 / (2 * Math.PI * R)) * 100)
   if (segs)
@@ -114,8 +116,10 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
     openStory({ id: startId, href: groups[gi].href, opener: e.currentTarget, queue })
   }
 
+  // ряд — до краёв карточки, без затухания: кружок у края срезан самой карточкой (видно, что ряд листается), а
+  // затухание по маске растворяло крайний кружок наполовину; шаг 76px — на 390px видно четыре с половиной
   return (
-    <nav aria-label="Истории дня" className="scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 pt-1.5 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
+    <nav aria-label="Истории дня" className="scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 pt-1.5 sm:-mx-5 sm:px-5">
       {groups.map((g, gi) => {
         const n = seenCount(g, seen)
         const done = n === g.items.length
@@ -126,7 +130,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             onClick={(e) => open(gi, e)}
             title={g.hint.includes(':') ? g.hint : `${g.hint}: ${g.items.length} ${plural(g.items.length)}`}
             aria-label={`${g.label}. ${g.hint}. Смотреть истории`}
-            className="group flex w-[80px] shrink-0 flex-col items-center focus-visible:outline-none"
+            className="group flex w-[70px] shrink-0 flex-col items-center focus-visible:outline-none"
           >
             {/* фокус с клавиатуры — белым кругом вокруг кружка */}
             <span data-story-key={g.key} className={`relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 h-[58px] w-[58px] lg:h-[clamp(46px,calc(14vh_-_50px),58px)] lg:w-[clamp(46px,calc(14vh_-_50px),58px)]`}>
