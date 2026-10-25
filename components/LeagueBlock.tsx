@@ -109,8 +109,11 @@ export function LiveBlock({ items, total, rest = [] }: { items: FeedItem[]; tota
       <BlockTitle
         rows
         title={
+          // точка — по центру места шириной логотипа лиги (28px): название на одной линии с «Ла Лигой» ниже
           <span className="flex items-center gap-2.5">
-            <span className="h-2 w-2 animate-pulse-live rounded-full bg-live" aria-hidden />
+            <span className="grid w-7 shrink-0 place-items-center" aria-hidden>
+              <span className="h-2 w-2 animate-pulse-live rounded-full bg-live" />
+            </span>
             Сейчас в игре
           </span>
         }
