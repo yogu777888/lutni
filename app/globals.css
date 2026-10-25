@@ -618,13 +618,13 @@
 /* плашка про cookie (components/CookieNotice.tsx): выезжает снизу и так же уезжает */
 @keyframes cookie-in {
   from {
-    transform: translateY(100%);
+    transform: translateY(24px);
     opacity: 0;
   }
 }
 @keyframes cookie-out {
   to {
-    transform: translateY(100%);
+    transform: translateY(24px);
     opacity: 0;
   }
 }
