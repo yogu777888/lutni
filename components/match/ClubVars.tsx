@@ -49,7 +49,7 @@ function shade(home: Hsl, away: Hsl): string {
  * высветляет CSS (`oklch` L ≥ 0,62). Цвета одного оттенка (владелец прислал «Овьедо» — «Реал Мадрид»: обе синие) —
  * у гостей тот же оттенок другой светлоты (`shade`).
  */
-export function ClubVars({ id, ymd, children }: { id: number; ymd: string; children: React.ReactNode }) {
+export function ClubVars({ id, ymd, className, children }: { id: number; ymd: string; className?: string; children: React.ReactNode }) {
   const t = useMatchTint(id, ymd, null)
   const h = t ? hsl(t.home) : null
   const a = t ? hsl(t.away) : null
@@ -57,7 +57,7 @@ export function ClubVars({ id, ymd, children }: { id: number; ymd: string; child
   const away = t && h && a && alike(h, a) ? shade(h, a) : t?.away
   // `data-alike` — цвета похожи (или их нет — две серые): линии «Давления команд» у гостей пунктиром
   return (
-    <div data-alike={same ? '' : undefined} style={t ? ({ '--club-h': t.home, '--club-a': away } as React.CSSProperties) : undefined}>
+    <div className={className} data-alike={same ? '' : undefined} style={t ? ({ '--club-h': t.home, '--club-a': away } as React.CSSProperties) : undefined}>
       {children}
     </div>
   )

@@ -5,15 +5,17 @@ import { SPONSORED_REL } from '@/lib/affiliate'
 import { valueThreshold } from '@/lib/model'
 import type { CompareRow, FormSide, Side, StoryData, StorySlide, StoryTeam } from '@/lib/story'
 import type { StoryFocus } from '@/lib/story-groups'
-import type { Res } from '@/lib/stats'
 import { split100 } from '@/lib/verdict'
 import { TeamLogo } from '../TeamLogo'
+import { ClubVars } from '../match/ClubVars'
+import { ResBadge } from '../match/FormStrip'
+import { MirrorBars, mirrorWidths } from '../match/SplitBar'
 
 /**
  * Слайды сторис. Графики — обычные div/SVG с CSS-анимациями из globals.css
- * (st-*): анимация стартует, когда слайд монтируется. Цвета — как на странице матча:
- * без цветов команд и светофора — у кого больше, тот ярче; лайм — только «выгодно»
- * и переход к букмекеру, красный — только «идёт».
+ * (st-*): анимация стартует, когда слайд монтируется. Цвета — как на странице матча: у кого лучше —
+ * полоса цветом своего клуба, у другого — серая (`MirrorBars`, `ClubVars`), форма — В/Н/П цветом (`ResBadge`);
+ * лайм — только «выгодно» и переход к букмекеру, красный — только «идёт».
  */
 
 type S<K extends StorySlide['kind']> = Extract<StorySlide, { kind: K }>
@@ -87,12 +89,12 @@ function Frame({ children }: { children: React.ReactNode }) {
 function Head({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
     <div className="shrink-0">
-      <div className="st-rise text-[11px] font-bold uppercase tracking-[0.14em] text-dim">{eyebrow}</div>
-      <h2 className="st-rise mt-2 text-[23px] font-bold leading-[1.15] tracking-tight" style={wait(80)}>
+      <div className="st-rise text-[13px] font-semibold text-dim">{eyebrow}</div>
+      <h2 className="st-rise mt-1 text-[20px] font-bold leading-[1.2] tracking-tight" style={wait(80)}>
         {title}
       </h2>
       {sub ? (
-        <p className="st-rise mt-2 text-[14px] leading-snug text-dim" style={wait(160)}>
+        <p className="st-rise mt-1.5 text-[14px] leading-snug text-dim" style={wait(160)}>
           {sub}
         </p>
       ) : null}
@@ -100,19 +102,68 @@ function Head({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: s
   )
 }
 
-/** Над колонками — названия команд: хозяева слева, гости справа (без цветов команд — цвет у нас значит «выгодно» и «идёт»). */
-function Legend({ story, delay = 200 }: { story: StoryData; delay?: number }) {
+/** Внутренний блок — как на странице матча («Давление команд», «Прогноз»): плашка `white/4` с полями 16px. */
+function Card({ children, delay = 200, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   return (
-    <div className="st-fade flex items-center justify-between gap-3 text-[13px] font-semibold" style={wait(delay)}>
-      <span className="flex min-w-0 items-center gap-2">
-        <TeamLogo name={story.home.name} src={story.home.logo} size={20} />
-        <span className="truncate">{story.home.name}</span>
-      </span>
-      <span className="flex min-w-0 items-center justify-end gap-2">
-        <span className="truncate">{story.away.name}</span>
-        <TeamLogo name={story.away.name} src={story.away.logo} size={20} />
-      </span>
+    <div className={`st-rise rounded-tile bg-white/[0.04] p-4 ${className}`} style={wait(delay)}>
+      {children}
     </div>
+  )
+}
+
+/** Шапка сравнения — как `TeamHead` у «Статистики» и «Формы команд»: эмблема 28px и название, гости — зеркально. */
+function Legend({ story }: { story: StoryData }) {
+  const team = (t: StoryTeam, right: boolean) => (
+    <span className={`flex min-w-0 items-center gap-2.5 ${right ? 'flex-row-reverse text-right' : ''}`}>
+      <span className="shrink-0">
+        <TeamLogo name={t.name} src={t.logo} size={28} />
+      </span>
+      {/* до двух строк: «Райо Вальек…» рядом с «Реал Сосьед…» не читалось */}
+      <span className="line-clamp-2 break-words text-[16px] font-semibold leading-tight">{t.name}</span>
+    </span>
+  )
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {team(story.home, false)}
+      {team(story.away, true)}
+    </div>
+  )
+}
+
+/**
+ * Строка сравнения — разметкой `Row` из «Статистики» на странице матча: цифры по краям (у кого лучше — белым жирным,
+ * у другого — серым), подпись по центру, под ней зеркальная полоса `MirrorBars`: у кого лучше — цветом своего клуба,
+ * у другого — серая (владелец: «в матче у нас если команда сильнее то график окрашивается в цвет команды»).
+ */
+function CmpRow({ r, first, delay }: { r: CompareRow; first: boolean; delay: number }) {
+  const better = (v: number, o: number) => (r.neutral ? v < o : v > o)
+  const lead = r.home === r.away ? null : better(r.home, r.away) ? 'home' : 'away'
+  const num = (side: Side) => (
+    <span className={`num min-w-0 text-[16px] leading-snug ${side === 'away' ? 'text-right' : ''} ${lead === side ? 'font-bold text-fg' : lead ? 'font-semibold text-dim' : 'font-semibold text-fg'}`}>
+      {r.text[side === 'home' ? 0 : 1]}
+    </span>
+  )
+  return (
+    <li className={`st-rise py-2 ${first ? '' : 'border-t border-edge'}`} style={wait(delay)}>
+      <div className="grid grid-cols-[minmax(3rem,1fr)_minmax(0,auto)_minmax(3rem,1fr)] items-baseline gap-x-2">
+        {num('home')}
+        <span className="text-balance text-center text-[14px] leading-snug text-dim">{r.label}</span>
+        {num('away')}
+      </div>
+      <div className="mt-2">
+        <MirrorBars widths={mirrorWidths(r.home, r.away, !!r.abs)} lead={lead} />
+      </div>
+    </li>
+  )
+}
+
+function CmpRows({ rows, base = 300 }: { rows: CompareRow[]; base?: number }) {
+  return (
+    <ul className="mt-2">
+      {rows.map((r, i) => (
+        <CmpRow key={r.label} r={r} first={i === 0} delay={base + i * 90} />
+      ))}
+    </ul>
   )
 }
 
@@ -139,7 +190,7 @@ function Cover({ s, story, focus }: { s: S<'cover'>; story: StoryData; focus: St
   const b = s.before
   return (
     <div className="flex h-full flex-col items-center px-6 pb-4 pt-5 text-center">
-      <div className="st-fade text-[12.5px] text-dim">
+      <div className="st-fade text-[13px] text-dim">
         {story.league}
         {story.round ? ` · ${story.round}` : ''}
       </div>
@@ -168,15 +219,15 @@ function Cover({ s, story, focus }: { s: S<'cover'>; story: StoryData; focus: St
           </p>
         ) : null}
         {b ? (
-          <p className="st-rise mx-auto mt-6 max-w-[21rem] text-[13.5px] leading-relaxed text-dim" style={wait(500)}>
+          <p className="st-rise mx-auto mt-6 max-w-[21rem] text-[14px] leading-relaxed text-dim" style={wait(500)}>
             До матча: <span className="whitespace-nowrap">«{story.home.name}» {b.home}% ·</span> <span className="whitespace-nowrap">ничья {b.draw}% ·</span>{' '}
             <span className="whitespace-nowrap">«{story.away.name}» {b.away}%</span>
           </p>
         ) : null}
         {tags.length ? (
-          <ul className="st-rise mx-auto mt-5 max-w-[21rem] divide-y divide-white/10 rounded-tile bg-white/[0.05] text-left" style={wait(650)}>
+          <ul className="st-rise mx-auto mt-5 max-w-[21rem] divide-y divide-white/10 rounded-tile bg-white/[0.04] text-left" style={wait(650)}>
             {tags.map((t) => (
-              <li key={t.slug} className="px-3.5 py-2.5 text-[13.5px] leading-snug">
+              <li key={t.slug} className="px-3.5 py-2.5 text-[14px] leading-snug">
                 <span className="font-semibold">{t.title}</span>
                 <span className="text-fg/75"> — {t.short}</span>
               </li>
@@ -201,13 +252,12 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
   const n = split100(s.probs)
   const keys = ['home', 'draw', 'away'] as const
   const name = { home: story.home.name, draw: 'Ничья', away: story.away.name }
-  const team = { home: story.home, draw: null, away: story.away }
   const max = Math.max(s.probs.home, s.probs.draw, s.probs.away)
   return (
     <Frame>
       <Head eyebrow="Кто фаворит" title={s.title} sub={s.sub} />
-      <div className="mt-6">
-        <div className="grid h-[min(26dvh,200px)] grid-cols-3 items-end gap-3 border-b border-white/15">
+      <Card className="mt-5">
+        <div className="grid h-[min(24dvh,190px)] grid-cols-3 items-end gap-3 border-b border-white/15">
           {keys.map((k, i) => (
             <div key={k} className="flex h-full flex-col items-center justify-end">
               <Num
@@ -216,8 +266,9 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
                 delay={300 + i * 120}
                 className={`display-num mb-1.5 leading-none ${s.probs[k] === max ? 'text-[44px]' : 'text-[26px] text-fg/70'}`}
               />
+              {/* самый вероятный — цветом клуба, как лучшая сторона полос на странице матча; ничья — белым; остальные серые */}
               <div
-                className={`st-grow-y w-full rounded-t-[6px] ${s.probs[k] === max ? 'bg-fg/85' : 'bg-white/25'}`}
+                className={`st-grow-y w-full rounded-t-[6px] ${s.probs[k] !== max ? 'bg-white/20' : k === 'draw' ? 'bg-fg/85' : `club-bar-${k[0]}`}`}
                 style={{ height: `${Math.max(3, (s.probs[k] / max) * 80)}%`, ...wait(300 + i * 120) }}
               />
             </div>
@@ -230,10 +281,10 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
             return (
               <div key={k} className="min-w-0">
                 {/* название до двух строк: «Райо Валье…» не читалось */}
-                <div className="flex min-h-[36px] flex-col items-center justify-start gap-1 text-[13.5px] font-bold leading-tight">
+                <div className="flex min-h-[36px] flex-col items-center justify-start gap-1 text-[14px] font-semibold leading-tight">
                   <span className="line-clamp-2 break-words">{name[k]}</span>
                 </div>
-                <div className="num mt-1 text-[12px] text-dim">честная {s.fair[k].toFixed(2)}</div>
+                <div className="num mt-1 text-[13px] text-dim">честная {s.fair[k].toFixed(2)}</div>
                 {s.line && odd ? (
                   <a
                     href={s.line.href}
@@ -251,8 +302,8 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
             )
           })}
         </div>
-        {s.line ? <p className="mt-2.5 text-center text-[11.5px] text-dim">Кэфы {s.line.partner} · Реклама · 18+</p> : null}
-      </div>
+        {s.line ? <p className="mt-3 text-center text-[12px] text-dim">Кэфы {s.line.partner} · Реклама · 18+</p> : null}
+      </Card>
     </Frame>
   )
 }
@@ -262,12 +313,12 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
 /** Шанс строкой с полосой от края до края — как «Голы и счёт» на странице матча (кольца похожи на значок загрузки). */
 function ChanceLine({ p, label, delay }: { p: number; label: string; delay: number }) {
   return (
-    <div className="st-rise" style={wait(delay)}>
-      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+    <div className="st-rise border-t border-edge py-2.5" style={wait(delay)}>
+      <div className="mb-2 flex items-baseline justify-between gap-2">
         <span className="text-[15px] font-semibold">{label}</span>
-        <Num value={p} format={pctFmt} delay={delay} className="text-[20px] font-bold" />
+        <Num value={p} format={pctFmt} delay={delay} className="text-[16px] font-bold" />
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/[0.09]">
+      <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.09]">
         <div className="st-grow-x h-full rounded-full bg-fg/85" style={{ width: `${p * 100}%`, ...wait(delay + 100) }} />
       </div>
     </div>
@@ -275,144 +326,117 @@ function ChanceLine({ p, label, delay }: { p: number; label: string; delay: numb
 }
 
 function Goals({ s, story }: { s: S<'goals'>; story: StoryData }) {
+  // голы команд — строкой сравнения: у кого больше — цветом клуба
+  const teams = s.teams ? compare('Голы команд', s.teams.home, s.teams.away, (v) => dec(v)) : null
   return (
     <Frame>
       <Head eyebrow="Голы" title={s.title} sub={s.sub} />
-      <div className="mt-6 space-y-5">
-        {/* главная цифра слайда — сколько голов ждём, крупно, как счёт на сайте */}
-        <div className="st-pop flex items-baseline gap-3" style={wait(200)}>
-          <Num value={s.total} format={(v) => dec(v)} delay={200} className="display-num text-[64px] leading-none" />
-          <span className="text-[15px] font-semibold text-dim">гола ждём в среднем</span>
-        </div>
-        {s.over25 != null ? <ChanceLine p={s.over25} label="3 гола и больше" delay={300} /> : null}
-        {s.btts != null ? <ChanceLine p={s.btts} label="Обе забьют" delay={450} /> : null}
-        {s.scores.length ? (
-          <div className="st-rise pt-2" style={wait(650)}>
-            <div className="text-[13px] font-semibold text-dim">Вероятный счёт</div>
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              {s.scores.map((x, i) => (
-                <div key={i} className={`rounded-tile px-2 py-2.5 text-center ${i === 0 ? 'bg-white/[0.1]' : 'bg-white/[0.05]'}`}>
-                  <div className="num display-num text-[24px] leading-none">
-                    {x.home}:{x.away}
-                  </div>
-                  <div className="num mt-1 text-[12px] text-dim">{Math.round(x.p * 100)}%</div>
-                </div>
-              ))}
-            </div>
-            <p className="mt-2 text-[12px] text-mute">
-              Слева — голы «{story.home.name}». Даже самый вероятный счёт сбывается редко.
-            </p>
-          </div>
-        ) : null}
+      {/* главная цифра слайда — сколько голов ждём, крупно, как счёт на сайте */}
+      <div className="st-pop mt-5 flex items-baseline gap-3" style={wait(200)}>
+        <Num value={s.total} format={(v) => dec(v)} delay={200} className="display-num text-[56px] leading-none" />
+        <span className="text-[15px] font-semibold text-dim">гола ждём в среднем</span>
       </div>
+      <Card className="mt-4 !pb-2" delay={300}>
+        {teams ? (
+          <>
+            <Legend story={story} />
+            <CmpRows rows={[teams]} base={350} />
+          </>
+        ) : null}
+        {s.over25 != null ? <ChanceLine p={s.over25} label="3 гола и больше" delay={450} /> : null}
+        {s.btts != null ? <ChanceLine p={s.btts} label="Обе забьют" delay={550} /> : null}
+      </Card>
+      {s.scores.length ? (
+        <div className="st-rise mt-4" style={wait(650)}>
+          <div className="text-[13px] font-semibold text-dim">Вероятный счёт</div>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {s.scores.map((x, i) => (
+              <div key={i} className={`rounded-tile px-2 py-2.5 text-center ${i === 0 ? 'bg-white/[0.08]' : 'bg-white/[0.04]'}`}>
+                <div className="num display-num text-[24px] leading-none">
+                  {x.home}:{x.away}
+                </div>
+                <div className="num mt-1 text-[12px] text-dim">{Math.round(x.p * 100)}%</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </Frame>
   )
 }
+
+const compare = (label: string, home: number, away: number, fmt: (v: number) => string, neutral = false): CompareRow => ({
+  label,
+  home,
+  away,
+  text: [fmt(home), fmt(away)],
+  neutral,
+})
 
 // ─── Форма ───────────────────────────────────────────────────────────────────
 
-// результат — яркостью, как «Форма команд» на странице матча: «В» — белая, «Н» — серая, «П» — контур
-const RES: Record<Res, { letter: string; cls: string; title: string }> = {
-  W: { letter: 'В', cls: 'bg-fg text-ink', title: 'победа' },
-  D: { letter: 'Н', cls: 'bg-white/[0.14] text-fg', title: 'ничья' },
-  L: { letter: 'П', cls: 'ring-1 ring-inset ring-white/30 text-dim', title: 'поражение' },
-}
-
-function FormTeam({ team, f, base }: { team: StoryTeam; f: FormSide | null; base: number }) {
-  if (!f) {
-    return <div className="rounded-tile bg-white/[0.05] p-3.5 text-[13px] text-dim">Нет свежих матчей: {team.name}</div>
-  }
-  // в данных свежие первыми, на экране — слева направо по времени
-  const last = [...f.last5].reverse()
-  const scores = f.scores.slice(0, last.length).reverse()
-  return (
-    <div className="st-rise rounded-tile bg-white/[0.05] p-3.5" style={wait(base)}>
-      <div className="flex items-center gap-2">
-        <TeamLogo name={team.name} src={team.logo} size={22} />
-        <span className="min-w-0 truncate text-[15px] font-bold">{team.name}</span>
-        {f.note ? <span className="ml-auto shrink-0 rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px] font-semibold text-fg/85">{f.note}</span> : null}
-      </div>
-      <div className="mt-3 grid grid-cols-5 gap-1.5">
-        {last.map((r, i) => (
-          <div key={i} className="st-pop flex flex-col items-center" style={wait(base + 150 + i * 90)}>
-            <span className={`flex h-10 w-full items-center justify-center rounded-ctl text-[15px] font-semibold ${RES[r].cls}`} title={RES[r].title}>
-              {RES[r].letter}
-            </span>
-            <span className="num mt-1 text-[11px] text-dim">{scores[i]}</span>
-          </div>
+/** Форма — как «Форма команд» на странице матча: строки сравнения с полосами и последние 5 матчей значками В/Н/П цветом. */
+function Form({ s, story }: { s: S<'form'>; story: StoryData }) {
+  const h = s.home
+  const a = s.away
+  const rows =
+    h && a
+      ? [
+          compare('Очки из 15', h.points5, a.points5, intFmt),
+          compare('Забивает за игру', h.gfAvg, a.gfAvg, (v) => dec(v)),
+          compare('Пропускает за игру', h.gaAvg, a.gaAvg, (v) => dec(v), true),
+        ]
+      : []
+  // в данных свежие первыми, на экране — слева направо по времени (свежий справа)
+  const strip = (f: FormSide | null, right: boolean, base: number) =>
+    f ? (
+      <div className={`flex gap-1.5 ${right ? 'justify-end' : ''}`}>
+        {[...f.last5].reverse().map((r, i) => (
+          <span key={i} className="st-pop" style={wait(base + i * 70)}>
+            <ResBadge r={r} />
+          </span>
         ))}
       </div>
-      <div className="mt-3 flex items-end justify-between gap-3 text-[13px]">
-        <span className="flex items-baseline gap-1.5">
-          <Num value={f.points5} format={intFmt} delay={base + 500} className="display-num text-[30px] leading-none" />
-          <span className="text-dim">из 15 очков</span>
-        </span>
-        <span className="text-dim">
-          забивает {dec(f.gfAvg)} · пропускает {dec(f.gaAvg)} <span className="whitespace-nowrap">за игру</span>
-        </span>
-      </div>
-    </div>
+    ) : (
+      <span className={`text-[13px] text-dim ${right ? 'text-right' : ''}`}>нет свежих матчей</span>
+    )
+  const note = (f: FormSide | null, right: boolean) => (
+    <span className={`min-w-0 truncate text-[13px] text-dim ${right ? 'text-right' : ''}`}>{f?.note ?? ''}</span>
   )
-}
-
-function Form({ s, story }: { s: S<'form'>; story: StoryData }) {
   return (
     <Frame>
       <Head eyebrow="Форма" title={s.title} sub={s.sub} />
-      <div className="mt-6 space-y-3">
-        <FormTeam team={story.home} f={s.home} base={250} />
-        <FormTeam team={story.away} f={s.away} base={450} />
-        <p className="st-fade text-center text-[11px] text-mute" style={wait(900)}>
-          В — победа · Н — ничья · П — поражение · последний матч справа
-        </p>
-      </div>
+      <Card className="mt-5 !pb-3" delay={250}>
+        <Legend story={story} />
+        {h?.note || a?.note ? (
+          <div className="mt-1 grid grid-cols-2 gap-3 pl-[38px] pr-[38px]">
+            {note(h, false)}
+            {note(a, true)}
+          </div>
+        ) : null}
+        <CmpRows rows={rows} base={350} />
+        <div className="st-rise border-t border-edge pt-3" style={wait(650)}>
+          <div className="text-center text-[13px] text-dim">Последние 5 матчей</div>
+          <div className="mt-2 grid grid-cols-2 gap-3">
+            {strip(h, false, 700)}
+            {strip(a, true, 700)}
+          </div>
+        </div>
+      </Card>
     </Frame>
   )
 }
 
-// ─── Статистика: строки «бабочкой», у кого больше — ярче ─────────────────────
-
-function Butterfly({ rows }: { rows: CompareRow[] }) {
-  return (
-    <div className="space-y-3">
-      {rows.map((r, i) => {
-        const max = Math.max(r.home, r.away) || 1
-        const d = 250 + i * 110
-        const tone = (side: Side) => {
-          const mine = side === 'home' ? r.home : r.away
-          const other = side === 'home' ? r.away : r.home
-          return mine > other ? 'bg-fg/85' : mine < other ? 'bg-white/30' : 'bg-white/55'
-        }
-        return (
-          <div key={r.label} className="st-rise" style={wait(d)}>
-            <div className="mb-1 grid grid-cols-[1fr_auto_1fr] items-baseline gap-2">
-              <span className={`num text-[17px] font-bold ${r.home < r.away ? 'text-fg/60' : ''}`}>{r.text[0]}</span>
-              <span className="text-center text-[12px] font-semibold text-dim">{r.label}</span>
-              <span className={`num text-right text-[17px] font-bold ${r.away < r.home ? 'text-fg/60' : ''}`}>{r.text[1]}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-0.5">
-              <div className="flex justify-end rounded-l-full bg-white/[0.09]">
-                <div className={`st-grow-x-rev h-2 rounded-l-full ${tone('home')}`} style={{ width: `${(r.home / max) * 100}%`, ...wait(d + 100) }} />
-              </div>
-              <div className="flex rounded-r-full bg-white/[0.09]">
-                <div className={`st-grow-x h-2 rounded-r-full ${tone('away')}`} style={{ width: `${(r.away / max) * 100}%`, ...wait(d + 100) }} />
-              </div>
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
+// ─── Статистика: строки, как «Статистика» на странице матча ──────────────────
 
 function Stats({ s, story }: { s: S<'stats'>; story: StoryData }) {
   return (
     <Frame>
       <Head eyebrow="Статистика" title={s.title} sub={s.sub} />
-      <div className="mt-6 space-y-4">
+      <Card className="mt-5 !pb-2" delay={200}>
         <Legend story={story} />
-        <Butterfly rows={s.rows} />
-      </div>
+        <CmpRows rows={s.rows} base={280} />
+      </Card>
     </Frame>
   )
 }
@@ -428,34 +452,35 @@ function GoalsTimeline({ s, story }: { s: S<'goalsTimeline'>; story: StoryData }
     return { ...g, score: `${h}:${a}` }
   })
   const shown = rows.slice(0, 7)
+  // у автора гола — точка цветом клуба, которому засчитан гол (как пунктир гола в «Давлении команд»)
   const label = (g: (typeof rows)[number]) => (
-    <span className={`inline-flex max-w-full items-center gap-1.5 text-[14px] font-semibold ${g.side === 'home' ? 'flex-row-reverse' : ''}`}>
-      <span className="truncate">{g.player || (g.kind === 'own-goal' ? 'Автогол' : 'Гол')}</span>
-      {g.kind === 'penalty' ? <span className="shrink-0 text-[11px] text-dim">пен.</span> : g.kind === 'own-goal' && g.player ? <span className="shrink-0 text-[11px] text-dim">автогол</span> : null}
+    <span className={`inline-flex max-w-full items-center gap-2 ${g.side === 'home' ? 'flex-row-reverse text-right' : ''}`}>
+      <span className={`h-2 w-2 shrink-0 rounded-full club-bar-${g.side[0]}`} />
+      <span className="min-w-0">
+        <span className="block truncate text-[15px] font-semibold">{g.player || (g.kind === 'own-goal' ? 'Автогол' : 'Гол')}</span>
+        {g.kind === 'penalty' ? <span className="block text-[12px] text-dim">с пенальти</span> : g.kind === 'own-goal' && g.player ? <span className="block text-[12px] text-dim">автогол</span> : null}
+      </span>
     </span>
   )
   return (
     <Frame>
       <Head eyebrow="Голы" title={s.title} sub={s.sub} />
-      <div className="mt-6">
+      <Card className="mt-5" delay={200}>
         <Legend story={story} />
-        <div className="relative mt-4">
-          <div className="st-grow-y absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-white/15" style={{ transformOrigin: 'top' }} />
-          <ul className="relative space-y-2.5">
-            {shown.map((g, i) => (
-              <li key={i} className="st-rise grid grid-cols-[1fr_auto_1fr] items-center gap-2.5" style={wait(300 + i * 160)}>
-                <span className="flex min-w-0 justify-end">{g.side === 'home' ? label(g) : null}</span>
-                <span className="num flex h-10 w-14 flex-col items-center justify-center rounded-ctl bg-white/[0.1]">
-                  <span className="text-[11px] text-dim">{g.label}</span>
-                  <span className="text-[14px] font-bold leading-none">{g.score}</span>
-                </span>
-                <span className="flex min-w-0">{g.side === 'away' ? label(g) : null}</span>
-              </li>
-            ))}
-          </ul>
-          {rows.length > shown.length ? <p className="mt-2 text-center text-[12px] text-dim">и ещё {rows.length - shown.length} — в разборе матча</p> : null}
-        </div>
-      </div>
+        <ul className="mt-3">
+          {shown.map((g, i) => (
+            <li key={i} className="st-rise grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-t border-edge py-2.5" style={wait(300 + i * 160)}>
+              <span className="flex min-w-0 justify-end">{g.side === 'home' ? label(g) : null}</span>
+              <span className="num flex w-14 flex-col items-center">
+                <span className="display-num text-[20px] leading-none">{g.score}</span>
+                <span className="mt-1 text-[12px] text-dim">{g.label}</span>
+              </span>
+              <span className="flex min-w-0">{g.side === 'away' ? label(g) : null}</span>
+            </li>
+          ))}
+        </ul>
+        {rows.length > shown.length ? <p className="mt-1 text-center text-[13px] text-dim">и ещё {rows.length - shown.length} — в разборе матча</p> : null}
+      </Card>
     </Frame>
   )
 }
@@ -475,7 +500,7 @@ function PickSlide({ s }: { s: S<'pick'> }) {
   ]
   return (
     <Frame>
-      <div className="st-rise text-[11px] font-bold uppercase tracking-[0.14em] text-dim">{s.value ? 'Выгодная ставка' : 'Наш выбор'}</div>
+      <div className="st-rise text-[13px] font-semibold text-dim">{s.value ? 'Выгодная ставка' : 'Наш выбор'}</div>
       <div className="flex flex-1 flex-col items-center justify-center text-center">
         <div className={`st-pop max-w-[20rem] text-[32px] font-bold leading-[1.1] tracking-tight ${s.value ? 'text-good' : ''}`} style={wait(150)}>
           {s.label}
@@ -511,6 +536,15 @@ function PickSlide({ s }: { s: S<'pick'> }) {
 }
 
 export function Slide({ slide, story, focus = null }: { slide: StorySlide; story: StoryData; focus?: StoryFocus | null }) {
+  // цвета клубов матча — переменными для полос (`.club-bar-h/-a`), как на странице матча; пока не догрузились — серые
+  return (
+    <ClubVars id={story.id} ymd={story.ymd} className="h-full">
+      <SlideBody slide={slide} story={story} focus={focus} />
+    </ClubVars>
+  )
+}
+
+function SlideBody({ slide, story, focus }: { slide: StorySlide; story: StoryData; focus: StoryFocus | null }) {
   switch (slide.kind) {
     case 'cover':
       return <Cover s={slide} story={story} focus={focus} />

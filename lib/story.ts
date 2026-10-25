@@ -24,7 +24,16 @@ export type Side = 'home' | 'away'
 export type StoryTeam = { name: string; logo: string | null }
 
 /** Строка статистики «хозяева — гости». */
-export type CompareRow = { label: string; home: number; away: number; text: [string, string] }
+export type CompareRow = {
+  label: string
+  home: number
+  away: number
+  text: [string, string]
+  /** проценты (владение) — полосы по шкале 0–100, а не от большего, как на странице матча (`mirrorWidths`) */
+  abs?: boolean
+  /** больше — хуже (фолы, карточки, офсайды): цветом — у кого меньше */
+  neutral?: boolean
+}
 
 export type FormSide = {
   last5: Res[]
@@ -63,6 +72,8 @@ export type StorySlide =
       sub: string
       /** сколько голов ждём в сумме — главная цифра слайда */
       total: number
+      /** голы каждой команды — строкой с полосой, как в «Форме команд» */
+      teams: { home: number; away: number }
       over25: number | null
       btts: number | null
       /** три самых вероятных счёта */
@@ -93,6 +104,8 @@ export type StoryCta = { partner: string; color: string; textColor: string; shor
 
 export type StoryData = {
   id: number
+  /** день матча — для цветов клубов (`/api/tint`) */
+  ymd: string
   href: string
   league: string
   round: string | null
@@ -130,8 +143,10 @@ function poissonGrid(lh: number, la: number, n = 5): number[][] {
   return ph.map((x) => pa.map((y) => x * y))
 }
 
-function compareRow(label: string, home: number, away: number, fmt: (x: number) => string): CompareRow {
-  return { label, home, away, text: [fmt(home), fmt(away)] }
+const WORSE_MORE = new Set(['fouls', 'yellowCards', 'redCards', 'offsides'])
+
+function compareRow(label: string, home: number, away: number, fmt: (x: number) => string, key = '', suffix = ''): CompareRow {
+  return { label, home, away, text: [fmt(home), fmt(away)], abs: suffix === '%', neutral: WORSE_MORE.has(key) }
 }
 
 /**
@@ -207,7 +222,7 @@ export function buildStory(ins: MatchInsights): StoryData | null {
         kind: 'stats',
         title,
         sub: m.status === 'live' ? 'Цифры по ходу игры' : 'Итоговые цифры',
-        rows: stats.map((s) => compareRow(s.label, s.home, s.away, (v) => `${Number.isInteger(v) ? v : dec(v, 2)}${s.suffix ?? ''}`)),
+        rows: stats.map((s) => compareRow(s.label, s.home, s.away, (v) => `${Number.isInteger(v) ? v : dec(v, 2)}${s.suffix ?? ''}`, s.key, s.suffix)),
       })
     }
   }
@@ -254,8 +269,9 @@ export function buildStory(ins: MatchInsights): StoryData | null {
     slides.push({
       kind: 'goals',
       title,
-      sub: `Сколько голов ждём: ${q(H)} — ${dec(model.lambdas.home)}, ${q(A)} — ${dec(model.lambdas.away)}`,
+      sub: 'Оценка tag.bet по силе атаки и обороны команд',
       total,
+      teams: { home: model.lambdas.home, away: model.lambdas.away },
       over25,
       btts: model.btts,
       scores,
@@ -286,7 +302,7 @@ export function buildStory(ins: MatchInsights): StoryData | null {
       if (Math.abs(d) >= 4) title = `Команда ${q(d > 0 ? H : A)} в форме лучше`
       else title = 'По форме — почти поровну'
     }
-    slides.push({ kind: 'form', title, sub: 'Последние 5 матчей: очки из 15 возможных, голы за игру', home: side(homeForm), away: side(awayForm) })
+    slides.push({ kind: 'form', title, sub: '', home: side(homeForm), away: side(awayForm) })
   }
 
   // ── прогноз
@@ -351,6 +367,7 @@ export function buildStory(ins: MatchInsights): StoryData | null {
 
   return {
     id: m.id,
+    ymd: ymdInTz(m.ts),
     href: matchHref(m),
     league: m.league.name,
     round: m.round,
