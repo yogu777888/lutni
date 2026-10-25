@@ -17,6 +17,7 @@ import { useRailTip } from './RailTip'
 import { matchesN, StateLine, stateText } from './StateLine'
 import { StoryRing } from './StoryRing'
 import { Icon } from '@/components/Icon'
+import { NavIcon } from '@/components/NavIcon'
 
 const BETS = ['ставка', 'ставки', 'ставок'] as const
 
@@ -67,10 +68,16 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
   return (
     // карточкой (под списком ниже xl) — заголовок над ней, на фоне страницы, как блоки лиг и разделы матча
     <section className={card ? 'relative min-w-0' : 'relative mt-6 border-t border-edge pt-4'}>
-      <h3 className={`flex items-baseline justify-between ${card ? 'mb-2.5 px-4 text-[20px] font-bold leading-tight tracking-[-0.01em] sm:px-5' : 'text-[15px] font-semibold'}`}>
+      <h3 className={`flex items-baseline justify-between gap-3 ${card ? 'mb-2.5 px-4 text-[20px] font-bold leading-tight tracking-[-0.01em] sm:px-5' : 'text-[15px] font-semibold'}`}>
         {/* ⓘ — почему «выгодно» (владелец согласился: объяснение было только в подсказке плашки, её почти никто не находит);
             простыми словами и с примером, без «заработать»: оценка, а не гарантия */}
-        <span className="group/vh flex items-baseline gap-1.5">
+        <span className="group/vh flex items-center gap-1.5">
+          {card ? (
+            // лаймом — «выгодно» (лайм у нас про деньги и «выгодно»), как круг в свёрнутой правой панели
+            <span className="mr-1 grid w-7 shrink-0 place-items-center text-acid" aria-hidden>
+              <NavIcon href="/tag/value" on size={22} />
+            </span>
+          ) : null}
           Выгодно сегодня
           <button
             type="button"

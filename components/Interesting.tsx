@@ -3,6 +3,7 @@ import type { FeedItem } from '@/lib/data'
 import { formatTime } from '@/lib/format'
 import { matchHref } from '@/lib/links'
 import { TAG_BY_SLUG } from '@/lib/tags'
+import { Icon } from './Icon'
 import { BlockTitle } from './Section'
 import { StorySymbol, symbolSoft } from './story/StorySymbol'
 
@@ -31,7 +32,7 @@ export function Interesting({ facts }: { facts: Fact[] }) {
   if (!facts.length) return null
   return (
     <section aria-labelledby="facts-title" className="min-w-0">
-      <BlockTitle rows id="facts-title" title="Интересно сегодня" />
+      <BlockTitle rows id="facts-title" mark={<Icon k="chart" size={22} />} title="Интересно сегодня" />
       <div className="grid grid-cols-2 gap-2.5">
         {facts.map(({ item, slug, reason }) => {
           const m = item.match
