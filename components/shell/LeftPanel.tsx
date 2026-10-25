@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { SITE } from '@/config/site'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayLeague, DayLeagues } from '@/lib/day-leagues'
-import { leagueLogo } from '@/lib/league-logos'
+import { leagueColor, leagueLogo } from '@/lib/league-logos'
 import { useFavorites } from '../favorites'
 import { LeagueMark } from '../LeagueMark'
 import { TeamLogo } from '../TeamLogo'
@@ -201,7 +201,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
       className="relative shrink-0 rounded-full transition-opacity hover:opacity-80"
     >
       <LeagueFlag l={l} />
-      <StoryRing group={`league-${l.id}`} ids={l.items.map((m) => m.id)} seen={seen} />
+      <StoryRing group={`league-${l.id}`} ids={l.items.map((m) => m.id)} seen={seen} color={leagueColor(l.id)} />
     </button>
   )
   // у турниров «Завтра» подписи нет (владелец: «не слишком много мелкого текста из-за подписей?» — пять одинаковых
@@ -252,7 +252,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
               <LeagueFlag l={l} />
             </span>
             <PlayOverlay />
-            <StoryRing group={id} ids={l.items.map((m) => m.id)} seen={seen} muted={!jump} />
+            <StoryRing group={id} ids={l.items.map((m) => m.id)} seen={seen} muted={!jump} color={leagueColor(l.id)} />
           </button>
           <a
             href={l.href}

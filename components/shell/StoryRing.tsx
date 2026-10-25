@@ -30,9 +30,24 @@ export const arc = ([start, len]: [number, number]) => ({ strokeDasharray: `${le
  * сереет от верха по часовой. Отметки — те же, что у сторис (`seenKey(группа, матч)` в localStorage). Родитель —
  * `relative`, круг 36px; кольцо — на 3px снаружи.
  */
-export function StoryRing({ group, ids, seen, muted = false, live = false }: { group: string; ids: number[]; seen: Set<string>; muted?: boolean; live?: boolean }) {
+export function StoryRing({
+  group,
+  ids,
+  seen,
+  muted = false,
+  live = false,
+  color = null,
+}: {
+  group: string
+  ids: number[]
+  seen: Set<string>
+  muted?: boolean
+  live?: boolean
+  /** цвет непросмотренных у турниров — главный цвет логотипа (`leagueColor`; владелец: «как у нас в графиках команд») */
+  color?: string | null
+}) {
   const n = ids.length
-  const UNSEEN = live ? LIVE : WHITE
+  const UNSEEN = live ? LIVE : (color ?? WHITE)
   if (!n) return null
   const flags = ids.map((id) => muted || seen.has(seenKey(group, id)))
   const c = { cx: 21, cy: 21, r: 20, fill: 'none', strokeWidth: 2, pathLength: 100 } as const

@@ -3,6 +3,8 @@
  * Один логотип на несколько id — группы и стыки одной лиги (Серия C, Серия D, Примера RFEF…). Тяжёлые SVG с картинками
  * внутри пережаты в webp 192px. Нет логотипа — флаг, как было. Новый логотип — файл и строка здесь.
  */
+import { LEAGUE_COLORS } from './league-colors'
+
 const LOGOS: Record<number, string> = {
   1: 'fifa-world-cup-2026.webp',
   2: 'uefa-champions-league.svg',
@@ -201,6 +203,9 @@ const LOGOS: Record<number, string> = {
   1056: 'new-zealand-national-league.svg',
   1087: 'ykkosliiga-finland.svg',
 }
+
+/** Цвет кольца историй турнира — главный цвет его логотипа (`lib/league-colors.ts`); нет логотипа или он чёрно-белый — null. */
+export const leagueColor = (id: number): string | null => (LOGOS[id] ? (LEAGUE_COLORS[LOGOS[id].replace(/\.\w+$/, '')] ?? null) : null)
 
 export const leagueLogo = (id: number): string | null => (LOGOS[id] ? `/leagues/${LOGOS[id]}` : null)
 
