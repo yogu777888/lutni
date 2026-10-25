@@ -46,8 +46,8 @@ function Dot({ p, away }: { p: LineupPlayer; away: boolean }) {
         {p.goals || p.ownGoals ? (
           <span className="absolute -left-2.5 -top-1.5 flex" aria-hidden>
             {Array.from({ length: Math.min(3, p.goals + p.ownGoals) }, (_, i) => (
-              <svg key={i} viewBox="0 0 256 256" width={14} height={14} className={`rounded-full bg-fg text-ink ${i ? '-ml-1.5' : ''}`}>
-                <path d={BALL} fill="currentColor" />
+              <svg key={i} viewBox="0 0 24 24" width={14} height={14} className={`rounded-full bg-fg text-ink ${i ? '-ml-1.5' : ''}`}>
+                <path d={BALL} fill="currentColor" fillRule="evenodd" />
               </svg>
             ))}
           </span>

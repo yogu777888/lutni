@@ -10,6 +10,7 @@ import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
 import { useMatchTint } from './shell/tint'
 import { StoryLink } from './story/StoryLink'
+import { Icon } from '@/components/Icon'
 
 export type HeroItem = {
   m: Match
@@ -178,9 +179,7 @@ export function DayHero({ items, ymd }: { items: HeroItem[]; ymd: string }) {
               className="inline-flex h-11 items-center gap-2.5 rounded-full bg-white pl-1.5 pr-5 text-[15px] font-semibold text-ink transition-colors hover:bg-white/85"
             >
               <span aria-hidden className="grid h-8 w-8 place-items-center rounded-full bg-ink text-white">
-                <svg viewBox="0 0 24 24" className="ml-0.5 h-3.5 w-3.5" fill="currentColor">
-                  <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" />
-                </svg>
+                <Icon k="play-fill" className="ml-0.5 h-3.5 w-3.5" />
               </span>
               Разбор за минуту
             </StoryLink>

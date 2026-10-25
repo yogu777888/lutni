@@ -9,6 +9,7 @@ import { OPEN_STORY, openStory, type OpenStoryDetail, type StoryQueueItem, type 
 import { circleQueue } from './queue'
 import { markSeen, readSeen, SEEN_EVENT, type SeenMark } from './seen'
 import { Slide, SLIDE_MS } from './slides'
+import { Icon, type IconKey } from '../Icon'
 
 type Item = StoryQueueItem
 
@@ -31,22 +32,8 @@ function collect(d: OpenStoryDetail): Item[] {
   return list
 }
 
-function Icon({ d, className = '' }: { d: string; className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={`h-5 w-5 fill-none stroke-current ${className}`} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d={d} />
-    </svg>
-  )
-}
-
-const ICONS = {
-  close: 'M6 6l12 12M18 6 6 18',
-  pause: 'M8 5v14M16 5v14',
-  play: 'M7 4.5v15l12.5-7.5z',
-  share: 'M12 15V3m0 0L7.5 7.5M12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7',
-  prev: 'm15 5-7 7 7 7',
-  next: 'm9 5 7 7-7 7',
-}
+/** Значки — набор владельца (`components/Icon.tsx`), 20px. */
+const Glyph = ({ k, className = 'h-5 w-5' }: { k: IconKey; className?: string }) => <Icon k={k} className={className} />
 
 /** Почему матч в кружке: причину берём из разбора матча (она свежее), иначе — из списка. */
 function focusFor(item: Item | null, story: StoryData | null) {
@@ -618,13 +605,13 @@ export function StoryViewer() {
   const controls = (
     <>
       <button type="button" className={btn} onClick={() => setPaused((p) => !p)} aria-label={paused ? 'Продолжить' : 'Пауза'}>
-        <Icon d={paused ? ICONS.play : ICONS.pause} className={paused ? 'fill-current' : ''} />
+        <Glyph k={paused ? 'play-fill' : 'pause'} />
       </button>
       <button type="button" className={btn} onClick={share} aria-label="Поделиться">
-        <Icon d={ICONS.share} />
+        <Glyph k="share" />
       </button>
       <button type="button" className={btn} onClick={close} aria-label="Закрыть">
-        <Icon d={ICONS.close} />
+        <Glyph k="close" />
       </button>
     </>
   )
@@ -686,7 +673,7 @@ export function StoryViewer() {
           {story ? (
             <a href={story.href} onClick={goFull} className="flex shrink-0 items-center gap-1 text-[13px] font-semibold text-dim transition-colors hover:text-fg">
               Полный разбор матча
-              <Icon d={ICONS.next} className="h-3.5 w-3.5" />
+              <Glyph k="chevron-right" className="h-3.5 w-3.5" />
             </a>
           ) : null}
         </div>
@@ -699,7 +686,7 @@ export function StoryViewer() {
               onClick={prev}
               className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-white/[0.06] text-[15px] font-semibold text-fg/90 transition hover:bg-white/10 active:scale-[0.98]"
             >
-              <Icon d={ICONS.prev} className="h-4 w-4" />
+              <Glyph k="chevron-left" className="h-4 w-4" />
               Назад
             </button>
             {/* «Дальше» — белая: навигация, не переход к букмекеру (лайм — только деньги) */}
@@ -709,7 +696,7 @@ export function StoryViewer() {
               className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-white text-[15px] font-semibold text-ink transition hover:bg-white/90 active:scale-[0.98]"
             >
               Дальше
-              <Icon d={ICONS.next} className="h-4 w-4" />
+              <Glyph k="chevron-right" className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -732,7 +719,7 @@ export function StoryViewer() {
       {/* затемнение отдельным слоем: появляется прозрачностью, размытие постоянное (анимация размытия мерцала) */}
       <div ref={shade} aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-black/[0.88] backdrop-blur-md" />
       <button type="button" onClick={prev} className={`${btn} mr-5 hidden h-11 w-11 bg-white/5 ${wideRow ? '' : 'sm:flex'}`} aria-label="Назад">
-        <Icon d={ICONS.prev} />
+        <Glyph k="chevron-left" />
       </button>
 
       <div
@@ -781,13 +768,13 @@ export function StoryViewer() {
                 <span className="flex-1" />
               )}
               <button type="button" className={btn} onClick={() => setPaused((p) => !p)} aria-label={paused ? 'Продолжить' : 'Пауза'}>
-                <Icon d={paused ? ICONS.play : ICONS.pause} className={paused ? 'fill-current' : ''} />
+                <Glyph k={paused ? 'play-fill' : 'pause'} />
               </button>
               <button type="button" className={btn} onClick={share} aria-label="Поделиться">
-                <Icon d={ICONS.share} />
+                <Glyph k="share" />
               </button>
               <button type="button" className={btn} onClick={close} aria-label="Закрыть">
-                <Icon d={ICONS.close} />
+                <Glyph k="close" />
               </button>
             </div>
 
@@ -803,7 +790,7 @@ export function StoryViewer() {
                   className="flex items-center justify-center gap-1 py-1.5 text-[13px] font-semibold text-dim transition-colors hover:text-fg"
                 >
                   Полный разбор матча
-                  <Icon d={ICONS.next} className="h-3.5 w-3.5" />
+                  <Glyph k="chevron-right" className="h-3.5 w-3.5" />
                 </a>
               </div>
             ) : null}
@@ -818,7 +805,7 @@ export function StoryViewer() {
       </div>
 
       <button type="button" onClick={next} className={`${btn} ml-5 hidden h-11 w-11 bg-white/5 ${wideRow ? '' : 'sm:flex'}`} aria-label="Дальше">
-        <Icon d={ICONS.next} />
+        <Glyph k="chevron-right" />
       </button>
 
       <p className={`pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-[12px] text-white/45 ${wideRow ? '' : 'sm:block'}`}>

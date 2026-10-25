@@ -10,6 +10,7 @@ import type { TagHit } from '@/lib/tags'
 import { StorySymbol } from '../story/StorySymbol'
 import { TeamLogo } from '../TeamLogo'
 import { PredictShare, type PredictCard } from './PredictShare'
+import { Icon } from '@/components/Icon'
 
 /**
  * «Прогноз» — отдельный блок под табло до начала матча (владелец: «блок матча супер некрасивый» — вынесли из табло; потом
@@ -183,9 +184,7 @@ export function PredictBlock({
           <div id="pick-cta" className="mt-4">
             <CtaLink href={goHref(partner, 'pick', m.id)} size="lg" className="relative w-full">
               {odd != null ? `Поставить в ${partner.name}` : `Сделать ставку в ${partner.name}`}
-              <svg viewBox="0 0 24 24" className="absolute right-5 h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
+              <Icon k="arrow-right" className="absolute right-5 h-5 w-5" />
             </CtaLink>
             <AdMark partner={partner} className="mt-2 text-center" />
           </div>

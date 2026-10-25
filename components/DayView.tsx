@@ -19,6 +19,7 @@ import { dayPicks } from '@/lib/day-picks'
 import { MatchFilter } from './MatchFilter'
 import { StoryCircles } from './story/StoryCircles'
 import { TAGS } from '@/lib/tags'
+import { Icon } from '@/components/Icon'
 
 const OTHER_LIMIT = 160
 /** В списке «по времени» — не больше стольких матчей: сначала топ-лиги, потом остальные с линией. */
@@ -407,15 +408,6 @@ export async function DayView({
 /** Значок порядка ниже lg (ряд шапки): «По турнирам» — список с заголовками групп, «По времени» — часы. */
 function SortIcon({ k }: { k: 'league' | 'time' }) {
   return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden className="lg:hidden">
-      {k === 'time' ? (
-        <>
-          <circle cx="12" cy="12" r="8.5" />
-          <path d="M12 7.5V12l3 2" />
-        </>
-      ) : (
-        <path d="M4 6h7M8 10h12M8 14h12M4 18h7" />
-      )}
-    </svg>
+    <Icon k={k === 'time' ? 'sort-time' : 'sort-list'} size={18} className="lg:hidden" />
   )
 }

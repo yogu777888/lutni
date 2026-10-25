@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef, useState } from 'react'
+import { Icon } from '../Icon'
 
 /**
  * ⓘ с объяснением (владелец согласился: на телефоне подсказка `title` не открывается вовсе, а мышью — через секунду
@@ -47,17 +48,7 @@ export function Hint({ title, text, term }: { title: string; text: string; /** �
       >
         {term}
         {/* значок рядом со словом: без него пунктир не читался как «нажми — объясним» (владелец: «нет значка») */}
-        <svg
-          aria-hidden
-          viewBox="0 0 16 16"
-          width={15}
-          height={15}
-          className={`inline-block -translate-y-px align-middle transition-colors group-hover/term:text-fg ${term ? 'ml-[3px]' : ''} ${open ? 'text-fg' : 'text-dim'}`}
-        >
-          <circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" strokeWidth="1.4" />
-          <rect x="7.25" y="7" width="1.5" height="4.6" rx="0.75" fill="currentColor" />
-          <circle cx="8" cy="4.9" r="0.95" fill="currentColor" />
-        </svg>
+        <Icon k="info" size={15} className={`inline-block -translate-y-px align-middle transition-colors group-hover/term:text-fg ${term ? 'ml-[3px]' : ''} ${open ? 'text-fg' : 'text-dim'}`} />
       </button>
       {open ? (
         <span

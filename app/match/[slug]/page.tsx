@@ -43,6 +43,7 @@ import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
 import type { Match } from '@/lib/types'
 import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
+import { Icon } from '@/components/Icon'
 
 export const dynamic = 'force-dynamic'
 
@@ -513,9 +514,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
                           <details key={p.title} className="group border-t border-edge">
                             <summary className="flex min-h-12 list-none items-center justify-between gap-3 py-2 text-[15px] font-medium [&::-webkit-details-marker]:hidden">
                               {p.title}
-                              <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-mute transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                                <path d="M9.5 6l6 6-6 6" />
-                              </svg>
+                              <Icon k="chevron-right" className="h-4 w-4 shrink-0 text-mute transition-transform group-open:rotate-90" />
                             </summary>
                             <p className="max-w-[62ch] pb-4 text-[15px] leading-relaxed text-dim">{p.text}</p>
                           </details>

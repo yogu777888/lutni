@@ -8,6 +8,7 @@ import type { TagHit } from '@/lib/tags'
 import type { Match } from '@/lib/types'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
+import { Icon } from '@/components/Icon'
 
 /**
  * Колонки строки матча — одни и те же у каждой строки, в любом состоянии (владелец: «время везде по-разному, кэфы не
@@ -161,9 +162,7 @@ export function MatchRow({
           {showLeague ? <span className="block truncate text-[13px] text-mute">{m.league.name}</span> : null}
         </Link>
         {played ? <Score m={m} big /> : <span />}
-        <svg viewBox="0 0 24 24" className="h-4 w-4 text-mute transition-colors group-hover:text-fg" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M9.5 6l6 6-6 6" />
-        </svg>
+        <Icon k="chevron-right" className="h-4 w-4 text-mute transition-colors group-hover:text-fg" />
       </div>
     )
   }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { Icon, type IconKey } from '@/components/Icon'
 
 /** Всё, что попадает на картинку прогноза, — строками: партнёра с RegExp в клиентский компонент не передать. */
 export type PredictCard = {
@@ -184,9 +185,9 @@ export function PredictShare({ card }: { card: PredictCard }) {
     }
   }
   // значки — те же, что в меню «Давления команд»
-  const items: [string, string, () => void][] = [
-    ['Сохранить изображение', 'M8 2.5v7.5M5 7l3 3 3-3M3 12.5h10', save],
-    ['Поделиться', 'M8 10V2.5M5 5.5 8 2.5l3 3M4.5 8H3.5v5.5h9V8h-1', shareIt],
+  const items: [string, IconKey, () => void][] = [
+    ['Сохранить изображение', 'save', save],
+    ['Поделиться', 'share', shareIt],
   ]
   return (
     <div ref={box} className="relative shrink-0">
@@ -197,15 +198,11 @@ export function PredictShare({ card }: { card: PredictCard }) {
         onClick={() => setMenu(!menu)}
         className={`flex h-8 w-8 items-center justify-center rounded-full text-dim hover:bg-white/[0.08] hover:text-fg ${menu ? 'bg-white/[0.08] text-fg' : ''}`}
       >
-        <svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor" aria-hidden>
-          <circle cx="2" cy="2" r="1.6" />
-          <circle cx="8" cy="2" r="1.6" />
-          <circle cx="14" cy="2" r="1.6" />
-        </svg>
+        <Icon k="more" className="h-[18px] w-[18px]" />
       </button>
       {menu ? (
         <div role="menu" className="absolute right-0 top-full z-10 mt-1 w-max max-w-[calc(100vw-2rem)] overflow-hidden rounded-tile bg-panel-3 py-1 text-[14px] shadow-lg">
-          {items.map(([label, d, run]) => (
+          {items.map(([label, icon, run]) => (
             <button
               key={label}
               type="button"
@@ -216,9 +213,7 @@ export function PredictShare({ card }: { card: PredictCard }) {
               }}
               className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left hover:bg-white/[0.06]"
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-dim" aria-hidden>
-                <path d={d} />
-              </svg>
+              <Icon k={icon} size={16} className="shrink-0 text-dim" />
               {label}
             </button>
           ))}

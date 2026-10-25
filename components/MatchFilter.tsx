@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { Icon } from '@/components/Icon'
 
 export type PanelOption = { key: string; label: string }
 
@@ -84,9 +85,7 @@ export function MatchFilter({ day, today, leagues, tags }: { day: string; today:
     // открыта, когда подборка уже настроена; иначе — одна строка, чтобы не отодвигать список
     <details key={String(open)} open={open} className="card group mt-5 overflow-hidden">
       <summary className="flex cursor-pointer items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/[0.02]">
-        <svg viewBox="0 0 24 24" className="h-4 w-4 text-dim" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
-          <path d="M4 6h16M7 12h10M10 18h4" />
-        </svg>
+        <Icon k="filter" className="h-4 w-4 text-dim" />
         <span className="text-[15px] font-semibold">Своя подборка</span>
         <span className="text-[13px] text-mute">статус, турниры, теги</span>
         {touched ? (

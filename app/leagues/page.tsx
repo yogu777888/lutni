@@ -9,6 +9,7 @@ import { getLeagues } from '@/lib/data'
 import { pluralN } from '@/lib/format'
 import { leagueIndex, type IndexGroup } from '@/lib/league-index'
 import type { LeagueInfo } from '@/lib/types'
+import { Icon } from '@/components/Icon'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,9 +46,7 @@ function Globe({ size }: { size: number }) {
 
 /** Шеврон у края строки — строка ведёт на страницу турнира, как в списках iOS. */
 const Chevron = ({ className = 'transition-colors group-hover/r:text-fg' }: { className?: string }) => (
-  <svg aria-hidden viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-mute ${className}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m9 6 6 6-6 6" />
-  </svg>
+  <Icon k="chevron-right" className={`h-4 w-4 shrink-0 text-mute ${className}`} />
 )
 
 function Group({ g }: { g: IndexGroup }) {

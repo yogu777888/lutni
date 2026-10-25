@@ -19,6 +19,7 @@ import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
 import { matchesN, StateLine } from './StateLine'
 import { LIVE, StoryRing } from './StoryRing'
+import { Icon } from '@/components/Icon'
 
 /** Кольцо турнира — оттенок логотипа, светлота и насыщенность общие (OKLCH L 0,74, C 0,12), как подборки справа
  * (владелец: «остальные истории в левом меню тоже как-то не очень» — цвета логотипов разной силы, красные спорили с «В игре») */
@@ -39,9 +40,7 @@ const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'т
 function PlayOverlay() {
   return (
     <span aria-hidden className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-      <svg viewBox="0 0 24 24" className="ml-0.5 h-3.5 w-3.5" fill="currentColor">
-        <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" />
-      </svg>
+      <Icon k="play-fill" className="ml-0.5 h-3.5 w-3.5" />
     </span>
   )
 }

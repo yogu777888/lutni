@@ -11,6 +11,7 @@ import { circleQueue } from './story/queue'
 import { readSeen, SEEN_EVENT } from './story/seen'
 import { ShelfIcon } from './story/StorySymbol'
 import { Shelf } from './Shelf'
+import { Icon } from '@/components/Icon'
 
 /**
  * Подпись простыми словами: технический повод тега «Выгодно» («Победа «X» за 2.73 (Winline) при честной цене 2.53:
@@ -72,9 +73,7 @@ function Card({
         <span className="flex items-center justify-between gap-3 text-[13px]">
           <span className="flex min-w-0 items-center gap-1.5 text-dim">
             <span aria-hidden className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white text-ink">
-              <svg viewBox="0 0 24 24" className="ml-px h-2.5 w-2.5" fill="currentColor">
-                <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" />
-              </svg>
+              <Icon k="play-fill" className="ml-px h-2.5 w-2.5" />
             </span>
             <span className="truncate">{m.league.name}</span>
           </span>

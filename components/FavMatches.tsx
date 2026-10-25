@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useFavorites } from './favorites'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
+import { Icon } from '@/components/Icon'
 
 type Item = {
   id: number
@@ -61,9 +62,7 @@ export function FavMatches({ ymd }: { ymd: string }) {
     <section className="min-w-0" aria-label="Ваши команды">
       <style>{hide}</style>
       <div className="mb-2.5 flex items-center gap-2 px-4 sm:px-5">
-        <svg viewBox="0 0 24 24" className="h-4 w-4 text-fg" fill="currentColor" aria-hidden>
-          <path d="M12 3.6l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.5l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z" />
-        </svg>
+        <Icon k="star-fill" className="h-4 w-4 text-fg" />
         <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">Ваши команды</h2>
       </div>
       {/* строки — той же разметкой, что `MatchRow` в блоках ниже (владелец: «смотри как отличается матч сохраненной команды»):

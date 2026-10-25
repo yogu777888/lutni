@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Icon } from '@/components/Icon'
 
 const norm = (s: string) => s.toLowerCase().replace(/ё/g, 'е').trim()
 /** Что ищем у строки: видимый текст (по-русски) и `data-q` — оригинальное название, если оно другое. */
@@ -53,17 +54,7 @@ export function LeagueFilter({ target }: { target: string }) {
   return (
     <label className="relative block w-full sm:w-60">
       <span className="sr-only">Фильтр: страна или турнир</span>
-      <svg
-        aria-hidden
-        viewBox="0 0 24 24"
-        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mute"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      >
-        <path d="M4 5h16l-6 7.5V19l-4-2v-4.5z" strokeLinejoin="round" />
-      </svg>
+      <Icon k="filter" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mute" />
       <input
         type="search"
         value={q}

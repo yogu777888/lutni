@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useLayoutEffect, useState } from 'react'
+import { Icon } from '@/components/Icon'
 
 const key = () => `tb-scroll:${location.pathname}${location.search}`
 let back = false
@@ -133,9 +134,7 @@ export function BackButton({ fallback, className = '' }: { fallback: string; cla
       }}
       className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/[0.07] text-dim transition-colors hover:bg-white/[0.13] hover:text-fg ${className}`}
     >
-      <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M14.5 6l-6 6 6 6" />
-      </svg>
+      <Icon k="chevron-left" className="h-[18px] w-[18px]" />
     </a>
   )
 }
@@ -179,9 +178,7 @@ export function NavBack({ fallback, className = '' }: { fallback: { href: string
       }}
       className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/[0.07] text-dim transition-colors hover:bg-white/[0.13] hover:text-fg ${className}`}
     >
-      <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M14.5 6l-6 6 6 6" />
-      </svg>
+      <Icon k="chevron-left" className="h-[18px] w-[18px]" />
     </a>
   )
 }
@@ -225,13 +222,9 @@ export function BackLabel({
       }
     >
       {bar ? (
-        <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M15 5.5l-6.5 6.5 6.5 6.5" />
-        </svg>
+        <Icon k="chevron-left" className="h-7 w-7 shrink-0" />
       ) : chip ? (
-        <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M14.5 6l-6 6 6 6" />
-        </svg>
+        <Icon k="chevron-left" className="h-[18px] w-[18px] shrink-0" />
       ) : null}
       <span
         className={

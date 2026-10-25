@@ -16,13 +16,12 @@ import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
 import { matchesN, StateLine, stateText } from './StateLine'
 import { StoryRing } from './StoryRing'
+import { Icon } from '@/components/Icon'
 
 const BETS = ['ставка', 'ставки', 'ставок'] as const
 
 const Play = ({ className = '' }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-    <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" />
-  </svg>
+  <Icon k="play-fill" className={className} />
 )
 
 /**
@@ -300,18 +299,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                           ) : null}
                         </span>
                         {/* шеврон — только у раскрытой и при наведении: восемь одинаковых шевронов повторяли одно и то же */}
-                        <svg
-                          viewBox="0 0 24 24"
-                          aria-hidden
-                          className={`h-4 w-4 shrink-0 text-mute transition-[transform,opacity] duration-200 ${on ? 'rotate-180' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}`}
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={2.2}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="m6 9 6 6 6-6" />
-                        </svg>
+                        <Icon k="chevron-down" className={`h-4 w-4 shrink-0 text-mute transition-[transform,opacity] duration-200 ${on ? 'rotate-180' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}`} />
                       </button>
                     </div>
                     {on ? (
@@ -364,18 +352,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                     className="-mx-2 mt-1 flex w-[calc(100%+1rem)] items-center gap-3 rounded-tile px-2 py-2 text-left text-[13.5px] font-medium text-dim transition-colors hover:bg-white/[0.04] hover:text-fg"
                   >
                     <span className="grid h-9 w-9 shrink-0 place-items-center">
-                      <svg
-                        viewBox="0 0 24 24"
-                        aria-hidden
-                        className={`h-4 w-4 transition-transform ${all ? 'rotate-180' : ''}`}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2.2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="m6 9 6 6 6-6" />
-                      </svg>
+                      <Icon k="chevron-down" className={`h-4 w-4 transition-transform ${all ? 'rotate-180' : ''}`} />
                     </span>
                     {all ? 'Свернуть' : `Ещё ${groups.length - SHOWN}`}
                   </button>

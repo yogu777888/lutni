@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { Icon } from '@/components/Icon'
 
 /** закрыта на этом матче: `tb-cta-closed:<адрес страницы>` */
 const key = () => `tb-cta-closed:${location.pathname}`
@@ -61,9 +62,7 @@ export function StickyHide({ target, className, children }: { target: string; cl
         onClick={close}
         className="absolute -top-3 right-3 grid h-6 w-6 place-items-center rounded-full bg-[#151b22]/90 text-mute shadow-[inset_0_0_0_1px_rgb(255_255_255/0.12)] backdrop-blur-xl transition-colors before:absolute before:-inset-x-2.5 before:-top-2.5 before:bottom-0 before:content-[''] hover:text-fg"
       >
-        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" aria-hidden>
-          <path d="M6 6l12 12M18 6L6 18" />
-        </svg>
+        <Icon k="close" className="h-3 w-3" />
       </button>
       {children}
     </div>

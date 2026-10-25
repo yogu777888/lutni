@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { LeagueMark } from './LeagueMark'
 import { StoryLink } from './story/StoryLink'
 import { TeamLogo } from './TeamLogo'
+import { Icon } from '@/components/Icon'
 
 type Suggest = {
   leagues: { id: number; href: string; name: string; flag: string | null; live: number }[]
@@ -94,10 +95,7 @@ export function Search() {
         title={`Поиск · ${mac ? '⌘K' : 'Ctrl K'}`}
         className="hidden h-9 w-[240px] shrink-0 items-center gap-2.5 rounded-full bg-white/[0.06] px-3 text-[14px] text-mute transition-colors hover:bg-white/[0.1] hover:text-dim lg:flex"
       >
-        <svg viewBox="0 0 24 24" className="h-[16px] w-[16px] shrink-0" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
-          <circle cx="11" cy="11" r="6.5" />
-          <path d="M16 16l4.5 4.5" />
-        </svg>
+        <Icon k="search" className="h-[16px] w-[16px] shrink-0" />
         <span className="flex-1 text-left">Команда или турнир</span>
       </button>
       <button
@@ -109,19 +107,13 @@ export function Search() {
         // поиска» — лупа висела посередине между надписью и «Рекламой»), как у YouTube
         className="hdr-search order-last grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.08] text-fg/85 transition-colors hover:bg-white/[0.14] hover:text-fg lg:hidden"
       >
-        <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
-          <circle cx="11" cy="11" r="6.5" />
-          <path d="M16 16l4.5 4.5" />
-        </svg>
+        <Icon k="search" className="h-[18px] w-[18px]" />
       </button>
       {open ? (
         <div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/60 px-3 pt-[12vh] backdrop-blur-sm" onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}>
           <div role="dialog" aria-label="Поиск" className="card w-full max-w-[560px] overflow-hidden shadow-[0_24px_80px_rgb(0_0_0/0.55)]">
             <div className="flex items-center gap-3 border-b border-edge px-4">
-              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0 text-mute" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
-                <circle cx="11" cy="11" r="6.5" />
-                <path d="M16 16l4.5 4.5" />
-              </svg>
+              <Icon k="search" className="h-[18px] w-[18px] shrink-0 text-mute" />
               <input
                 ref={input}
                 autoFocus

@@ -7,6 +7,7 @@ import type { MatchEvent } from '@/lib/types'
 import { ICONS, NavIcon } from '../NavIcon'
 import { withScore } from './EventsBlock'
 import { SplitBar } from './SplitBar'
+import { Icon, type IconKey } from '@/components/Icon'
 
 type Side = { name: string; logo?: string | null }
 
@@ -285,9 +286,8 @@ export function Momentum({ points, events, final = null, url, league, status, ho
       g.fill()
       g.save()
       g.translate(lx + 12, ly + 10)
-      g.scale(24 / 256, 24 / 256)
       g.fillStyle = '#e6e9ed'
-      g.fill(ball)
+      g.fill(ball, 'evenodd')
       g.restore()
       text(o.label, lx + 12 + 24 + 8, ly + 31, '500 24px', '#e6e9ed')
     })
@@ -381,15 +381,7 @@ export function Momentum({ points, events, final = null, url, league, status, ho
       setFlash('Не удалось скопировать')
     }
   }
-  // значки пунктов меню — контуром 1.5px на сетке 16×16
-  const MI = {
-    save: 'M8 2.5v7.5M5 7l3 3 3-3M3 12.5h10',
-    share: 'M8 10V2.5M5 5.5 8 2.5l3 3M4.5 8H3.5v5.5h9V8h-1',
-    table: 'M2.5 3.5h11v9h-11zM2.5 6.5h11M2.5 9.5h11M6.5 6.5v6',
-    chart: 'M2.5 12.5l3.5-4 3 2.5 4.5-6',
-    copy: 'M5.5 5.5h7v7h-7zM10.5 5.5v-2h-7v7h2',
-  }
-  const items: [string, keyof typeof MI, () => void][] = [
+  const items: [string, IconKey, () => void][] = [
     ['Сохранить изображение', 'save', save],
     ['Поделиться', 'share', shareIt],
     [table ? 'Показать график' : 'Табличный вид', table ? 'chart' : 'table', () => setTable(!table)],
@@ -434,11 +426,7 @@ export function Momentum({ points, events, final = null, url, league, status, ho
           onClick={() => setMenu(!menu)}
           className={`flex h-6 w-8 items-center justify-center rounded-full text-dim hover:bg-white/[0.08] hover:text-fg ${menu ? 'bg-white/[0.08] text-fg' : ''}`}
         >
-          <svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor" aria-hidden>
-            <circle cx="2" cy="2" r="1.6" />
-            <circle cx="8" cy="2" r="1.6" />
-            <circle cx="14" cy="2" r="1.6" />
-          </svg>
+          <Icon k="more" className="h-[18px] w-[18px]" />
         </button>
         {menu ? (
           <div role="menu" className="absolute right-0 top-full mt-1 w-[min(14rem,calc(100vw-2rem))] overflow-hidden rounded-tile bg-panel-3 py-1 text-[14px] shadow-lg">
@@ -453,9 +441,7 @@ export function Momentum({ points, events, final = null, url, league, status, ho
                 }}
                 className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left hover:bg-white/[0.06]"
               >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-dim" aria-hidden>
-                  <path d={MI[icon]} />
-                </svg>
+                <Icon k={icon} size={16} className="shrink-0 text-dim" />
                 {label}
               </button>
             ))}

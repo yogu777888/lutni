@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
+import { Icon } from '@/components/Icon'
 
 /**
  * Кнопка «календарь» рядом с вкладками дней: любой день в пределах года назад и двух месяцев вперёд.
@@ -35,10 +36,7 @@ export function DatePicker({ active, today, min, max, hash = '', section, chips 
         aria-label="Выбрать дату"
         title="Выбрать дату"
       >
-        <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <rect x="3" y="4.5" width="18" height="16.5" rx="3" />
-          <path d="M16 2.5v4M8 2.5v4M3 10h18" />
-        </svg>
+        <Icon k="calendar" className="h-[18px] w-[18px]" />
         <span className="hidden sm:inline">Дата</span>
       </button>
       <input

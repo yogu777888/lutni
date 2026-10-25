@@ -6,6 +6,7 @@ import { Hint } from './Hint'
 import { XgTerm } from './Xg'
 import { MirrorBars, mirrorWidths } from './SplitBar'
 import { TeamHead } from './TeamHead'
+import { Icon } from '@/components/Icon'
 
 type Side = { id: number; name: string; logo?: string | null }
 type Mode = 'main' | 'all'
@@ -144,7 +145,7 @@ export function StatsPanel({ periods, home, away }: { periods: StatPeriod[]; hom
               <h3>
                 <button type="button" aria-expanded={!shut.has(g)} onClick={() => flip(g)} className="flex w-full items-center justify-between py-1 text-[13px] font-semibold uppercase tracking-wide text-mute hover:text-fg">
                   {GROUP_TITLE[g]}
-                  <svg aria-hidden viewBox="0 0 24 24" className={`size-4 transition-transform ${shut.has(g) ? '-rotate-90' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                  <Icon k="chevron-down" className={`size-4 transition-transform ${shut.has(g) ? '-rotate-90' : ''}`} />
                 </button>
               </h3>
               {shut.has(g) ? null : <div className="mt-0.5">{list(items)}</div>}
