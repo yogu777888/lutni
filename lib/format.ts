@@ -162,5 +162,5 @@ export function dayLabel(ymd: string, today: string = todayYmd()): string {
 export const formatOdd = (v: number | undefined | null) => (v && v > 1 ? v.toFixed(2) : '—')
 export const pct = (p: number | undefined | null, digits = 0) =>
   p == null || Number.isNaN(p) ? '—' : `${(p * 100).toFixed(digits)}%`
-export const signedPct = (p: number, digits = 1) => `${p >= 0 ? '+' : ''}${(p * 100).toFixed(digits)}%`
+export const signedPct = (p: number, digits = 1) => `${p >= 0 ? '+' : ''}${(p * 100).toFixed(digits).replace('.', ',')}%`
 export const round1 = (x: number) => Math.round(x * 10) / 10

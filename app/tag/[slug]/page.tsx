@@ -190,9 +190,11 @@ export default async function TagPage({ params }: Props) {
         >
           {isValue ? null : (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="text-[13px] text-mute">
-                Что обычно ставят: <span className="font-medium text-fg">{t.bet}</span>
-              </span>
+              {t.bet ? (
+                <span className="text-[13px] text-mute">
+                  Что обычно ставят: <span className="font-medium text-fg">{t.bet}</span>
+                </span>
+              ) : null}
               <CtaLink href={goHref(partner, 'tag')} size="sm">
                 Перейти в {partner.name}
               </CtaLink>
@@ -237,7 +239,7 @@ export default async function TagPage({ params }: Props) {
             ))}
             {liveHits.length ? (
               <section>
-                <BlockTitle rows title="Уже идут" aside="кэфы до матча уже не действуют" />
+                <BlockTitle rows title="Уже идут" aside="кэфы до матча не действуют" />
                 <div className="card divide-y divide-edge overflow-hidden">
                   {liveHits.map((it) => (
                     <TagRow key={it.match.id} it={it} hit={hitOf(it)} bet={null} />
