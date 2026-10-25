@@ -5,20 +5,18 @@ import type { CircleKind, StoryGroup } from '@/lib/story-groups'
 import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
-import { discBackground, StorySymbol, symbolColor } from './StorySymbol'
+import { StorySymbol, symbolSoft } from './StorySymbol'
 import { arc, ringSegments } from '../shell/StoryRing'
 
 /**
- * Истории — круглые входы в подборки, в духе iOS: светлый диск (#FFFFFF → #EAF2F8, тонкая граница, мягкая тень), в
- * центре — абстрактный знак категории (StorySymbol), вокруг — тонкое кольцо просмотренности. Диаметр — 58px (на
- * невысоком окне меньше), под кругом — только название: число матчей — в подсказке.
+ * Истории — круглые входы в подборки: круг, залитый оттенком подборки, знак категории (StorySymbol) и кольцо
+ * просмотренности тем же оттенком — как в правой панели на компьютере. Диаметр — 58px (на невысоком окне меньше), под
+ * кругом — только название: число матчей — в подсказке.
  */
 const D = 76
-/** Кольцо 2px по радиусу 36.5: между кольцом и диском — 3px воздуха. */
+/** Кольцо 2px по радиусу 36.5: между кольцом и диском — 3px воздуха. Не смотрели — оттенком подборки (`toneOf`),
+ *  «Идут» — красное, просмотрено — тусклое. */
 const R = 36.5
-/** Не смотрели — белое кольцо, как в боковых панелях (`StoryRing`): лаймом четыре кольца спорили с «Бонусом», а лайм у нас —
- *  деньги и «выгодно» (владелец: «посмотри ещё раз визуально на главную»); LIVE — красное, просмотрено — тусклое. */
-const UNSEEN = '#ffffff'
 const LIVE = '#ff5c63'
 const SEEN = 'rgb(255 255 255 / 0.22)'
 
@@ -27,8 +25,8 @@ const SEEN = 'rgb(255 255 255 / 0.22)'
  * `seen` дуг, приглушённые. Больше 12 — одним контуром, просмотренная доля приглушённая от верха по часовой: из 15–30 дуг
  * вышла бы рябь.
  */
-function Ring({ kind, n, seen }: { kind: CircleKind; n: number; seen: number }) {
-  const color = kind === 'live' ? LIVE : UNSEEN
+function Ring({ kind, n, seen, tone }: { kind: CircleKind; n: number; seen: number; tone: string }) {
+  const color = kind === 'live' ? LIVE : tone
   const done = Math.round((seen / Math.max(1, n)) * 100)
   // без `vector-effect: non-scaling-stroke`: с ним Chrome считал штрихи в пикселях экрана, а не в долях `pathLength` —
   // дуги выходили неровными, а сверху торчал обрубок; толщина 2,6 единицы — 2px на круге 58px
@@ -67,22 +65,29 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
   )
 }
 
+/** «Выгодно» — лаймом, как круг «Выгодно сегодня» в свёрнутой правой панели (лайм — деньги и «выгодно»). */
+const ACID = '#c8ff2e'
 /**
- * Диск, как иконки Apple («Команды», Fitness): мягкий градиент цвета категории — светлее сверху, глубже снизу, —
- * тонкий блик по верхнему краю и белый знак. Своя картинка из public/stories/<ключ>.* — вместо всего этого.
+ * Цвет кружка — как у подборок в правой панели на компьютере (владелец: «а почему они отличаются от компьютерной
+ * версии?» — «да»): знак, непросмотренные дуги кольца и заливка круга 14% — приглушённым оттенком подборки
+ * (`symbolSoft`: общие светлота и насыщенность); «Идут» — красным `LIVE`, как «Сейчас идут» в левой панели;
+ * «Выгодно» — лаймовым кругом с тёмным знаком. Были яркие диски с белым знаком и белые кольца.
  */
-function Disc({ k, cover }: { k: string; cover?: string }) {
-  const c = symbolColor(k)
+function toneOf(g: StoryGroup) {
+  return g.kind === 'live' || g.key === 'live' ? LIVE : g.key === 'value' ? ACID : symbolSoft(g.key)
+}
+
+/** Диск: заливка оттенком 14% и знак тем же оттенком; своя картинка из public/stories/<ключ>.* — вместо всего этого. */
+function Disc({ k, tone, cover }: { k: string; tone: string; cover?: string }) {
+  const solid = k === 'value'
   return (
     <span
-      className="story-disc absolute inset-[5px] grid place-items-center overflow-hidden rounded-full"
+      className="absolute inset-[5px] grid place-items-center overflow-hidden rounded-full"
       style={{
-        background: cover
-          ? `center / cover no-repeat url("${cover}")`
-          : discBackground(c),
+        background: cover ? `center / cover no-repeat url("${cover}")` : solid ? tone : `color-mix(in oklch, ${tone} 14%, transparent)`,
       }}
     >
-      {cover ? null : <StorySymbol k={k} tone="#ffffff" className="h-[56%] w-[56%] drop-shadow-[0_1px_1.5px_rgb(0_0_0/0.18)]" />}
+      {cover ? null : <StorySymbol k={k} tone={solid ? 'var(--color-acid-ink)' : tone} className="h-1/2 w-1/2" />}
     </span>
   )
 }
@@ -134,8 +139,8 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
           >
             {/* фокус с клавиатуры — белым кругом вокруг кружка */}
             <span data-story-key={g.key} className={`relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 h-[58px] w-[58px] lg:h-[clamp(46px,calc(14vh_-_50px),58px)] lg:w-[clamp(46px,calc(14vh_-_50px),58px)]`}>
-              <Ring kind={g.kind} n={g.items.length} seen={n} />
-              <Disc k={g.key} cover={covers[g.key]} />
+              <Ring kind={g.kind} n={g.items.length} seen={n} tone={toneOf(g)} />
+              <Disc k={g.key} tone={toneOf(g)} cover={covers[g.key]} />
             </span>
             <span className="mt-1.5 w-full px-0.5 text-center">
               <Caption g={g} dim={done} />
