@@ -14,8 +14,8 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ sort?: string; live?: string }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ sort?: string }> }) {
   const today = todayYmd()
-  const { sort, live } = await searchParams
-  return <DayView ymd={today} today={today} sort={sort === 'time' ? 'time' : 'league'} live={live === '1'} />
+  const { sort } = await searchParams
+  return <DayView ymd={today} today={today} sort={sort === 'time' ? 'time' : 'league'} />
 }

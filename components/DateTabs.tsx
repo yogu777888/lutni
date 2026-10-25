@@ -14,7 +14,7 @@ const dayNumFmt = new Intl.DateTimeFormat('ru-RU', { timeZone: SITE.timeZone, da
  * Короткая подпись дня: «Вчера», «Сегодня», «Завтра», дальше — день недели с числом («Вт 6»; без числа к концу недели
  * было непонятно, какой это день — владелец согласился).
  */
-export function shortDay(ymd: string, today: string): string {
+function shortDay(ymd: string, today: string): string {
   const d = diffDays(ymd, today)
   if (d === 0) return 'Сегодня'
   if (d === 1) return 'Завтра'
