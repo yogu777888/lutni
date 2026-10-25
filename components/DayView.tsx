@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { PageHead } from './PageHead'
 import { countryRank, FEATURED_LEAGUES, featuredRank } from '@/config/leagues'
-import { daySnaps, getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
+import { daySnaps, getMatchesByDate, tagsFor, waitMatchFull, type FeedItem } from '@/lib/data'
+import { mainMatches } from '@/lib/day-summary'
+import { FocusMatch } from './FocusMatch'
 import { x12For, type X12Line } from '@/lib/lines'
 import { dayHref, listHref } from '@/lib/links'
 import { applyListFilter, filterQuery, isEmptyFilter, type ListFilter } from '@/lib/list-filter'
@@ -101,6 +103,10 @@ export async function DayView({
   // в «Сейчас идут» сверху — только топ-турниры (владелец согласился: на настоящих данных в субботу утром первый экран
   // занимали «Petřín Plzeň — Rokycany» и «6 из 42» без ссылки на остальные), остальные идущие — под раскрывашкой
   // «Ещё 36 матчей в других турнирах» в том же блоке; топ-лиги сверх шести — в своих блоках, как были
+  // «Матч в фокусе» (ниже xl, под «Подборками дня»): главный из идущих, нет идущих — главный за день (`mainMatches`); в
+  // списке ниже остаётся — на компьютере виджета нет
+  const focus = view === 'home' ? (mainMatches(items.filter((i) => isLive(i.match)), 1)[0] ?? mainMatches(items, 1)[0] ?? null) : null
+  const focusFull = focus && focus.match.status !== 'scheduled' ? await waitMatchFull(focus.match.id) : null
   const liveMain = liveSorted.filter((i) => featuredRank(i.match.league) >= 0)
   const liveTop = liveMain.slice(0, LIVE_LIMIT)
   const liveRest = liveSorted.filter((i) => featuredRank(i.match.league) < 0)
@@ -335,10 +341,17 @@ export async function DayView({
                 </Link>
               }
             />
-            <div className="card overflow-hidden px-4 pb-3 pt-3 sm:px-5">
+            {/* без карточки, на фоне (владелец: «уберем фон и выровняем слева по левому блоку который ниже и справа чтоб
+                не обрезалось»): первый кружок — от левого края карточек ниже, ряд листается до края экрана */}
+            <div className="-mr-4">
               <StoryCircles groups={storyGroups} />
             </div>
           </section>
+        ) : null}
+        {focus ? (
+          <div className="mt-6 xl:hidden">
+            <FocusMatch item={focus} full={focusFull} />
+          </div>
         ) : null}
         <div
           className={`mt-6 grid gap-8 sm:mt-8 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-6 xl:!grid-cols-1 xl:gap-8' : ''}`}

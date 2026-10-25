@@ -121,10 +121,10 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
     openStory({ id: startId, href: groups[gi].href, opener: e.currentTarget, queue })
   }
 
-  // ряд — до краёв карточки, без затухания: кружок у края срезан самой карточкой (видно, что ряд листается), а
-  // затухание по маске растворяло крайний кружок наполовину; шаг 76px — на 390px видно четыре с половиной
+  // ряд на фоне, без карточки: первый круг — ровно по левому краю карточек ниже (`-ml-1.5` — поле кружка 70px вокруг
+  // круга 58px), справа ряд листается до края экрана (обёртка в DayView — `-mr-4`), без затухания
   return (
-    <nav aria-label="Истории дня" className="scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 pt-1.5 sm:-mx-5 sm:px-5">
+    <nav aria-label="Истории дня" className="scrollbar-none -ml-1.5 flex gap-1.5 overflow-x-auto pb-1 pr-4 pt-1.5">
       {groups.map((g, gi) => {
         const n = seenCount(g, seen)
         const done = n === g.items.length
