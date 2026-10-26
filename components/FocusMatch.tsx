@@ -15,6 +15,9 @@ import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
 import { untilText } from './shell/StateLine'
 
+// названия команд в факте — без кавычек, как в «Выгодно сегодня» (владелец: «не писать названия команд в скобках»)
+const plain = (t: string) => t.replace(/[«»]/g, '')
+
 /**
  * «Матч в фокусе» — на телефоне и планшете под «Подборками дня» (владелец прислал прототип ChatGPT: «ниже сделать
  * виджет типа матч в фокусе… и там типа команды счет и 1 факт»): турнир и минута, команды и счёт (до начала — время),
@@ -111,14 +114,15 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
             {fact.sym ? (
               <StorySymbol k={fact.sym} tone={tone} className="h-4 w-4 shrink-0" />
             ) : (
-              <Icon k={fact.icon ?? 'chart'} size={16} className={fact.icon === 'card' ? 'shrink-0 text-loss' : 'shrink-0'} />
+              // по ходу — ⓘ, а не мяч: мяч — «Матчи» в нижнем меню (владелец: «иконка футбольного мячика дублируется»)
+              <Icon k="info" size={16} className="shrink-0" />
             )}
             {fact.label ?? 'Главное'}
           </p>
-          <p className="mt-1.5 text-[15px] font-semibold leading-snug">{fact.title}</p>
+          <p className="mt-1.5 text-[15px] font-semibold leading-snug">{plain(fact.title)}</p>
           {fact.text ? (
             // текстом, без ⓘ у xG: кнопка подсказки внутри ссылки — недопустимая вложенность
-            <p className="mt-1 text-[14px] leading-snug text-dim">{fact.text}</p>
+            <p className="mt-1 text-[14px] leading-snug text-dim">{plain(fact.text)}</p>
           ) : null}
         </div>
       ) : null}
