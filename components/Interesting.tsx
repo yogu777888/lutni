@@ -6,6 +6,9 @@ import { TAG_BY_SLUG } from '@/lib/tags'
 import { BlockTitle, TitleIcon } from './Section'
 import { StorySymbol, symbolSoft } from './story/StorySymbol'
 
+// названия команд без кавычек, как в «Выгодно сегодня» и «Матче в фокусе» (владелец: «не пиши названия команд в скобках»)
+const plain = (t: string) => t.replace(/[«»]/g, '')
+
 type Fact = { item: FeedItem; slug: string; reason: string }
 
 /**
@@ -33,12 +36,13 @@ export function Interesting({ facts }: { facts: Fact[] }) {
   return (
     <section aria-labelledby="facts-title" className="min-w-0">
       <BlockTitle rows id="facts-title" title="Интересно сегодня" aside={<TitleIcon href="/tags" label="Все подборки" />} />
-      {/* два факта — ровно в две колонки; больше — лентой вбок: видно два и край третьего, справа — до края экрана */}
+      {/* лентой вбок: на телефоне карточка 82% ширины и край следующей (в две колонки по ~165px факт вытягивался
+          в восемь строк — владелец: «сузил блоки слишком»), от sm — две и край третьей; справа лента до края экрана */}
       <div
         className={
-          facts.length > 2
-            ? 'scrollbar-none -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-2.5 overflow-x-auto px-4 [&>a]:shrink-0 [&>a]:basis-[calc((100%-10px)/2.15)] [&>a]:snap-start'
-            : 'grid grid-cols-2 gap-2.5'
+          facts.length > 1
+            ? 'scrollbar-none -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-2.5 overflow-x-auto px-4 [&>a]:shrink-0 [&>a]:basis-[82%] [&>a]:snap-start sm:[&>a]:basis-[calc((100%-10px)/2.15)]'
+            : ''
         }
       >
         {facts.map(({ item, slug, reason }) => {
@@ -49,7 +53,7 @@ export function Interesting({ facts }: { facts: Fact[] }) {
               <span title={TAG_BY_SLUG.get(slug)?.title}>
                 <StorySymbol k={slug} tone={symbolSoft(slug)} className="h-6 w-6" />
               </span>
-              <p className="mt-3 text-[15px] font-semibold leading-snug">{reason}</p>
+              <p className="mt-3 text-[15px] font-semibold leading-snug">{plain(reason)}</p>
               <p className="mt-auto pt-3 text-[13px] leading-snug text-dim">
                 {m.home.name} — {m.away.name} · {m.status === 'scheduled' ? formatTime(m.ts) : 'идёт'}
               </p>
