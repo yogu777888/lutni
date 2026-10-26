@@ -805,6 +805,10 @@ export default async function MatchPage({ params }: Props) {
         />
       ) : null}
 
+      {/* разметка для поисковиков (владелец: «чтоб его поисковики не утопили»): что это футбольный матч, кто играет, когда и где.
+          Поля — по рекомендациям Google для событий: адрес — `PostalAddress`, конец — примерно через 2 часа (точного в данных нет),
+          стадиона нет — без названия места, страна — кодом ISO;
+          эмблемы — картинками, турнир — организатором и `superEvent` со ссылкой на его страницу; разбора нет — описание из фактов. */}
       <JsonLd
         data={{
           '@context': 'https://schema.org',
@@ -812,6 +816,7 @@ export default async function MatchPage({ params }: Props) {
           name: pair,
           sport: 'Football',
           startDate: new Date(m.ts).toISOString(),
+          endDate: new Date(m.ts + 2 * 3600_000).toISOString(),
           eventStatus:
             m.status === 'postponed'
               ? 'https://schema.org/EventPostponed'
@@ -821,17 +826,27 @@ export default async function MatchPage({ params }: Props) {
           eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
           location: {
             '@type': 'Place',
-            name: full.venue?.name ?? m.league.name,
-            address: full.venue?.city || m.home.country || m.league.country || undefined,
+            // стадиона нет в данных — без названия места (не выдумываем); страна — кодом ISO, как ждёт Google
+            name: full.venue?.name || undefined,
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: full.venue?.city || undefined,
+              // «GB-ENG» у Англии — «GB»; у международных турниров кода нет
+              addressCountry: /^[A-Z]{2}(-|$)/i.test(m.league.countryCode) ? m.league.countryCode.slice(0, 2).toUpperCase() : undefined,
+            },
           },
+          image: [m.home.logo, m.away.logo].filter((u): u is string => !!u).map((u) => new URL(u, SITE.url).href),
           homeTeam: { '@type': 'SportsTeam', name: m.home.name },
           awayTeam: { '@type': 'SportsTeam', name: m.away.name },
           competitor: [
             { '@type': 'SportsTeam', name: m.home.name },
             { '@type': 'SportsTeam', name: m.away.name },
           ],
-          superEvent: { '@type': 'SportsEvent', name: m.league.name },
-          description: ins.preview[0]?.text,
+          organizer: { '@type': 'SportsOrganization', name: leagueTitle(m.league.name), url: `${SITE.url}${leagueHref(m.league)}` },
+          superEvent: { '@type': 'SportsEvent', name: m.league.name, url: `${SITE.url}${leagueHref(m.league)}` },
+          description:
+            ins.preview[0]?.text ||
+            `${pair}: ${leagueTitle(m.league.name)}${m.round ? `, ${m.round}` : ''}, ${formatDateShort(m.ts)} в ${formatTime(m.ts)} мск.`,
           url: `${SITE.url}${canonical}`,
         }}
       />
