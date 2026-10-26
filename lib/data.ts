@@ -497,6 +497,8 @@ export type MatchInsights = {
   full: MatchFull
   match: Match
   books: BookOdds[]
+  /** когда взяли линию (`OddsSnap.at`); линии нет — null */
+  oddsAt: number | null
   cons: Consensus
   glicko: Glicko | null
   model: ModelOutput | null
@@ -575,8 +577,8 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
   if (!full) return null
   const m = full.match
   const before = ymdInTz(m.ts)
-  const [books, glicko, teamGames, h2hGames, injuries, standings] = await Promise.all([
-    settle(getOdds(m, opts), [] as BookOdds[]),
+  const [snap, glicko, teamGames, h2hGames, injuries, standings] = await Promise.all([
+    settle(getOddsSnap(m, opts), null),
     settle(getGlicko(m, opts), null),
     settle(getTeamGames(m.home.id, m.away.id, before, opts), [] as Match[]),
     settle(getH2HGames(m.home.id, m.away.id, before, opts), [] as Match[]),
@@ -584,6 +586,8 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
     m.season?.year ? settle(getStandings(m.league.id, m.season.year, opts), null) : null,
   ])
 
+  const books = snap?.books ?? []
+  const oddsAt = books.length ? (snap?.at ?? null) : null
   const { cons, model, candidates } = modelFor(m, books, glicko)
   const pick = m.status === 'scheduled' ? choosePick(candidates) : null
   const homeForm = buildForm(m.home.id, teamGames)
@@ -608,7 +612,7 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
   const summary: MatchSummary = { id, tags, form, facts, pick: summaryPick(pick), pari: m.status === 'scheduled' ? pariValue(books, candidates) : null, at: Date.now() }
   cache.set(`summary:${id}`, summary, { ttl: 3 * H, stale: 9 * H, persist: false })
 
-  return { full, match: m, books, cons, glicko, model, candidates, pick, homeForm, awayForm, h2h, injuries, standings, tags, preview }
+  return { full, match: m, books, oddsAt, cons, glicko, model, candidates, pick, homeForm, awayForm, h2h, injuries, standings, tags, preview }
 }
 
 /** Теги из списка матчей: по коротким кэфам + «глубокие», если матч уже разобран. */

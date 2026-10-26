@@ -140,7 +140,7 @@ export default async function MatchPage({ params }: Props) {
   const canonical = matchHref(m)
   if (`/match/${slug}` !== canonical) permanentRedirect(canonical)
 
-  const { full: base, books, cons, model, candidates, pick, tags } = ins
+  const { full: base, books, oddsAt, cons, model, candidates, pick, tags } = ins
   // Flashscore-раздел SStats (`/Ls/*`): составы, давление по минутам, лишние строки статистики, стадион и зрители —
   // ждём не дольше 1,5 с, дальше ответ дозаполнит кэш к следующему открытию (владелец: «сделай всё»)
   // xG прошлых матчей обеих команд — для «Сильного и слабого места» (тоже ≤1,5 с, параллельно)
@@ -471,6 +471,7 @@ export default async function MatchPage({ params }: Props) {
               title="Коэффициенты букмекеров"
               note={
                 <>
+                  {oddsAt ? `Кэфы обновлены ${updatedText(oddsAt)} мск. ` : ''}
                   {hasMoves(legalBooks, m) ? '▼▲ — изменение с открытия линии. ' : ''}
                   <OddsTable part="note" match={m} books={legalBooks} model={model} candidates={candidates} />
                 </>
@@ -836,4 +837,14 @@ export default async function MatchPage({ params }: Props) {
       />
     </>
   )
+}
+
+/** «в 19:22» / «вчера в 23:40» / «4 октября в 19:22» — когда взяли линию (время по Москве) */
+function updatedText(at: number): string {
+  const day = ymdInTz(at)
+  const today = ymdInTz(appNow())
+  const time = `в\u00a0${formatTime(at)}`
+  if (day === today) return time
+  const label = dayLabel(day, today)
+  return `${/^[А-ЯЁ]/.test(label) ? label.toLowerCase() : label} ${time}`
 }
