@@ -1070,3 +1070,79 @@ html[data-shell-rc] .shell-r-rail {
 [data-vsort='time'] [data-ot] {
   order: var(--ot);
 }
+
+/* Затухание у нижнего края, где текст уходит под край (владелец: «в яндекс картах снизу такое типа размытие или
+   затухание… а мы можем где у нас текст уходит тоже что нибудь придумать? только без кринжа»), как край прокрутки в iOS:
+   текст не обрывается ровной линией, а растворяется в фоне. Видно, только пока ниже есть что листать: в конце страницы
+   или панели и на коротких страницах его нет (прогресс прокрутки — `animation-timeline`; браузер без него — без затухания).
+   - страница (`.edge-fade-page` в app/layout.tsx): слой у низа окна — фон страницы с лёгким размытием, оба нарастают
+     книзу (маска); ниже lg — за нижним меню и вокруг него (уходит меню — слой ниже), от xl — по колонке центра над
+     полоской рамки (`ShellFrame`);
+   - боковые панели (`.edge-fade` у прокрутки в LeftPanel/RightPanel): последние 40px списка растворяются в панели —
+     пара к затуханию под закреплённым заголовком сверху. */
+@property --edge {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes edge-out {
+  from {
+    --edge: 40px;
+    opacity: 1;
+  }
+  to {
+    --edge: 0px;
+    opacity: 0;
+  }
+}
+.edge-fade-page {
+  display: none;
+}
+@supports (animation-timeline: scroll()) {
+  .edge-fade {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--edge)), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--edge)), transparent);
+    animation: edge-out linear both;
+    animation-timeline: scroll(self);
+    animation-range: calc(100% - 40px) 100%;
+  }
+  .edge-fade-page {
+    display: block;
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 30;
+    height: 48px;
+    pointer-events: none;
+    opacity: 0;
+    background: rgb(9 12 16 / 0.9);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000);
+    mask-image: linear-gradient(to bottom, transparent, #000);
+    animation: edge-out linear both;
+    animation-timeline: scroll(root);
+    animation-range: calc(100% - 48px) 100%;
+  }
+  @media (max-width: 1023.98px) {
+    .edge-fade-page {
+      height: calc(var(--tabbar) + 20px);
+      transition: height 0.25s cubic-bezier(0.2, 0.7, 0.3, 1);
+    }
+    html[data-bars-hidden] .edge-fade-page {
+      height: calc(max(env(safe-area-inset-bottom), 10px) + 32px);
+    }
+  }
+  @media (min-width: 1280px) {
+    .edge-fade-page {
+      left: calc(var(--shell-l) + 16px);
+      right: calc(var(--shell-r) + 16px);
+      bottom: 8px;
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .edge-fade-page {
+    transition: none;
+  }
+}

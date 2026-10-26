@@ -105,6 +105,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </aside>
         </div>
+        {/* затухание у нижнего края окна, где текст уходит под край (.edge-fade-page в app/globals.css) */}
+        <div aria-hidden className="edge-fade-page" />
         <TabBar />
         <BarsAutoHide />
         <CookieNotice />
