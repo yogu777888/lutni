@@ -97,20 +97,15 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
 
       {fact ? (
         <div className="mt-4 flex items-start gap-3 rounded-tile bg-white/[0.04] px-4 py-3">
-          {fact.sym ? (
-            <span
-              aria-hidden
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full"
-              style={{ background: `color-mix(in oklch, ${symbolSoft(fact.sym)} 14%, transparent)` }}
-            >
-              <StorySymbol k={fact.sym} tone={symbolSoft(fact.sym)} className="h-[18px] w-[18px]" />
-            </span>
-          ) : (
-            <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.08]">
-              <Icon k={fact.icon ?? 'chart'} size={18} className={fact.icon === 'card' ? 'text-loss' : 'text-fg/85'} />
-            </span>
-          )}
-          <div className="min-w-0 self-center">
+          {/* значок без подложки (владелец: «а ты можешь значок без подложки ставить?») — на линии первой строки */}
+          <span aria-hidden className="grid h-[21px] shrink-0 place-items-center">
+            {fact.sym ? (
+              <StorySymbol k={fact.sym} tone={symbolSoft(fact.sym)} className="h-5 w-5" />
+            ) : (
+              <Icon k={fact.icon ?? 'chart'} size={20} className={fact.icon === 'card' ? 'text-loss' : 'text-fg/85'} />
+            )}
+          </span>
+          <div className="min-w-0">
             <p className="text-[15px] font-semibold leading-snug">{fact.title}</p>
             {fact.text ? (
               // текстом, без ⓘ у xG: кнопка подсказки внутри ссылки — недопустимая вложенность
