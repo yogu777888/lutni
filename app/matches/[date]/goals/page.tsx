@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { cache } from 'react'
 import { dayHeading } from '@/components/DayView'
 import { Coverage, Crests, Filters, MatchWhen, PickHead, STAGES, STAGE_LABEL, pickParam, stageOf, withParam, type StageKey } from '@/components/picks/Shared'
 import { featuredInfo, isFeatured } from '@/config/leagues'
@@ -8,6 +9,8 @@ import { daySnaps, getMatchesByDate, tagsFor, type FeedItem } from '@/lib/data'
 import { goalsPicks } from '@/lib/day-summary'
 import { diffDays, formatDayMonth, formatTime, isYmd, pct, pluralN, todayYmd, ymdInTz, ymdToNoonTs } from '@/lib/format'
 import { dayHref, listHref, matchHref } from '@/lib/links'
+import { NOINDEX } from '@/lib/seo'
+import type { Match } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +23,24 @@ const TOPS = ['all', 'top'] as const
 
 const valid = (date: string) => isYmd(date) && Math.abs(diffDays(date, todayYmd())) <= 365
 
+/** Матчи дня и снимки линии — одни на страницу и её `generateMetadata` (`cache` — один раз за запрос). */
+const loadDay = cache(async (date: string) => {
+  let failed = false
+  const matches = await getMatchesByDate(date).catch(() => {
+    failed = true
+    return [] as Match[]
+  })
+  const items: FeedItem[] = matches.map((m) => ({ match: m, ...tagsFor(m) }))
+  const { snaps, pending } = await daySnaps(matches)
+  return { failed, items, snaps, pending }
+})
+
+/** Пустая подборка дня (при фильтрах по умолчанию) — не в индекс: страница «матчей нет» — малополезная (`lib/seo.ts`). */
+async function empty(date: string) {
+  const d = await loadDay(date)
+  return d.failed || !goalsPicks(d.items, (id) => d.snaps.get(id) ?? null, 0.55).picks.length
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { date } = await params
   if (!valid(date)) return {}
@@ -28,6 +49,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `Голевые матчи ${d}: шанс 3+ голов по линии букмекера`,
     description: `Матчи ${date.split('-').reverse().join('.')}, где по линии букмекера вероятнее 3 гола и больше: шанс из пары коэффициентов «больше 2,5 / меньше 2,5» одного букмекера без маржи.`,
     alternates: { canonical: `/matches/${date}/goals` },
+    ...((await empty(date)) ? { robots: NOINDEX } : {}),
   }
 }
 
@@ -54,13 +76,7 @@ export default async function GoalsPage({ params, searchParams }: Props) {
   const top = pickParam(sp.top, TOPS, 'all')
   const sort = pickParam(sp.sort, SORTS, 'chance')
 
-  let failed = false
-  const matches = await getMatchesByDate(date).catch(() => {
-    failed = true
-    return []
-  })
-  const items: FeedItem[] = matches.map((m) => ({ match: m, ...tagsFor(m) }))
-  const { snaps, pending } = await daySnaps(matches)
+  const { failed, items, snaps, pending } = await loadDay(date)
   const { picks, covered } = goalsPicks(items, (id) => snaps.get(id) ?? null, Number(min) / 100)
   const rows = picks
     .filter((p) => st === 'all' || stageOf(p.it.match) === st)
@@ -107,7 +123,7 @@ export default async function GoalsPage({ params, searchParams }: Props) {
             },
           ]}
         />
-        <Coverage covered={covered} total={matches.length} pending={pending} what="Линия на тотал 2,5" />
+        <Coverage covered={covered} total={items.length} pending={pending} what="Линия на тотал 2,5" />
       </div>
 
       {failed ? <div className="card mt-6 xl:mt-2 p-5 text-[15px] text-dim">Не удалось загрузить матчи: источник данных временно недоступен. Обновите страницу через минуту.</div> : null}

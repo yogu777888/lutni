@@ -12,6 +12,7 @@ import { flagCode, leagueTitle } from '@/lib/flags'
 import { appNow, dayLabel, formatDayMonth, idFromSlug, pluralN, todayYmd, ymdInTz } from '@/lib/format'
 import { x12For, type X12Line } from '@/lib/lines'
 import { leagueHref } from '@/lib/links'
+import { NOINDEX, indexLeague } from '@/lib/seo'
 import type { Match } from '@/lib/types'
 
 // готовая страница хранится 30 с и отдаётся всем (ISR), собирается при первом открытии — как страница матча
@@ -44,6 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${name}: таблица, расписание, результаты и прогнозы`,
     description: `${name}${data.year ? ` ${data.year}/${String(data.year + 1).slice(2)}` : ''}: турнирная таблица, ближайшие матчи с коэффициентами и тегами ставок, результаты туров.`,
     alternates: { canonical: leagueHref(data.league) },
+    ...(indexLeague(data.league) ? {} : { robots: NOINDEX }),
   }
 }
 

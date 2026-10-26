@@ -41,6 +41,7 @@ import { matchNotes } from '@/lib/match-notes'
 import { appNow, dayLabel, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
+import { NOINDEX, indexMatch } from '@/lib/seo'
 import type { Match } from '@/lib/types'
 import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
 import { Icon } from '@/components/Icon'
@@ -70,7 +71,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = idFromSlug(slug)
   if (!id) return {}
   const ins = await load(id).catch(() => null)
-  if (!ins) return { title: 'Матч', robots: { index: false } }
+  if (!ins) return { title: 'Матч', robots: NOINDEX }
   const m = ins.match
   const title = titleFor(m)
   const pick = ins.pick ? ` Прогноз tag.bet: ${ins.pick.candidate.label}.` : ''
@@ -82,6 +83,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: matchHref(m) },
+    ...(indexMatch(m) ? {} : { robots: NOINDEX }),
     openGraph: { title, description, type: 'article', url: matchHref(m), images: [{ url: '/og.png', width: 1200, height: 630 }] },
   }
 }
