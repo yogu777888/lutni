@@ -293,7 +293,10 @@ export default async function TagPage({ params }: Props) {
               </section>
             )).concat(
               <p key="note" className="-mt-5 px-4 text-[13px] text-mute sm:px-5">
-                Вероятность — оценка tag.bet, кэф — предложение букмекера. Не гарантия выигрыша: ставки — это риск · 18+
+                Вероятность — оценка tag.bet, кэф — предложение букмекера. Не гарантия выигрыша: ставки — это риск · 18+ ·{' '}
+                <Link href="/about#vygodno" className="underline underline-offset-2 hover:text-fg">
+                  Как мы считаем
+                </Link>
               </p>,
             )
           ) : (
