@@ -95,7 +95,8 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
         </span>
         {rows.length ? <span className={`${card ? 'text-[12px]' : 'text-[11.5px]'} font-normal tracking-normal text-mute`}>{onlyPari ? 'PARI · ' : ''}Реклама · 18+</span> : null}
       </h3>
-      {/* карточкой — строки через черту, как «Где ставить» под ним, и крупнее: 15/13px и плашка 40px (владелец прислал вариант
+      {/* карточкой — строки через черту от края до края карточки, как «Где ставить» под ним и все списки (владелец: «правильно
+          что в ставках разделительные линии не до конца?»), и крупнее: 15/13px и плашка 40px (владелец прислал вариант
           ChatGPT; в узкой правой панели — как было) */}
       <div className={card ? 'card px-4 pb-4 sm:px-5' : ''}>
       {rows.length ? null : <p className={`${card ? 'py-4' : 'mt-2'} text-[13px] text-dim`}>Сегодня выгодных ставок нет.</p>}
@@ -103,11 +104,11 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
       {rows.length && !rows.some((r) => r.slug === 'pari') ? (
         <p className={`${card ? 'pt-3 text-[13px]' : 'mt-1.5 text-[12.5px]'} leading-snug text-mute`}>У PARI сегодня выгодных нет — у других легальных букмекеров:</p>
       ) : null}
-      <ul className={card ? 'divide-y divide-edge' : 'mt-2 space-y-1'}>
+      <ul className={card ? '-mx-4 divide-y divide-edge sm:-mx-5' : 'mt-2 space-y-1'}>
         {rows.map((r) => (
           // без круга с эмблемами слева (владелец согласился: эмблемы по 16px внахлёст не различить, а круг съедал место —
           // вторая строка не влезала даже как «с «Мидлсбро»», и «с» после времени читалось как «с 21:00» строкой выше)
-          <li key={r.id} className={card ? 'flex items-center gap-3 py-3.5' : '-mx-2 flex items-center gap-3 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.04]'}>
+          <li key={r.id} className={card ? 'flex items-center gap-3 px-4 py-3.5 sm:px-5' : '-mx-2 flex items-center gap-3 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.04]'}>
             {/* главное — на что ставка (сверху, белым, в узкой панели — в две строки, не обрезаем); матч и время — ниже серым: обрезается второстепенное */}
             <Link href={r.href} prefetch={false} className="min-w-0 flex-1 leading-tight">
               <span className={`line-clamp-2 ${card ? 'text-[15px] font-semibold' : 'text-[13.5px] font-medium'} first-letter:uppercase`}>{plain(r.outcome)}</span>

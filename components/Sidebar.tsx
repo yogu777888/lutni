@@ -2,7 +2,7 @@ import { BlockMore } from './BlockMore'
 import { PARTNERS } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import type { ValueRow } from '@/lib/day-picks'
-import { BlockTitle, TitleIcon } from './Section'
+import { BlockTitle } from './Section'
 import { PartnerCard } from './PartnerCard'
 import { ValueBlock } from './shell/RightPanel'
 
@@ -17,18 +17,10 @@ export function Sidebar({ values = [] }: { values?: ValueRow[] }) {
       {values.length ? <ValueBlock rows={values} card /> : null}
       {/* заголовок над карточкой, как «Где поставить» на странице матча */}
       <section className="min-w-0">
-        {/* «Реклама · 18+» — одна на блок, слева от значка раздела (владелец прислал вариант ChatGPT); строка про лицензию
-            убрана — она в шапке «Букмекеров», а здесь отделяла список от «Все букмекеры» лишней строкой */}
-        <BlockTitle
-          rows
-          title="Где ставить"
-          aside={
-            <span className="flex items-center gap-2">
-              <span className="text-[12px] text-mute">Реклама · 18+</span>
-              <TitleIcon href="/bookmakers" label="Все букмекеры" />
-            </span>
-          }
-        />
+        {/* «Реклама · 18+» — одна на блок, справа в строке заголовка (владелец прислал вариант ChatGPT); значка раздела нет
+            (владелец: «можешь справа от где ставить убрать иконку?») — ведёт туда же «Все букмекеры →» внизу; строка про
+            лицензию убрана — она в шапке «Букмекеров» */}
+        <BlockTitle rows title="Где ставить" aside={<span className="text-[12px] text-mute">Реклама · 18+</span>} />
         <div className="card overflow-hidden">
         <div className="divide-y divide-edge">
           {PARTNERS.slice(0, 3).map((p) => (
