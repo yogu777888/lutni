@@ -17,15 +17,24 @@ export function Sidebar({ values = [] }: { values?: ValueRow[] }) {
       {values.length ? <ValueBlock rows={values} card /> : null}
       {/* заголовок над карточкой, как «Где поставить» на странице матча */}
       <section className="min-w-0">
-        <BlockTitle rows title="Где ставить" aside={<TitleIcon href="/bookmakers" label="Все букмекеры" />} />
+        {/* «Реклама · 18+» — одна на блок, слева от значка раздела (владелец прислал вариант ChatGPT); строка про лицензию
+            убрана — она в шапке «Букмекеров», а здесь отделяла список от «Все букмекеры» лишней строкой */}
+        <BlockTitle
+          rows
+          title="Где ставить"
+          aside={
+            <span className="flex items-center gap-2">
+              <span className="text-[12px] text-mute">Реклама · 18+</span>
+              <TitleIcon href="/bookmakers" label="Все букмекеры" />
+            </span>
+          }
+        />
         <div className="card overflow-hidden">
         <div className="divide-y divide-edge">
           {PARTNERS.slice(0, 3).map((p) => (
-            <PartnerCard key={p.slug} partner={p} placement="sidebar" className="px-4 sm:px-5" />
+            <PartnerCard key={p.slug} partner={p} placement="sidebar" className="px-4 sm:px-5" markInTitle />
           ))}
         </div>
-        {/* про лицензию — над чертой, у списка; под чертой — только ссылка, как во всех блоках-списках (`BlockMore`) */}
-        <p className="border-t border-edge px-4 py-3 text-[12px] text-mute sm:px-5">Только букмекеры с лицензией ФНС России.</p>
         <BlockMore href="/bookmakers">Все букмекеры</BlockMore>
         </div>
       </section>

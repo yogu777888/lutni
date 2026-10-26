@@ -93,25 +93,27 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
             <span className="mt-1.5 block text-mute">Оценка, а не гарантия · 18+</span>
           </span>
         </span>
-        {rows.length ? <span className="text-[11.5px] font-normal tracking-normal text-mute">{onlyPari ? 'PARI · ' : ''}Реклама · 18+</span> : null}
+        {rows.length ? <span className={`${card ? 'text-[12px]' : 'text-[11.5px]'} font-normal tracking-normal text-mute`}>{onlyPari ? 'PARI · ' : ''}Реклама · 18+</span> : null}
       </h3>
-      <div className={card ? 'card px-4 pb-4 pt-2 sm:px-5' : ''}>
-      {rows.length ? null : <p className="mt-2 text-[13px] text-dim">Сегодня выгодных ставок нет.</p>}
+      {/* карточкой — строки через черту, как «Где ставить» под ним, и крупнее: 15/13px и плашка 40px (владелец прислал вариант
+          ChatGPT; в узкой правой панели — как было) */}
+      <div className={card ? 'card px-4 pb-4 sm:px-5' : ''}>
+      {rows.length ? null : <p className={`${card ? 'py-4' : 'mt-2'} text-[13px] text-dim`}>Сегодня выгодных ставок нет.</p>}
       {/* у PARI пусто, а у других есть — так и пишем: главного партнёра в блоке не видно, и это не поломка */}
       {rows.length && !rows.some((r) => r.slug === 'pari') ? (
-        <p className="mt-1.5 text-[12.5px] leading-snug text-mute">У PARI сегодня выгодных нет — у других легальных букмекеров:</p>
+        <p className={`${card ? 'pt-3 text-[13px]' : 'mt-1.5 text-[12.5px]'} leading-snug text-mute`}>У PARI сегодня выгодных нет — у других легальных букмекеров:</p>
       ) : null}
-      <ul className="mt-2 space-y-1">
+      <ul className={card ? 'divide-y divide-edge' : 'mt-2 space-y-1'}>
         {rows.map((r) => (
           // без круга с эмблемами слева (владелец согласился: эмблемы по 16px внахлёст не различить, а круг съедал место —
           // вторая строка не влезала даже как «с «Мидлсбро»», и «с» после времени читалось как «с 21:00» строкой выше)
-          <li key={r.id} className="-mx-2 flex items-center gap-3 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.04]">
+          <li key={r.id} className={card ? 'flex items-center gap-3 py-3.5' : '-mx-2 flex items-center gap-3 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.04]'}>
             {/* главное — на что ставка (сверху, белым, в узкой панели — в две строки, не обрезаем); матч и время — ниже серым: обрезается второстепенное */}
             <Link href={r.href} prefetch={false} className="min-w-0 flex-1 leading-tight">
-              <span className="line-clamp-2 text-[13.5px] font-medium first-letter:uppercase">{plain(r.outcome)}</span>
+              <span className={`line-clamp-2 ${card ? 'text-[15px] font-semibold' : 'text-[13.5px] font-medium'} first-letter:uppercase`}>{plain(r.outcome)}</span>
               {/* вторая строка — время и матч (владелец: «как тебе выгодно сегодня, только честно?» — «Марафон · 22:00 ·
                   Саутгемпт…» обрезало матч, а букмекер посетителю важен меньше всего) */}
-              <span className="mt-0.5 line-clamp-2 text-[12.5px] text-dim">
+              <span className={`mt-0.5 line-clamp-2 ${card ? 'text-[13px]' : 'text-[12.5px]'} text-dim`}>
                 {/* ставка на победу команды — она уже названа строкой выше, здесь только соперник («с «Мидлсбро»»): в 288px
                     «Саутгемптон — Мидлсбро» и даже «против «Мидлсбро»» обрезались; длинное — переносом, не многоточием */}
                 {r.time} · {r.side === 'home' ? `против ${r.away}` : r.side === 'away' ? `против ${r.home}` : `${r.home} — ${r.away}`}
@@ -124,7 +126,7 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
                 rel={SPONSORED_REL}
                 title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выгода +${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
                 // как лаймовая ячейка кэфа в строке списка (34px, 15px): три высоких плашки с букмекером были ярче всего на странице
-                className="num grid h-[34px] w-14 place-items-center rounded-ctl bg-acid text-[15px] font-semibold text-acid-ink transition-colors hover:bg-acid/85"
+                className={`num grid place-items-center rounded-ctl bg-acid font-semibold text-acid-ink transition-colors hover:bg-acid/85 ${card ? 'h-10 w-16 text-[16px]' : 'h-[34px] w-14 text-[15px]'}`}
               >
                 {r.odd.toFixed(2)}
               </a>
@@ -133,7 +135,7 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
           </li>
         ))}
       </ul>
-      <BlockMore href="/tag/value" panel={!card} className={card ? '-mx-4 -mb-4 mt-3 sm:-mx-5' : ''}>
+      <BlockMore href="/tag/value" panel={!card} className={card ? '-mx-4 -mb-4 sm:-mx-5' : ''}>
         Все выгодные ставки
       </BlockMore>
       </div>
