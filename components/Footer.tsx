@@ -37,6 +37,7 @@ export function Footer() {
   const advertisers = configured.length ? configured : PARTNERS.slice(0, 6)
   const info: [string, string][] = [
     ['/about', 'Как мы считаем'],
+    ['/o-proekte', 'О проекте'],
     ['/responsible-gaming', 'Ответственная игра'],
     ['/privacy', 'Cookie'],
   ]

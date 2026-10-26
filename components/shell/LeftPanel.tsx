@@ -94,6 +94,7 @@ function Legal() {
       <nav aria-label="Информация" className="flex flex-wrap gap-x-1">
         {[
           ['/about', 'Как мы считаем'],
+          ['/o-proekte', 'О проекте'],
           ['/responsible-gaming', 'Ответственная игра'],
           ['/privacy', 'Cookie'],
         ].map(([href, label], i, all) => (
