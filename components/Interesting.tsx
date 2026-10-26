@@ -12,8 +12,9 @@ type Fact = { item: FeedItem; slug: string; reason: string }
  * Два факта дня для «Интересно сегодня» (владелец прислал прототип ChatGPT: «Интересно сегодня как на фото типа 2 факта»):
  * самые сильные поводы подборок у разных матчей и разных подборок, сначала у не начавшихся (факт — до матча), без
  * «Выгодно» (это реклама) и без матча из «Матча в фокусе». Не случайно: иначе факты менялись бы при каждом обновлении.
+ * До шести (владелец: «если будет больше 2 интересных фактов … чтоб можно было слайдить следующие? только … умеренно»).
  */
-export function pickFacts(items: FeedItem[], skip: number | null, n = 2): Fact[] {
+export function pickFacts(items: FeedItem[], skip: number | null, n = 6): Fact[] {
   const all = items
     .filter((i) => i.match.id !== skip && i.match.status !== 'postponed' && i.match.status !== 'cancelled')
     .flatMap((item) => item.tags.filter((t) => t.slug !== 'value' && t.reason && TAG_BY_SLUG.has(t.slug)).map((t) => ({ item, t })))
@@ -32,7 +33,14 @@ export function Interesting({ facts }: { facts: Fact[] }) {
   return (
     <section aria-labelledby="facts-title" className="min-w-0">
       <BlockTitle rows id="facts-title" title="Интересно сегодня" aside={<TitleIcon href="/tags" label="Все подборки" />} />
-      <div className="grid grid-cols-2 gap-2.5">
+      {/* два факта — ровно в две колонки; больше — лентой вбок: видно два и край третьего, справа — до края экрана */}
+      <div
+        className={
+          facts.length > 2
+            ? 'scrollbar-none -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-2.5 overflow-x-auto px-4 [&>a]:shrink-0 [&>a]:basis-[calc((100%-10px)/2.15)] [&>a]:snap-start'
+            : 'grid grid-cols-2 gap-2.5'
+        }
+      >
         {facts.map(({ item, slug, reason }) => {
           const m = item.match
           return (

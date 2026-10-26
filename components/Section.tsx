@@ -75,8 +75,9 @@ export function BlockTitle({
 }
 
 /**
- * Значок раздела справа в строке заголовка — круглая ссылка 32px, как «‹» у `NavBack` (владелец: «справа от интересно
- * сегодня и где ставить сделать какие нибудь иконки в правом углу строки»): значок того раздела меню, куда ведёт.
+ * Значок раздела справа в строке заголовка (владелец: «справа от интересно сегодня и где ставить сделать какие нибудь
+ * иконки в правом углу строки», потом — «без подложек»): значок того раздела меню, куда ведёт, 20px серым без круга;
+ * место нажатия 32px, значок — по правому краю строк (`-mr-1.5`).
  */
 export function TitleIcon({ href, label }: { href: string; label: string }) {
   return (
@@ -84,9 +85,9 @@ export function TitleIcon({ href, label }: { href: string; label: string }) {
       href={href}
       aria-label={label}
       title={label}
-      className="grid h-8 w-8 place-items-center rounded-full bg-white/[0.07] text-dim transition-colors hover:bg-white/[0.13] hover:text-fg"
+      className="-mr-1.5 grid h-8 w-8 place-items-center text-dim transition-colors hover:text-fg"
     >
-      <NavIcon href={href} on size={18} />
+      <NavIcon href={href} on size={20} />
     </Link>
   )
 }
