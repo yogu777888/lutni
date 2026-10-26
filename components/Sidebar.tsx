@@ -2,7 +2,7 @@ import { BlockMore } from './BlockMore'
 import { PARTNERS } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import type { ValueRow } from '@/lib/day-picks'
-import { BlockTitle } from './Section'
+import { BlockTitle, TitleIcon } from './Section'
 import { PartnerCard } from './PartnerCard'
 import { ValueBlock } from './shell/RightPanel'
 
@@ -17,7 +17,7 @@ export function Sidebar({ values = [] }: { values?: ValueRow[] }) {
       {values.length ? <ValueBlock rows={values} card /> : null}
       {/* заголовок над карточкой, как «Где поставить» на странице матча */}
       <section className="min-w-0">
-        <BlockTitle rows title="Где ставить" />
+        <BlockTitle rows title="Где ставить" aside={<TitleIcon href="/bookmakers" label="Все букмекеры" />} />
         <div className="card overflow-hidden">
         <div className="divide-y divide-edge">
           {PARTNERS.slice(0, 3).map((p) => (

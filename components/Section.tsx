@@ -1,3 +1,6 @@
+import Link from 'next/link'
+import { NavIcon } from './NavIcon'
+
 export function Section({
   title,
   id,
@@ -68,6 +71,23 @@ export function BlockTitle({
       <h2 id={id} className="min-w-0 text-[20px] font-bold leading-tight tracking-[-0.01em] text-fg">{title}</h2>
       {aside ? <div className="text-[13px] text-mute">{aside}</div> : null}
     </div>
+  )
+}
+
+/**
+ * Значок раздела справа в строке заголовка — круглая ссылка 32px, как «‹» у `NavBack` (владелец: «справа от интересно
+ * сегодня и где ставить сделать какие нибудь иконки в правом углу строки»): значок того раздела меню, куда ведёт.
+ */
+export function TitleIcon({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      title={label}
+      className="grid h-8 w-8 place-items-center rounded-full bg-white/[0.07] text-dim transition-colors hover:bg-white/[0.13] hover:text-fg"
+    >
+      <NavIcon href={href} on size={18} />
+    </Link>
   )
 }
 
