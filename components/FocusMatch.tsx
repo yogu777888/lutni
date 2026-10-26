@@ -8,7 +8,8 @@ import { isLive } from '@/lib/rank'
 import type { MatchFull } from '@/lib/types'
 import { buildVerdict } from '@/lib/verdict'
 import { Flag } from './Flag'
-import { StorySymbol, symbolSoft } from './story/StorySymbol'
+import { TAG_BY_SLUG } from '@/lib/tags'
+import { StorySymbol, softTone, symbolSoft } from './story/StorySymbol'
 import { Icon } from './Icon'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
@@ -26,17 +27,20 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
   const started = m.status !== 'scheduled' && m.status !== 'postponed' && m.status !== 'cancelled'
 
   // значок факта: до начала — знак подборки её приглушённым цветом (как в правой панели), по ходу — о чём вывод
-  type Fact = { title: string; text?: string; sym?: string; icon?: 'chart' | 'ball' | 'card' | 'swap' }
+  type Fact = { title: string; text?: string; sym?: string; icon?: 'chart' | 'ball' | 'card' | 'swap'; label?: string }
   const fact: Fact | null = started
     ? full
       ? (matchNotes({ home: m.home.name, away: m.away.name, score: m.score ?? null, stats: full.stats ?? [], events: full.events, momentum: null, live, minute: m.elapsed })[0] ?? null)
       : null
     : (() => {
         const top = [...item.tags].sort((a, b) => b.score - a.score).find((t) => t.slug !== 'value' && t.reason)
-        if (top) return { title: top.reason, sym: top.slug }
+        if (top) return { title: top.reason, sym: top.slug, label: TAG_BY_SLUG.get(top.slug)?.title }
         const v = buildVerdict({ match: m, tags: item.tags })
-        return v ? { title: v.headline, text: v.goals ? `${v.goals}.` : undefined, sym: 'favorit' } : null
+        return v ? { title: v.headline, text: v.goals ? `${v.goals}.` : undefined, sym: 'favorit', label: 'Оценка tag.bet' } : null
       })()
+
+  // цвет плашки факта: до начала — подборки (приглушённый, как в правой панели), по ходу — синий «Главного»
+  const tone = fact?.sym ? symbolSoft(fact.sym) : softTone('#0a84ff')
 
   const status = live
     ? { text: m.elapsed ? `${m.elapsed}′` : 'идёт', live: true }
@@ -96,22 +100,26 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
       </div>
 
       {fact ? (
-        <div className="mt-4 flex items-start gap-3 rounded-tile bg-white/[0.04] px-4 py-3">
-          {/* значок без подложки (владелец: «а ты можешь значок без подложки ставить?») — на линии первой строки */}
-          <span aria-hidden className="grid h-[21px] shrink-0 place-items-center">
+        // факт — плашкой цвета своей подборки (по ходу — спокойный синий «Главного»), сверху значок и о чём он,
+        // текст — от левого края плашки, без отступа под значок (владелец прислал прототип ChatGPT: «иконку … и сам
+        // блок как то подкрасить? и не делай такой большой отступ слева у текста»)
+        <div
+          className="mt-4 rounded-tile px-4 py-3"
+          style={{ background: `color-mix(in oklch, ${tone} 12%, transparent)` }}
+        >
+          <p className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: tone }}>
             {fact.sym ? (
-              <StorySymbol k={fact.sym} tone={symbolSoft(fact.sym)} className="h-5 w-5" />
+              <StorySymbol k={fact.sym} tone={tone} className="h-4 w-4 shrink-0" />
             ) : (
-              <Icon k={fact.icon ?? 'chart'} size={20} className={fact.icon === 'card' ? 'text-loss' : 'text-fg/85'} />
+              <Icon k={fact.icon ?? 'chart'} size={16} className={fact.icon === 'card' ? 'shrink-0 text-loss' : 'shrink-0'} />
             )}
-          </span>
-          <div className="min-w-0">
-            <p className="text-[15px] font-semibold leading-snug">{fact.title}</p>
-            {fact.text ? (
-              // текстом, без ⓘ у xG: кнопка подсказки внутри ссылки — недопустимая вложенность
-              <p className="mt-1 text-[14px] leading-snug text-dim">{fact.text}</p>
-            ) : null}
-          </div>
+            {fact.label ?? 'Главное'}
+          </p>
+          <p className="mt-1.5 text-[15px] font-semibold leading-snug">{fact.title}</p>
+          {fact.text ? (
+            // текстом, без ⓘ у xG: кнопка подсказки внутри ссылки — недопустимая вложенность
+            <p className="mt-1 text-[14px] leading-snug text-dim">{fact.text}</p>
+          ) : null}
         </div>
       ) : null}
     </Link>
