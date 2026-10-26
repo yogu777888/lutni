@@ -345,7 +345,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
 
       <div className="shell-l-full flex h-full flex-col">
       <div className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto p-4 edge-fade">
-        <h2 className="sticky -top-4 z-10 -mx-4 -mt-4 flex items-center justify-between bg-panel px-4 pb-2 pt-4 text-[15px] font-semibold after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-linear-to-b after:from-panel after:to-transparent after:content-['']">
+        <h2 className="sticky -top-4 z-10 -mx-4 -mt-4 flex items-center justify-between bg-panel px-4 pb-2 pt-4 text-[15px] font-semibold edge-top">
           Турниры дня
           <PanelToggle side="l" open />
         </h2>

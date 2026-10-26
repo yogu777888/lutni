@@ -1071,24 +1071,28 @@ html[data-shell-rc] .shell-r-rail {
   order: var(--ot);
 }
 
-/* Затухание у нижнего края, где текст уходит под край (владелец: «в яндекс картах снизу такое типа размытие или
-   затухание… а мы можем где у нас текст уходит тоже что нибудь придумать? только без кринжа»), как край прокрутки в iOS:
-   текст не обрывается ровной линией, а растворяется в фоне. Видно, только пока ниже есть что листать: в конце страницы
-   или панели и на коротких страницах его нет (прогресс прокрутки — `animation-timeline`; браузер без него — без затухания).
-   - страница (`.edge-fade-page` в app/layout.tsx): слой у низа окна — фон страницы с лёгким размытием, оба нарастают
-     книзу (маска); ниже lg — за нижним меню и вокруг него (уходит меню — слой ниже), от xl — по колонке центра над
-     полоской рамки (`ShellFrame`);
-   - боковые панели (`.edge-fade` у прокрутки в LeftPanel/RightPanel): последние 40px списка растворяются в панели —
-     пара к затуханию под закреплённым заголовком сверху. */
+/* Затухание у краёв прокрутки — одно правило везде (владелец: «а почему затухания отличаются и как правильнее сделать?»
+   — «единое затухание сделай»; до этого: «в яндекс картах снизу такое типа размытие или затухание… только без кринжа»):
+   текст не обрывается ровной линией, а растворяется в фоне на 32px — сверху и снизу, в центре и в обеих панелях. Только
+   фон того, во что уходит текст (страница `#090c10`, панель `--color-panel`), без размытия и свечения. Видно, только пока
+   за краем есть что листать: сверху — когда уже прокрутили, снизу — пока не дошли до конца (прогресс прокрутки —
+   `animation-timeline`; браузер без него, Firefox, — без затухания, у заголовков панелей — постоянная полоска).
+   - страница: снизу слой `.edge-fade-page`, сверху `.edge-fade-top` (оба в app/layout.tsx); сверху — от xl, под шапкой
+     и полоской рамки (ниже xl шапка стеклом или уезжает при прокрутке — там затухания сверху нет); под липкими
+     строками (дни на главной, `MatchBar`) его не видно — они выше слоем;
+     снизу ниже lg — за нижним меню и вокруг него (высота `--tabbar` + 20px; меню ушло — 32px над полоской жестов),
+     от xl — по колонке центра над полоской рамки (`ShellFrame`);
+   - боковые панели: снизу — маска у прокрутки (`.edge-fade` в LeftPanel/RightPanel), сверху — полоска под закреплённым
+     заголовком (`.edge-top`). */
 @property --edge {
   syntax: '<length>';
   inherits: false;
   initial-value: 0px;
 }
-/* панели — только маска; слой страницы — только прозрачность (общие keyframes гасили панель целиком) */
+/* у каждой анимации свои keyframes: общие гасили панель целиком (владелец: «в правом блоке теперь все темное стало») */
 @keyframes edge-out {
   from {
-    --edge: 40px;
+    --edge: 32px;
   }
   to {
     --edge: 0px;
@@ -1102,7 +1106,25 @@ html[data-shell-rc] .shell-r-rail {
     opacity: 0;
   }
 }
-.edge-fade-page {
+@keyframes edge-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.edge-top::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: 32px;
+  background: linear-gradient(var(--color-panel), transparent);
+}
+.edge-fade-page,
+.edge-fade-top {
   display: none;
 }
 @supports (animation-timeline: scroll()) {
@@ -1111,25 +1133,40 @@ html[data-shell-rc] .shell-r-rail {
     mask-image: linear-gradient(to bottom, #000 calc(100% - var(--edge)), transparent);
     animation: edge-out linear both;
     animation-timeline: scroll(self);
-    animation-range: calc(100% - 40px) 100%;
+    animation-range: calc(100% - 32px) 100%;
+  }
+  .edge-top::after {
+    animation: edge-in linear both;
+    animation-timeline: scroll(nearest);
+    animation-range: 0 32px;
+  }
+  .edge-fade-page,
+  .edge-fade-top {
+    position: fixed;
+    inset-inline: 0;
+    height: 32px;
+    pointer-events: none;
+    background: #090c10;
   }
   .edge-fade-page {
     display: block;
-    position: fixed;
-    inset-inline: 0;
     bottom: 0;
     z-index: 30;
-    height: 48px;
-    pointer-events: none;
     opacity: 0;
-    background: rgb(9 12 16 / 0.9);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
     -webkit-mask-image: linear-gradient(to bottom, transparent, #000);
     mask-image: linear-gradient(to bottom, transparent, #000);
     animation: edge-page-out linear both;
     animation-timeline: scroll(root);
-    animation-range: calc(100% - 48px) 100%;
+    animation-range: calc(100% - 32px) 100%;
+  }
+  .edge-fade-top {
+    /* ниже липких строк (z-20) и рамки, выше карточек */
+    z-index: 19;
+    -webkit-mask-image: linear-gradient(to top, transparent, #000);
+    mask-image: linear-gradient(to top, transparent, #000);
+    animation: edge-in linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 32px;
   }
   @media (max-width: 1023.98px) {
     .edge-fade-page {
@@ -1141,10 +1178,17 @@ html[data-shell-rc] .shell-r-rail {
     }
   }
   @media (min-width: 1280px) {
-    .edge-fade-page {
+    .edge-fade-page,
+    .edge-fade-top {
       left: calc(var(--shell-l) + 16px);
       right: calc(var(--shell-r) + 16px);
+    }
+    .edge-fade-page {
       bottom: 8px;
+    }
+    .edge-fade-top {
+      display: block;
+      top: 72px;
     }
   }
 }
