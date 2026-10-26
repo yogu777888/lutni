@@ -8,6 +8,7 @@ import { isLive } from '@/lib/rank'
 import type { MatchFull } from '@/lib/types'
 import { buildVerdict } from '@/lib/verdict'
 import { Flag } from './Flag'
+import { StorySymbol, symbolSoft } from './story/StorySymbol'
 import { Icon } from './Icon'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
@@ -24,15 +25,17 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
   const live = isLive(m)
   const started = m.status !== 'scheduled' && m.status !== 'postponed' && m.status !== 'cancelled'
 
-  const fact: { title: string; text?: string } | null = started
+  // значок факта: до начала — знак подборки её приглушённым цветом (как в правой панели), по ходу — о чём вывод
+  type Fact = { title: string; text?: string; sym?: string; icon?: 'chart' | 'ball' | 'card' | 'swap' }
+  const fact: Fact | null = started
     ? full
       ? (matchNotes({ home: m.home.name, away: m.away.name, score: m.score ?? null, stats: full.stats ?? [], events: full.events, momentum: null, live, minute: m.elapsed })[0] ?? null)
       : null
     : (() => {
         const top = [...item.tags].sort((a, b) => b.score - a.score).find((t) => t.slug !== 'value' && t.reason)
-        if (top) return { title: top.reason }
+        if (top) return { title: top.reason, sym: top.slug }
         const v = buildVerdict({ match: m, tags: item.tags })
-        return v ? { title: v.headline, text: v.goals ? `${v.goals}.` : undefined } : null
+        return v ? { title: v.headline, text: v.goals ? `${v.goals}.` : undefined, sym: 'favorit' } : null
       })()
 
   const status = live
@@ -93,12 +96,27 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
       </div>
 
       {fact ? (
-        <div className="mt-4 rounded-tile bg-white/[0.04] px-4 py-3">
-          <p className="text-[15px] font-semibold leading-snug">{fact.title}</p>
-          {fact.text ? (
-            // текстом, без ⓘ у xG: кнопка подсказки внутри ссылки — недопустимая вложенность
-            <p className="mt-1 text-[14px] leading-snug text-dim">{fact.text}</p>
-          ) : null}
+        <div className="mt-4 flex items-start gap-3 rounded-tile bg-white/[0.04] px-4 py-3">
+          {fact.sym ? (
+            <span
+              aria-hidden
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full"
+              style={{ background: `color-mix(in oklch, ${symbolSoft(fact.sym)} 14%, transparent)` }}
+            >
+              <StorySymbol k={fact.sym} tone={symbolSoft(fact.sym)} className="h-[18px] w-[18px]" />
+            </span>
+          ) : (
+            <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.08]">
+              <Icon k={fact.icon ?? 'chart'} size={18} className={fact.icon === 'card' ? 'text-loss' : 'text-fg/85'} />
+            </span>
+          )}
+          <div className="min-w-0 self-center">
+            <p className="text-[15px] font-semibold leading-snug">{fact.title}</p>
+            {fact.text ? (
+              // текстом, без ⓘ у xG: кнопка подсказки внутри ссылки — недопустимая вложенность
+              <p className="mt-1 text-[14px] leading-snug text-dim">{fact.text}</p>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </Link>
