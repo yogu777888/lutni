@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Icon } from '@/components/Icon'
+import { FILTER_EVENT, MORE_EVENT } from '@/components/MoreCountries'
 
 const norm = (s: string) => s.toLowerCase().replace(/ё/g, 'е').trim()
 /** Что ищем у строки: видимый текст (по-русски) и `data-q` — оригинальное название, если оно другое. */
@@ -17,6 +18,16 @@ const hay = (el: Element | null) => (el ? norm(`${el.textContent ?? ''} ${(el as
  */
 export function LeagueFilter({ target }: { target: string }) {
   const [q, setQ] = useState('')
+  // догруженные страны (`MoreCountries`) — пройти список заново
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const on = () => setTick((t) => t + 1)
+    window.addEventListener(MORE_EVENT, on)
+    return () => window.removeEventListener(MORE_EVENT, on)
+  }, [])
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(FILTER_EVENT, { detail: q.trim() }))
+  }, [q])
   useEffect(() => {
     const root = document.getElementById(target)
     if (!root) return
@@ -43,14 +54,15 @@ export function LeagueFilter({ target }: { target: string }) {
     }
     const empty = root.querySelector<HTMLElement>('[data-empty]')
     if (empty) {
-      empty.hidden = !n || found > 0
+      // пока остальные страны догружаются, «ничего не нашлось» не пишем — там пишет «Загружаем страны…»
+      empty.hidden = !n || found > 0 || Boolean(root.querySelector('[data-pending]'))
       // топ-турниры — отдельным блоком выше, в странах их нет: «Premier League» без подсказки давал «ничего не нашлось»
       const tops = n ? [...document.querySelectorAll<HTMLElement>('[data-top]')].filter((el) => hay(el).includes(n)).map((el) => el.dataset.top) : []
       empty.textContent = tops.length
         ? `${[...new Set(tops)].join(', ')} — в топ-турнирах выше. Среди остальных стран и турниров ничего не нашлось.`
         : 'Ничего не нашлось. Попробуйте название страны или турнира по-английски — например, «Serie B».'
     }
-  }, [q, target])
+  }, [q, target, tick])
   return (
     <label className="relative block w-full sm:w-60">
       <span className="sr-only">Фильтр: страна или турнир</span>
