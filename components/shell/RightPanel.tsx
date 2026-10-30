@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { BlockMore } from '../BlockMore'
+import { DayNumbersBlock } from '../DayNumbersBlock'
 import { useEffect, useId, useState } from 'react'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayPicks, ValueRow } from '@/lib/day-picks'
@@ -368,6 +369,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
           ) : (
             <p className="mt-2 text-[13.5px] text-dim">Подборки появятся, когда будут матчи дня.</p>
           )}
+          {picks.numbers ? <DayNumbersBlock n={picks.numbers} /> : null}
           <ValueBlock rows={picks.values} />
         </div>
       </div>

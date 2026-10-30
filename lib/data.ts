@@ -494,6 +494,8 @@ export type MatchSummary = {
   } | null
   /** лучшая выгодная ставка именно по линии PARI (для «Выгодно сегодня» в правой панели — только PARI), иначе null */
   pari?: { key: string; label: string; prob: number; odd: number; ev: number } | null
+  /** оценка tag.bet (модель) — для «Сегодня в цифрах» (средние по матчам дня, `lib/day-numbers.ts`); нет модели — null */
+  probs?: { home: number; draw: number; away: number; over25: number | null; btts: number | null } | null
   at: number
 }
 
@@ -615,7 +617,7 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
   const facts = teamFacts({ homeForm, awayForm, h2h })
   // «История точности»: последняя оценка до начала матча — на диск (после начала не меняется)
   void recordForecast(m, model, cons).catch(() => {})
-  const summary: MatchSummary = { id, tags, form, facts, pick: summaryPick(pick), pari: m.status === 'scheduled' ? pariValue(books, candidates) : null, at: Date.now() }
+  const summary: MatchSummary = { id, tags, form, facts, pick: summaryPick(pick), pari: m.status === 'scheduled' ? pariValue(books, candidates) : null, probs: model ? { ...model.x12, over25: model.over['2.5'] ?? null, btts: model.btts ?? null } : null, at: Date.now() }
   cache.set(`summary:${id}`, summary, { ttl: 3 * H, stale: 9 * H, persist: false })
 
   return { full, match: m, books, oddsAt, cons, glicko, model, candidates, pick, homeForm, awayForm, h2h, injuries, standings, tags, preview }

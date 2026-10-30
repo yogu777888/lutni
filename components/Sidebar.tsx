@@ -2,6 +2,8 @@ import { BlockMore } from './BlockMore'
 import { PARTNERS } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import type { ValueRow } from '@/lib/day-picks'
+import type { DayNumbers } from '@/lib/day-numbers'
+import { DayNumbersBlock } from './DayNumbersBlock'
 import { BlockTitle } from './Section'
 import { PartnerCard } from './PartnerCard'
 import { ValueBlock } from './shell/RightPanel'
@@ -11,9 +13,11 @@ import { ValueBlock } from './shell/RightPanel'
  * правой панели нет, а это блок, который приносит деньги) и «Где ставить». «Как читать теги» убрана: тегов в строках
  * давно нет, легенда объясняла то, чего на экране нет (владелец: «а на телефоне главная как?»).
  */
-export function Sidebar({ values = [] }: { values?: ValueRow[] }) {
+export function Sidebar({ values = [], numbers = null }: { values?: ValueRow[]; numbers?: DayNumbers | null }) {
   return (
     <aside className="space-y-8 lg:sticky lg:top-24 lg:self-start">
+      {/* «Сегодня в цифрах» — перед «Выгодно сегодня»: сначала с чем сравнивать, потом где кэф выше оценки */}
+      {numbers ? <DayNumbersBlock n={numbers} card /> : null}
       {values.length ? <ValueBlock rows={values} card /> : null}
       {/* заголовок над карточкой, как «Где поставить» на странице матча */}
       <section className="min-w-0">

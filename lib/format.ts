@@ -164,3 +164,14 @@ export const pct = (p: number | undefined | null, digits = 0) =>
   p == null || Number.isNaN(p) ? '—' : `${(p * 100).toFixed(digits)}%`
 export const signedPct = (p: number, digits = 1) => `${p >= 0 ? '+' : ''}${(p * 100).toFixed(digits).replace('.', ',')}%`
 export const round1 = (x: number) => Math.round(x * 10) / 10
+
+/** Когда обновили: «в 19:22» сегодня, «вчера в 23:40», «пт, 3 октября в 19:22» — строка «Кэфы обновлены …» на странице
+ *  матча и «Обновлено …» в историях (время снимка линии, а не открытия страницы). */
+export function updatedText(at: number): string {
+  const day = ymdInTz(at)
+  const today = ymdInTz(appNow())
+  const time = `в\u00a0${formatTime(at)}`
+  if (day === today) return time
+  const label = dayLabel(day, today)
+  return `${/^[А-ЯЁ]/.test(label) ? label.toLowerCase() : label} ${time}`
+}

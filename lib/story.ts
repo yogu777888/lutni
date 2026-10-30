@@ -11,7 +11,7 @@ import { SITE } from '@/config/site'
 import { goHref } from './affiliate'
 import { partnerBooks } from './lines'
 import type { MatchInsights } from './data'
-import { dayLabel, formatTime, pluralN, todayYmd, ymdInTz } from './format'
+import { dayLabel, formatTime, pluralN, todayYmd, updatedText, ymdInTz } from './format'
 import { matchHref } from './links'
 import { visibleStats } from './sstats/normalize'
 import { buildVerdict, outcomeText, split100 } from './verdict'
@@ -65,6 +65,8 @@ export type StorySlide =
       fair: X12
       /** линия главного легального партнёра — ячейки ведут к нему */
       line: { partner: string; href: string; odds: { home: number | null; draw: number | null; away: number | null } } | null
+      /** «Обновлено в 19:22» — когда взяли линию, по которой считана оценка (`oddsAt`); нет снимка — null */
+      updated: string | null
     }
   | {
       kind: 'goals'
@@ -251,6 +253,7 @@ export function buildStory(ins: MatchInsights): StoryData | null {
             odds: { home: ref.book.x12?.home?.value ?? null, draw: ref.book.x12?.draw?.value ?? null, away: ref.book.x12?.away?.value ?? null },
           }
         : null,
+      updated: ins.oddsAt ? `Обновлено ${updatedText(ins.oddsAt)}` : null,
     })
   }
 

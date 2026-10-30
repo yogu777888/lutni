@@ -323,6 +323,9 @@ function Odds({ s, story }: { s: S<'odds'>; story: StoryData }) {
         </div>
         {s.line ? <p className="mt-3 text-center text-[12px] text-dim">Кэфы {s.line.partner} · Реклама · 18+</p> : null}
       </Card>
+      {/* время снимка линии, по которой считана оценка (владелец, из переписки: «Внутри истории показывать текущий процент
+          и «Обновлено в 14:02»»); в старом кэше поля нет */}
+      {s.updated ? <p className="st-fade mt-3 text-center text-[13px] text-mute">{s.updated}</p> : null}
     </Frame>
   )
 }

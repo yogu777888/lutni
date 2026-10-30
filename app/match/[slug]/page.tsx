@@ -28,6 +28,8 @@ import { MatchTags } from '@/components/match/MatchTags'
 import { PartnerCard } from '@/components/PartnerCard'
 import { BlockNote, BlockTitle, Section } from '@/components/Section'
 import { TeamLogo } from '@/components/TeamLogo'
+import { TenScale, tenText } from '@/components/TenScale'
+import { dayNumbers } from '@/lib/day-numbers'
 import { StandingsTable } from '@/components/StandingsTable'
 import { StickyCta } from '@/components/StickyCta'
 import { PARTNERS, partnerForApiBookmaker, primaryPartner } from '@/config/bookmakers'
@@ -38,7 +40,7 @@ import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
 import { matchNotes } from '@/lib/match-notes'
-import { appNow, dayLabel, formatDateShort, formatTime, idFromSlug, pct, ymdInTz } from '@/lib/format'
+import { appNow, dayLabel, formatDateShort, formatTime, idFromSlug, pct, updatedText, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
 import { NOINDEX, indexMatch } from '@/lib/seo'
@@ -155,6 +157,8 @@ export default async function MatchPage({ params }: Props) {
     // идёт матч — на табло кэфы PARI по ходу матча (доматчевые там уже история, поставить по ним нельзя)
     isLive ? Promise.race([getLiveOdds(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))]) : null,
   ])
+  // средние шансы по матчам дня — с чем сравнить «3 гола и больше» у этого матча (только оценка модели: среднее — тоже по ней)
+  const day = ins.model ? await dayNumbers(ymdInTz(m.ts)) : null
   const full = ls && (ls.stats.length || (ls.venue && !base.venue))
     ? { ...base, stats: [...base.stats, ...ls.stats], venue: base.venue ?? (ls.venue ? { ...ls.venue, capacity: null } : null) }
     : base
@@ -383,8 +387,8 @@ export default async function MatchPage({ params }: Props) {
                         split: model.lambdas.home / (model.lambdas.home + model.lambdas.away || 1),
                       }
                     : null,
-                  over25 != null ? { k: '3 гола и больше', v: <span className="num font-semibold">{pct(over25)}</span>, p: over25 } : null,
-                  btts != null ? { k: 'Обе забьют', v: <span className="num font-semibold">{pct(btts)}</span>, p: btts } : null,
+                  over25 != null ? { k: '3 гола и больше', v: <span className="num font-semibold">{pct(over25)}</span>, p: over25, day: model ? day?.over25 : null } : null,
+                  btts != null ? { k: 'Обе забьют', v: <span className="num font-semibold">{pct(btts)}</span>, p: btts, day: model ? day?.btts : null } : null,
                   model && scheduled
                     ? {
                         k: 'Вероятный счёт',
@@ -426,9 +430,16 @@ export default async function MatchPage({ params }: Props) {
                           <div className={`h-full flex-1 rounded-r-full ${r.split <= 0.5 ? 'bg-white/85' : 'bg-white/30'}`} />
                         </div>
                       ) : r.p != null ? (
-                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.09]" aria-hidden>
-                          <div className="h-full rounded-full bg-white/85" style={{ width: `${Math.round(r.p * 100)}%` }} />
-                        </div>
+                        // шкала из 10 делений и «≈ 5 из 10» (план — пункт 2: «58% ≈ 6 из 10»); ниже — с чем сравнить:
+                        // средний шанс по матчам топ-турниров этого дня («Сегодня в цифрах», `lib/day-numbers.ts`)
+                        <>
+                          <TenScale p={r.p} className="mt-2" />
+                          <p className="mt-1.5 text-[13px] text-dim">
+                            {tenText(r.p)}
+                            {/* «выше среднего на 7 п.п. (в среднем 50%)» на телефоне рвалось на две строки — 57% рядом с 50% и так видно */}
+                            {'day' in r && r.day != null ? ` · в среднем за день ${pct(r.day)}` : null}
+                          </p>
+                        </>
                       ) : null}
                     </div>
                   ))}
@@ -854,12 +865,3 @@ export default async function MatchPage({ params }: Props) {
   )
 }
 
-/** «в 19:22» / «вчера в 23:40» / «4 октября в 19:22» — когда взяли линию (время по Москве) */
-function updatedText(at: number): string {
-  const day = ymdInTz(at)
-  const today = ymdInTz(appNow())
-  const time = `в\u00a0${formatTime(at)}`
-  if (day === today) return time
-  const label = dayLabel(day, today)
-  return `${/^[А-ЯЁ]/.test(label) ? label.toLowerCase() : label} ${time}`
-}
