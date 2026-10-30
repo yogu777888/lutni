@@ -14,7 +14,7 @@ describe('«Главное» словами', () => {
 
   it('удары — во сколько раз честно, чьи числа — по названиям, одна мысль — один вывод', () => {
     const four = matchNotes({ ...base, score: { home: 0, away: 0 }, stats: [st('totalShots', 12, 3)] })
-    expect(four[0]).toEqual({ title: '«Арсенал» бьёт вчетверо чаще', text: 'Удары: «Арсенал» — 12, «Челси» — 3.' })
+    expect(four[0]).toEqual({ title: '«Арсенал» бьёт вчетверо чаще', text: 'Удары: «Арсенал» — 12, «Челси» — 3.', icon: 'ball' })
     expect(matchNotes({ ...base, score: { home: 0, away: 0 }, stats: [st('totalShots', 10, 4)] })[0].title).toBe('«Арсенал» бьёт больше чем вдвое чаще')
     // ведёт по делу, бьёт чаще и мяч чаще — про одну команду: остаётся самый важный
     const one = matchNotes({ ...base, score: { home: 2, away: 0 }, stats: [st('expectedGoals', 2.1, 0.4), st('totalShots', 12, 3), st('ballPossession', 66, 34)] })
