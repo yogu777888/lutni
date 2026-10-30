@@ -7,6 +7,7 @@ import type { League } from '@/lib/types'
 import { flagCode, leagueTitle } from '@/lib/flags'
 import { Flag } from './Flag'
 import { MatchRow } from './MatchRow'
+import { BlockMore } from './BlockMore'
 import { BlockTitle } from './Section'
 import { liveText } from './shell/StateLine'
 
@@ -44,6 +45,8 @@ export function LeagueBlock({
   items,
   lines = {},
   live = 0,
+  limit,
+  more,
 }: {
   league: League
   items: FeedItem[]
@@ -51,7 +54,12 @@ export function LeagueBlock({
   /** линия партнёра по матчам: кэфы в строках — ссылки к нему */
   lines?: Record<number, X12Line>
   live?: number
+  /** на главной — первые N строк, остальные — ссылкой «Ещё N матчей» на страницу «Матчи» (`more`) */
+  limit?: number
+  more?: string
 }) {
+  const sorted = [...items].sort(byState)
+  const shown = limit ? sorted.slice(0, limit) : sorted
   return (
     // id — для «Турниров дня» в левой панели (клик прокручивает сюда)
     // заголовок — над карточкой, на фоне страницы, как разделы страницы матча (владелец: «как визуально сделать блоки на
@@ -89,9 +97,12 @@ export function LeagueBlock({
         </div>
       </header>
       <div className="card divide-y divide-edge overflow-hidden">
-        {[...items].sort(byState).map((it) => (
+        {shown.map((it) => (
           <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} line={lines[it.match.id] ?? null} />
         ))}
+        {more && sorted.length > shown.length ? (
+          <BlockMore href={`${more}#league-${league.id}`}>Ещё {pluralN(sorted.length - shown.length, ['матч', 'матча', 'матчей'])}</BlockMore>
+        ) : null}
       </div>
       {/* пометка — у самих кэфов: под карточкой справа, под их колонкой */}
       <AdNote items={items} lines={lines} under />

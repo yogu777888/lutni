@@ -389,9 +389,14 @@ export async function DayView({
             {liveTop.length || liveRest.length ? <LiveBlock items={liveTop} total={liveMain.length} rest={liveRest} /> : null}
             {byTime && timeList.length ? <TimeBlock items={timeList} lines={lines} /> : null}
             {byTime ? null : featured.map((g) => (
-              <LeagueBlock key={g.league.id} league={g.league} items={g.items} lines={lines} live={liveIn.get(g.league.id) ?? 0} featured />
+              <LeagueBlock key={g.league.id} league={g.league} items={g.items} lines={lines} live={liveIn.get(g.league.id) ?? 0} featured {...(view === 'home' ? { limit: 3, more: list } : {})} />
             ))}
-            {!byTime && others.length ? (
+            {view === 'home' && !byTime && featured.length ? (
+              <Link href={list} className="card flex h-12 items-center justify-center gap-1.5 text-[15px] font-semibold transition-colors hover:bg-panel-3">
+                Все матчи {ymd === today ? 'на сегодня' : 'дня'} →
+              </Link>
+            ) : null}
+            {!byTime && others.length && !(view === 'home' && featured.length) ? (
               // «Другие турниры» — раскрывашкой заголовком на фоне, внутри — те же блоки лиг с заголовками над карточками
               // (было — карточка с турнирами-карточками внутри, «блок в блоке»)
               <details className="group" open={!featured.length}>
