@@ -33,6 +33,8 @@ const TAG_WEIGHT: Record<string, number> = {
   kadry: 0.5,
   'tm-2-5': 0.5,
   favorit: 0.4,
+  uglovye: 0.5,
+  kartochki: 0.5,
 }
 
 const tagValue = (t: TagHit) => (TAG_WEIGHT[t.slug] ?? 0.5) * (0.5 + 0.5 * t.score)

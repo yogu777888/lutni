@@ -1,4 +1,4 @@
-import type { TeamSetPieces } from '@/lib/data'
+import { perMatch, type TeamSetPieces } from '@/lib/team-xg'
 import type { Team } from '@/lib/types'
 import { CmpRow } from './FormBlock'
 import { TeamHead } from './TeamHead'
@@ -19,8 +19,8 @@ export function SetPiecesBlock({ home, away, h, a }: { home: Team; away: Team; h
   const yh = has(h, 'cardsN')
   const ya = has(a, 'cardsN')
   // в матчах обеих команд — только если цифры есть у обеих: по одной команде «в их матчах» было бы неправдой
-  const corners = ch && ca ? (ch.cornersFor + ch.cornersAgainst + ca.cornersFor + ca.cornersAgainst) / 2 : null
-  const cards = yh && ya ? (yh.cards + yh.cardsAgainst + ya.cards + ya.cardsAgainst) / 2 : null
+  const corners = perMatch(h, a, 'corners')
+  const cards = perMatch(h, a, 'cards')
   const big = (v: number, word: string) => (
     <div className="flex items-end gap-2.5">
       <span className="display-num text-[44px] leading-[0.9] text-fg sm:text-[52px]">{dec(v)}</span>

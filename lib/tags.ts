@@ -11,6 +11,7 @@ import { pct, pluralN } from './format'
 import type { Candidate, Consensus, ModelOutput, Pick } from './model'
 import { isValue } from './model'
 import type { H2H, TeamForm } from './stats'
+import { perMatch, type TeamSetPieces } from './team-xg'
 import type { Injury, Match, Standings } from './types'
 import { outcomeText, split100 } from './verdict'
 
@@ -90,6 +91,28 @@ export const TAGS: TagDef[] = [
     bet: 'обе забьют',
     kind: 'neutral',
     deep: false,
+  },
+  {
+    slug: 'uglovye',
+    label: '#много угловых',
+    title: 'Много угловых',
+    hint: 'В последних матчах этих команд много угловых',
+    about:
+      'Статистика прошлых игр, а не прогноз: в последних матчах обеих команд (до 5 у каждой, минимум 3 с данными) в среднем было 10,5 угловых за матч и больше — считаем и угловые команды, и угловые её соперников. Шанс на угловые в этом матче мы не оцениваем.',
+    bet: '',
+    kind: 'neutral',
+    deep: true,
+  },
+  {
+    slug: 'kartochki',
+    label: '#много карточек',
+    title: 'Много карточек',
+    hint: 'В последних матчах этих команд много жёлтых карточек',
+    about:
+      'Статистика прошлых игр, а не прогноз: в последних матчах обеих команд (до 5 у каждой, минимум 3 с данными) в среднем было 4,5 жёлтой карточки за матч и больше — у самой команды и у её соперников. Судью и шанс на карточки в этом матче мы не учитываем.',
+    bet: '',
+    kind: 'neutral',
+    deep: true,
   },
   {
     slug: 'favorit',
@@ -203,7 +226,13 @@ export type TagInput = {
   h2h?: H2H | null
   injuries?: Injury[]
   standings?: Standings | null
+  /** угловые и жёлтые прошлых матчей обеих команд — «Много угловых», «Много карточек» */
+  setPieces?: { home: TeamSetPieces | null; away: TeamSetPieces | null } | null
 }
+
+/** Пороги «Много угловых» / «Много карточек» — в среднем за матч в последних играх обеих команд. */
+export const CORNERS_MIN = 10.5
+export const CARDS_MIN = 4.5
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x))
 const MATCHES = ['матч', 'матча', 'матчей'] as const
@@ -281,6 +310,16 @@ export function computeTags(input: TagInput): TagHit[] {
       add('obe-zabyut', rate - 0.4, `Обе забивали в ${pct(rate)} последних матчей команд`, `Забивали обе\u00a0— в\u00a0${pct(rate)} последних матчей команд`, rate)
     }
   }
+
+  // угловые и карточки — средние прошлых игр обеих команд, без модели (владелец: «пока просто визуально сделай»)
+  const sp = input.setPieces
+  const dec1 = (v: number) => v.toFixed(1).replace('.', ',')
+  const corners = perMatch(sp?.home, sp?.away, 'corners')
+  if (corners != null && corners >= CORNERS_MIN)
+    add('uglovye', (corners - 9.5) / 3, `В последних матчах команд в среднем ${dec1(corners)} угловых за матч`, `В среднем ${dec1(corners)} угловых за матч в последних играх команд`)
+  const cards = perMatch(sp?.home, sp?.away, 'cards')
+  if (cards != null && cards >= CARDS_MIN)
+    add('kartochki', (cards - 4) / 3, `В последних матчах команд в среднем ${dec1(cards)} жёлтых за матч`, `В среднем ${dec1(cards)} жёлтых за матч в последних играх команд`)
 
   // фаворит / равные
   if (x12) {

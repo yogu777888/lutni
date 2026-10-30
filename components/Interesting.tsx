@@ -58,6 +58,10 @@ function heroOf(slug: string, reason: string): { num: string; unit: string } | n
       return { num: num.replace('/', ' из '), unit: 'встреч' }
     case 'top-match':
       return { num: num.replace('·', ' и '), unit: 'места' }
+    case 'uglovye':
+      return { num, unit: 'угловых за матч' }
+    case 'kartochki':
+      return { num, unit: 'жёлтых за матч' }
   }
   return null
 }

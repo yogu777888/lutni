@@ -78,6 +78,8 @@ const SHORT: Record<string, string> = {
   kadry: '+',
   h2h: 'H2H',
   'top-match': '1·2',
+  uglovye: 'УГ',
+  kartochki: 'ЖК',
 }
 
 /** «Табло» кружка: главная цифра из объяснения самого сильного матча группы. */
@@ -113,6 +115,10 @@ export function statFor(slug: string, reason: string): string {
     case 'top-match':
       m = num(/с (\d+)-го и (\d+)-го/)
       return m ? `${m[1]}·${m[2]}` : SHORT['top-match']
+    case 'uglovye':
+    case 'kartochki':
+      m = num(/(\d+,\d)/)
+      return m ? m[1] : SHORT[slug]
   }
   return SHORT[slug] ?? '#'
 }
@@ -128,6 +134,8 @@ const CIRCLE_LABEL: Record<string, string> = {
   'серии побед и неудач': 'Серия',
   'дома не проигрывают': 'Крепость',
   'много травм': 'Травмы',
+  'много угловых': 'Угловые',
+  'много карточек': 'Карточки',
   'кэф упал': 'Прогруз',
 }
 
@@ -195,7 +203,7 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
 }
 
 /** Какие теги идут в кружки на главной — по пользе для посетителя; остальные — в «Все теги». */
-const MAIN_TAGS = ['value', 'progruz', 'tb-2-5', 'favorit', 'obe-zabyut', 'ravnye', 'andedog', 'top-match', 'tm-2-5', 'seriya', 'krepost', 'kadry', 'h2h']
+const MAIN_TAGS = ['value', 'progruz', 'tb-2-5', 'favorit', 'obe-zabyut', 'ravnye', 'andedog', 'top-match', 'tm-2-5', 'seriya', 'krepost', 'uglovye', 'kartochki', 'kadry', 'h2h']
 
 /**
  * Кружки для первого экрана: «В игре», «Топ дня» и не больше max тегов — самых полезных.

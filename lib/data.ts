@@ -34,7 +34,8 @@ import type {
 import { buildForm, buildH2H, type H2H, type Res, type TeamForm } from './stats'
 import { computeTags, type TagHit } from './tags'
 import { teamFacts, type Fact } from './facts'
-import { teamXg, type GameXg, type TeamXg } from './team-xg'
+import { teamXg, type GameXg, type TeamSetPieces, type TeamXg } from './team-xg'
+export type { TeamSetPieces }
 import type { Glicko, Injury, LeagueInfo, Match, MatchFull, Standings, Team } from './types'
 
 export type Opts = { priority?: Priority }
@@ -413,7 +414,6 @@ export async function getTeamXg(form: TeamForm | null, opts: Opts = {}): Promise
  * Угловые и жёлтые команды за 5 последних матчей формы — средние «за игру» (свои и соперников). Только статистика
  * прошлых игр, без модели (владелец: «давай без этого, пока просто визуально сделай»). Меньше трёх матчей с цифрами — `null`.
  */
-export type TeamSetPieces = { cornersN: number; cornersFor: number; cornersAgainst: number; cardsN: number; cards: number; cardsAgainst: number }
 export async function getTeamSetPieces(form: TeamForm | null, opts: Opts = {}): Promise<TeamSetPieces | null> {
   if (!form) return null
   const games = form.games.slice(0, 5)
@@ -636,6 +636,12 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
   const homeForm = buildForm(m.home.id, teamGames)
   const awayForm = buildForm(m.away.id, teamGames)
   const h2h = buildH2H(m.home.id, m.away.id, h2hGames)
+  // угловые и жёлтые прошлых матчей — для подборок «Много угловых» и «Много карточек»: ждём недолго (карточки прошлых
+  // матчей обычно уже в кэше — их грузит прогрев для xG), не успели — подборки появятся при следующем разборе
+  const setPieces = await Promise.race([
+    Promise.all([settle(getTeamSetPieces(homeForm, opts), null), settle(getTeamSetPieces(awayForm, opts), null)]).then(([home, away]) => ({ home, away })),
+    new Promise<null>((r) => setTimeout(() => r(null), 600).unref?.()),
+  ])
   const tags = computeTags({
     match: m,
     cons,
@@ -647,6 +653,7 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
     h2h,
     injuries,
     standings,
+    setPieces,
   })
   const preview = buildPreview({ full, cons, model, pick, glicko, homeForm, awayForm, h2h, injuries, standings, tags })
 

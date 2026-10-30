@@ -9,6 +9,14 @@ import type { TeamForm } from './stats'
 
 export type GameXg = { id: number; xgFor: number; xgAgainst: number; gf: number; ga: number }
 export type TeamXg = { n: number; xgFor: number; xgAgainst: number; gf: number; ga: number }
+/** Угловые и жёлтые за последние матчи (`getTeamSetPieces` в `lib/data.ts`): средние за игру; `…N` — по скольким матчам, 0 — цифр нет. */
+export type TeamSetPieces = { cornersN: number; cornersFor: number; cornersAgainst: number; cardsN: number; cards: number; cardsAgainst: number }
+
+/** Сколько в среднем бывает за матч в играх обеих команд (свои + соперника, среднее двух); нет цифр у одной из них — `null`. */
+export function perMatch(h: TeamSetPieces | null | undefined, a: TeamSetPieces | null | undefined, k: 'corners' | 'cards'): number | null {
+  if (k === 'corners') return h?.cornersN && a?.cornersN ? (h.cornersFor + h.cornersAgainst + a.cornersFor + a.cornersAgainst) / 2 : null
+  return h?.cardsN && a?.cardsN ? (h.cards + h.cardsAgainst + a.cards + a.cardsAgainst) / 2 : null
+}
 /** `key` — какая это сторона игры: по ней «Главное» идущего матча сверяет сегодняшние цифры (`historyNotes` в lib/match-notes.ts). */
 export type PointKey = 'attack+' | 'attack-' | 'defense+' | 'defense-' | 'finish+' | 'finish-' | 'goals'
 /** `xg` — средние за последние матчи: по ним «Главное» пишет «сегодня — в последних 5 матчах» своими словами */

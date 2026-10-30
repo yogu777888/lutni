@@ -43,6 +43,8 @@ const ART: Record<string, Art> = {
   kadry: { a: '#ff4d6d', b: '#ffb3c1', base: '#1c060d', icon: 'bandaids' },
   h2h: { a: '#4cc9f0', b: '#c8ff2e', base: '#061417', icon: 'arrows-in-line-horizontal' },
   'top-match': { a: '#ffd84d', b: '#c8ff2e', base: '#161203', icon: 'trophy' },
+  uglovye: { a: '#5ac8fa', b: '#3987e5', base: '#04121a', icon: 'hash' },
+  kartochki: { a: '#ffe14d', b: '#ffb020', base: '#1a1603', icon: 'hash' },
 }
 
 const DEFAULT: Art = { a: '#c8ff2e', b: '#3987e5', base: '#121210', icon: 'hash' }
