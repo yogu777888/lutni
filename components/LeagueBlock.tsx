@@ -54,12 +54,13 @@ export function LeagueBlock({
   /** линия партнёра по матчам: кэфы в строках — ссылки к нему */
   lines?: Record<number, X12Line>
   live?: number
-  /** на главной — первые N строк, остальные — ссылкой «Ещё N матчей» на страницу «Матчи» (`more`) */
+  /** на главной ниже lg — первые N строк, остальные скрыты, вместо них — ссылка «Ещё N матчей» на страницу «Матчи» (`more`);
+   *  от lg — все строки (на компьютере подборки и «Выгодно» и так в правой панели) */
   limit?: number
   more?: string
 }) {
   const sorted = [...items].sort(byState)
-  const shown = limit ? sorted.slice(0, limit) : sorted
+  const cut = limit && sorted.length > limit ? limit : sorted.length
   return (
     // id — для «Турниров дня» в левой панели (клик прокручивает сюда)
     // заголовок — над карточкой, на фоне страницы, как разделы страницы матча (владелец: «как визуально сделать блоки на
@@ -97,11 +98,13 @@ export function LeagueBlock({
         </div>
       </header>
       <div className="card divide-y divide-edge overflow-hidden">
-        {shown.map((it) => (
-          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} line={lines[it.match.id] ?? null} />
+        {sorted.map((it, i) => (
+          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} line={lines[it.match.id] ?? null} className={i >= cut ? 'max-lg:hidden' : ''} />
         ))}
-        {more && sorted.length > shown.length ? (
-          <BlockMore href={`${more}#league-${league.id}`}>Ещё {pluralN(sorted.length - shown.length, ['матч', 'матча', 'матчей'])}</BlockMore>
+        {more && sorted.length > cut ? (
+          <BlockMore href={`${more}#league-${league.id}`} className="lg:hidden">
+            Ещё {pluralN(sorted.length - cut, ['матч', 'матча', 'матчей'])}
+          </BlockMore>
         ) : null}
       </div>
       {/* пометка — у самих кэфов: под карточкой справа, под их колонкой */}

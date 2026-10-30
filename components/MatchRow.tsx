@@ -113,6 +113,7 @@ export function MatchRow({
   compact = false,
   noOdds = false,
   line = null,
+  className = '',
 }: {
   m: Match
   tags: TagHit[]
@@ -125,6 +126,7 @@ export function MatchRow({
   noOdds?: boolean
   /** линия легального партнёра: кэфы — ссылки к нему */
   line?: X12Line | null
+  className?: string
 }) {
   const live = isLive(m)
   const played = Boolean(m.score) && (live || m.status === 'finished')
@@ -172,7 +174,7 @@ export function MatchRow({
   return (
     <div
       data-mid={m.id}
-      className={`relative grid items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:gap-x-4 sm:gap-y-2.5 sm:py-2.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : ROW_COLS}`}
+      className={`relative grid items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:gap-x-4 sm:gap-y-2.5 sm:py-2.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : ROW_COLS} ${className}`}
     >
       <div className="self-start pt-0.5 sm:self-center sm:pt-0">
         <StatusCell m={m} />

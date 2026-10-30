@@ -392,14 +392,15 @@ export async function DayView({
               <LeagueBlock key={g.league.id} league={g.league} items={g.items} lines={lines} live={liveIn.get(g.league.id) ?? 0} featured {...(view === 'home' ? { limit: 3, more: list } : {})} />
             ))}
             {view === 'home' && !byTime && featured.length ? (
-              <Link href={list} className="card flex h-12 items-center justify-center gap-1.5 text-[15px] font-semibold transition-colors hover:bg-panel-3">
+              <Link href={list} className="card flex h-12 items-center justify-center gap-1.5 text-[15px] font-semibold transition-colors hover:bg-panel-3 lg:hidden">
                 Все матчи {ymd === today ? 'на сегодня' : 'дня'} →
               </Link>
             ) : null}
-            {!byTime && others.length && !(view === 'home' && featured.length) ? (
+            {!byTime && others.length ? (
               // «Другие турниры» — раскрывашкой заголовком на фоне, внутри — те же блоки лиг с заголовками над карточками
-              // (было — карточка с турнирами-карточками внутри, «блок в блоке»)
-              <details className="group" open={!featured.length}>
+              // (было — карточка с турнирами-карточками внутри, «блок в блоке»); на главной ниже lg их нет — там
+              // «Все матчи на сегодня»
+              <details className={`group ${view === 'home' && featured.length ? 'max-lg:hidden' : ''}`} open={!featured.length}>
                 <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 sm:px-5 [&::-webkit-details-marker]:hidden">
                   <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">{featured.length ? 'Другие турниры' : 'Все турниры'}</h2>
                   <span className="flex items-center gap-2 text-[13px] text-mute transition-colors group-hover:text-fg">
