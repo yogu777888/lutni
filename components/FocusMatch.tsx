@@ -63,7 +63,7 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
     <Link
       href={matchHref(m)}
       aria-label={`Матч в фокусе: ${m.home.name} — ${m.away.name}`}
-      className="card block p-4 transition-colors hover:bg-panel-3 sm:p-5"
+      className="card flex flex-col p-4 transition-colors hover:bg-panel-3 sm:p-5"
     >
       <div className="flex items-center justify-between gap-3 text-[13px]">
         <span className="flex items-center gap-1.5 font-semibold text-fg">

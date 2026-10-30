@@ -3,6 +3,7 @@ import { PageHead } from './PageHead'
 import { countryRank, FEATURED_LEAGUES, featuredRank } from '@/config/leagues'
 import { daySnaps, getMatchesByDate, tagsFor, waitMatchFull, type FeedItem } from '@/lib/data'
 import { mainMatches } from '@/lib/day-summary'
+import { Carousel } from './Carousel'
 import { FocusMatch } from './FocusMatch'
 import { x12For, type X12Line } from '@/lib/lines'
 import { dayHref, listHref } from '@/lib/links'
@@ -106,7 +107,14 @@ export async function DayView({
   // «Ещё 36 матчей в других турнирах» в том же блоке; топ-лиги сверх шести — в своих блоках, как были
   // «Матч в фокусе» (ниже xl, под «Подборками дня»): главный из идущих, нет идущих — главный за день (`mainMatches`); в
   // списке ниже остаётся — на компьютере виджета нет
-  const focus = view === 'home' ? (mainMatches(items.filter((i) => isLive(i.match)), 1)[0] ?? mainMatches(items, 1)[0] ?? null) : null
+  // теперь до трёх, лентой с точками (владелец: «Матч в фокусе» листается, как в прототипе ChatGPT): сначала главные идущие,
+  // дальше главные за день, разные матчи
+  const focusList =
+    view === 'home'
+      ? [...mainMatches(items.filter((i) => isLive(i.match)), 3), ...mainMatches(items, 3)]
+          .filter((it, i, a) => a.findIndex((x) => x.match.id === it.match.id) === i)
+          .slice(0, 3)
+      : []
   const liveMain = liveSorted.filter((i) => featuredRank(i.match.league) >= 0)
   const liveTop = liveMain.slice(0, LIVE_LIMIT)
   const liveRest = liveSorted.filter((i) => featuredRank(i.match.league) < 0)
@@ -152,7 +160,7 @@ export async function DayView({
   // все ожидания — одновременно (владелец: «чтоб не все сразу грузилось»): по очереди они складывались
   const pre = listItems.filter((i) => i.match.status === 'scheduled')
   const [focusFull, { snaps }, picks] = await Promise.all([
-    focus && focus.match.status !== 'scheduled' ? waitMatchFull(focus.match.id) : null,
+    Promise.all(focusList.map((f) => (f.match.status !== 'scheduled' ? waitMatchFull(f.match.id) : null))),
     daySnaps(
       pre.map((i) => i.match),
       1200,
@@ -199,7 +207,7 @@ export async function DayView({
   // главная — тоже все матчи дня по лигам (владелец: «в центре просто матчи по лигам, а подборки — в боковой виджет»)
   const showList = true
   // «Интересно сегодня» — два факта дня под списком (телефон и планшет)
-  const facts = view === 'home' && !past ? pickFacts(items, focus?.match.id ?? null) : []
+  const facts = view === 'home' && !past ? pickFacts(items, new Set(focusList.map((f) => f.match.id))) : []
   return (
     <>
       {/* пока на этой странице идут матчи — счёт и минуты обновляются сами, без перезагрузки */}
@@ -356,9 +364,13 @@ export async function DayView({
             </div>
           </section>
         ) : null}
-        {focus ? (
+        {focusList.length ? (
           <div className="mt-6 xl:hidden">
-            <FocusMatch item={focus} full={focusFull} />
+            <Carousel label="Матч в фокусе">
+              {focusList.map((f, i) => (
+                <FocusMatch key={f.match.id} item={f} full={focusFull[i]} />
+              ))}
+            </Carousel>
           </div>
         ) : null}
         <div
