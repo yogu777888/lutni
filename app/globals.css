@@ -1135,7 +1135,10 @@ html[data-shell-rc] .shell-r-rail {
     animation-timeline: scroll(self);
     animation-range: calc(100% - 32px) 100%;
   }
+  /* без `opacity: 0` полоска висела всегда, когда список панели помещается целиком: шкала прокрутки тогда неактивна,
+     анимация не действует, и остаётся непрозрачный `::after` (владелец: «под турнирами дня тень») */
   .edge-top::after {
+    opacity: 0;
     animation: edge-in linear both;
     animation-timeline: scroll(nearest);
     animation-range: 0 32px;
