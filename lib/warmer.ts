@@ -34,6 +34,7 @@ import {
   getStandings,
   getTeamXg,
   settle,
+  settleArchive,
 } from './data'
 import { addDays, appNow, todayYmd } from './format'
 import { HAS_KEY, IS_DESIGN, IS_MOCK } from './sstats/client'
@@ -144,6 +145,8 @@ export async function warmOnce() {
     // а первым шагом после перезапуска они держали пустыми «Все выгодные» и лайм в списке (разборы матчей — только в
     // памяти), пока не досчитаются
     await settle(getChanceCheck(low), null)
+    // «История точности»: оценки сыгранных матчей — сверить с итогом (lib/forecast-log.ts)
+    await settleArchive()
     if (FULL) {
       // кэфы в строках остальных турниров сегодня (список берёт их только из кэша)
       const maxSnaps = Number(process.env.WARMER_MAX_SNAPS || 400)

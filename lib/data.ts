@@ -9,11 +9,15 @@ import { cache, type CacheOptions } from './cache'
 import { CHANCE_DAYS, chanceCheck, mergeTallies, tallyChances, type ChanceCheck, type ChanceTally } from './chance-check'
 import { addDays, appNow, diffDays, todayYmd, tzOffsetHours, ymdInTz, ymdToNoonTs } from './format'
 import { buildCandidates, buildConsensus, buildModel, choosePick, valueThreshold, type Candidate, type Consensus, type ModelOutput, type Pick } from './model'
-import type { BookOdds } from './odds'
+import { fair1x2, fairTwoWay, type BookOdds } from './odds'
 import type { OddsSnap } from './lines'
 import { buildPreview, type Paragraph } from './preview'
+import { readForecasts, recordForecast, settleForecasts } from './forecast-log'
+import { trackRecord, type Forecast, type TrackRecord } from './track-record'
+import { leagueTitle } from './flags'
+import { matchHref } from './links'
 import type { Priority } from './rate-limit'
-import { ApiError, apiGet } from './sstats/client'
+import { ApiError, IS_MOCK, apiGet } from './sstats/client'
 import * as N from './sstats/normalize'
 import { normalizePariMatch, pariBook, pariHistory, type PariHistory, type PariMatch, type RawPariMatch, type RawPariSnapshot } from './sstats/pari'
 import { linkPari } from './pari-link'
@@ -609,6 +613,8 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
 
   const form = homeForm && awayForm ? { home: homeForm.last5, away: awayForm.last5 } : null
   const facts = teamFacts({ homeForm, awayForm, h2h })
+  // «История точности»: последняя оценка до начала матча — на диск (после начала не меняется)
+  void recordForecast(m, model, cons).catch(() => {})
   const summary: MatchSummary = { id, tags, form, facts, pick: summaryPick(pick), pari: m.status === 'scheduled' ? pariValue(books, candidates) : null, at: Date.now() }
   cache.set(`summary:${id}`, summary, { ttl: 3 * H, stale: 9 * H, persist: false })
 
@@ -683,4 +689,53 @@ export async function getChanceCheck(opts: Opts = {}): Promise<ChanceCheck | nul
 export async function peekChanceCheck(): Promise<ChanceCheck | null> {
   const run = settle(getChanceCheck({ priority: 'low' }), null)
   return Promise.race([run, new Promise<null>((r) => setTimeout(() => r(null), 1500).unref?.())])
+}
+
+// ─── «История точности» ──────────────────────────────────────────────────────
+
+/** Окно страницы «История точности»: столько дней до сегодняшнего. */
+export const TRACK_DAYS = 90
+
+/** Сверить архив оценок с итогами и посчитать точность за `TRACK_DAYS` (lib/track-record.ts). */
+export async function getTrackRecord(): Promise<TrackRecord> {
+  const list = IS_MOCK ? await demoForecasts() : (await settleArchive(), await readForecasts(TRACK_DAYS))
+  return trackRecord(list, { missesSince: appNow() - 7 * 24 * H * 1000 })
+}
+
+/** Сверка архива с итогами — страница и прогрев (каждый обход). */
+export async function settleArchive() {
+  await settle(settleForecasts((ymd) => getMatchesByDate(ymd, { priority: 'low' })), undefined)
+}
+
+/**
+ * Демо: часы стоят, архив не копится — собираем его из сыгранных матчей демо за 30 дней, оценка — кэфы из списка без маржи
+ * (у настоящего архива — оценка tag.bet перед началом). Только чтобы видеть страницу.
+ */
+async function demoForecasts(): Promise<Forecast[]> {
+  const today = todayYmd()
+  const lists = await Promise.all(Array.from({ length: 30 }, (_, i) => settle(getMatchesByDate(addDays(today, -i)), [] as Match[])))
+  const out: Forecast[] = []
+  for (const m of lists.flat()) {
+    const f = fair1x2(m.odds?.x12)
+    const s = m.scoreFT ?? m.score
+    if (!f || m.status !== 'finished' || !s) continue
+    const t = m.odds?.totals.find((x) => x.line === 2.5)
+    const over = fairTwoWay(t?.over, t?.under)?.a ?? null
+    const line = { home: f.home, draw: f.draw, away: f.away, over25: over, btts: null }
+    out.push({
+      id: m.id,
+      ts: m.ts,
+      league: leagueTitle(m.league.name),
+      leagueId: m.league.id,
+      featured: isFeatured(m.league),
+      home: m.home.name,
+      away: m.away.name,
+      href: matchHref(m),
+      at: m.ts - 3600_000,
+      p: line,
+      line,
+      res: { home: s.home, away: s.away },
+    })
+  }
+  return out
 }
