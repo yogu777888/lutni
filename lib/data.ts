@@ -373,21 +373,26 @@ export async function waitLsExtra(m: Match, have: Set<string>, ms = 1500): Promi
 }
 
 /**
- * xG прошлого матча — из его полной карточки (`/Games/{id}`: в `/Games/list` статистики нет). Сыгранный матч не
- * меняется — храним полгода; нужен и обеим его командам, и всем их следующим соперникам, так что запрос — один на матч.
- * Нет xG в API (низшие лиги) — `null`, тоже надолго.
+ * Цифры прошлого матча — из его полной карточки (`/Games/{id}`: в `/Games/list` статистики нет): xG, угловые, жёлтые.
+ * Сыгранный матч не меняется — храним полгода; нужен и обеим его командам, и всем их следующим соперникам, так что
+ * запрос — один на матч. Нет строки в API (низшие лиги) — `null` у неё, тоже надолго.
  */
-async function getGameXg(id: number, opts: Opts = {}): Promise<{ home: number; away: number } | null> {
-  const v = await cache.get(
-    `xg:game:${id}`,
+type Pair = { home: number; away: number }
+type GameStats = { xg: Pair | null; corners: Pair | null; yellow: Pair | null }
+async function getGameStats(id: number, opts: Opts = {}): Promise<GameStats> {
+  return cache.get(
+    `game-stats:v1:${id}`,
     async () => {
       const full = await getMatchFull(id, opts)
-      const x = full?.stats.find((s) => s.key === 'expectedGoals')
-      return { x: x && x.home + x.away > 0 ? { home: x.home, away: x.away } : null }
+      const pick = (key: string, zero: boolean): Pair | null => {
+        const x = full?.stats.find((s) => s.key === key)
+        return x && (zero || x.home + x.away > 0) ? { home: x.home, away: x.away } : null
+      }
+      // угловые 0 : 0 бывают, но почти всегда это «нет данных»; жёлтые 0 : 0 — обычное дело, если строка в ответе есть
+      return { xg: pick('expectedGoals', false), corners: pick('cornerKicks', false), yellow: pick('yellowCards', true) }
     },
     { ttl: 180 * 24 * H },
   )
-  return v.x
 }
 
 /** xG команды за 5 последних сыгранных матчей формы; меньше трёх с xG — `null` (тогда «Сильное и слабое место» — по голам). */
@@ -396,12 +401,44 @@ export async function getTeamXg(form: TeamForm | null, opts: Opts = {}): Promise
   const games = form.games.slice(0, 5)
   const rows = await Promise.all(
     games.map(async (g): Promise<GameXg | null> => {
-      const x = await settle(getGameXg(g.id, opts), null)
+      const x = (await settle(getGameStats(g.id, opts), null))?.xg
       if (!x) return null
       return { id: g.id, xgFor: g.isHome ? x.home : x.away, xgAgainst: g.isHome ? x.away : x.home, gf: g.gf, ga: g.ga }
     }),
   )
   return teamXg(rows.filter((r): r is GameXg => r != null))
+}
+
+/**
+ * Угловые и жёлтые команды за 5 последних матчей формы — средние «за игру» (свои и соперников). Только статистика
+ * прошлых игр, без модели (владелец: «давай без этого, пока просто визуально сделай»). Меньше трёх матчей с цифрами — `null`.
+ */
+export type TeamSetPieces = { cornersN: number; cornersFor: number; cornersAgainst: number; cardsN: number; cards: number; cardsAgainst: number }
+export async function getTeamSetPieces(form: TeamForm | null, opts: Opts = {}): Promise<TeamSetPieces | null> {
+  if (!form) return null
+  const games = form.games.slice(0, 5)
+  const rows = await Promise.all(games.map(async (g) => ({ g, s: await settle(getGameStats(g.id, opts), null) })))
+  const side = (key: 'corners' | 'yellow') =>
+    rows.flatMap(({ g, s }) => (s?.[key] ? [{ me: g.isHome ? s[key]!.home : s[key]!.away, them: g.isHome ? s[key]!.away : s[key]!.home }] : []))
+  const avg = (xs: { me: number; them: number }[], k: 'me' | 'them') => xs.reduce((a, x) => a + x[k], 0) / xs.length
+  const c = side('corners')
+  const y = side('yellow')
+  if (c.length < 3 && y.length < 3) return null
+  return {
+    cornersN: c.length >= 3 ? c.length : 0,
+    cornersFor: c.length >= 3 ? avg(c, 'me') : 0,
+    cornersAgainst: c.length >= 3 ? avg(c, 'them') : 0,
+    cardsN: y.length >= 3 ? y.length : 0,
+    cards: y.length >= 3 ? avg(y, 'me') : 0,
+    cardsAgainst: y.length >= 3 ? avg(y, 'them') : 0,
+  }
+}
+
+/** Страница ждёт угловые и карточки обеих команд не дольше `ms` (карточки матчей — те же, что у xG). */
+export async function waitTeamSetPieces(home: TeamForm | null, away: TeamForm | null, ms = 1500) {
+  const run = Promise.all([settle(getTeamSetPieces(home, { priority: 'low' }), null), settle(getTeamSetPieces(away, { priority: 'low' }), null)])
+  const r = await Promise.race([run, new Promise<null>((ok) => setTimeout(() => ok(null), ms).unref?.())])
+  return r ? { home: r[0], away: r[1] } : { home: null, away: null }
 }
 
 /** Страница ждёт xG обеих команд не дольше `ms` (первый раз — до 10 запросов); остальное дозаполнит кэш. */

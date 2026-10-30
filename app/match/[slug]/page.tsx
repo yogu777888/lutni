@@ -14,6 +14,7 @@ import { Strengths } from '@/components/match/Strengths'
 import { mainPoint, teamPoints } from '@/lib/team-xg'
 import { ClubVars } from '@/components/match/ClubVars'
 import { FormBlock } from '@/components/match/FormBlock'
+import { SetPiecesBlock } from '@/components/match/SetPiecesBlock'
 import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
 import { Lineups } from '@/components/match/Lineups'
@@ -35,7 +36,7 @@ import { StickyCta } from '@/components/StickyCta'
 import { PARTNERS, partnerForApiBookmaker, primaryPartner } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
-import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle, waitLsExtra, waitTeamXg } from '@/lib/data'
+import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle, waitLsExtra, waitTeamSetPieces, waitTeamXg } from '@/lib/data'
 import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
@@ -149,9 +150,11 @@ export default async function MatchPage({ params }: Props) {
   // все ожидания — одновременно (владелец: «чтоб не все сразу грузилось»): по очереди они складывались в 5–6 с
   // на холодном кэше, вместе — не дольше самого долгого (2 с); «Другие матчи» догружаются отдельно (`RelatedMatches`)
   const isLive = m.status === 'live' || m.status === 'suspended'
-  const [ls, xg, pari, liveOdds] = await Promise.all([
+  const [ls, xg, sp, pari, liveOdds] = await Promise.all([
     waitLsExtra(m, new Set(base.stats.map((s) => s.key))),
     waitTeamXg(ins.homeForm, ins.awayForm),
+    // угловые и жёлтые прошлых матчей — те же карточки матчей, что у xG (запросов не прибавляет)
+    waitTeamSetPieces(ins.homeForm, ins.awayForm),
     // история доматчевой линии PARI (легальный букмекер): ждём не дольше 2 с, иначе — без графика
     Promise.race([getPariHistory(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 2000))]),
     // идёт матч — на табло кэфы PARI по ходу матча (доматчевые там уже история, поставить по ним нельзя)
@@ -502,6 +505,12 @@ export default async function MatchPage({ params }: Props) {
             // цифры — по последним (до 10) матчам: выборку называем числом (было «последние матчи», а в карточке — три разные выборки)
             <Section outside title="Форма команд">
               {clubVars(<FormBlock home={m.home} away={m.away} homeForm={ins.homeForm} awayForm={ins.awayForm} />)}
+            </Section>
+          ) : null}
+          {sp.home || sp.away ? (
+            // только статистика прошлых игр, без прогноза (владелец: «пока просто визуально сделай»)
+            <Section outside title="Угловые и карточки" note="Средние за последние матчи каждой команды (до 5); сверху — всего за матч в их играх. Статистика прошлых игр, а не прогноз.">
+              {clubVars(<SetPiecesBlock home={m.home} away={m.away} h={sp.home} a={sp.away} />)}
             </Section>
           ) : null}
 
