@@ -57,6 +57,21 @@ export function x12For(snap: OddsSnap | null | undefined, slug?: string | null):
   return x12Line(snap)
 }
 
+/**
+ * Линии 1X2 всех партнёров, у кого они есть в снимке, — в порядке `PARTNERS`. Для строк списка с выбором букмекера
+ * (`OddsPick`): страница готовая одна на всех, поэтому приходят все линии, а нужную показывает браузер.
+ */
+export function x12All(snap: OddsSnap | null | undefined): X12Line[] {
+  if (!snap) return []
+  const out: X12Line[] = []
+  for (const { partner, book } of partnerBooks(snap.books)) {
+    const x = book.x12
+    if (x?.home && x.draw && x.away)
+      out.push({ bookmaker: partner.name, slug: partner.slug, at: snap.at, home: x.home.value, draw: x.draw.value, away: x.away.value })
+  }
+  return out
+}
+
 /** Шанс 3+ голов по паре «больше 2,5 / меньше 2,5» одного букмекера. */
 export type GoalsLine = Source & { p: number; over: number; under: number }
 

@@ -10,7 +10,9 @@ import { StandingsTable } from '@/components/StandingsTable'
 import { currentSeason, daySnaps, getLeague, getSeasonGames, getStandings, peekOddsSnap, settle, tagsFor } from '@/lib/data'
 import { flagCode, leagueTitle } from '@/lib/flags'
 import { appNow, dayLabel, formatDayMonth, idFromSlug, pluralN, todayYmd, ymdInTz } from '@/lib/format'
-import { x12For, type X12Line } from '@/lib/lines'
+import { x12All, type X12Line } from '@/lib/lines'
+import { PARTNERS } from '@/config/bookmakers'
+import { OddsPick } from '@/components/OddsPick'
 import { leagueHref } from '@/lib/links'
 import { NOINDEX, indexLeague } from '@/lib/seo'
 import type { Match } from '@/lib/types'
@@ -62,7 +64,7 @@ function dayHead(ymd: string, ts: number, today: string) {
 }
 
 /** Строки матчей с подписью дня, когда день сменился (`prev` — матч перед первым: у раскрывашки день мог не смениться). */
-function Rows({ list, prev, lines, today }: { list: Match[]; prev?: Match; lines: Record<number, X12Line>; today: string }) {
+function Rows({ list, prev, lines, today }: { list: Match[]; prev?: Match; lines: Record<number, X12Line[]>; today: string }) {
   return list.map((m, i) => {
     const day = ymdInTz(m.ts)
     const before = i ? list[i - 1] : prev
@@ -72,7 +74,7 @@ function Rows({ list, prev, lines, today }: { list: Match[]; prev?: Match; lines
           <div className="bg-white/[0.02] px-4 py-2 text-[12px] font-medium text-mute sm:px-5">{dayHead(day, m.ts, today)}</div>
         ) : null}
         {/* кэфы — линия партнёра, как на главной; линии нет — без кэфов (не прочерками «– – –», как было на всех матчах) */}
-        <MatchRow m={m} {...tagsFor(m)} line={lines[m.id] ?? null} noOdds={m.status === 'scheduled' && !lines[m.id]} />
+        <MatchRow m={m} {...tagsFor(m)} lines={lines[m.id] ?? []} noOdds={m.status === 'scheduled' && !lines[m.id]} />
       </div>
     )
   })
@@ -110,12 +112,15 @@ export default async function LeaguePage({ params }: Props) {
     scheduled.filter((m) => m.ts < now + 48 * 3600_000),
     1200,
   )
-  const lines: Record<number, X12Line> = {}
+  // линии всех партнёров — какую показать, выбирает посетитель (`OddsPick`, как на главной)
+  const lines: Record<number, X12Line[]> = {}
   for (const m of scheduled) {
-    const line = x12For(snaps.get(m.id) ?? peekOddsSnap(m.id), null)
-    if (line) lines[m.id] = line
+    const ls = x12All(snaps.get(m.id) ?? peekOddsSnap(m.id))
+    if (ls.length) lines[m.id] = ls
   }
-  const books = [...new Set(Object.values(lines).map((l) => l.bookmaker))]
+  const first = [...new Set(Object.values(lines).map((ls) => ls[0].bookmaker))]
+  const seen = new Set(Object.values(lines).flatMap((ls) => ls.map((l) => l.slug)))
+  const pickBooks = PARTNERS.filter((p) => seen.has(p.slug)).map((p) => ({ slug: p.slug, name: p.name, color: p.color }))
   const shown = upcoming.slice(0, SHOWN)
   const more = upcoming.slice(SHOWN)
 
@@ -140,7 +145,21 @@ export default async function LeaguePage({ params }: Props) {
           {/* заголовки — над карточками, на фоне страницы, как на главной, «Лигах» и странице матча; между блоками 32px */}
           <div className="match-body space-y-8 pt-4 xl:pt-6">
           <section>
-            <BlockTitle rows title="Ближайшие матчи" aside={books.length ? `Кэфы ${books.join(', ')} · Реклама` : null} />
+            <BlockTitle rows title="Ближайшие матчи" aside={
+                pickBooks.length ? (
+                  <span className="flex items-center gap-3">
+                    <span>
+                      <span data-bk="*" data-bk-first="">Кэфы {first.join(', ')} · Реклама</span>
+                      {pickBooks.map((b) => (
+                        <span key={b.slug} data-bk={b.slug}>
+                          Кэфы {b.name} · Реклама
+                        </span>
+                      ))}
+                    </span>
+                    <OddsPick books={pickBooks} />
+                  </span>
+                ) : null
+              } />
             <div className="card overflow-hidden">
             {upcoming.length ? (
               <>

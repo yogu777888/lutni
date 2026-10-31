@@ -24,20 +24,19 @@ const byState = (a: FeedItem, b: FeedItem) =>
  * Пометка рекламы у кэфов-ссылок: «Кэфы PARI · Реклама · 18+» — какие букмекеры стоят в строках (закон о рекламе).
  * `under` — строкой под карточкой лиги справа, под колонкой кэфов (не рядом с логотипом лиги в заголовке).
  */
-function AdNote({ items, lines, under }: { items: FeedItem[]; lines: Record<number, X12Line>; under?: boolean }) {
-  const books = [...new Set(items.map((i) => lines[i.match.id]?.bookmaker).filter(Boolean))]
-  if (!books.length) return null
-  const text = `Кэфы ${books.join(', ')} · Реклама · 18+`
-  const title = `Кэфы ${books.join(', ')} — ссылки к букмекеру-партнёру`
-  return under ? (
-    <p className="mt-2 px-4 text-right text-[12px] text-mute sm:px-5" title={title}>
-      {text}
-    </p>
-  ) : (
-    <span className="text-mute" title={title}>
-      {text}
+function AdNote({ items, lines, under }: { items: FeedItem[]; lines: Record<number, X12Line[]>; under?: boolean }) {
+  const ls = items.map((i) => lines[i.match.id] ?? []).filter((l) => l.length)
+  if (!ls.length) return null
+  // без выбора — те, чьи кэфы первыми в строках; выбран букмекер — только он (`data-bk`, lib/odds-pick.ts); «Без кэфов» — пусто
+  const first = [...new Set(ls.map((l) => l[0].bookmaker))]
+  const all = new Map(ls.flat().map((l) => [l.slug, l.bookmaker]))
+  const note = (books: string[], bk: string, isFirst = false) => (
+    <span key={bk} data-bk={bk} data-bk-first={isFirst ? '' : undefined} title={`Кэфы ${books.join(', ')} — ссылки к букмекеру-партнёру`}>
+      Кэфы {books.join(', ')} · Реклама · 18+
     </span>
   )
+  const body = [note(first, '*', true), ...[...all].map(([slug, name]) => note([name], slug))]
+  return under ? <p className="mt-2 px-4 text-right text-[12px] text-mute sm:px-5">{body}</p> : <span className="text-mute">{body}</span>
 }
 
 export function LeagueBlock({
@@ -52,7 +51,7 @@ export function LeagueBlock({
   items: FeedItem[]
   featured?: boolean
   /** линия партнёра по матчам: кэфы в строках — ссылки к нему */
-  lines?: Record<number, X12Line>
+  lines?: Record<number, X12Line[]>
   live?: number
   /** на главной ниже lg — первые N строк, остальные скрыты, вместо них — ссылка «Ещё N матчей» на страницу «Матчи» (`more`);
    *  от lg — все строки (на компьютере подборки и «Выгодно» и так в правой панели) */
@@ -99,7 +98,7 @@ export function LeagueBlock({
       </header>
       <div className="card divide-y divide-edge overflow-hidden">
         {sorted.map((it, i) => (
-          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} line={lines[it.match.id] ?? null} className={i >= cut ? 'max-lg:hidden' : ''} />
+          <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} lines={lines[it.match.id] ?? []} className={i >= cut ? 'max-lg:hidden' : ''} />
         ))}
         {more && sorted.length > cut ? (
           <BlockMore href={`${more}#league-${league.id}`} className="lg:hidden">
@@ -170,7 +169,7 @@ export function LiveBlock({ items, total, rest = [] }: { items: FeedItem[]; tota
  * Все матчи дня по времени начала — одной карточкой, по часам: «14:00 · 5 матчей».
  * У каждой строки — турнир, раз они вперемешку.
  */
-export function TimeBlock({ items, lines = {} }: { items: FeedItem[]; lines?: Record<number, X12Line> }) {
+export function TimeBlock({ items, lines = {} }: { items: FeedItem[]; lines?: Record<number, X12Line[]> }) {
   const hours = new Map<string, FeedItem[]>()
   for (const it of items) {
     const h = `${formatTime(it.match.ts).slice(0, 2)}:00`
@@ -188,7 +187,7 @@ export function TimeBlock({ items, lines = {} }: { items: FeedItem[]; lines?: Re
           </h3>
           <div className="divide-y divide-edge border-b border-edge last:border-b-0">
             {list.map((it) => (
-              <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} line={lines[it.match.id] ?? null} showLeague />
+              <MatchRow key={it.match.id} m={it.match} tags={it.tags} summary={it.summary} lines={lines[it.match.id] ?? []} showLeague />
             ))}
           </div>
         </div>

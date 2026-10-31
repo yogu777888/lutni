@@ -16,6 +16,7 @@ import { RightPanel } from '@/components/shell/RightPanel'
 import { ShellFrame } from '@/components/shell/ShellFrame'
 import { ResizeHandle } from '@/components/shell/ResizeHandle'
 import { SHELL_SCRIPT } from '@/components/shell/shell-state'
+import { ODDS_CSS, ODDS_SCRIPT } from '@/lib/odds-pick'
 import { todayYmd } from '@/lib/format'
 import { StoryViewerLazy } from '@/components/story/StoryViewerLazy'
 import { SITE } from '@/config/site'
@@ -77,6 +78,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ru" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: SHELL_SCRIPT }} />
+        {/* чьи кэфы в строках списка — до отрисовки, без мигания (lib/odds-pick.ts) */}
+        <script dangerouslySetInnerHTML={{ __html: ODDS_SCRIPT }} />
+        <style dangerouslySetInnerHTML={{ __html: ODDS_CSS }} />
       </head>
       <body className="min-h-dvh antialiased">
         <NavWatch />

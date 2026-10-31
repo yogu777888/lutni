@@ -5,7 +5,9 @@ import { daySnaps, getMatchesByDate, tagsFor, waitMatchFull, type FeedItem } fro
 import { mainMatches } from '@/lib/day-summary'
 import { Carousel } from './Carousel'
 import { FocusMatch } from './FocusMatch'
-import { x12For, type X12Line } from '@/lib/lines'
+import { x12All, type X12Line } from '@/lib/lines'
+import { PARTNERS } from '@/config/bookmakers'
+import { OddsPick, type PickBook } from './OddsPick'
 import { dayHref, listHref } from '@/lib/links'
 import { applyListFilter, filterQuery, isEmptyFilter, type ListFilter } from '@/lib/list-filter'
 import { diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
@@ -167,16 +169,15 @@ export async function DayView({
     ),
     ymd === today ? dayPicks() : null,
   ])
-  const lines: Record<number, X12Line> = {}
-  {
-    for (const it of pre) {
-      // линия главного партнёра (PARI — первым в PARTNERS), а не того, у кого выгодна ставка (владелец: «выгодно сегодня тебе
-      // как?» — лайм в центре был у Марафона, а «Выгодно сегодня» справа — по PARI: два «выгодно» по одному матчу); нет у
-      // PARI линии — следующий партнёр
-      const line = x12For(snaps.get(it.match.id), null)
-      if (line) lines[it.match.id] = line
-    }
+  // линии всех партнёров (`x12All`, в порядке PARTNERS — PARI первым): какую показать, выбирает посетитель (`OddsPick`);
+  // без выбора — первая, как было (владелец: «выгодно сегодня тебе как?» — лайм в центре и «Выгодно сегодня» — по PARI)
+  const lines: Record<number, X12Line[]> = {}
+  for (const it of pre) {
+    const ls = x12All(snaps.get(it.match.id))
+    if (ls.length) lines[it.match.id] = ls
   }
+  const seen = new Set(Object.values(lines).flatMap((ls) => ls.map((l) => l.slug)))
+  const pickBooks: PickBook[] = PARTNERS.filter((p) => seen.has(p.slug)).map((p) => ({ slug: p.slug, name: p.name, color: p.color }))
   const heading = dayHeading(ymd, today)
   // «Выгодно сегодня» в колонке под списком (ниже xl правой панели нет) — только у сегодняшнего дня
   const values = picks?.values ?? []
@@ -306,6 +307,8 @@ export async function DayView({
                 <>
                   {/* ниже lg — один чип в стиле дней со значком текущего порядка, нажатие — другой порядок (владелец: «посмотри
                       ещё раз визуально на главную» — капсула из двух значков с серым «выбрано» спорила с белым выбранным днём) */}
+                  {/* чьи кэфы (владелец прислал WhoScored: «чтоб можно было бк выбирать чьи коэффициенты смотришь или вообще
+                      вырубить?» — «да»): ниже lg — чипом вторым слева, рядом с порядком; от lg — кнопкой справа */}
                   <Link
                     href={other[2]}
                     prefetch={false}
@@ -316,9 +319,12 @@ export async function DayView({
                   >
                     <SortIcon k={cur[0]} />
                   </Link>
+                  <OddsPick books={pickBooks} chip className="order-first lg:hidden" />
                   {/* порядок списка — обычными ссылками (?sort=time): работает без JS, у страницы один canonical. Скругления
                       вложены по правилу «внешний = внутренний + отступ»: строка 20px, отступ 10 → переключатель 10px
                       (rounded-ctl), отступ 4 → выбранный 6px */}
+                  <div className="hidden shrink-0 items-center gap-2 lg:flex">
+                  <OddsPick books={pickBooks} />
                   <nav aria-label="Порядок матчей" className="hidden shrink-0 items-center gap-1 rounded-ctl bg-white/[0.04] p-1 text-[14px] font-medium lg:flex">
                     {orders.map(([k, label, href]) => (
                       <Link
@@ -333,6 +339,7 @@ export async function DayView({
                       </Link>
                     ))}
                   </nav>
+                  </div>
                 </>
               )
             })()

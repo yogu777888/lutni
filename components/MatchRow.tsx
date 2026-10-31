@@ -113,6 +113,7 @@ export function MatchRow({
   compact = false,
   noOdds = false,
   line = null,
+  lines,
   className = '',
 }: {
   m: Match
@@ -126,6 +127,8 @@ export function MatchRow({
   noOdds?: boolean
   /** линия легального партнёра: кэфы — ссылки к нему */
   line?: X12Line | null
+  /** линии всех партнёров — какую показать, выбирает посетитель (`OddsPick`, `lib/odds-pick.ts`): у каждой `data-bk` */
+  lines?: X12Line[]
   className?: string
 }) {
   const live = isLive(m)
@@ -136,11 +139,12 @@ export function MatchRow({
   // лайм — только если выгоден кэф именно той линии, что в строке: у PARI — его выгодная ставка (`summary.pari`, та же, что
   // в «Выгодно сегодня» справа), у другого партнёра — выгодная ставка, если она у него
   const x12 = (k?: string | null) => (k && ['home', 'draw', 'away'].includes(k) ? k : null)
-  const hotKey = !line
-    ? pick?.kind === 'value' ? x12(pick.key) : null
-    : line.slug === 'pari'
-      ? m.status === 'scheduled' ? x12(summary?.pari?.key) : null
-      : pick?.kind === 'value' && pick.partnerSlug === line.slug ? x12(pick.key) : null
+  const hotFor = (line: X12Line | null) =>
+    !line
+      ? pick?.kind === 'value' ? x12(pick.key) : null
+      : line.slug === 'pari'
+        ? m.status === 'scheduled' ? x12(summary?.pari?.key) : null
+        : pick?.kind === 'value' && pick.partnerSlug === line.slug ? x12(pick.key) : null
   // эмблема перед названием — матч узнаётся глазами раньше, чем прочитан
   const name = (t: Match['home'], lost: boolean) => (
     <span className={`flex min-w-0 items-center gap-2 ${lost ? 'text-fg/55' : ''}`}>
@@ -201,10 +205,22 @@ export function MatchRow({
       {m.status === 'scheduled' && !noOdds ? (
         <>
           <span className="sm:hidden" />
-          {/* на телефоне кэфы — во всю ширину строки, от левого края под временем: ячейки крупнее, слева нет пустого «кармана» */}
-          <div className="col-span-3 col-start-1 sm:col-span-1 sm:col-start-auto">
-            <Odds m={m} hotKey={hotKey} line={line} />
-          </div>
+          {/* на телефоне кэфы — во всю ширину строки, от левого края под временем: ячейки крупнее, слева нет пустого «кармана».
+              С выбором букмекера — по ячейке на партнёра, видна одна (`data-bk`); «Без кэфов» прячет все — на телефоне строка
+              вдвое ниже */}
+          {/* место ячеек держит высоту строки на компьютере, когда кэфы выключены или у выбранного букмекера линии нет */}
+          {lines ? <span aria-hidden className="hidden sm:col-start-3 sm:row-start-1 sm:block sm:h-[34px]" /> : null}
+          {lines?.length ? (
+            lines.map((l, i) => (
+              <div key={l.slug} data-bk={l.slug} data-bk-first={i === 0 ? '' : undefined} className="col-span-3 col-start-1 sm:col-span-1 sm:col-start-3 sm:row-start-1">
+                <Odds m={m} hotKey={hotFor(l)} line={l} />
+              </div>
+            ))
+          ) : (
+            <div data-bk-plain={lines ? '' : undefined} className="col-span-3 col-start-1 sm:col-span-1 sm:col-start-auto">
+              <Odds m={m} hotKey={hotFor(line)} line={line} />
+            </div>
+          )}
         </>
       ) : (
         <div className="flex items-center justify-end sm:h-[34px] sm:justify-center">
