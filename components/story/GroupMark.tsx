@@ -9,8 +9,8 @@ import { StorySymbol } from './StorySymbol'
 export function GroupMark({ g, tone, className, crest }: { g: Pick<StoryGroup, 'key' | 'kind' | 'lead'>; tone: string; className: string; crest: string }) {
   const lead = g.kind === 'live' || g.key === 'value' ? null : g.lead
   if (lead?.logo)
-    // тёмные эмблемы («Мец», «Ювентус») на тёмном круге пропадали — тонкий светлый контур по краю эмблемы
+    // без светлого контура: владелец — «мне не нравится контур светлый»
     // eslint-disable-next-line @next/next/no-img-element
-    return <img style={{ filter: 'drop-shadow(0 0 0.6px rgb(255 255 255 / 0.7)) drop-shadow(0 0 2.5px rgb(255 255 255 / 0.18))' }} src={lead.logo} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className={`${crest} object-contain`} />
+    return <img src={lead.logo} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className={`${crest} object-contain`} />
   return <StorySymbol k={g.key} tone={tone} className={className} />
 }
