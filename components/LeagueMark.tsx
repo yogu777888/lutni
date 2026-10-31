@@ -32,6 +32,12 @@ const tile = (bare: boolean) => ({ width: bare ? '86%' : '70%', height: bare ? '
  */
 export const PLATE = '#cdd2d8'
 
+/**
+ * Тень эмблемы на светлой подложке — вниз вправо, графитом (владелец: «мне понравилось что эти иконки сзади напоминали
+ * тень, а можно как то тень сделать лого клубов и лиг?»). Только на `PLATE`; светлый контур не делать — владелец отверг.
+ */
+export const CREST_SHADOW = 'drop-shadow(1.5px 2px 1.5px rgb(11 15 20 / 0.3))'
+
 /** `light` — на светлой подложке `PLATE` (круги историй): тёмные логотипы тогда без перевёрнутой яркости. */
 export function LeagueMark({ id, flag, size, bare = false, fill, light = false, fallback = null, className = '' }: { id: number; flag: string | null; size: number; bare?: boolean; fill?: string; light?: boolean; fallback?: ReactNode; className?: string }) {
   const logo = leagueLogoInfo(id)
@@ -47,7 +53,7 @@ export function LeagueMark({ id, flag, size, bare = false, fill, light = false, 
           height={size}
           loading="lazy"
           className={logo.tile ? 'object-cover' : 'object-contain'}
-          style={{ ...(logo.tile ? tile(bare) : fit(logo.aspect, bare)), ...(logo.dark && !light ? { filter: 'invert(1) hue-rotate(180deg)' } : {}) }}
+          style={{ ...(logo.tile ? tile(bare) : fit(logo.aspect, bare)), ...(logo.dark && !light ? { filter: 'invert(1) hue-rotate(180deg)' } : fill === PLATE ? { filter: CREST_SHADOW } : {}) }}
         />
       </span>
     )
