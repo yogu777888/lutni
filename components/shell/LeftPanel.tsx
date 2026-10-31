@@ -19,7 +19,7 @@ import { StorySymbol } from '../story/StorySymbol'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
 import { matchesN, StateLine } from './StateLine'
-import { DISC, ICON, StoryRing } from './StoryRing'
+import { LIVE, StoryRing } from './StoryRing'
 import { Icon } from '@/components/Icon'
 
 /** Кольцо турнира — оттенок логотипа, светлота и насыщенность общие (OKLCH L 0,74, C 0,12), как подборки справа
@@ -29,8 +29,10 @@ const ringTone = (id: number) => {
   // чёрно-белый логотип или флаг — серый той же светлоты (белое кольцо было ярче цветных)
   return h ? `oklch(0.74 0.12 ${h})` : 'oklch(0.74 0 0)'
 }
-/** круг «Сейчас идут» — серый, знак белый; красное — кольцо */
-const LIVE_FILL = DISC
+/** заливка круга турнира — оттенок кольца 14%, как круги подборок справа; без цвета (чёрно-белый логотип, флаг) — серый круг, как был */
+const discFill = (id: number) => (leagueColor(id) ? `color-mix(in oklch, ${ringTone(id)} 14%, transparent)` : undefined)
+/** заливка круга «Сейчас идут» — красным 14%, как круги подборок справа их цветом */
+const LIVE_FILL = { background: `color-mix(in oklch, ${LIVE} 14%, transparent)` }
 
 /** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас идут». */
 const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'турнире' : 'турнирах'}`
@@ -55,7 +57,7 @@ function reveal(id: string): boolean {
 
 /** Знак турнира в плашке 36px — как значки подборок в правой панели: логотип лиги кругом во всю плашку, флаг — 20px; нет ни того, ни другого (еврокубки без логотипа) — первая буква. */
 function LeagueFlag({ l }: { l: Pick<DayLeague, 'id' | 'flag' | 'name'> }) {
-  if (leagueLogo(l.id)) return <LeagueMark id={l.id} flag={l.flag} size={36} />
+  if (leagueLogo(l.id)) return <LeagueMark id={l.id} flag={l.flag} size={36} fill={discFill(l.id)} />
   return (
     <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.1]">
       <LeagueMark id={l.id} flag={l.flag} size={20} fallback={<span className="text-[12px] font-semibold text-dim">{l.name.charAt(0)}</span>} />
@@ -249,7 +251,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     if (g.key === 'live')
       return (
         <span className="relative grid h-9 w-9 place-items-center rounded-full" style={LIVE_FILL}>
-          <StorySymbol k="live" tone={ICON} className="h-[18px] w-[18px]" />
+          <StorySymbol k="live" tone={LIVE} className="h-[18px] w-[18px]" />
           <StoryRing group="live" ids={ids} seen={s} live />
         </span>
       )
@@ -334,7 +336,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             style={LIVE_FILL}
             className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full transition-[filter] hover:brightness-150"
           >
-            <StorySymbol k="live" tone={ICON} className="h-[18px] w-[18px]" />
+            <StorySymbol k="live" tone={LIVE} className="h-[18px] w-[18px]" />
             <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} live />
           </button>
         ) : null}
@@ -427,7 +429,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                 <button type="button" data-story-key="live"
             onClick={playLive} aria-label="Сейчас идут: смотреть разбор матчей" className="relative shrink-0 rounded-full">
                   <span aria-hidden className="grid h-9 w-9 place-items-center rounded-full" style={LIVE_FILL}>
-                    <StorySymbol k="live" tone={ICON} className="h-[18px] w-[18px]" />
+                    <StorySymbol k="live" tone={LIVE} className="h-[18px] w-[18px]" />
                   </span>
                   <PlayOverlay />
                   <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} live />

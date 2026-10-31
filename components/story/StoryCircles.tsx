@@ -6,7 +6,7 @@ import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
 import { StorySymbol, symbolSoft } from './StorySymbol'
-import { DISC, ICON, ringArcs } from '../shell/StoryRing'
+import { ringArcs } from '../shell/StoryRing'
 
 /**
  * Истории — круглые входы в подборки: круг, залитый оттенком подборки, знак категории (StorySymbol) и кольцо
@@ -77,18 +77,17 @@ function toneOf(g: StoryGroup) {
   return g.kind === 'live' || g.key === 'live' ? LIVE : g.key === 'value' ? ACID : symbolSoft(g.key)
 }
 
-/** Диск: графитовый, знак белым (цвет подборки — только в кольце, как в панелях; «Выгодно» — лаймом); своя картинка из
- *  public/stories/<ключ>.* — вместо всего этого. */
+/** Диск: заливка оттенком 14% и знак тем же оттенком; своя картинка из public/stories/<ключ>.* — вместо всего этого. */
 function Disc({ k, tone, cover }: { k: string; tone: string; cover?: string }) {
   const solid = k === 'value'
   return (
     <span
       className="absolute inset-[5px] grid place-items-center overflow-hidden rounded-full"
       style={{
-        background: cover ? `center / cover no-repeat url("${cover}")` : solid ? tone : DISC.background,
+        background: cover ? `center / cover no-repeat url("${cover}")` : solid ? tone : `color-mix(in oklch, ${tone} 14%, transparent)`,
       }}
     >
-      {cover ? null : <StorySymbol k={k} tone={solid ? 'var(--color-acid-ink)' : ICON} className="h-1/2 w-1/2" />}
+      {cover ? null : <StorySymbol k={k} tone={solid ? 'var(--color-acid-ink)' : tone} className="h-1/2 w-1/2" />}
     </span>
   )
 }
