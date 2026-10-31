@@ -21,6 +21,7 @@ import { StoryViewerLazy } from '@/components/story/StoryViewerLazy'
 import { SITE } from '@/config/site'
 import { Suspense } from 'react'
 import { IS_MOCK } from '@/lib/sstats/client'
+import { CrestShadowDefs } from '@/components/LeagueMark'
 
 // Настройки партнёров, erid и URL сайта читаются из env в рантайме (в Docker-сборке .env недоступен), поэтому при
 // сборке сайта страницы с ними не собираем: у каждой своя настройка — `force-dynamic` (на каждый запрос) или хранение
@@ -79,6 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-dvh antialiased">
         <NavWatch />
+        <CrestShadowDefs />
         <Header />
         <ShellFrame />
         {/* каркас, как у Spotify (от xl): слева «Мои команды» и турниры, в центре — серая панель страницы с градиентом

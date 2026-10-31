@@ -33,10 +33,38 @@ const tile = (bare: boolean) => ({ width: bare ? '86%' : '70%', height: bare ? '
 export const PLATE = '#cdd2d8'
 
 /**
- * Тень эмблемы на светлой подложке — вниз вправо, графитом (владелец: «мне понравилось что эти иконки сзади напоминали
- * тень, а можно как то тень сделать лого клубов и лиг?»). Только на `PLATE`; светлый контур не делать — владелец отверг.
+ * Тень эмблемы на светлой подложке — «длинная», с твёрдыми краями, уходит вниз вправо и срезается кругом (владелец: «да не
+ * размытую а с твердыми углами. и чтоб вниз вправо уходила например?»). SVG-фильтр `CrestShadowDefs` (стоит один раз в
+ * app/layout.tsx): силуэт эмблемы сдвигается по 0,5px 16 раз (8px), копии сливаются в сплошной след цвета подложки темнее.
+ * Цепочка CSS `drop-shadow` не годится: доли пикселя Chrome отбрасывает, а по 1px на ретине видны ступеньки.
+ * Только на `PLATE`; светлый контур не делать — владелец отверг. Длина — `STEPS`, цвет — `SHADOW_TONE`.
  */
-export const CREST_SHADOW = 'drop-shadow(1.5px 2px 1.5px rgb(11 15 20 / 0.3))'
+const SHADOW_TONE = '#a7aeb6'
+const STEPS = 16
+export const CREST_SHADOW = 'url(#crest-shadow)'
+
+export function CrestShadowDefs() {
+  return (
+    <svg aria-hidden width="0" height="0" className="pointer-events-none absolute">
+      <filter id="crest-shadow" x="0" y="0" width="200%" height="200%" colorInterpolationFilters="sRGB">
+        {Array.from({ length: STEPS }, (_, i) => (
+          <feOffset key={i} in="SourceAlpha" dx={(i + 1) / 2} dy={(i + 1) / 2} result={`o${i}`} />
+        ))}
+        <feMerge result="trail">
+          {Array.from({ length: STEPS }, (_, i) => (
+            <feMergeNode key={i} in={`o${i}`} />
+          ))}
+        </feMerge>
+        <feFlood floodColor={SHADOW_TONE} />
+        <feComposite in2="trail" operator="in" result="shadow" />
+        <feMerge>
+          <feMergeNode in="shadow" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </svg>
+  )
+}
 
 /** `light` — на светлой подложке `PLATE` (круги историй): тёмные логотипы тогда без перевёрнутой яркости. */
 export function LeagueMark({ id, flag, size, bare = false, fill, light = false, fallback = null, className = '' }: { id: number; flag: string | null; size: number; bare?: boolean; fill?: string; light?: boolean; fallback?: ReactNode; className?: string }) {
