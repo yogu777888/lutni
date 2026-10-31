@@ -55,9 +55,9 @@ export function DateTabs({
   const days = strip.includes(active) ? strip : active < strip[0] ? [active, ...strip] : [...strip, active]
   const label = (d: string) => (strip.includes(d) ? shortDay(d, today) : dayMonthFmt.format(ymdToNoonTs(d)).replace('.', ''))
   return (
-    <nav aria-label="Выбор дня" className={`scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 ${fade ? 'max-lg:mx-0 max-lg:pl-0 max-lg:pr-6 max-sm:[mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)] lg:mr-0' : ''}`}
+    <nav aria-label="Выбор дня" className={`scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 ${chips ? 'lg:-ml-3' : 'max-sm:pl-1 sm:-ml-3'} ${fade ? 'max-lg:mx-0 max-lg:pl-0 max-lg:pr-6 max-sm:[mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)] lg:mr-0' : ''}`}
     >
-      <div className={`flex w-max items-center ${chips ? 'gap-2 lg:gap-5' : 'gap-5'}`}>
+      <div className={`flex w-max items-center ${chips ? 'gap-2 lg:gap-0.5' : 'gap-0.5'}`}>
         {days.map((d) => {
           const on = d === active
           return (
@@ -67,18 +67,22 @@ export function DateTabs({
               prefetch={false}
               aria-current={on ? 'page' : undefined}
               // черта выбранного дня — белая, как у пункта меню в шапке (владелец спросил «а хедер как?», согласился): лаймовая
-              // была единственным лаймом на экране не про ставку и спорила с выгодными кэфами; «вы здесь» — везде одного цвета
+              // была единственным лаймом на экране не про ставку и спорила с выгодными кэфами; «вы здесь» — везде одного цвета.
+              // На компьютере дни — тем же видом, что меню в шапке (`NavLinks`; владелец: «при наведении на кнопки в меню есть
+              // задний фон светлый прямоугольный а … в сортировке по дням другие эффекты»): поле 12px, при наведении — светлая
+              // плашка `white/12`, черта выбранного — короткая под текстом; ряд сдвинут на −12px, текст стоит, где стоял
               className={
                 chips
-                  ? `inline-flex shrink-0 items-center font-medium transition-colors max-lg:h-[30px] max-lg:rounded-full max-lg:px-3.5 max-lg:text-[14px] lg:h-9 lg:border-b-2 lg:text-[15px] ${
-                      on ? 'max-lg:bg-fg max-lg:text-ink lg:border-fg lg:text-fg' : 'max-lg:bg-white/[0.08] max-lg:text-fg/85 lg:border-transparent lg:text-dim lg:hover:text-fg'
+                  ? `relative inline-flex shrink-0 items-center font-medium transition-colors max-lg:h-[30px] max-lg:rounded-full max-lg:px-3.5 max-lg:text-[14px] lg:h-9 lg:rounded-ctl lg:px-3 lg:text-[15px] ${
+                      on ? 'max-lg:bg-fg max-lg:text-ink lg:text-fg' : 'max-lg:bg-white/[0.08] max-lg:text-fg/85 lg:text-dim lg:hover:bg-white/12 lg:hover:text-fg'
                     }`
-                  : `inline-flex h-9 shrink-0 items-center border-b-2 text-[15px] font-medium transition-colors ${
-                      on ? 'border-fg text-fg' : 'border-transparent text-dim hover:text-fg'
+                  : `relative inline-flex h-9 shrink-0 items-center rounded-ctl px-3 text-[15px] font-medium transition-colors ${
+                      on ? 'text-fg' : 'text-dim hover:bg-white/12 hover:text-fg'
                     }`
               }
             >
               {label(d)}
+              {on ? <span aria-hidden className={`absolute inset-x-3 bottom-0.5 h-[2.5px] rounded-full bg-fg ${chips ? 'max-lg:hidden' : ''}`} /> : null}
               {/* точка «идут матчи» — только у невыбранного «Сегодня»: на белом чипе она читалась бледным значком уведомления, а
                   идущие матчи и так видны ниже */}
               {d === today && liveToday && !on ? (
