@@ -65,16 +65,13 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
       aria-label={`Матч в фокусе: ${m.home.name} — ${m.away.name}`}
       className="card flex flex-col p-4 transition-colors hover:bg-panel-3 sm:p-5"
     >
+      {/* «Матч в фокусе» — заголовком над лентой (DayView), в карточке — турнир слева и минута справа */}
       <div className="flex items-center justify-between gap-3 text-[13px]">
-        <span className="flex items-center gap-1.5 font-semibold text-fg">
-          <Icon k="star-outline" size={16} className="text-dim" />
-          Матч в фокусе
-        </span>
         <span className="flex min-w-0 items-center gap-1.5 text-dim">
           <Flag league={m.league} size={16} />
           <span className="truncate">{leagueTitle(m.league.name)}</span>
-          {status ? <span className={status.live ? 'shrink-0 font-semibold text-live' : 'shrink-0'}>· {status.text}</span> : null}
         </span>
+        {status ? <span className={`shrink-0 ${status.live ? 'font-semibold text-live' : 'text-dim'}`}>{status.text}</span> : null}
       </div>
 
       <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3">
@@ -103,11 +100,12 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
       </div>
 
       {fact ? (
-        // факт — плашкой цвета своей подборки (по ходу — спокойный синий «Главного»), сверху значок и о чём он,
-        // текст — от левого края плашки, без отступа под значок (владелец прислал прототип ChatGPT: «иконку … и сам
+        // факт — плашкой цвета своей подборки, до низа карточки (`flex-1`): в ленте карточки одной высоты, и короткий факт
+        // кончался раньше длинного (владелец: «в первой карточке подблок с описанием не доходит до конца а в другой доходит»);
+        // по ходу — спокойный синий «Главного»; сверху значок и о чём он, текст — от левого края плашки, без отступа под значок (владелец прислал прототип ChatGPT: «иконку … и сам
         // блок как то подкрасить? и не делай такой большой отступ слева у текста»)
         <div
-          className="relative isolate mt-4 overflow-hidden rounded-tile px-4 py-3"
+          className="relative isolate mt-4 flex-1 overflow-hidden rounded-tile px-4 py-3"
           style={{ background: `color-mix(in oklch, ${tone} 12%, transparent)` }}
         >
           {/* знак подборки крупно на фоне, у правого края — как в «Интересно сегодня» */}

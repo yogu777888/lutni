@@ -2,11 +2,13 @@ import Link from 'next/link'
 import type { FeedItem } from '@/lib/data'
 import { formatTime, plural } from '@/lib/format'
 import { matchHref } from '@/lib/links'
+import { isLive } from '@/lib/rank'
 import { statFor } from '@/lib/story-groups'
 import { TAG_BY_SLUG } from '@/lib/tags'
 import { Carousel } from './Carousel'
 import { BlockTitle, TitleIcon } from './Section'
 import { StorySymbol, symbolSoft } from './story/StorySymbol'
+import { TeamLogo } from './TeamLogo'
 
 // названия команд без кавычек, как в «Выгодно сегодня» и «Матче в фокусе» (владелец: «не пиши названия команд в скобках»)
 const plain = (t: string) => t.replace(/[«»]/g, '')
@@ -85,10 +87,11 @@ export function Interesting({ facts }: { facts: Fact[] }) {
               className="relative isolate flex flex-col overflow-hidden rounded-card p-4 transition-[filter] hover:brightness-125"
               style={{ background: `color-mix(in oklch, ${tone} 12%, var(--color-panel-2))` }}
             >
-              {/* знак подборки крупно на фоне, срезан правым краем (владелец: «в подборках на заднем фоне ставить как то
-                  аккуратно значки? типа прогруз линия вниз»): 10% цвета подборки, под текстом — читается как тиснение */}
-              <StorySymbol k={slug} tone={tone} className="pointer-events-none absolute -right-6 top-6 -z-10 size-[128px] opacity-[0.1]" />
-              <p className="flex min-w-0 items-center gap-1.5 text-[13px] font-semibold" style={{ color: tone }}>
+              {/* знак подборки крупно на фоне — в правом верхнем углу, срезан краем, рядом с крупной цифрой, а не под текстом
+                  (за повод он вставал плашками и читался как блоки — владелец: «карточки интересных фактов … странно
+                  выглядят»); 10% цвета подборки */}
+              <StorySymbol k={slug} tone={tone} className="pointer-events-none absolute -right-5 -top-5 -z-10 size-[112px] opacity-[0.1]" />
+              <p className="flex min-w-0 items-center gap-1.5 pr-16 text-[13px] font-semibold" style={{ color: tone }}>
                 <StorySymbol k={slug} tone={tone} className="h-4 w-4 shrink-0" />
                 <span className="truncate">{TAG_BY_SLUG.get(slug)?.title}</span>
               </p>
@@ -100,11 +103,27 @@ export function Interesting({ facts }: { facts: Fact[] }) {
                   </span>
                 </p>
               ) : null}
-              <p className="mt-3 text-[15px] font-semibold leading-snug">{plain(reason)}</p>
+              <p className="mt-3 line-clamp-3 text-[15px] font-semibold leading-snug">{plain(reason)}</p>
               <span className="flex-1" />
-              <p className="mt-3 border-t border-white/10 pt-3 text-[13px] leading-snug text-dim">
-                {m.home.name} — {m.away.name} · {m.status === 'scheduled' ? formatTime(m.ts) : 'идёт'}
-              </p>
+              {/* матч — строками с эмблемами, как в списке матчей (владелец: «добавил бы рядом с названиями команд их
+                  лого»), время — справа */}
+              <div className="mt-4 flex items-center gap-3 border-t border-white/10 pt-3">
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  {[m.home, m.away].map((t) => (
+                    <p key={t.name} className="flex min-w-0 items-center gap-2 text-[15px] leading-tight">
+                      <TeamLogo name={t.name} src={t.logo ?? null} size={22} />
+                      <span className="truncate">{t.name}</span>
+                    </p>
+                  ))}
+                </div>
+                {m.status === 'scheduled' ? (
+                  <span className="display-num shrink-0 text-[18px]">{formatTime(m.ts)}</span>
+                ) : isLive(m) ? (
+                  <span className="shrink-0 text-[15px] font-semibold text-live">{m.elapsed ? `${m.elapsed}′` : 'идёт'}</span>
+                ) : (
+                  <span className="shrink-0 text-[13px] text-dim">итог</span>
+                )}
+              </div>
             </Link>
           )
         })}

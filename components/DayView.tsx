@@ -370,13 +370,16 @@ export async function DayView({
           </section>
         ) : null}
         {focusList.length ? (
-          <div className="mt-6 xl:hidden">
+          // заголовок над лентой, как у «Интересно сегодня» и блоков ниже (владелец: «странно что у матчей в фокусе нет
+          // заголовка»); в самой карточке — только турнир и минута
+          <section aria-labelledby="focus-title" className="mt-6 xl:hidden">
+            <BlockTitle rows id="focus-title" title="Матч в фокусе" />
             <Carousel label="Матч в фокусе">
               {focusList.map((f, i) => (
                 <FocusMatch key={f.match.id} item={f} full={focusFull[i]} />
               ))}
             </Carousel>
-          </div>
+          </section>
         ) : null}
         <div
           className={`mt-6 grid gap-8 sm:mt-8 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-6 xl:!grid-cols-1 xl:gap-8' : ''}`}
