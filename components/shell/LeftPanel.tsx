@@ -185,14 +185,16 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
   const top = day.leagues.filter((l) => l.top)
   const rest = day.leagues.filter((l) => !l.top)
   // строки — как в правой панели: значок в круге 36px, название 14,5px, справа число
-  const row = 'flex items-center gap-3 rounded-tile py-1.5 pl-2 pr-2.5 text-[14.5px] font-medium transition-colors'
+  // без `transition-colors`: подсветка «текущей» лиги меняется на ходу прокрутки, и плавная смена фона перерисовывала
+  // строку каждый кадр вместе с тенями эмблем (SVG-фильтр) — центр подлагивал (замер: растр при прокрутке ×4)
+  const row = 'flex items-center gap-3 rounded-tile py-1.5 pl-2 pr-2.5 text-[14.5px] font-medium'
   // справа всегда число матчей, тихо (один столбец — один смысл); сколько идёт — красным в подписи
   // подпись под названием — сколько матчей и что с турниром (`StateLine`, общая с правой панелью); страны нет — её
   // говорит флаг, полное название — в подсказке; цифры справа нет — голая «10» читалась как счётчик непрочитанных
-  const SubText = ({ l }: { l: DayLeague }) => <StateLine total={l.total} live={l.live} next={l.next} started={l.started} pending={l.pending} same={l.same} />
-  const Sub = ({ l }: { l: DayLeague }) => (
+  const subText = (l: DayLeague) => <StateLine total={l.total} live={l.live} next={l.next} started={l.started} pending={l.pending} same={l.same} />
+  const sub = (l: DayLeague) => (
     <span className="mt-0.5 block truncate text-[12.5px] font-normal text-mute">
-      <SubText l={l} />
+      {subText(l)}
     </span>
   )
   // свёрнутая панель — как правая полоска (владелец: «в левом блоке, когда он свёрнут, нет индикатора историй, а в правом
@@ -208,7 +210,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
       {...tipProps(
         l.name,
         <>
-          <SubText l={l} /> · нажмите — разбор
+          {subText(l)} · нажмите — разбор
         </>,
       )}
       aria-label={`${l.name}: смотреть разбор матчей`}
@@ -220,10 +222,10 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
   )
   // у турниров «Завтра» подписи нет (владелец: «не слишком много мелкого текста из-за подписей?» — пять одинаковых
   // «10 матчей · начало в 16:00» подряд; про завтра в панели это мало кому нужно) — она в подсказке
-  const Name = ({ l, sub = true }: { l: DayLeague; sub?: boolean }) => (
+  const name = (l: DayLeague, withSub = true) => (
     <span className="min-w-0 flex-1 leading-tight">
       <span className="block truncate">{l.name}</span>
-      {sub ? <Sub l={l} /> : null}
+      {withSub ? sub(l) : null}
     </span>
   )
   // турниры как истории: клик по флагу — сторис матчей лиги подряд, дальше — следующих лиг (как у подборок справа)
@@ -268,12 +270,14 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     const first = live.items.find((m) => m.id === startId) ?? live.items[0]
     if (first) openStory({ id: startId, href: first.href, opener: e.currentTarget, queue, circles: todayRow() })
   }
+  // строки — функциями, а не компонентами (`<League/>`, объявленный в рендере, — новый тип на каждую отрисовку: при
+  // смене подсвеченной лиги во время прокрутки React пересоздавал все строки с кольцами и тенями эмблем — центр подлагивал)
   // строка: флаг — кнопка сторис (кольцо — непросмотренные матчи, при наведении — белая ▶), название — переход к блоку лиги
-  const League = ({ l, list, jump = true }: { l: DayLeague; list: DayLeague[]; jump?: boolean }) => {
+  const league = (l: DayLeague, list: DayLeague[], jump = true) => {
     const id = `league-${l.id}`
     const on = jump && active === id
     return (
-      <li>
+      <li key={l.id}>
         {/* «Завтра» (jump=false) — тише сегодняшних (владелец согласился: 17 одинаково белых колец, четыре — про завтра):
             название серым, кольцо серое, флаг прозрачнее; при наведении — обычной яркости */}
         <div
@@ -301,7 +305,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             aria-current={on ? 'location' : undefined}
             className="flex min-w-0 flex-1 items-center self-stretch"
           >
-            <Name l={l} sub={jump} />
+            {name(l, jump)}
           </a>
         </div>
       </li>
@@ -431,18 +435,14 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
               </div>
             </li>
           ) : null}
-          {top.map((l) => (
-            <League key={l.id} l={l} list={day.leagues} />
-          ))}
+          {top.map((l) => league(l, day.leagues))}
         </ul>
 
         {rest.length ? (
           <section className="mt-5">
             <h3 className="text-[12px] font-medium text-mute">Другие турниры</h3>
             <ul className="mt-1.5 space-y-0.5">
-              {rest.map((l) => (
-                <League key={l.id} l={l} list={day.leagues} />
-              ))}
+              {rest.map((l) => league(l, day.leagues))}
             </ul>
           </section>
         ) : null}
@@ -452,9 +452,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
           <section className="mt-5">
             <h3 className="text-[12px] font-medium text-mute">Завтра</h3>
             <ul className="mt-1.5 space-y-0.5">
-              {day.tomorrow.map((l) => (
-                <League key={l.id} l={l} list={day.tomorrow} jump={false} />
-              ))}
+              {day.tomorrow.map((l) => league(l, day.tomorrow, false))}
             </ul>
           </section>
         ) : null}
