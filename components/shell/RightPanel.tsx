@@ -358,12 +358,13 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                                 e.preventDefault()
                                 openStory({ id: it.id, href: m.href, opener: e.currentTarget, queue: circleQueue(groups, gi, seen).queue, circles: row })
                               }}
-                              className="-mx-2 flex items-center gap-2.5 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.05]"
+                              className="-mx-2 flex items-center gap-3 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.05]"
                             >
-                              <span className="flex shrink-0 -space-x-2">
-                                {[m.home, m.away].map((t) => (
-                                  <CrestPlate key={t.id} name={t.name} logo={t.logo} size={28} className="ring-2 ring-panel" />
-                                ))}
+                              {/* две подложки по диагонали в квадрате 36px, как избранный матч слева: названия — с той же линии,
+                                  что «Много голов» над ними (в ряд пара была 48px — владелец: «тут ещё осталось») */}
+                              <span aria-hidden className="relative h-9 w-9 shrink-0">
+                                <CrestPlate name={m.home.name} logo={m.home.logo} size={22} crest={0.72} className="absolute left-0 top-0" />
+                                <CrestPlate name={m.away.name} logo={m.away.logo} size={22} crest={0.72} className="absolute bottom-0 right-0 ring-2 ring-panel" />
                               </span>
                               <span className="min-w-0 flex-1 text-[13px] leading-tight">
                                 <span className="block truncate">{m.home.name}</span>

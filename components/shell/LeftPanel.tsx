@@ -405,8 +405,8 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                     {/* две подложки по диагонали в квадрате 36px — как круг избранной команды ниже: названия начинаются с одного
                         места (в ряд внахлёст пара выходила 44px, и «Бетис — Хетафе» стоял правее «Осасуны» — скриншот владельца) */}
                     <span aria-hidden className="relative h-9 w-9 shrink-0">
-                      <CrestPlate name={g.home.name} logo={g.home.logo} size={25} className="absolute left-0 top-0" />
-                      <CrestPlate name={g.away.name} logo={g.away.logo} size={25} className="absolute bottom-0 right-0 ring-2 ring-panel" />
+                      <CrestPlate name={g.home.name} logo={g.home.logo} size={22} crest={0.72} className="absolute left-0 top-0" />
+                      <CrestPlate name={g.away.name} logo={g.away.logo} size={22} crest={0.72} className="absolute bottom-0 right-0 ring-2 ring-panel" />
                     </span>
                     <span className="min-w-0 flex-1 leading-tight">
                       <span className="line-clamp-2">
