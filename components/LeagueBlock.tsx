@@ -21,7 +21,7 @@ const byState = (a: FeedItem, b: FeedItem) =>
   (STATE_ORDER[a.match.status] ?? 2) - (STATE_ORDER[b.match.status] ?? 2) || a.match.ts - b.match.ts
 
 /**
- * Пометка рекламы у кэфов-ссылок: «Кэфы PARI · Реклама · 18+» — какие букмекеры стоят в строках (закон о рекламе).
+ * Пометка рекламы у кэфов-ссылок: «PARI · Реклама · 18+» (без «Кэфы», бледнее — владелец: «может надпись реклама куда то перенести где она не будет глаз мозолить?») — какие букмекеры стоят в строках (закон о рекламе).
  * `under` — строкой под карточкой лиги справа, под колонкой кэфов (не рядом с логотипом лиги в заголовке).
  */
 function AdNote({ items, lines, under }: { items: FeedItem[]; lines: Record<number, X12Line[]>; under?: boolean }) {
@@ -32,11 +32,11 @@ function AdNote({ items, lines, under }: { items: FeedItem[]; lines: Record<numb
   const all = new Map(ls.flat().map((l) => [l.slug, l.bookmaker]))
   const note = (books: string[], bk: string, isFirst = false) => (
     <span key={bk} data-bk={bk} data-bk-first={isFirst ? '' : undefined} title={`Кэфы ${books.join(', ')} — ссылки к букмекеру-партнёру`}>
-      Кэфы {books.join(', ')} · Реклама · 18+
+      {books.join(', ')} · Реклама · 18+
     </span>
   )
   const body = [note(first, '*', true), ...[...all].map(([slug, name]) => note([name], slug))]
-  return under ? <p className="mt-2 px-4 text-right text-[12px] text-mute sm:px-5">{body}</p> : <span className="text-mute">{body}</span>
+  return under ? <p className="mt-2 px-4 text-right text-[12px] text-mute/70 sm:px-5">{body}</p> : <span className="text-mute/70">{body}</span>
 }
 
 export function LeagueBlock({

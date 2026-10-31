@@ -149,10 +149,10 @@ export default async function LeaguePage({ params }: Props) {
                 pickBooks.length ? (
                   <span className="flex items-center gap-3">
                     <span>
-                      <span data-bk="*" data-bk-first="">Кэфы {first.join(', ')} · Реклама</span>
+                      <span data-bk="*" data-bk-first="">{first.join(', ')} · Реклама</span>
                       {pickBooks.map((b) => (
                         <span key={b.slug} data-bk={b.slug}>
-                          Кэфы {b.name} · Реклама
+                          {b.name} · Реклама
                         </span>
                       ))}
                     </span>
