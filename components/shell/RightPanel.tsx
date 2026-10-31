@@ -11,8 +11,9 @@ import { TeamLogo } from '../TeamLogo'
 import { openStory, type StoryRow } from '../story/events'
 import { circleQueue } from '../story/queue'
 import { readSeen, SEEN_EVENT } from '../story/seen'
-import { StorySymbol, symbolSoft } from '../story/StorySymbol'
-import { GroupMark } from '../story/GroupMark'
+import { symbolSoft } from '../story/StorySymbol'
+import { GroupMark, PlateSymbol } from '../story/GroupMark'
+import { PLATE } from '../LeagueMark'
 import { pluralN } from '@/lib/format'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
@@ -187,7 +188,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
     groups,
     disc: (g, s) => (
       <span className="relative grid h-9 w-9 place-items-center rounded-full" style={{ background: `color-mix(in oklch, ${symbolSoft(g.key)} 14%, transparent)` }}>
-        <GroupMark g={g} tone={symbolSoft(g.key)} className="h-[18px] w-[18px]" crest="h-[22px] w-[22px]" />
+        <GroupMark g={g} className="h-[18px] w-[18px]" crest="h-[22px] w-[22px]" />
         <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={s} color={symbolSoft(g.key)} />
       </span>
     ),
@@ -224,7 +225,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
             className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full transition-[filter] hover:brightness-150"
             style={{ background: `color-mix(in oklch, ${symbolSoft(g.key)} 14%, transparent)` }}
           >
-            <GroupMark g={g} tone={symbolSoft(g.key)} className="h-[18px] w-[18px]" crest="h-[22px] w-[22px]" />
+            <GroupMark g={g} className="h-[18px] w-[18px]" crest="h-[22px] w-[22px]" />
             <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} color={symbolSoft(g.key)} />
           </button>
         ))}
@@ -236,9 +237,11 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
               href="/tag/value"
               prefetch={false}
               {...tipProps(`Выгодно сегодня · ${pluralN(picks.values.length, BETS)}`, 'Кэф выше честной цены · Реклама 18+')}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-acid text-acid-ink transition-colors hover:bg-acid/85"
+              // на светлой подложке, как все круги историй (владелец: «и идут с выгодно тоже подложку»); лайм — кольцом
+              className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full ring-2 ring-acid ring-offset-[3px] ring-offset-panel transition-[filter] hover:brightness-110"
+              style={{ background: PLATE }}
             >
-              <StorySymbol k="value" tone="currentColor" className="h-[18px] w-[18px]" />
+              <PlateSymbol k="value" className="h-[18px] w-[18px]" />
             </Link>
           </>
         ) : null}
@@ -275,7 +278,6 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                       >
                         <GroupMark
                           g={g}
-                          tone={symbolSoft(g.key)}
                           className="h-[18px] w-[18px] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"
                           crest="h-[22px] w-[22px]"
                           fade="transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"

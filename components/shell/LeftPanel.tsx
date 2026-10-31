@@ -10,12 +10,12 @@ import { leagueColor, leagueLogo } from '@/lib/league-logos'
 import { useFavMatches, useFavorites } from '../favorites'
 import { ymdInTz } from '@/lib/format'
 import { LeagueMark, PLATE } from '../LeagueMark'
+import { PlateSymbol } from '../story/GroupMark'
 import { TeamLogo } from '../TeamLogo'
 import type { StoryGroup } from '@/lib/story-groups'
 import { openStory, type StoryRow } from '../story/events'
 import { circleQueue } from '../story/queue'
 import { readSeen, SEEN_EVENT } from '../story/seen'
-import { StorySymbol } from '../story/StorySymbol'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
 import { matchesN, StateLine } from './StateLine'
@@ -29,8 +29,8 @@ const ringTone = (id: number) => {
   // чёрно-белый логотип или флаг — серый той же светлоты (белое кольцо было ярче цветных)
   return h ? `oklch(0.74 0.12 ${h})` : 'oklch(0.74 0 0)'
 }
-/** заливка круга «Сейчас идут» — красным 14%, как круги подборок справа их цветом */
-const LIVE_FILL = { background: `color-mix(in oklch, ${LIVE} 14%, transparent)` }
+/** круг «Сейчас идут» — на светлой подложке, как все круги историй (владелец: «и идут с выгодно тоже подложку»); красный — у знака и кольца */
+const LIVE_FILL = { background: PLATE }
 
 /** «в 1 турнире», «в 3 турнирах» — подпись у «Сейчас идут». */
 const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'турнире' : 'турнирах'}`
@@ -250,7 +250,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     if (g.key === 'live')
       return (
         <span className="relative grid h-9 w-9 place-items-center rounded-full" style={LIVE_FILL}>
-          <StorySymbol k="live" tone={LIVE} className="h-[18px] w-[18px]" />
+          <PlateSymbol k="live" className="h-[18px] w-[18px]" />
           <StoryRing group="live" ids={ids} seen={s} live />
         </span>
       )
@@ -335,7 +335,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             style={LIVE_FILL}
             className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full transition-[filter] hover:brightness-150"
           >
-            <StorySymbol k="live" tone={LIVE} className="h-[18px] w-[18px]" />
+            <PlateSymbol k="live" className="h-[18px] w-[18px]" />
             <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} live />
           </button>
         ) : null}
@@ -428,7 +428,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                 <button type="button" data-story-key="live"
             onClick={playLive} aria-label="Сейчас идут: смотреть разбор матчей" className="relative shrink-0 rounded-full">
                   <span aria-hidden className="grid h-9 w-9 place-items-center rounded-full" style={LIVE_FILL}>
-                    <StorySymbol k="live" tone={LIVE} className="h-[18px] w-[18px]" />
+                    <PlateSymbol k="live" className="h-[18px] w-[18px]" />
                   </span>
                   <PlayOverlay />
                   <StoryRing group="live" ids={day.liveItems.map((m) => m.id)} seen={seen} live />
