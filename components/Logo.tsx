@@ -15,7 +15,7 @@ export function Wordmark({ size = 24, className = '' }: { size?: number; classNa
   return (
     <svg aria-hidden viewBox="118 122 1812 524" height={size} width={Math.round(size * ASPECT)} className={`block shrink-0 ${className}`}>
       <path fill="currentColor" fillRule="evenodd" d={LETTERS} />
-      <circle cx="1057" cy="457" r="50" fill="var(--color-acid)" />
+      <circle cx="1057" cy="457" r="50" fill="currentColor" />
     </svg>
   )
 }
