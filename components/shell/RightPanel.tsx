@@ -339,7 +339,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                             >
                               <span className="flex shrink-0 -space-x-2">
                                 {[m.home, m.away].map((t) => (
-                                  <span key={t.id} className="grid h-7 w-7 place-items-center rounded-full bg-panel-3 ring-2 ring-panel">
+                                  <span key={t.id} className="grid h-7 w-7 place-items-center rounded-full ring-2 ring-panel" style={{ background: PLATE }}>
                                     <TeamLogo name={t.name} src={t.logo} size={18} />
                                   </span>
                                 ))}

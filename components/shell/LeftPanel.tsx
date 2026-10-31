@@ -361,7 +361,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
               {starred.map((g) => (
                 <li key={`m${g.id}`}>
                   <Link href={g.href} prefetch={false} className={`-mx-2 ${row} hover:bg-white/[0.04]`}>
-                    <span aria-hidden className="relative h-9 w-9 shrink-0 rounded-full bg-white/[0.06]">
+                    <span aria-hidden className="relative h-9 w-9 shrink-0 rounded-full" style={{ background: PLATE }}>
                       <span className="absolute left-1 top-1">
                         <TeamLogo name={g.home.name} src={g.home.logo} size={16} />
                       </span>
@@ -382,7 +382,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                 const g = gameOf(t.id)
                 const body = (
                   <>
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full" style={{ background: PLATE }}>
                       <TeamLogo name={t.name} src={t.logo ?? null} size={20} />
                     </span>
                     <span className="min-w-0 flex-1 leading-tight">
