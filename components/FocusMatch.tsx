@@ -11,12 +11,25 @@ import { Flag } from './Flag'
 import { TAG_BY_SLUG } from '@/lib/tags'
 import { StorySymbol, softTone, symbolSoft } from './story/StorySymbol'
 import { Icon } from './Icon'
+import { StatGlyph } from './match/StatIcon'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
 import { untilText } from './shell/StateLine'
 
 // названия команд в факте — без кавычек, как в «Выгодно сегодня» (владелец: «не писать названия команд в скобках»)
 // и без «Команда» перед названием — как в «Интересно сегодня»
+// тема вывода по ходу матча → знак (тот же, что у строки статистики) и цвет плашки (владелец: «почему у всех подкарточек
+// подблоков один и тот же цвет и одни и те же иконки»): у каждой темы свой; мяч не берём — он «Матчи» в нижнем меню
+const TOPIC: Record<string, { k: string; color: string }> = {
+  Моменты: { k: 'expectedGoals', color: '#bf5af2' },
+  Реализация: { k: 'hitWoodwork', color: '#ff9f0a' },
+  Давление: { k: 'dangerousAttacks', color: '#30b0c7' },
+  Удары: { k: 'shotsOnGoal', color: '#0a84ff' },
+  Владение: { k: 'ballPossession', color: '#63e6be' },
+  Оборона: { k: 'tackles', color: '#5e5ce6' },
+  Удаление: { k: 'redCards', color: '#ff6482' },
+}
+
 const plain = (t: string) => t.replace(/(^|\s)[Кк]оманда «([^»]+)»/g, '$1$2').replace(/[«»]/g, '')
 
 /**
@@ -48,7 +61,8 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
       })()
 
   // цвет плашки факта: до начала — подборки (приглушённый, как в правой панели), по ходу — синий «Главного»
-  const tone = fact?.sym ? symbolSoft(fact.sym) : softTone('#0a84ff')
+  const topic = fact && !fact.sym && fact.label ? TOPIC[fact.label] : undefined
+  const tone = fact?.sym ? symbolSoft(fact.sym) : softTone(topic?.color ?? '#0a84ff')
 
   const status = live
     ? { text: m.elapsed ? `${m.elapsed}′` : 'идёт', live: true }
@@ -118,6 +132,8 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
           <p className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: tone }}>
             {fact.sym ? (
               <StorySymbol k={fact.sym} tone={tone} className="h-4 w-4 shrink-0" />
+            ) : topic ? (
+              <StatGlyph k={topic.k} className="h-4 w-4 shrink-0" />
             ) : (
               // по ходу — ⓘ, а не мяч: мяч — «Матчи» в нижнем меню (владелец: «иконка футбольного мячика дублируется»)
               <Icon k="info" size={16} className="shrink-0" />

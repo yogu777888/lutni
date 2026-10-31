@@ -89,11 +89,15 @@ const BY_GROUP: Record<string, Glyph> = {
 }
 
 export function StatIcon({ k, group }: { k: string; group?: string }) {
+  return <StatGlyph k={k} group={group} className="mr-1.5 inline-block size-4 shrink-0 align-[-3px] text-mute" />
+}
+
+/** тот же знак строки статистики — своим размером и цветом (`currentColor`): тема вывода в «Матче в фокусе» */
+export function StatGlyph({ k, group, className }: { k: string; group?: string; className: string }) {
   const g = KEY[k] ?? (group ? BY_GROUP[group] : undefined) ?? { d: G.dot }
-  const cls = 'mr-1.5 inline-block size-4 shrink-0 align-[-3px] text-mute'
-  if (g.sym) return <StorySymbol k={g.sym} tone="var(--color-mute)" className={cls} />
+  if (g.sym) return <StorySymbol k={g.sym} tone="currentColor" className={className} />
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className={cls} style={g.tone ? { color: g.tone } : undefined}>
+    <svg viewBox="0 0 24 24" aria-hidden className={className} style={g.tone ? { color: g.tone } : undefined}>
       {g.ui ? <path fillRule="evenodd" fill="currentColor" d={UI[g.ui]} /> : <path d={g.d} {...LINE} />}
     </svg>
   )
