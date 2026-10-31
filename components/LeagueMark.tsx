@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { leagueLogoInfo } from '@/lib/league-logos'
+import { crestScale, crestSrc } from '@/lib/crest-geo'
 
 /** Размер знака в круге — по площади, а не по длинной стороне: квадратный щит и надпись «eredivisie» на вид одного
  * размера (по длинной стороне надписи выходили мелкими, щиты — крупными; владелец: «криво»), и не за краем круга. */
@@ -78,11 +79,23 @@ export function CrestShadowDefs() {
  * `overflow: visible` — след выходит за рамку, срезает его круг подложки. `x`/`y`/размер `image` в процентах — единицы
  * фильтра остаются пикселями CSS, как было.
  */
-export function ShadowCrest({ src, className = '', style }: { src: string; className?: string; style?: CSSProperties }) {
+export function ShadowCrest({ src, aspect = 1, className = '', style }: { src: string; aspect?: number; className?: string; style?: CSSProperties }) {
+  // тень — уже в картинке (/api/crest, lib/crest-shadow.ts): эмблема в левом верхнем углу, след вправо и вниз; место — по
+  // эмблеме, картинка шире и выше его и выходит за рамку, круг подложки срезает
+  const k = crestScale(aspect)
   return (
-    <svg aria-hidden className={`overflow-visible ${className}`} style={style}>
-      <image href={src} x="0" y="0" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" filter={CREST_SHADOW} />
-    </svg>
+    <span className={`relative block ${className}`} style={style}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- готовая картинка с нашего сервера */}
+      <img
+        src={crestSrc(src, aspect)}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+        className="pointer-events-none absolute left-0 top-0 max-w-none"
+        style={{ width: `${k.x * 100}%`, height: `${k.y * 100}%` }}
+      />
+    </span>
   )
 }
 
@@ -93,7 +106,7 @@ export function LeagueMark({ id, flag, size, bare = false, fill, light = false, 
   if (logo && fill === PLATE && !logo.tile && !(logo.dark && !light))
     return (
       <span aria-hidden className={`grid shrink-0 grid-cols-1 grid-rows-1 place-items-center ${bare ? '' : 'overflow-hidden rounded-full'} ${className}`} style={{ width: size, height: size, ...(!bare ? { background: fill } : {}) }}>
-        <ShadowCrest src={logo.src} style={fit(logo.aspect, bare)} />
+        <ShadowCrest src={logo.src} aspect={logo.aspect} style={fit(logo.aspect, bare)} />
       </span>
     )
   if (logo)
