@@ -352,8 +352,8 @@ export async function DayView({
               id="picks-title"
               title={
                 <span className="flex items-center gap-1.5">
-                  <PlayAll groups={storyGroups} />
                   Подборки дня
+                  <PlayAll groups={storyGroups} />
                 </span>
               }
               aside={

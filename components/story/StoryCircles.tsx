@@ -74,7 +74,7 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
 }
 
 /**
- * «▶» слева от заголовка «Подборки дня» (владелец: «на мобильном слева от подборки дня иконку плэй типа сделать?»): истории
+ * «▶» справа от заголовка «Подборки дня» (владелец: «можно иконку плэй сделать справа от заголовка подборки дня?»; была слева) (владелец: «на мобильном слева от подборки дня иконку плэй типа сделать?»): истории
  * подряд с первой подборки, где есть непросмотренное, — как кнопка «слушать» у плейлиста; всё просмотрено — с начала.
  * Знак 20px цветом заголовка без подложки: белый круг владельцу не понравился («мне не нравится иконка слева от подборки дня»).
  */
@@ -92,7 +92,7 @@ export function PlayAll({ groups }: { groups: StoryGroup[] }) {
       onClick={play}
       aria-label="Смотреть подборки дня подряд"
       title="Смотреть подряд"
-      className="-ml-1.5 -mr-1 grid h-8 w-8 shrink-0 place-items-center text-fg transition-transform active:scale-90"
+      className="-ml-1 grid h-8 w-8 shrink-0 place-items-center text-fg transition-transform active:scale-90"
     >
       <Icon k="play-fill" size={20} />
     </button>
