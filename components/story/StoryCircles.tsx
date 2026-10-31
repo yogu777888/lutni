@@ -71,9 +71,9 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
 }
 
 /**
- * Знак подборки — значком в правом нижнем углу круга, как «в сети» у аватара (владелец прислал эскиз со значком на круге:
+ * Знак подборки — значком на углу круга (владелец прислал эскиз со значком на круге:
  * «как тебе вариант вот так иконки перенести вместо того чтобы они слева от текста были?» — «сделай как знаешь лучше»):
- * графитовый круг 22px, знак 12px белым («Идут» — красным, красный — только «идёт»), обводка цветом фона 2px «вырезает»
+ * графитовый круг 24px в правом верхнем углу, на кольце (владелец из двух вариантов выбрал «сверху, как на эскизе»; внизу справа 22px — «некрасиво»), знак 12px белым («Идут» — красным, красный — только «идёт»), обводка цветом фона 2px «вырезает»
  * кольцо. Нет эмблемы — знак и так по центру круга, значка нет.
  */
 function Badge({ g }: { g: StoryGroup }) {
@@ -82,7 +82,7 @@ function Badge({ g }: { g: StoryGroup }) {
   return (
     <span
       aria-hidden
-      className={`absolute -bottom-0.5 -right-0.5 grid h-[22px] w-[22px] place-items-center rounded-full border-2 border-[#090c10] bg-[#1c242d] ${live ? 'text-live' : 'text-white'}`}
+      className={`absolute -right-[3px] -top-[3px] grid h-6 w-6 place-items-center rounded-full border-2 border-[#090c10] bg-[#1c242d] ${live ? 'text-live' : 'text-white'}`}
     >
       <StorySymbol k={live ? 'live' : g.key} tone="currentColor" className="h-3 w-3" />
     </span>
