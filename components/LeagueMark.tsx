@@ -40,7 +40,7 @@ export const PLATE = '#cdd2d8'
  * подложкой темнее. Цепочка CSS `drop-shadow` не годится: доли пикселя Chrome отбрасывает, а по 1px на ретине видны
  * ступеньки. Только на `PLATE`; светлый контур не делать — владелец отверг. Цвет — `SHADOW_TONE`.
  */
-const SHADOW_TONE = '#a7aeb6'
+const SHADOW_TONE = '#bbc1c8'
 /** 7 удвоений — след 64px: длиннее радиуса самого крупного круга, до края доходит всегда */
 const DOUBLINGS = 7
 export const CREST_SHADOW = 'url(#crest-shadow)'
