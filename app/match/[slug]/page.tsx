@@ -791,7 +791,7 @@ export default async function MatchPage({ params }: Props) {
           {/* оговорка — последней строкой разбора; разбора нет — под вкладками */}
           {ins.preview.length ? null : <BlockNote className="!mt-8">{disclaimer}</BlockNote>}
         </div>
-        <aside className="space-y-6 sm:space-y-8 lg:sticky lg:top-24 lg:self-start xl:static xl:space-y-6 2xl:sticky 2xl:top-16">
+        <aside className="space-y-6 sm:space-y-8 lg:sticky lg:top-24 lg:self-start xl:static xl:space-y-6 2xl:sticky 2xl:top-14">
           <section>
             {/* заголовок — над блоком, как у разделов страницы (`Section outside`) */}
             <BlockTitle title="Где поставить" />

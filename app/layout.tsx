@@ -85,7 +85,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             сверху, справа — вход на сайт (виджет, как у Spotify «Зарегистрируйся») — по одной панели на всю высоту; уже — обычная страница во всю ширину */}
         <div className="xl:grid xl:grid-cols-[var(--shell-l)_minmax(0,1fr)_var(--shell-r)] xl:gap-2 xl:px-2 xl:pb-2 xl:pt-2">
           <aside aria-label="Турниры дня" className="hidden xl:block">
-            <div className="sticky top-16 h-[calc(100dvh-72px)]">
+            <div className="sticky top-14 h-[calc(100dvh-64px)]">
               <ResizeHandle side="l" />
               <Suspense fallback={<PanelSkeleton />}>
                 <LeftPanelData />
@@ -97,7 +97,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Footer />
           </div>
           <aside aria-label="Подборки дня" className="hidden xl:block">
-            <div className="sticky top-16 h-[calc(100dvh-72px)]">
+            <div className="sticky top-14 h-[calc(100dvh-64px)]">
               <ResizeHandle side="r" />
               <Suspense fallback={<PanelSkeleton />}>
                 <RightPanelData />

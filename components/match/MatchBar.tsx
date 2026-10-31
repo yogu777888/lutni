@@ -108,7 +108,7 @@ export function MatchBar({
           потом «может сразу названия команд и счет в самом верхнем блоке сделать? и убрать рядом со стрелкой название лиги?»):
           «‹», команды и счёт с самого начала и ничего не сменяется; турнир и минута — строкой в табло ниже; когда
           табло ушло под плашку — у неё тень */}
-      <div className="sticky top-[57px] z-30 max-lg:hidden xl:top-16">
+      <div className="sticky top-[57px] z-30 max-lg:hidden xl:top-14">
         <div ref={ref} className="match-top relative bg-[#090c10] pt-1.5 xl:pt-0">
           <div
             className={`match-top-in relative grid min-h-[58px] grid-cols-[minmax(32px,1fr)_minmax(0,28rem)_minmax(32px,1fr)] items-center gap-3 rounded-card bg-panel-3 py-2 px-[29px] transition-shadow duration-300 ${
