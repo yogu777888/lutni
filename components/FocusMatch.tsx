@@ -34,7 +34,11 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
   type Fact = { title: string; text?: string; sym?: string; icon?: 'chart' | 'ball' | 'card' | 'swap'; label?: string }
   const fact: Fact | null = started
     ? full
-      ? (matchNotes({ home: m.home.name, away: m.away.name, score: m.score ?? null, stats: full.stats ?? [], events: full.events, momentum: null, live, minute: m.elapsed })[0] ?? null)
+      ? (() => {
+          const n = matchNotes({ home: m.home.name, away: m.away.name, score: m.score ?? null, stats: full.stats ?? [], events: full.events, momentum: null, live, minute: m.elapsed })[0]
+          // подпись — о чём вывод («Моменты», «Удары», «Удаление»…), а не «Главное» у всех карточек ленты
+          return n ? { ...n, label: n.topic } : null
+        })()
       : null
     : (() => {
         const top = [...item.tags].sort((a, b) => b.score - a.score).find((t) => t.slug !== 'value' && t.reason)
@@ -69,7 +73,7 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
       {/* «Матч в фокусе» — заголовком над лентой (DayView), в карточке — турнир слева и минута справа */}
       <div className="flex items-center justify-between gap-3 text-[13px]">
         <span className="flex min-w-0 items-center gap-1.5 text-dim">
-          <Flag league={m.league} size={16} />
+          <Flag league={m.league} size={16} bare />
           <span className="truncate">{leagueTitle(m.league.name)}</span>
         </span>
         {status ? <span className={`shrink-0 ${status.live ? 'font-semibold text-live' : 'text-dim'}`}>{status.text}</span> : null}

@@ -8,7 +8,8 @@ import type { MatchEvent, StatPair } from './types'
 import { lastN, type Point, type TeamPoints } from './team-xg'
 
 /** `icon` — значок к выводу в «Матче в фокусе» на главной (`Icon`): о чём мысль — моменты, удары, удаление, владение. */
-export type MatchNote = { title: string; text: string; icon?: 'chart' | 'ball' | 'card' | 'swap' }
+/** topic — о чём вывод одним словом: подпись плашки в «Матче в фокусе» (было «Главное» у всех) */
+export type MatchNote = { title: string; text: string; icon?: 'chart' | 'ball' | 'card' | 'swap'; topic?: string }
 
 type Ctx = {
   home: string
@@ -152,32 +153,32 @@ function historyNote(side: 'home' | 'away', p: Point, c: Ctx, xg: StatPair, sc: 
     case 'finish-':
       return mine >= 1 && goals <= mine - 0.8
         ? {
-            title: `«${name}» снова не реализует моменты`,
+            topic: 'Реализация', title: `«${name}» снова не реализует моменты`,
             text: `${now} xG\u00a0${dec(mine)}, а ${goals ? `забит только ${goalsW(goals)}` : 'голов нет'}. И ${past} забивает ${d1(h.gf)} за игру при xG\u00a0${d1(h.xgFor)}.`,
           }
         : null
     case 'finish+':
       return goals >= 2 && goals >= mine + 0.8
         ? {
-            title: `«${name}» снова забивает больше, чем создаёт`,
+            topic: 'Реализация', title: `«${name}» снова забивает больше, чем создаёт`,
             text: `${now} ${goalsW(goals)} при xG\u00a0${dec(mine)}. И ${past} — ${d1(h.gf)} за игру при xG\u00a0${d1(h.xgFor)}.`,
           }
         : null
     case 'attack+':
       return mine >= 1.5
-        ? { title: `«${name}», как обычно, создаёт много моментов`, text: `${now} ${already}xG\u00a0${dec(mine)}, ${past} — в среднем ${d1(h.xgFor)} за игру.` }
+        ? { topic: 'Моменты', title: `«${name}», как обычно, создаёт много моментов`, text: `${now} ${already}xG\u00a0${dec(mine)}, ${past} — в среднем ${d1(h.xgFor)} за игру.` }
         : null
     case 'attack-':
       return late && mine <= 0.5
-        ? { title: `«${name}» снова почти без моментов`, text: `${now} xG\u00a0${dec(mine)}, ${past} — в среднем ${d1(h.xgFor)} за игру.` }
+        ? { topic: 'Моменты', title: `«${name}» снова почти без моментов`, text: `${now} xG\u00a0${dec(mine)}, ${past} — в среднем ${d1(h.xgFor)} за игру.` }
         : null
     case 'defense+':
       return late && theirs <= 0.5
-        ? { title: `«${name}», как обычно, почти не даёт бить`, text: `${now} у соперника xG\u00a0${dec(theirs)}, ${past} у соперников — в среднем ${d1(h.xgAgainst)}.` }
+        ? { topic: 'Оборона', title: `«${name}», как обычно, почти не даёт бить`, text: `${now} у соперника xG\u00a0${dec(theirs)}, ${past} у соперников — в среднем ${d1(h.xgAgainst)}.` }
         : null
     case 'defense-':
       return theirs >= 1.5
-        ? { title: `«${name}» снова отдаёт много моментов`, text: `${now} у соперника ${already}xG\u00a0${dec(theirs)}, ${past} у соперников — в среднем ${d1(h.xgAgainst)}.` }
+        ? { topic: 'Оборона', title: `«${name}» снова отдаёт много моментов`, text: `${now} у соперника ${already}xG\u00a0${dec(theirs)}, ${past} у соперников — в среднем ${d1(h.xgAgainst)}.` }
         : null
     default:
       return null
@@ -218,6 +219,7 @@ export function matchNotes(c: Ctx): MatchNote[] {
         g: `dom:${top}`,
         n: {
           icon: 'chart',
+          topic: 'Моменты',
           title: `«${name(top)}» опаснее, но ${mine < theirs ? 'уступает' : 'не впереди'}`,
           text: `xG: «${name(top)}» — ${dec(a)}, «${other(top)}» — ${dec(b)}. А на табло ${sc.home}:${sc.away}.`,
         },
@@ -226,7 +228,7 @@ export function matchNotes(c: Ctx): MatchNote[] {
       out.push({
         p: 6,
         g: `dom:${top}`,
-        n: { icon: 'chart', title: `«${name(top)}» ведёт по делу`, text: `По моментам тоже впереди: xG — ${dec(a)}, у «${other(top)}» — ${dec(b)}.` },
+        n: { icon: 'chart', topic: 'Моменты', title: `«${name(top)}» ведёт по делу`, text: `По моментам тоже впереди: xG — ${dec(a)}, у «${other(top)}» — ${dec(b)}.` },
       })
   }
 
@@ -241,6 +243,7 @@ export function matchNotes(c: Ctx): MatchNote[] {
           p: 8,
           n: {
             icon: 'ball',
+            topic: 'Реализация',
             title: `«${name(side)}» не реализует моменты`,
             text: `${ch} ${plural(ch, 'голевой момент', 'голевых момента', 'голевых моментов')}, а ${g ? `забит только ${goalsW(g)}` : c.live ? 'гола пока нет' : 'гола так и не было'}.`,
           },
@@ -254,8 +257,8 @@ export function matchNotes(c: Ctx): MatchNote[] {
     out.push({
       p: c.live ? 9 : 4,
       n: c.live
-        ? { icon: 'chart', title: `«${name(side)}» давит последние 10 минут`, text: `Атакует чаще и опаснее, чем «${other(side)}», — это видно на графике «Давление команд».` }
-        : { icon: 'chart', title: `Концовка — за «${name(side)}»`, text: `В последние 10 минут — больше атак и опаснее, чем у «${other(side)}»: это видно на графике «Давление команд».` },
+        ? { icon: 'chart', topic: 'Давление', title: `«${name(side)}» давит последние 10 минут`, text: `Атакует чаще и опаснее, чем «${other(side)}», — это видно на графике «Давление команд».` }
+        : { icon: 'chart', topic: 'Давление', title: `Концовка — за «${name(side)}»`, text: `В последние 10 минут — больше атак и опаснее, чем у «${other(side)}»: это видно на графике «Давление команд».` },
     })
   }
 
@@ -271,6 +274,7 @@ export function matchNotes(c: Ctx): MatchNote[] {
       p: c.live ? 11 : 5,
       n: {
         icon: 'card',
+        topic: 'Удаление',
         title: `«${name(e.side)}» в меньшинстве с ${e.minute}′`,
         text: `${e.player ? `Удалён ${e.player}. ` : ''}${left(e.minute)}`,
       },
@@ -290,7 +294,7 @@ export function matchNotes(c: Ctx): MatchNote[] {
       out.push({
         p: 7,
         g: `dom:${side}`,
-        n: { icon: 'ball', title, text: `Удары: «${name(side)}» — ${a}, «${other(side)}» — ${b || 'ни одного'}.` },
+        n: { icon: 'ball', topic: 'Удары', title, text: `Удары: «${name(side)}» — ${a}, «${other(side)}» — ${b || 'ни одного'}.` },
       })
     }
   }
@@ -302,7 +306,7 @@ export function matchNotes(c: Ctx): MatchNote[] {
     out.push({
       p: 3,
       g: `dom:${side}`,
-      n: { icon: 'swap', title: `Мяч чаще у «${name(side)}»`, text: `Владение: «${name(side)}» — ${poss[side]}%, «${other(side)}» — ${poss[side === 'home' ? 'away' : 'home']}%.` },
+      n: { icon: 'swap', topic: 'Владение', title: `Мяч чаще у «${name(side)}»`, text: `Владение: «${name(side)}» — ${poss[side]}%, «${other(side)}» — ${poss[side === 'home' ? 'away' : 'home']}%.` },
     })
   }
 
