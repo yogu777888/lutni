@@ -11,7 +11,7 @@ import { useFavMatches, useFavorites } from '../favorites'
 import { ymdInTz } from '@/lib/format'
 import { LeagueMark, PLATE } from '../LeagueMark'
 import { PlateMark } from '../story/GroupMark'
-import { TeamLogo } from '../TeamLogo'
+import { CrestPlate } from '../CrestPlate'
 import type { StoryGroup } from '@/lib/story-groups'
 import { openStory, type StoryRow } from '../story/events'
 import { circleQueue } from '../story/queue'
@@ -361,16 +361,12 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
               {starred.map((g) => (
                 <li key={`m${g.id}`}>
                   <Link href={g.href} prefetch={false} className={`-mx-2 ${row} hover:bg-white/[0.04]`}>
-                    <span aria-hidden className="relative h-9 w-9 shrink-0 rounded-full" style={{ background: PLATE }}>
-                      <span className="absolute left-1 top-1">
-                        <TeamLogo name={g.home.name} src={g.home.logo} size={16} />
-                      </span>
-                      <span className="absolute bottom-1 right-1">
-                        <TeamLogo name={g.away.name} src={g.away.logo} size={16} />
-                      </span>
+                    <span aria-hidden className="flex shrink-0 -space-x-3">
+                      <CrestPlate name={g.home.name} logo={g.home.logo} size={28} className="ring-2 ring-panel" />
+                      <CrestPlate name={g.away.name} logo={g.away.logo} size={28} className="ring-2 ring-panel" />
                     </span>
                     <span className="min-w-0 flex-1 leading-tight">
-                      <span className="block truncate">
+                      <span className="line-clamp-2">
                         {g.home.name} — {g.away.name}
                       </span>
                       <span className={`mt-0.5 block truncate text-[12.5px] font-normal ${g.live ? 'text-live' : 'text-dim'}`}>{lineOf(g)}</span>
@@ -382,9 +378,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                 const g = gameOf(t.id)
                 const body = (
                   <>
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full" style={{ background: PLATE }}>
-                      <TeamLogo name={t.name} src={t.logo ?? null} size={20} />
-                    </span>
+                    <CrestPlate name={t.name} logo={t.logo} size={36} />
                     <span className="min-w-0 flex-1 leading-tight">
                       <span className="block truncate">{t.name}</span>
                       <span className={`mt-0.5 block truncate text-[12.5px] font-normal ${g?.live ? 'text-live' : 'text-dim'}`}>{lineOf(g)}</span>

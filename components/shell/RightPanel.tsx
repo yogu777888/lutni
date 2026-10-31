@@ -7,7 +7,7 @@ import { useEffect, useId, useState } from 'react'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayPicks, ValueRow } from '@/lib/day-picks'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
-import { TeamLogo } from '../TeamLogo'
+import { CrestPlate } from '../CrestPlate'
 import { openStory, type StoryRow } from '../story/events'
 import { circleQueue } from '../story/queue'
 import { readSeen, SEEN_EVENT } from '../story/seen'
@@ -339,9 +339,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                             >
                               <span className="flex shrink-0 -space-x-2">
                                 {[m.home, m.away].map((t) => (
-                                  <span key={t.id} className="grid h-7 w-7 place-items-center rounded-full ring-2 ring-panel" style={{ background: PLATE }}>
-                                    <TeamLogo name={t.name} src={t.logo} size={18} />
-                                  </span>
+                                  <CrestPlate key={t.id} name={t.name} logo={t.logo} size={28} className="ring-2 ring-panel" />
                                 ))}
                               </span>
                               <span className="min-w-0 flex-1 text-[13px] leading-tight">
