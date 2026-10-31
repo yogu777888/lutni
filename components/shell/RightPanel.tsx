@@ -277,7 +277,8 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                           g={g}
                           tone={symbolSoft(g.key)}
                           className="h-[18px] w-[18px] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"
-                          crest="h-[22px] w-[22px] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"
+                          crest="h-[22px] w-[22px]"
+                          fade="transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"
                         />
                         <span className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                           <Play className="ml-0.5 h-3.5 w-3.5" />
