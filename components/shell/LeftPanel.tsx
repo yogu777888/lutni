@@ -163,18 +163,41 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     if (hash.startsWith('league-') || hash === 'live') setTimeout(() => reveal(hash), 50)
     const blocks = [...document.querySelectorAll<HTMLElement>('#live, [id^="league-"]')]
     if (!blocks.length) return setActive(null)
+    // какие блоки сейчас в полосе: колбэк получает только изменившиеся, и без общего набора подсветка «залипала» —
+    // вернулись наверх к «Избранному», «Сейчас идут» ушёл из полосы вниз, а в панели оставался выбранным (скриншот владельца)
+    const inBand = new Map<string, number>()
+    // пока страницу не листали — ничего не подсвечено (иначе «Сейчас идут» выглядит выбранным пунктом)
+    const pick = () => {
+      if (window.scrollY < 40) return setActive(null)
+      const top = [...inBand].sort((a, b) => a[1] - b[1])[0]
+      setActive(top ? top[0] : null)
+    }
+    // переход через 40px сверху колбэк не вызывает (блок как был в полосе, так и остался) — пересчитываем сами, только на
+    // пересечении порога, а не на каждом кадре прокрутки
+    let low = window.scrollY < 40
+    const onScroll = () => {
+      if (window.scrollY < 40 !== low) {
+        low = !low
+        pick()
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
     const io = new IntersectionObserver(
       (entries) => {
-        // пока страницу не листали — ничего не подсвечено (иначе «Сейчас идут» выглядит выбранным пунктом)
-        if (window.scrollY < 40) return setActive(null)
-        const top = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
-        if (top) setActive(top.target.id)
+        for (const e of entries) {
+          if (e.isIntersecting) inBand.set(e.target.id, e.boundingClientRect.top)
+          else inBand.delete(e.target.id)
+        }
+        pick()
       },
       // «текущая» — та, что пересекает полосу чуть ниже шапки и липкой строки дней
       { rootMargin: '-150px 0px -70% 0px' },
     )
     blocks.forEach((b) => io.observe(b))
-    return () => io.disconnect()
+    return () => {
+      io.disconnect()
+      window.removeEventListener('scroll', onScroll)
+    }
   }, [pathname])
 
   const go = (id: string, href: string) => (e: React.MouseEvent) => {
@@ -194,7 +217,8 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     : []
   const anyFav = favs.length > 0 || starred.length > 0
   const lineOf = (g: CompactMatch | undefined) =>
-    g ? (g.live ? `${g.score?.[0] ?? 0} : ${g.score?.[1] ?? 0} · ${g.minute}` : g.finished && g.score ? `${g.score[0]} : ${g.score[1]} · итог` : `Сегодня в ${g.time}`) : 'Сегодня не играет'
+    // идёт — счёт серым, как вся подпись, красная только минута (красный — «идёт», счёт в строках центра тоже не красный)
+    g ? (g.live ? (<>{`${g.score?.[0] ?? 0} : ${g.score?.[1] ?? 0} · `}<span className="text-live">{g.minute}</span></>) : g.finished && g.score ? `${g.score[0]} : ${g.score[1]} · итог` : `Сегодня в ${g.time}`) : 'Сегодня не играет'
 
   const top = day.leagues.filter((l) => l.top)
   const rest = day.leagues.filter((l) => !l.top)
@@ -386,7 +410,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                       <span className="line-clamp-2">
                         {g.home.name} — {g.away.name}
                       </span>
-                      <span className={`mt-0.5 block truncate text-[12.5px] font-normal ${g.live ? 'text-live' : 'text-dim'}`}>{lineOf(g)}</span>
+                      <span className={`mt-0.5 block truncate text-[12.5px] font-normal text-dim`}>{lineOf(g)}</span>
                     </span>
                   </Link>
                 </li>
@@ -398,7 +422,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                     <CrestPlate name={t.name} logo={t.logo} size={36} />
                     <span className="min-w-0 flex-1 leading-tight">
                       <span className="block truncate">{t.name}</span>
-                      <span className={`mt-0.5 block truncate text-[12.5px] font-normal ${g?.live ? 'text-live' : 'text-dim'}`}>{lineOf(g)}</span>
+                      <span className={`mt-0.5 block truncate text-[12.5px] font-normal text-dim`}>{lineOf(g)}</span>
                     </span>
                   </>
                 )
