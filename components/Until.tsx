@@ -23,5 +23,14 @@ export function Until({ ts, skew }: { ts: number; skew: number }) {
   if (now === null) return null
   const min = Math.ceil((ts - now) / 60_000)
   if (min > MAX_MIN) return null
-  return <span className="whitespace-nowrap text-[14px] text-mute">{untilText(min)}</span>
+  const t = untilText(min)
+  const rest = t.replace(/^через /, '')
+  // на телефоне — в две строки по правому краю («через» / «3 ч 30 мин»): одной строкой обрезались названия команд
+  return t === rest ? (
+    <span className="text-right text-[13px] leading-tight text-mute sm:whitespace-nowrap sm:text-[14px]">{t}</span>
+  ) : (
+    <span className="text-right text-[13px] leading-tight text-mute sm:whitespace-nowrap sm:text-[14px]">
+      через<span className="max-sm:block sm:before:content-['_']">{rest}</span>
+    </span>
+  )
 }

@@ -16,8 +16,7 @@ export const ODDS_SCRIPT = `try{var v=localStorage.getItem('${ODDS_KEY}');if(${J
 export const ODDS_CSS = [
   'html:not([data-odds]) [data-bk]:not([data-bk-first]){display:none}',
   'html[data-odds=off] [data-bk],html[data-odds=off] [data-bk-plain]{display:none}',
-  // отсчёт до начала на месте счёта — только при «Без кэфов» (`Until` в MatchRow) и от sm: на телефоне «через 3 ч 30 мин»
-  // обрезал названия команд («Атлетик Биль…»), а строка там и так узкая — справа не пустует
-  '[data-odds-off]{display:none}@media(min-width:640px){html[data-odds=off] [data-odds-off]{display:flex}}',
+  // отсчёт до начала на месте счёта — только при «Без кэфов» (`Until` в MatchRow); на телефоне — в две строки
+  '[data-odds-off]{display:none}html[data-odds=off] [data-odds-off]{display:flex}',
   ...PARTNERS.map((p) => `html[data-odds="${p.slug}"] [data-bk]:not([data-bk="${p.slug}"]){display:none}`),
 ].join('')

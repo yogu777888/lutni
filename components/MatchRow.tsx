@@ -214,7 +214,7 @@ export function MatchRow({
           {/* «Без кэфов» — на месте счёта отсчёт до начала (владелец: «матчи без счёта там всё равно пусто»); виден только
               при `html[data-odds=off]` (`data-odds-off`, lib/odds-pick.ts) */}
           {lines ? (
-            <span data-odds-off="" className="col-start-3 row-start-1 h-[34px] items-center justify-center">
+            <span data-odds-off="" className="col-start-3 row-start-1 items-center justify-end sm:h-[34px] sm:justify-center">
               <Until ts={m.ts} skew={appNow() - Date.now()} />
             </span>
           ) : null}
