@@ -41,6 +41,8 @@ export type DayLeagues = {
   liveLeagues: number
   /** идущие матчи (главные первыми, как в «Сейчас идут») — сторис по клику на значок «Сейчас идут» и его кольцо */
   liveItems: { id: number; href: string }[]
+  /** эмблема в круге «Сейчас идут» — первого идущего матча (хозяева, нет эмблемы — гости) */
+  liveLogo: string | null
   leagues: DayLeague[]
   /** турниры завтра (только число матчей) — ниже сегодняшних, чтобы в спокойный день панель не стояла пустой */
   tomorrow: DayLeague[]
@@ -108,6 +110,7 @@ export async function dayLeagues(): Promise<DayLeagues> {
     live: live.length,
     liveLeagues: new Set(live.map((m) => m.league.id)).size,
     liveItems: live.map((m) => ({ id: m.id, href: matchHref(m) })),
+    liveLogo: live.map((m) => m.home.logo || m.away.logo).find(Boolean) ?? null,
     leagues: now?.leagues ?? [],
     tomorrow: (next?.leagues ?? []).slice(0, TOMORROW_LIMIT),
   }

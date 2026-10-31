@@ -15,6 +15,32 @@ export function PlateSymbol({ k, className }: { k: string; className: string }) 
  * подборки (`lead` — из первого матча, `leadOf` в lib/story-groups.ts), как аватар у историй в Instagram; у «Идут»,
  * «Выгодно» и подборки без эмблем — знак. Всё — на светлой подложке `PLATE`, цвет подборки — у кольца.
  */
+/**
+ * Подложка с эмблемой и знаком подборки за ней (владелец: «в историях где подборки будем на задний фон под лого клуба
+ * ставить как то иконку допустим если прогруз то стрелку вниз?»): знак крупно, сдвинут к правому нижнему краю и срезан
+ * кругом, графитом 22% («Идут» — красным 30%), эмблема — поверх по центру. Нет эмблемы — знак по центру, как был.
+ */
+export function PlateMark({ sym, logo, className, crest, fade = '' }: { sym: string; logo?: string | null; className: string; crest: string; fade?: string }) {
+  const live = sym === 'live'
+  return (
+    <span className={`absolute inset-0 grid place-items-center overflow-hidden rounded-full ${fade}`} style={{ background: PLATE }}>
+      {logo ? (
+        <>
+          <StorySymbol
+            k={sym}
+            tone={live ? LIVE_ON_PLATE : 'var(--color-ink)'}
+            className={`absolute -bottom-[14%] -right-[14%] h-[72%] w-[72%] ${live ? 'opacity-30' : 'opacity-[0.22]'}`}
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logo} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className={`relative ${crest} object-contain`} />
+        </>
+      ) : (
+        <PlateSymbol k={sym} className={className} />
+      )}
+    </span>
+  )
+}
+
 export function GroupMark({
   g,
   className,
@@ -29,19 +55,9 @@ export function GroupMark({
   fade?: string
 }) {
   const live = g.kind === 'live' || g.key === 'live'
-  const lead = live || g.key === 'value' ? null : g.lead
   // эмблема — на светлом круге во весь круг подборки (владелец: «может добавим логотипам круглую светлую подложку?»):
   // эмблемы рисуют под белый фон, тёмные («Мец») на тёмном круге пропадали; светлый контур владельцу не понравился.
-  // «Идут», «Выгодно» и подборки без эмблем — тоже на подложке, знаком (владелец: «и идут с выгодно тоже подложку»).
-  // Родитель — `relative`; цвет подборки остаётся у кольца
-  return (
-    <span className={`absolute inset-0 grid place-items-center rounded-full ${fade}`} style={{ background: PLATE }}>
-      {lead?.logo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={lead.logo} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className={`${crest} object-contain`} />
-      ) : (
-        <PlateSymbol k={live ? 'live' : g.key} className={className} />
-      )}
-    </span>
-  )
+  // «Идут» — тоже эмблемой (владелец: «давай в лайв матчах тоже сделаем белые кружки и лого клуба?»), за ней — знак;
+  // «Выгодно» и подборки без эмблем — знаком. Родитель — `relative`; цвет подборки остаётся у кольца
+  return <PlateMark sym={live ? 'live' : g.key} logo={g.key === 'value' ? null : g.lead?.logo} className={className} crest={crest} fade={fade} />
 }
