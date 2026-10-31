@@ -503,11 +503,11 @@ function PickSlide({ s }: { s: S<'pick'> }) {
   const tiles = [
     { k: 'Честная цена', v: s.fairOdd.toFixed(2), cls: '' },
     ...(s.odd ? [{ k: s.bookmaker ? `Кэф ${s.bookmaker}` : 'Кэф', v: s.odd.toFixed(2), cls: '' }] : []),
-    ...(s.value && s.ev != null ? [{ k: 'Выгода', v: `+${dec(s.ev * 100)}%`, cls: 'text-good' }] : []),
+    ...(s.value && s.ev != null ? [{ k: 'Выше честной', v: `+${dec(s.ev * 100)}%`, cls: 'text-good' }] : []),
   ]
   return (
     <Frame>
-      <div className="st-rise text-[13px] font-semibold text-dim">{s.value ? 'Выгодная ставка' : 'Наш выбор'}</div>
+      <div className="st-rise text-[13px] font-semibold text-dim">{s.value ? 'Выгодная ставка' : 'Самый вероятный исход'}</div>
       <div className="flex flex-1 flex-col items-center justify-center text-center">
         <div className={`st-pop max-w-[20rem] text-[32px] font-bold leading-[1.1] tracking-tight ${s.value ? 'text-good' : ''}`} style={wait(150)}>
           {s.label}

@@ -571,7 +571,7 @@ export default async function MatchPage({ params }: Props) {
   const sec_predict = (
     <>
           {scheduled && (verdict || pick) ? (
-            <Section outside title="Прогноз" className="!p-4">
+            <Section outside title="Расклад по кэфам" className="!p-4">
               <PredictBlock m={m} v={verdict} pick={pick} probs={x} tags={tags} url={`${SITE.url}${canonical}`} when={`${leagueTitle(m.league.name)} · ${dayLabel(ymdInTz(m.ts)).toLowerCase()}`} />
             </Section>
           ) : null}
@@ -677,7 +677,7 @@ export default async function MatchPage({ params }: Props) {
       : [
           {
             key: 'predict',
-            label: 'Прогноз',
+            label: 'Обзор',
             on: Boolean(hasPredict || shownTags.length || x || chanceMoved || scheduled || ins.preview.length),
             content: <>{sec_predict}{sec_points}{sec_tags}{sec_goals}{sec_chance}{sec_odds}{sec_preview}</>,
           },
@@ -799,11 +799,11 @@ export default async function MatchPage({ params }: Props) {
           partner={partner}
           href={goHref(partner, 'sticky', m.id)}
           // кэф — на кнопке (владелец: «в попапе не всё влазит, может кэф писать на кнопке?»): в заголовке остаётся исход
-          // целиком; тип ставки — как в первом блоке, а не «Прогноз» (там у не выгодной честно написано «выгоды нет»)
-          title={pick ? cap(outcomeText(pick.candidate.key, m)) : `Ставки на ${pair}`}
+          // целиком; исход и кэф — только у выгодной (не выгодную не советуем — «Расклад по кэфам» без «Нашего выбора»)
+          title={pick?.kind === 'value' ? cap(outcomeText(pick.candidate.key, m)) : `Ставки на ${pair}`}
           // подпись — коротко, чтобы букмекер (рекламодатель) не обрезался: «Наш выбор · Ма…» на 360px
           subtitle={pick?.kind === 'value' ? `Выгодно · ${partner.name}` : partner.name}
-          action={pick && pickOffer ? pickOffer.value.toFixed(2) : 'Ставка'}
+          action={pick?.kind === 'value' && pickOffer ? pickOffer.value.toFixed(2) : 'Ставка'}
         />
       ) : null}
 

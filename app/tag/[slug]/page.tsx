@@ -95,7 +95,7 @@ function ValueRow({ it }: { it: FeedItem }) {
           {ev != null ? (
             // на телефоне — своей строкой: в одну с «Вероятностью» не влезает рядом с плашкой кэфа
             <span className="whitespace-nowrap text-good max-sm:block">
-              {prob != null ? <span className="max-sm:hidden"> · </span> : null}Преимущество {signedPct(ev)}
+              {prob != null ? <span className="max-sm:hidden"> · </span> : null}Выше честной на {signedPct(ev).replace('+', '')}
             </span>
           ) : null}
         </p>

@@ -326,7 +326,7 @@ export function buildStory(ins: MatchInsights): StoryData | null {
         short: partner.short,
         href: goHref(partner, 'story', m.id),
         text:
-          pick && offer && scheduled
+          pick?.kind === 'value' && offer && scheduled
             ? `Поставить за ${offer.value.toFixed(2)} в ${partner.name}`
             : m.status === 'live'
               ? `Кэфы по ходу матча — в ${partner.name}`

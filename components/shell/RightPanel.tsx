@@ -130,7 +130,7 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
                 href={goHref(r.slug, 'panel', r.id)}
                 target="_blank"
                 rel={SPONSORED_REL}
-                title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выгода +${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
+                title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выше честной цены на ${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
                 // как лаймовая ячейка кэфа в строке списка (34px, 15px): три высоких плашки с букмекером были ярче всего на странице
                 className={`num grid place-items-center rounded-ctl bg-acid font-semibold text-acid-ink transition-colors hover:bg-acid/85 ${card ? 'h-10 w-16 text-[16px]' : 'h-[34px] w-14 text-[15px]'}`}
               >

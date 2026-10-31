@@ -91,7 +91,7 @@ export function PredictShare({ card }: { card: PredictCard }) {
     }
     g.fillStyle = '#11161d'
     g.fillRect(0, 0, W, H)
-    text('Прогноз', P, P + 44, '700 46px', '#f2f4f7')
+    text('Расклад по кэфам', P, P + 44, '700 46px', '#f2f4f7')
     text(`${card.home} — ${card.away}`, P, P + 106, '600 36px', '#e6e9ed', 'left', W - 2 * P)
     text(card.when, P, P + 150, '400 26px', '#8a939e', 'left', W - 2 * P)
     // блок прогноза

@@ -55,7 +55,7 @@ export function PredictBlock({
         odd == null
           ? null
           : value && c.ev != null && c.ev > 0
-            ? `${partner.name} платит на ${pctComma(c.ev)} больше`
+            ? `кэф ${partner.name} выше неё на ${pctComma(c.ev)}`
             : c.ev != null && c.ev < 0
               ? 'кэф ниже — выгоды нет'
               : 'кэф около неё',
@@ -76,10 +76,10 @@ export function PredictBlock({
           top: k === (n.home >= n.draw && n.home >= n.away ? 'home' : n.away >= n.draw ? 'away' : 'draw'),
         }))
       : null,
-    facts: fs.map((f) => (f.side ? `${f.side.name} · ${f.text}` : f.text.charAt(0).toUpperCase() + f.text.slice(1))),
-    bet: c
+    facts: fs.map((f) => (f.side ? `${f.pro ? 'За ' : ''}${f.side.name}: ${f.text}` : f.text.charAt(0).toUpperCase() + f.text.slice(1))),
+    bet: c && value
       ? {
-          label: value ? 'Выгодная ставка' : 'Наш выбор',
+          label: 'Выгодная ставка',
           outcome: outcomeText(c.key, m).replace(/^./, (x) => x.toUpperCase()),
           fair: `${x12 ? '' : `Шанс ${pct(c.prob)} · `}честная цена — ${c.fairOdd.toFixed(2)}`.replace(/^./, (x) => x.toUpperCase()),
         }
@@ -154,7 +154,7 @@ export function PredictBlock({
             <li key={f.slug} className="flex min-w-0 items-start gap-2.5 rounded-tile bg-white/[0.06] px-3.5 py-2.5 text-[15px] leading-snug">
               <StorySymbol k={f.slug} tone="currentColor" className="mt-[3px] h-4 w-4 shrink-0 text-mute" />
               <span className="min-w-0">
-                {f.side ? <>{f.side.name} · </> : null}
+                {f.side ? <>{f.pro ? `За ${f.side.name}: ` : `${f.side.name}: `}</> : null}
                 {f.side ? f.text : <span className="inline-block first-letter:uppercase">{f.text}</span>}
               </span>
             </li>
@@ -162,31 +162,47 @@ export function PredictBlock({
         </ul>
       ) : null}
       </div>
-      {c ? (
-        // ставка — своей плашкой внутри блока: прогноз и ставка — две части, а не список через черту
+      {c && value ? (
+        // выгодная ставка — своей плашкой: исход, крупно кэф лаймом, одна фраза и кнопка к букмекеру
         <div className="mt-4 rounded-tile bg-white/[0.04] p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className={`text-[14px] font-semibold ${value ? 'text-good' : 'text-dim'}`}>{value ? 'Выгодная ставка' : 'Наш выбор'}</p>
-              {/* исход словами вместо «П1» — тем же размером, что вывод в блоке выше (владелец: «заголовок в наш выбор … побольше») */}
+              <p className="text-[14px] font-semibold text-good">Выгодная ставка</p>
+              {/* исход словами вместо «П1» — тем же размером, что вывод в блоке выше */}
               <p className="mt-1 text-[20px] font-bold leading-tight tracking-[-0.02em] first-letter:uppercase sm:text-[22px]">{outcomeText(c.key, m)}</p>
             </div>
             {odd != null ? (
               <div className="shrink-0 text-right">
-                <div className={`num text-[30px] font-semibold leading-none tracking-[-0.03em] ${value ? 'text-good' : ''}`}>{odd.toFixed(2)}</div>
+                <div className="num text-[30px] font-semibold leading-none tracking-[-0.03em] text-good">{odd.toFixed(2)}</div>
                 <div className="mt-1 text-[13px] text-dim">{partner.name}</div>
               </div>
             ) : null}
           </div>
           <p className="mt-3 text-[14px] leading-snug text-dim first-letter:uppercase">{why}.</p>
           {/* #pick-cta — по нему нижняя плашка на телефоне прячется, пока эта кнопка на экране (`StickyCta`) */}
-          {/* во всю ширину плашки, стрелка у правого края (было — половина ширины, прижата влево) */}
           <div id="pick-cta" className="mt-4">
             <CtaLink href={goHref(partner, 'pick', m.id)} size="lg" className="relative w-full">
               {odd != null ? `Поставить в ${partner.name}` : `Сделать ставку в ${partner.name}`}
               <Icon k="arrow-right" className="absolute right-5 h-5 w-5" />
             </CtaLink>
             <AdMark partner={partner} className="mt-2 text-center" />
+          </div>
+        </div>
+      ) : c && odd != null ? (
+        // выгоды нет — без «Нашего выбора» и лаймовой кнопки (владелец: «а сам блок безопасный?» — «да»): совет ставить при
+        // «кэф ниже — выгоды нет» внутри рекламы читался бы недостоверно; одна строка с кэфом и честной ценой и тихая ссылка
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-tile bg-white/[0.04] p-4">
+          <div className="min-w-0">
+            <p className="text-[15px] font-semibold first-letter:uppercase">
+              {outcomeText(c.key, m)}: <span className="num">{odd.toFixed(2)}</span> в {partner.name}
+            </p>
+            <p className="mt-0.5 text-[13px] text-dim first-letter:uppercase">{why}</p>
+          </div>
+          <div id="pick-cta" className="flex shrink-0 flex-col items-start gap-1.5 sm:items-end">
+            <CtaLink href={goHref(partner, 'pick', m.id)} variant="secondary" size="sm">
+              На сайт {partner.name}
+            </CtaLink>
+            <AdMark partner={partner} />
           </div>
         </div>
       ) : null}
@@ -208,7 +224,10 @@ function facts(tags: TagHit[], m: Match, pick: Pick | null) {
       const fact = t.short ?? t.reason
       const side = [m.home, m.away].find((tm) => /^[:,]/.test(fact.slice(tm.name.length + 2)) && fact.startsWith(`«${tm.name}»`)) ?? null
       const text = side ? fact.slice(side.name.length + 2).replace(/^[:,]\s*/, '') : fact
-      return { slug: t.slug, side, text, mine: Boolean(pickTeam && fact.includes(`«${pickTeam}»`)) }
+      // за кого довод: падение кэфа, «дома не проигрывают», форма аутсайдера и серия побед — за команду; травмы, серия
+      // без побед — нет (владелец: довод «Эльче · 13 очков…» под «Скорее выиграет Атлетико» читался спором с заголовком)
+      const pro = ['progruz', 'krepost', 'andedog'].includes(t.slug) || (t.slug === 'seriya' && !/без побед|поражени/.test(text))
+      return { slug: t.slug, side, text, pro, mine: Boolean(pickTeam && fact.includes(`«${pickTeam}»`)) }
     })
     .sort((a, b) => Number(b.mine) - Number(a.mine))
     .slice(0, 4)
