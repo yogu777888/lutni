@@ -178,7 +178,7 @@ export function MatchRow({
   return (
     <div
       data-mid={m.id}
-      className={`relative grid items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:gap-x-4 sm:gap-y-2.5 sm:py-2.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : ROW_COLS} ${className}`}
+      className={`relative grid items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:gap-x-4 sm:gap-y-2.5 sm:py-2.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : `odds-row ${ROW_COLS}`} ${className}`}
     >
       <div className="self-start pt-0.5 sm:self-center sm:pt-0">
         <StatusCell m={m} />
@@ -223,7 +223,7 @@ export function MatchRow({
           )}
         </>
       ) : (
-        <div className="flex items-center justify-end sm:h-[34px] sm:justify-center">
+        <div className="odds-score flex items-center justify-end sm:h-[34px] sm:justify-center">
           <Score m={m} big />
         </div>
       )}
