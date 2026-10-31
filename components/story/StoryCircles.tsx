@@ -6,9 +6,8 @@ import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
 import { PLATE } from '../LeagueMark'
-import { GroupMark } from './GroupMark'
+import { GroupBadge, GroupMark } from './GroupMark'
 import { ringArcs } from '../shell/StoryRing'
-import { StorySymbol } from './StorySymbol'
 import { Icon } from '../Icon'
 
 /**
@@ -60,30 +59,12 @@ const plural = (n: number) => {
 
 /**
  * Подпись — в одну строку, короткое название (`short`: «Главные»; в две строки ряд был неровным, под ним — пустая строка).
- * Знака у подписи нет — он значком на круге (`Badge`). Число матчей — в подсказке кружка.
+ * Знака у подписи нет — он значком на круге (`GroupBadge`). Число матчей — в подсказке кружка.
  */
 function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
   return (
     <span className={`block truncate text-[13px] font-semibold lg:text-[12px] leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>
       {g.short ?? g.label}
-    </span>
-  )
-}
-
-/**
- * Знак подборки — значком на углу круга (владелец прислал эскиз со значком на круге:
- * «как тебе вариант вот так иконки перенести вместо того чтобы они слева от текста были?» — «сделай как знаешь лучше»):
- * графитовый круг 24px в правом верхнем углу, на кольце (владелец из двух вариантов выбрал «сверху, как на эскизе»; внизу справа 22px — «некрасиво»), знак 12px белым, и у «Идут» (владелец: «иконку лайв сделать белой?»), обводка цветом фона 2px «вырезает» (светлую обводку `PLATE` пробовали — владелец: «с обводкой как то хуже?»)
- * кольцо. Нет эмблемы — знак и так по центру круга, значка нет.
- */
-function Badge({ g }: { g: StoryGroup }) {
-  if (!g.lead?.logo) return null
-  return (
-    <span
-      aria-hidden
-      className="absolute -right-[3px] -top-[3px] grid h-6 w-6 place-items-center rounded-full border-2 border-[#090c10] bg-[#1c242d] text-white"
-    >
-      <StorySymbol k={g.kind === 'live' || g.key === 'live' ? 'live' : g.key} tone="currentColor" className="h-3 w-3" />
     </span>
   )
 }
@@ -189,7 +170,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             <span data-story-key={g.key} className={`relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 h-[var(--c)] w-[var(--c)] lg:h-[clamp(46px,calc(14vh_-_50px),58px)] lg:w-[clamp(46px,calc(14vh_-_50px),58px)]`}>
               <Ring kind={g.kind} n={g.items.length} seen={n} tone={toneOf(g)} />
               <Disc g={g} cover={covers[g.key]} />
-              {covers[g.key] ? null : <Badge g={g} />}
+              {covers[g.key] ? null : <GroupBadge g={g} className="-right-[3px] -top-[3px] h-6 w-6 border-2 border-[#090c10]" />}
             </span>
             <span className="mt-1.5 w-full px-0.5 text-center">
               <Caption g={g} dim={done} />

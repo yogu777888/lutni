@@ -12,7 +12,7 @@ import { openStory, type StoryRow } from '../story/events'
 import { circleQueue } from '../story/queue'
 import { readSeen, SEEN_EVENT } from '../story/seen'
 import { symbolSoft } from '../story/StorySymbol'
-import { GroupMark, PlateMark } from '../story/GroupMark'
+import { GroupBadge, GroupMark, PlateMark } from '../story/GroupMark'
 
 const valueLogo = (v: ValueRow) => (v.side === 'away' ? v.awayLogo || v.homeLogo : v.homeLogo || v.awayLogo)
 import { PLATE } from '../LeagueMark'
@@ -192,6 +192,8 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
       <span className="relative grid h-9 w-9 place-items-center rounded-full" style={{ background: `color-mix(in oklch, ${symbolSoft(g.key)} 14%, transparent)` }}>
         <GroupMark g={g} className="h-[18px] w-[18px]" crest="h-[22px] w-[22px]" />
         <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={s} />
+        {/* знак подборки на углу, как у кружков на телефоне; обводка — цветом фона блока историй */}
+        <GroupBadge g={g} className="-right-[6px] -top-[6px] h-4 w-4 border-[1.5px] border-ink" />
       </span>
     ),
   }
@@ -229,6 +231,8 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
           >
             <GroupMark g={g} className="h-[18px] w-[18px]" crest="h-[22px] w-[22px]" />
             <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} />
+            {/* в полоске названий нет — какая это подборка, говорит значок на углу (эмблема «Барселоны» этого не скажет) */}
+            <GroupBadge g={g} className="-right-[6px] -top-[6px] h-4 w-4 border-[1.5px] border-panel" />
           </button>
         ))}
         {/* «Выгодно сегодня» не пропадает целиком: лаймовый круг со знаком процента внизу (лайм — деньги и «выгодно») */}

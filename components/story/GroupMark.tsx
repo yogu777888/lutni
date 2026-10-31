@@ -50,3 +50,19 @@ export function GroupMark({
   // «Идут» и «Выгодно» — тоже эмблемой (владелец: «в выгодно вместо иконки лого клуба как у всех?»); подборки без эмблем — знаком. Родитель — `relative`; цвет подборки остаётся у кольца
   return <PlateMark sym={live ? 'live' : g.key} logo={g.lead?.logo} className={className} crest={crest} fade={fade} />
 }
+
+/**
+ * Знак подборки значком на углу круга, на кольце (владелец прислал эскиз: «как тебе вариант вот так иконки перенести»;
+ * на компьютере — «а на компе будем эти маленькие иконки на истории делать?» — «да»): графитовый кружок, знак белым,
+ * обводка цветом фона «вырезает» кольцо (светлую — «с обводкой как то хуже?»). Нет эмблемы — знак и так по центру,
+ * значка нет. Размер и обводку задаёт место: кружки «Подборок дня» — 24px, свёрнутая правая полоска и ряд над историей —
+ * 16px у круга 36px (в ряду над историей круг увеличен в 1,44 раза — выходит 23px).
+ */
+export function GroupBadge({ g, className }: { g: Pick<StoryGroup, 'key' | 'kind' | 'lead'>; className: string }) {
+  if (!g.lead?.logo) return null
+  return (
+    <span aria-hidden className={`absolute grid place-items-center rounded-full bg-[#1c242d] text-white ${className}`}>
+      <StorySymbol k={g.kind === 'live' || g.key === 'live' ? 'live' : g.key} tone="currentColor" className="h-1/2 w-1/2" />
+    </span>
+  )
+}
