@@ -1204,3 +1204,23 @@ html[data-shell-rc] .shell-r-rail {
     transition: none;
   }
 }
+
+/* Свечение по верхней границе сайта (владелец: «а может по верхней границе сайта сделать свечение?» — после того как
+   убрали свечение у логотипа): тонкая светлая черта по самому верху окна, ярче к середине, и под ней мягкий белый
+   свет, гаснущий вниз. Белое, не лаймовое — лайм только деньги и «выгодно». Живёт в шапке и уходит вместе с ней;
+   прокрутили — у шапки свой фон, свечение гаснет (как было у логотипа). Сильнее или слабее — альфа в градиентах. */
+.site-header::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 auto;
+  height: 220px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, rgb(255 255 255 / 0.28) 50%, transparent) top / 100% 1px no-repeat,
+    radial-gradient(ellipse 55% 100% at 50% 0, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02) 50%, transparent 100%);
+  transition: opacity 0.3s;
+}
+.site-header[data-scrolled]::before {
+  opacity: 0;
+}
