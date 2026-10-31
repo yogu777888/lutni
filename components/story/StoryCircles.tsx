@@ -64,7 +64,7 @@ const plural = (n: number) => {
  */
 function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
   return (
-    <span className={`block truncate text-[12px] font-semibold leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>
+    <span className={`block truncate text-[13px] font-semibold lg:text-[12px] leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>
       {g.short ?? g.label}
     </span>
   )
@@ -165,10 +165,15 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
     openStory({ id: startId, href: groups[gi].href, opener: e.currentTarget, queue })
   }
 
-  // ряд на фоне, без карточки: первый круг — ровно по левому краю карточек ниже (`-ml-2.5` — поле кружка 80px вокруг
-  // круга 58px), справа ряд листается до края экрана (обёртка в DayView — `-mr-4`), без затухания
+  // ряд на фоне, без карточки: первый круг — ровно по левому краю карточек ниже (отступ слева — половина поля ячейки
+  // вокруг круга 64px), справа ряд листается до края экрана (обёртка в DayView — `-mr-4`), без затухания. Ячейка —
+  // от ширины экрана (`--cell`, 76–92px): на любом телефоне видно 4 кружка и около половины пятого (при 84px на 360
+  // пятый выглядывал на 7px, на 430 шестого не было видно — непонятно, что ряд листается)
   return (
-    <nav aria-label="Истории дня" className="scrollbar-none -ml-2.5 flex gap-1 overflow-x-auto pb-1 pr-4 pt-1.5">
+    <nav
+      aria-label="Истории дня"
+      className="scrollbar-none flex overflow-x-auto pb-1 pr-4 pt-1.5 [--cell:clamp(76px,calc((100vw_-_16px)/4.5),92px)] [margin-left:calc((64px_-_var(--cell))/2)] lg:gap-1 lg:[--cell:80px] lg:[margin-left:-10px]"
+    >
       {groups.map((g, gi) => {
         const n = seenCount(g, seen)
         const done = n === g.items.length
@@ -179,10 +184,10 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             onClick={(e) => open(gi, e)}
             title={g.hint.includes(':') ? g.hint : `${g.hint}: ${g.items.length} ${plural(g.items.length)}`}
             aria-label={`${g.label}. ${g.hint}. Смотреть истории`}
-            className="group flex w-[80px] shrink-0 flex-col items-center focus-visible:outline-none"
+            className="group flex w-[var(--cell)] shrink-0 flex-col items-center focus-visible:outline-none"
           >
             {/* фокус с клавиатуры — белым кругом вокруг кружка */}
-            <span data-story-key={g.key} className={`relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 h-[58px] w-[58px] lg:h-[clamp(46px,calc(14vh_-_50px),58px)] lg:w-[clamp(46px,calc(14vh_-_50px),58px)]`}>
+            <span data-story-key={g.key} className={`relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 h-16 w-16 lg:h-[clamp(46px,calc(14vh_-_50px),58px)] lg:w-[clamp(46px,calc(14vh_-_50px),58px)]`}>
               <Ring kind={g.kind} n={g.items.length} seen={n} tone={toneOf(g)} />
               <Disc g={g} cover={covers[g.key]} />
               {covers[g.key] ? null : <Badge g={g} />}
