@@ -10,7 +10,7 @@ import { dayHref, listHref } from '@/lib/links'
 import { applyListFilter, filterQuery, isEmptyFilter, type ListFilter } from '@/lib/list-filter'
 import { diffDays, formatDayMonth, formatWeekdayLong, pluralN, weekdayWhen, ymdToNoonTs } from '@/lib/format'
 import { isLive, liveRank } from '@/lib/rank'
-import { buildStoryGroups, mainCircles } from '@/lib/story-groups'
+import { buildStoryGroups, mainCircles, spreadLeads } from '@/lib/story-groups'
 import type { League, Match } from '@/lib/types'
 import { DateTabs } from './DateTabs'
 import { Interesting, pickFacts } from './Interesting'
@@ -152,7 +152,7 @@ export async function DayView({
   const totalOthers = othersAll.reduce((s, g) => s + g.items.length, 0)
 
   // все истории дня — полками на главной, главные теги первыми
-  const storyGroups = mainCircles(buildStoryGroups(items), 99)
+  const storyGroups = spreadLeads(mainCircles(buildStoryGroups(items), 99))
 
 
   // кэфы в строках — линия конкретного легального партнёра (ячейки — ссылки к нему, реклама): снимки линии из кэша,

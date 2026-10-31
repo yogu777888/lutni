@@ -32,6 +32,11 @@ export type StoryGroup = {
   items: StoryGroupItem[]
   /** Эмблемы для обложки: до двух команд из разных матчей истории, по порядку матчей. */
   crests?: Crest[]
+  /** Эмблема в круге подборки (владелец: «давай 1» — вместо знака эмблема главной команды, как аватар у историй в
+   *  Instagram): команда первого матча, ради которой он в подборке (`leadOf`); нет эмблемы — знак подборки, как был. */
+  lead?: Crest | null
+  /** запасные эмблемы — главные команды следующих матчей подборки, без повторов (`spreadLeads`) */
+  leads?: Crest[]
 }
 
 /** Эмблема на обложке истории. */
@@ -50,6 +55,46 @@ export function crestsOf(list: FeedItem[], max = 2): Crest[] {
     if (out.length === max) break
   }
   return out
+}
+
+/**
+ * Главная команда подборки — из первого матча: та, чьё название раньше стоит в поводе («Победа «X»», фаворит, аутсайдер,
+ * команда с травмами); повод про обе или без повода — хозяева. У неё нет эмблемы — соперник; ни у кого нет — null.
+ */
+export function leadOf(it: FeedItem, reason: string): Crest | null {
+  const { home, away } = it.match
+  const h = reason.indexOf(`«${home.name}»`)
+  const a = reason.indexOf(`«${away.name}»`)
+  const [first, second] = a >= 0 && (h < 0 || a < h) ? [away, home] : [home, away]
+  const t = first.logo ? first : second.logo ? second : null
+  return t ? { name: t.name, logo: t.logo } : null
+}
+
+/** Главные команды матчей подборки по порядку, без повторов, не больше `max`. */
+function leadsOf(list: { it: FeedItem; reason: string }[], max = 6): Crest[] {
+  const out: Crest[] = []
+  for (const { it, reason } of list) {
+    const c = leadOf(it, reason)
+    if (c && !out.some((x) => x.name === c.name)) out.push(c)
+    if (out.length === max) break
+  }
+  return out
+}
+
+/**
+ * Эмблемы соседних кружков — разные: команда часто в нескольких подборках сразу («Барселона» — и «Много голов», и
+ * «Явный фаворит»), и ряд повторял одну эмблему. По порядку показа каждой подборке — первая её команда, которой ещё нет
+ * в кружках выше; все заняты — первая.
+ */
+export function spreadLeads<T extends Pick<StoryGroup, 'lead' | 'leads'>>(groups: T[]): T[] {
+  const used = new Set<string>()
+  return groups.map((g) => {
+    const pool = g.leads?.length ? g.leads : g.lead ? [g.lead] : []
+    if (!g.lead || !pool.length) return g
+    const lead = pool.find((c) => !used.has(c.name)) ?? pool[0]
+    used.add(lead.name)
+    return { ...g, lead }
+  })
 }
 
 const TOP_LIMIT = 8
@@ -142,7 +187,7 @@ const CIRCLE_LABEL: Record<string, string> = {
 export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
   const open = items.filter((i) => i.match.status === 'scheduled' || isLive(i.match))
   const groups: StoryGroup[] = []
-  const add = (g: Omit<StoryGroup, 'items' | 'href' | 'stat' | 'crests'> & { href?: string; stat?: string }, list: Entry[]) => {
+  const add = (g: Omit<StoryGroup, 'items' | 'href' | 'stat' | 'crests' | 'lead' | 'leads'> & { href?: string; stat?: string }, list: Entry[]) => {
     // один матч в истории — один раз
     list = list.filter((x, i) => list.findIndex((y) => y.it.match.id === x.it.match.id) === i)
     if (!list.length) return
@@ -153,6 +198,10 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
       stat: g.stat ?? (first.tag ? statFor(first.tag.slug, first.tag.reason) : '#'),
       items: list.map(({ it, tag }) => ({ id: it.match.id, href: matchHref(it.match), focus: focusOf(tag) })),
       crests: crestsOf(list.map((x) => x.it)),
+      ...(g.kind === 'live' || g.key === 'value' ? { lead: null } : (() => {
+        const leads = leadsOf(list.map((x) => ({ it: x.it, reason: x.tag?.reason ?? '' })))
+        return { lead: leads[0] ?? null, leads }
+      })()),
     })
   }
 

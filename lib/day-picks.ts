@@ -14,7 +14,7 @@ import { dayNumbers, type DayNumbers } from './day-numbers'
 import { appNow, formatTime, todayYmd } from './format'
 import { matchHref } from './links'
 import { isLive } from './rank'
-import { buildStoryGroups, mainCircles, statFor, type StoryGroup } from './story-groups'
+import { buildStoryGroups, leadOf, mainCircles, spreadLeads, statFor, type StoryGroup } from './story-groups'
 import { outcomeText } from './verdict'
 
 export type DayPicks = {
@@ -83,6 +83,8 @@ export const dayPicks = cache(async (): Promise<DayPicks> => {
         href: '/matches?sort=time',
         stat: '',
         items: soon.map((it) => ({ id: it.match.id, href: matchHref(it.match), focus: null })),
+        lead: leadOf(soon[0], ''),
+        leads: [...new Map(soon.map((it) => leadOf(it, '')).filter((c) => c !== null).map((c) => [c.name, c])).values()].slice(0, 6),
       })
     }
     const byId = new Map(matches.map((m) => [m.id, m]))
@@ -173,6 +175,12 @@ export const dayPicks = cache(async (): Promise<DayPicks> => {
     // подборки, где впереди ничего нет (все матчи начались или сыграны), — вниз: «Кэф упал · 4 матча, все идут» стояла третьей,
     // хотя падение кэфа — сигнал до матча (владелец согласился); внутри — прежний порядок (sort устойчивый)
     out.groups.sort((a, b) => Number(!out.states[a.key]?.pending) - Number(!out.states[b.key]?.pending))
+    out.groups = spreadLeads(out.groups)
+    // подпись под названием — с команды, чья эмблема в круге: иначе «Барселона и другие» стояло рядом с эмблемой «Атлетика»
+    for (const g of out.groups) {
+      const t = out.teams[g.key]
+      if (g.lead && t?.includes(g.lead.name)) out.teams[g.key] = [g.lead.name, ...t.filter((n) => n !== g.lead!.name)]
+    }
     return out
   } catch {
     return { groups: [], matches: {}, stats: {}, totals: {}, values: [], states: {}, teams: {}, numbers: null }

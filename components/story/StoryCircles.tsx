@@ -5,7 +5,8 @@ import type { CircleKind, StoryGroup } from '@/lib/story-groups'
 import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
-import { StorySymbol, symbolSoft } from './StorySymbol'
+import { symbolSoft } from './StorySymbol'
+import { GroupMark } from './GroupMark'
 import { ringArcs } from '../shell/StoryRing'
 
 /**
@@ -78,8 +79,8 @@ function toneOf(g: StoryGroup) {
 }
 
 /** Диск: заливка оттенком 14% и знак тем же оттенком; своя картинка из public/stories/<ключ>.* — вместо всего этого. */
-function Disc({ k, tone, cover }: { k: string; tone: string; cover?: string }) {
-  const solid = k === 'value'
+function Disc({ g, tone, cover }: { g: StoryGroup; tone: string; cover?: string }) {
+  const solid = g.key === 'value'
   return (
     <span
       className="absolute inset-[5px] grid place-items-center overflow-hidden rounded-full"
@@ -87,7 +88,7 @@ function Disc({ k, tone, cover }: { k: string; tone: string; cover?: string }) {
         background: cover ? `center / cover no-repeat url("${cover}")` : solid ? tone : `color-mix(in oklch, ${tone} 14%, transparent)`,
       }}
     >
-      {cover ? null : <StorySymbol k={k} tone={solid ? 'var(--color-acid-ink)' : tone} className="h-1/2 w-1/2" />}
+      {cover ? null : <GroupMark g={g} tone={solid ? 'var(--color-acid-ink)' : tone} className="h-1/2 w-1/2" crest="h-[60%] w-[60%]" />}
     </span>
   )
 }
@@ -140,7 +141,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             {/* фокус с клавиатуры — белым кругом вокруг кружка */}
             <span data-story-key={g.key} className={`relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 h-[58px] w-[58px] lg:h-[clamp(46px,calc(14vh_-_50px),58px)] lg:w-[clamp(46px,calc(14vh_-_50px),58px)]`}>
               <Ring kind={g.kind} n={g.items.length} seen={n} tone={toneOf(g)} />
-              <Disc k={g.key} tone={toneOf(g)} cover={covers[g.key]} />
+              <Disc g={g} tone={toneOf(g)} cover={covers[g.key]} />
             </span>
             <span className="mt-1.5 w-full px-0.5 text-center">
               <Caption g={g} dim={done} />
