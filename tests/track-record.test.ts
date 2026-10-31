@@ -42,3 +42,22 @@ describe('track record', () => {
     expect(t.misses[0].won).toBe('away')
   })
 })
+
+describe('«Выгодно» вживую', () => {
+  it('куда пошёл кэф к началу и как сбывалось', () => {
+    const v = (key: string, first: number, last: number) => ({ key, slug: 'marathonbet', prob: 0.4, first, firstAt: 0, last, lastAt: 1 })
+    const t = trackRecord([
+      f(1, [0.4, 0.3, 0.3], [2, 0], { value: [v('home', 2.8, 2.6), v('over2.5', 2.0, 2.0)] }),
+      f(2, [0.4, 0.3, 0.3], [0, 1], { value: [v('home', 2.6, 2.7)] }),
+      // без итога — не в счёт
+      f(3, [0.4, 0.3, 0.3], undefined, { value: [v('home', 3, 2)] }),
+    ])
+    expect(t.value!.n).toBe(3)
+    expect(t.value!.down).toBeCloseTo(1 / 3)
+    expect(t.value!.up).toBeCloseTo(1 / 3)
+    expect(t.value!.move).toBeCloseTo((2.8 / 2.6 - 1 + 0 + (2.6 / 2.7 - 1)) / 3)
+    // home 2:0 — да, over2.5 при 2:0 — нет, home 0:1 — нет
+    expect(t.value!.hit).toBeCloseTo(1 / 3)
+    expect(trackRecord([f(1, [0.4, 0.3, 0.3], [2, 0])]).value).toBeNull()
+  })
+})

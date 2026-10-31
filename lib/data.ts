@@ -660,7 +660,7 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
   const form = homeForm && awayForm ? { home: homeForm.last5, away: awayForm.last5 } : null
   const facts = teamFacts({ homeForm, awayForm, h2h })
   // «История точности»: последняя оценка до начала матча — на диск (после начала не меняется)
-  void recordForecast(m, model, cons).catch(() => {})
+  void recordForecast(m, model, cons, books, candidates).catch(() => {})
   const summary: MatchSummary = { id, tags, form, facts, pick: summaryPick(pick), pari: m.status === 'scheduled' ? pariValue(books, candidates) : null, probs: model ? { ...model.x12, over25: model.over['2.5'] ?? null, btts: model.btts ?? null } : null, at: Date.now() }
   cache.set(`summary:${id}`, summary, { ttl: 3 * H, stale: 9 * H, persist: false })
 

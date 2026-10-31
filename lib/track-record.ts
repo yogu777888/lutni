@@ -1,10 +1,30 @@
 import { CHANCE_BINS, binOf, emptyTally, type ChanceBin, type ChanceTally } from './chance-check'
+import { betWon } from './model'
 
 /**
  * «История точности» (владелец: архив оценок — «показывать реальные результаты предыдущих прогнозов, включая ошибки»):
  * оценку tag.bet записываем до начала матча и больше не трогаем, после матча сверяем с итогом основного времени.
  * Здесь — только расчёт по готовым записям; запись и чтение с диска — `lib/forecast-log.ts`.
  */
+
+/**
+ * «Выгодно», которое показывали до начала матча, — проверка вживую (владелец согласился: «записывать кэф в момент оценки и
+ * перед стартом»): кэф легального букмекера, когда ставка впервые стала выгодной (`first`), и его последний кэф на ту же
+ * ставку перед началом (`last`: разбор обновляется каждые 5–10 минут — почти кэф закрытия). К началу кэф упал — рынок
+ * пошёл за нашей оценкой; на прошлых матчах это не проверить — там только кэфы закрытия.
+ */
+export type ValueTrack = {
+  /** ставка — ключ кандидата: «home», «hd», «over2.5», «bttsYes»… */
+  key: string
+  /** букмекер-партнёр */
+  slug: string
+  /** наш шанс, когда ставка стала выгодной */
+  prob: number
+  first: number
+  firstAt: number
+  last: number
+  lastAt: number
+}
 
 export type Forecast = {
   id: number
@@ -23,6 +43,8 @@ export type Forecast = {
   p: { home: number; draw: number; away: number; over25: number | null; btts: number | null }
   /** линия букмекеров без маржи — с чем сравниваем */
   line: { home: number; draw: number; away: number; over25: number | null; btts: number | null } | null
+  /** ставки «Выгодно» до начала матча — кэф тогда и перед стартом */
+  value?: ValueTrack[]
   /** счёт основного времени; нет — матч ещё не сверен */
   res?: { home: number; away: number }
   /** отменён или перенесён — в расчёт не идёт */
@@ -66,9 +88,25 @@ export type TrackRecord = {
   bins: ChanceBin[]
   /** самые неожиданные итоги: шанс того, что случилось, был ниже 25% */
   misses: Miss[]
+  value: ValueScore | null
 }
 
 export type Miss = { f: Forecast; won: Outcome; p: number }
+
+/** «Выгодно» в сверенных матчах: куда пошёл кэф к началу и как сбывалось. */
+export type ValueScore = {
+  /** ставок */
+  n: number
+  /** доля ставок, у которых к началу кэф упал / вырос */
+  down: number
+  up: number
+  /** на сколько в среднем изменился кэф к началу: кэф тогда / кэф перед стартом − 1 (плюс — упал) */
+  move: number
+  /** давали в среднем */
+  prob: number
+  /** сбылось */
+  hit: number
+}
 
 /** Порог для корзины на этой странице ниже, чем у «Проверки шансов»: архив копится с нуля, а число исходов подписано. */
 export const TRACK_MIN_BIN = 15
@@ -118,6 +156,7 @@ export function trackRecord(list: Forecast[], { since = 0, missesSince = 0 } = {
   for (let i = 0; i < CHANCE_BINS; i++) {
     if (t.n[i] >= TRACK_MIN_BIN) bins.push({ at: (i + 1) * 10, n: t.n[i], p: t.sum[i] / t.n[i], hit: t.hits[i] / t.n[i] })
   }
+  const vs = done.flatMap((f) => (f.value ?? []).map((v) => ({ v, won: betWon(v.key, f.res!.home, f.res!.away) })))
   const ts = done.map((f) => f.ts)
   return {
     settled: done.length,
@@ -131,5 +170,15 @@ export function trackRecord(list: Forecast[], { since = 0, missesSince = 0 } = {
     btts: two('btts', (r) => r.home > 0 && r.away > 0),
     bins,
     misses: misses.slice(0, 10),
+    value: vs.length
+      ? {
+          n: vs.length,
+          down: avg(vs.map(({ v }) => Number(v.last < v.first))),
+          up: avg(vs.map(({ v }) => Number(v.last > v.first))),
+          move: avg(vs.map(({ v }) => v.first / v.last - 1)),
+          prob: avg(vs.map(({ v }) => v.prob)),
+          hit: avg(vs.map(({ won }) => Number(won))),
+        }
+      : null,
   }
 }

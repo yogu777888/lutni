@@ -5,6 +5,7 @@ import { ChanceChart } from '@/components/ChanceChart'
 import { Hint } from '@/components/match/Hint'
 import { PageHead } from '@/components/PageHead'
 import { Section } from '@/components/Section'
+import { ValueMoves } from '@/components/ValueMoves'
 import { TRACK_DAYS, getTrackRecord } from '@/lib/data'
 import { formatDayMonth, pct, pluralN } from '@/lib/format'
 import { NOINDEX } from '@/lib/seo'
@@ -101,6 +102,9 @@ export default async function TrackPage() {
               ) : (
                 <p className="mt-3 text-[14px] text-dim">График появится, когда в группах наберётся хотя бы по 15 исходов.</p>
               )}
+            </Section>
+            <Section plain title="«Выгодно»: куда пошёл кэф">
+              <ValueMoves v={t.value} />
             </Section>
             <Section plain title="Неожиданные итоги недели">
               <p className={P}>Матчи топ-турниров, где сбылось то, чему мы давали меньше 25%.</p>

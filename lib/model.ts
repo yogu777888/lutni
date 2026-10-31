@@ -4,13 +4,13 @@
  * 1. Консенсус: снимаем маржу у каждого букмекера и усредняем вероятности
  *    (у «острых» букмекеров вроде Pinnacle вес больше).
  * 2. Пуассон: подбираем ожидаемые голы хозяев/гостей (λ), которые лучше всего
- *    объясняют рыночные вероятности, и смешиваем с xG из Glicko-2 от SStats.
- *    Из λ считаем точный счёт, тоталы и «обе забьют».
+ *    объясняют рыночные вероятности; из λ — точный счёт и то, чего нет в линии.
+ *    Без линии — λ из xG рейтинга SStats (Glicko-2).
  * 3. Value: коэффициент конкретного букмекера выше справедливого
  *    (EV = p × k − 1 > 0) — это и есть «перевес».
  */
 import { partnerForApiBookmaker, type Partner } from '@/config/bookmakers'
-import { fair1x2, fairTwoWay, sharpWeight, type BookOdds, type Outcome, type Quote } from './odds'
+import { DEVIG, fair1x2, fairTwoWay, sharpWeight, type BookOdds, type Devig, type Outcome, type Quote } from './odds'
 import type { Glicko } from './types'
 
 export type Probs1x2 = { home: number; draw: number; away: number }
@@ -33,7 +33,7 @@ function wavg(items: { v: number; w: number }[]): number | null {
   return sw > 0 ? items.reduce((s, i) => s + i.v * i.w, 0) / sw : null
 }
 
-export function buildConsensus(books: BookOdds[]): Consensus {
+export function buildConsensus(books: BookOdds[], method: Devig = DEVIG): Consensus {
   const h: { v: number; w: number }[] = []
   const d: { v: number; w: number }[] = []
   const a: { v: number; w: number }[] = []
@@ -52,14 +52,14 @@ export function buildConsensus(books: BookOdds[]): Consensus {
 
   for (const b of books) {
     const w = sharpWeight(b.bookmakerName)
-    const f = fair1x2(b.x12)
+    const f = fair1x2(b.x12, false, method)
     if (f) {
       n++
       h.push({ v: f.home, w })
       d.push({ v: f.draw, w })
       a.push({ v: f.away, w })
       margins.push(f.margin)
-      const fo = fair1x2(b.x12, true)
+      const fo = fair1x2(b.x12, true, method)
       if (fo) {
         ho.push({ v: fo.home, w })
         dO.push({ v: fo.draw, w })
@@ -74,11 +74,11 @@ export function buildConsensus(books: BookOdds[]): Consensus {
       }
     }
     for (const t of b.totals) {
-      const fw = fairTwoWay(t.over, t.under)
+      const fw = fairTwoWay(t.over, t.under, method)
       if (!fw) continue
       ;(over[String(t.line)] ??= []).push({ v: fw.a, w })
     }
-    const fb = fairTwoWay(b.btts?.yes, b.btts?.no)
+    const fb = fairTwoWay(b.btts?.yes, b.btts?.no, method)
     if (fb) btts.push({ v: fb.a, w })
   }
 
@@ -186,7 +186,7 @@ export function fitLambdas(target: Probs1x2, over25?: number | null): { home: nu
 // ─── Итоговая модель ─────────────────────────────────────────────────────────
 
 export type ModelOutput = {
-  source: 'market+xg' | 'market' | 'xg'
+  source: 'market' | 'xg'
   x12: Probs1x2
   lambdas: { home: number; away: number }
   over: Record<string, number>
@@ -194,39 +194,27 @@ export type ModelOutput = {
   topScores: ScoreProb[]
 }
 
+/**
+ * Шансы — честная цена по линии, без добавок: проверка на 4 506 матчах шести топ-лиг за 2024–2026 (`scripts/model/backtest.ts`,
+ * владелец: «давай модель») — «85% линии + 15% Пуассона» в исходе и «80/20» в голах были хуже чистой линии, рейтинг SStats —
+ * заметно хуже. Пуассон считает только то, чего в линии нет: точный счёт, тоталы без линии и матчи без линии (тогда λ — xG
+ * рейтинга SStats).
+ */
 export function buildModel(cons: Consensus, glicko: Glicko | null): ModelOutput | null {
   const gx = glicko?.homeXg && glicko?.awayXg ? { home: glicko.homeXg, away: glicko.awayXg } : null
-  let lambdas: { home: number; away: number } | null = null
-  let source: ModelOutput['source'] = 'market'
-  if (cons.x12) {
-    const m = fitLambdas(cons.x12, cons.over['2.5'])
-    lambdas = gx ? { home: 0.75 * m.home + 0.25 * gx.home, away: 0.75 * m.away + 0.25 * gx.away } : m
-    source = gx ? 'market+xg' : 'market'
-  } else if (gx) {
-    lambdas = gx
-    source = 'xg'
-  }
+  const lambdas = cons.x12 ? fitLambdas(cons.x12, cons.over['2.5']) : gx
   if (!lambdas) return null
   const p = poisson(lambdas.home, lambdas.away)
-  // рынок точнее модели: вероятности исходов берём из консенсуса, если он есть
-  const x12 = cons.x12
-    ? {
-        home: 0.85 * cons.x12.home + 0.15 * p.x12.home,
-        draw: 0.85 * cons.x12.draw + 0.15 * p.x12.draw,
-        away: 0.85 * cons.x12.away + 0.15 * p.x12.away,
-      }
-    : p.x12
   const over: Record<string, number> = { ...p.over }
   for (const [line, v] of Object.entries(cons.over)) {
-    if (over[line] !== undefined) over[line] = 0.8 * v + 0.2 * over[line]
+    if (over[line] !== undefined) over[line] = v
   }
-  const btts = cons.btts != null ? 0.8 * cons.btts + 0.2 * p.btts : p.btts
   return {
-    source,
-    x12,
+    source: cons.x12 ? 'market' : 'xg',
+    x12: cons.x12 ?? p.x12,
     lambdas: { home: Math.round(lambdas.home * 100) / 100, away: Math.round(lambdas.away * 100) / 100 },
     over,
-    btts,
+    btts: cons.btts ?? p.btts,
     topScores: p.topScores,
   }
 }
@@ -250,6 +238,42 @@ export type Candidate = {
 
 type Getter = (b: BookOdds) => Quote | undefined
 
+/** Кэф букмекера на ставку по ключу кандидата («home», «hd», «over2.5», «bttsYes»…). */
+export function quoteOf(b: BookOdds, key: string): Quote | undefined {
+  switch (key) {
+    case 'home':
+    case 'draw':
+    case 'away':
+      return b.x12?.[key]
+    case 'hd':
+    case 'da':
+    case 'ha':
+      return b.dc?.[key]
+    case 'bttsYes':
+      return b.btts?.yes
+    case 'bttsNo':
+      return b.btts?.no
+  }
+  const t = /^(over|under)([\d.]+)$/.exec(key)
+  const line = t ? b.totals.find((x) => x.line === Number(t[2])) : undefined
+  return line ? (t![1] === 'over' ? line.over : line.under) : undefined
+}
+
+/** Сыграла ли ставка по ключу кандидата — по счёту основного времени. */
+export function betWon(key: string, h: number, a: number): boolean {
+  if (key === 'home') return h > a
+  if (key === 'draw') return h === a
+  if (key === 'away') return h < a
+  if (key === 'hd') return h >= a
+  if (key === 'da') return h <= a
+  if (key === 'ha') return h !== a
+  if (key === 'bttsYes') return h > 0 && a > 0
+  if (key === 'bttsNo') return !(h > 0 && a > 0)
+  const t = /^(over|under)([\d.]+)$/.exec(key)
+  if (t) return t[1] === 'over' ? h + a > Number(t[2]) : h + a < Number(t[2])
+  throw new Error(`ставка ${key}`)
+}
+
 function offers(books: BookOdds[], get: Getter) {
   let best: OfferQuote | null = null
   let bestPartner: OfferQuote | null = null
@@ -270,9 +294,9 @@ function offers(books: BookOdds[], get: Getter) {
 export function buildCandidates(books: BookOdds[], model: ModelOutput | null): Candidate[] {
   if (!model) return []
   const out: Candidate[] = []
-  const add = (key: string, market: Candidate['market'], label: string, prob: number, get: Getter | null) => {
+  const add = (key: string, market: Candidate['market'], label: string, prob: number) => {
     if (!(prob > 0.02 && prob < 0.98)) return
-    const { best, bestPartner } = get ? offers(books, get) : { best: null, bestPartner: null }
+    const { best, bestPartner } = offers(books, (b) => quoteOf(b, key))
     const target = bestPartner ?? best
     out.push({
       key,
@@ -286,20 +310,20 @@ export function buildCandidates(books: BookOdds[], model: ModelOutput | null): C
     })
   }
   const x = model.x12
-  add('home', '1x2', 'П1', x.home, (b) => b.x12?.home)
-  add('draw', '1x2', 'Х', x.draw, (b) => b.x12?.draw)
-  add('away', '1x2', 'П2', x.away, (b) => b.x12?.away)
-  add('hd', 'dc', '1X', x.home + x.draw, (b) => b.dc?.hd)
-  add('da', 'dc', 'X2', x.draw + x.away, (b) => b.dc?.da)
-  add('ha', 'dc', '12', x.home + x.away, (b) => b.dc?.ha)
+  add('home', '1x2', 'П1', x.home)
+  add('draw', '1x2', 'Х', x.draw)
+  add('away', '1x2', 'П2', x.away)
+  add('hd', 'dc', '1X', x.home + x.draw)
+  add('da', 'dc', 'X2', x.draw + x.away)
+  add('ha', 'dc', '12', x.home + x.away)
   for (const line of LINES) {
     const po = model.over[String(line)]
     if (po === undefined) continue
-    add(`over${line}`, 'total', `ТБ ${line}`, po, (b) => b.totals.find((t) => t.line === line)?.over)
-    add(`under${line}`, 'total', `ТМ ${line}`, 1 - po, (b) => b.totals.find((t) => t.line === line)?.under)
+    add(`over${line}`, 'total', `ТБ ${line}`, po)
+    add(`under${line}`, 'total', `ТМ ${line}`, 1 - po)
   }
-  add('bttsYes', 'btts', 'Обе забьют', model.btts, (b) => b.btts?.yes)
-  add('bttsNo', 'btts', 'Обе не забьют', 1 - model.btts, (b) => b.btts?.no)
+  add('bttsYes', 'btts', 'Обе забьют', model.btts)
+  add('bttsNo', 'btts', 'Обе не забьют', 1 - model.btts)
   return out
 }
 

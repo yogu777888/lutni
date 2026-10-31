@@ -147,8 +147,46 @@ export const totalAt = (m: MarketSet | null | undefined, line: number) => m?.tot
 
 export type Fair1x2 = { home: number; draw: number; away: number }
 
-/** Пропорциональное снятие маржи. Возвращает null, если нет всех трёх исходов. */
-export function fair1x2(x: X12 | null | undefined, useOpening = false): (Fair1x2 & { margin: number }) | null {
+/**
+ * Как снимаем маржу. `proportional` — поровну с каждого исхода (делим обратные кэфы на их сумму). Букмекеры кладут на
+ * длинные кэфы больше маржи, чем на короткие, — поэтому так фаворит выходит недооценённым, а аутсайдер переоценённым
+ * (проверка на 4 506 матчах шести топ-лиг: давали 70–80% — сбылось 80%, давали 10–20% — 13,7%). `power` (степень k: Σ qᵏ = 1)
+ * и `shin` (метод Шина: доля «знающих» игроков z) снимают с длинных кэфов больше. Какой точнее — `scripts/model/backtest.ts`.
+ */
+export type Devig = 'proportional' | 'power' | 'shin'
+export const DEVIGS: Devig[] = ['proportional', 'power', 'shin']
+/** Способ на сайте. */
+export const DEVIG: Devig = 'proportional'
+
+const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0)
+
+/** Корень убывающей функции f(t) = 1 на [lo; hi] делением пополам. */
+function solve(f: (t: number) => number, lo: number, hi: number) {
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2
+    if (f(mid) > 1) lo = mid
+    else hi = mid
+  }
+  return (lo + hi) / 2
+}
+
+/** Шансы без маржи из обратных кэфов `q` (их сумма — 1 + маржа). */
+export function devig(q: number[], method: Devig = DEVIG): number[] {
+  const s = sum(q)
+  if (method === 'proportional' || s <= 1) return q.map((x) => x / s)
+  const p =
+    method === 'power'
+      ? q.map((x) => x ** solve((k) => sum(q.map((y) => y ** k)), 1, 10))
+      : (() => {
+          const at = (z: number) => q.map((x) => (Math.sqrt(z * z + (4 * (1 - z) * x * x) / s) - z) / (2 * (1 - z)))
+          return at(solve((z) => sum(at(z)), 0, 0.999))
+        })()
+  const ps = sum(p)
+  return p.map((x) => x / ps)
+}
+
+/** Снятие маржи с исходов матча. Возвращает null, если нет всех трёх исходов. */
+export function fair1x2(x: X12 | null | undefined, useOpening = false, method: Devig = DEVIG): (Fair1x2 & { margin: number }) | null {
   const get = (q?: Quote) => (useOpening ? (q?.opening ?? null) : (q?.value ?? null))
   const h = get(x?.home)
   const d = get(x?.draw)
@@ -156,14 +194,16 @@ export function fair1x2(x: X12 | null | undefined, useOpening = false): (Fair1x2
   if (!h || !d || !a) return null
   const s = 1 / h + 1 / d + 1 / a
   if (s < 0.9 || s > 1.4) return null // явно битые данные
-  return { home: 1 / h / s, draw: 1 / d / s, away: 1 / a / s, margin: s - 1 }
+  const [ph, pd, pa] = devig([1 / h, 1 / d, 1 / a], method)
+  return { home: ph, draw: pd, away: pa, margin: s - 1 }
 }
 
-export function fairTwoWay(a?: Quote, b?: Quote): { a: number; b: number; margin: number } | null {
+export function fairTwoWay(a?: Quote, b?: Quote, method: Devig = DEVIG): { a: number; b: number; margin: number } | null {
   if (!a || !b) return null
   const s = 1 / a.value + 1 / b.value
   if (s < 0.9 || s > 1.4) return null
-  return { a: 1 / a.value / s, b: 1 / b.value / s, margin: s - 1 }
+  const [pa, pb] = devig([1 / a.value, 1 / b.value], method)
+  return { a: pa, b: pb, margin: s - 1 }
 }
 
 /** Вес «острых» букмекеров в консенсусе рынка: их линия точнее. */

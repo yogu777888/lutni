@@ -6,12 +6,13 @@
  * Что считаем (отчёт — `.data/backtest/report.md` и в консоль):
  *  1. Исход матча: оценка Брайера и логарифмическая ошибка у линии Pinnacle, консенсуса букмекеров, модели сайта,
  *     модели SStats (Glicko) — на матчах, где скачаны кэфы всех букмекеров и рейтинг.
- *  2. Веса модели (85/15 исход, 75/25 голы с xG SStats, 80/20 тоталы): сетка, подбор на старой половине матчей,
- *     проверка на свежей — новая версия лучше, только если разница больше разброса.
+ *  2. Доля Пуассона в оценке (было 85/15 исход, 75/25 голы с xG SStats, 80/20 тоталы; по первому отчёту — 0): сетка,
+ *     подбор на старой половине матчей, проверка на свежей — новая версия лучше, только если разница больше разброса.
  *  3. Голы: «3 гола и больше», «Обе забьют» — модель против линии; как сбываются «Много голов», «Мало голов», «Обе забьют».
  *  4. «Давали — сбылось» у модели (корзины по 10%).
  *  5. «Выгодно» — правила сайта (`isValue`/`choosePick`) против кэфов Марафона (PARI в истории SStats нет): сколько
  *     выгодных ставок и чем бы кончилась ставка по 1 условной единице на каждую, по кэфу закрытия.
+ *  6. Как снимать маржу (`devig` в `lib/odds.ts`): пропорционально, степенной, метод Шина — исход, голы, «давали — сбылось».
  * Итог основного времени (`scoreFT`), как в «Проверке шансов».
  *
  *   npm run model:backtest   (после `npm run model:fetch`; считает ~30 с на 1500 матчей)
@@ -25,13 +26,14 @@ import {
   buildModel,
   choosePick,
   fitLambdas,
+  betWon,
   isValue,
   poisson,
   type Consensus,
   type ModelOutput,
   type Probs1x2,
 } from '@/lib/model'
-import { fair1x2, type BookOdds } from '@/lib/odds'
+import { DEVIG, DEVIGS, fair1x2, type BookOdds, type Devig } from '@/lib/odds'
 import { normalizeBookOdds, normalizeGame, normalizeGlicko } from '@/lib/sstats/normalize'
 import type { RawBookmakerOdds, RawGame, RawGameGlicko } from '@/lib/sstats/types'
 import type { Glicko, Match } from '@/lib/types'
@@ -108,7 +110,8 @@ const sg = (x: number, d = 1) => `${x >= 0 ? '+' : '−'}${Math.abs(x * 100).toF
 // ─── Модель с другими весами (та же формула, что `buildModel`) ──────────────
 
 type W = { x12: number; lam: number; goals: number }
-export const CURRENT: W = { x12: 0.15, lam: 0.25, goals: 0.2 }
+/** Как сейчас на сайте: чистая линия (`buildModel`). */
+export const CURRENT: W = { x12: 0, lam: 0, goals: 0 }
 
 function modelWith(f: Full, w: W): { x12: Probs1x2; over25: number | null; btts: number } | null {
   const gx = f.glicko?.homeXg && f.glicko?.awayXg ? { home: f.glicko.homeXg, away: f.glicko.awayXg } : null
@@ -127,20 +130,6 @@ function modelWith(f: Full, w: W): { x12: Probs1x2; over25: number | null; btts:
 }
 
 // ─── Ставки ──────────────────────────────────────────────────────────────────
-
-function won(key: string, h: number, a: number): boolean {
-  if (key === 'home') return h > a
-  if (key === 'draw') return h === a
-  if (key === 'away') return h < a
-  if (key === 'hd') return h >= a
-  if (key === 'da') return h <= a
-  if (key === 'ha') return h !== a
-  if (key === 'bttsYes') return h > 0 && a > 0
-  if (key === 'bttsNo') return !(h > 0 && a > 0)
-  const t = /^(over|under)([\d.]+)$/.exec(key)
-  if (t) return t[1] === 'over' ? h + a > Number(t[2]) : h + a < Number(t[2])
-  throw new Error(`ставка ${key}`)
-}
 
 const MARKET: Record<string, string> = { '1x2': 'исход', dc: 'двойной шанс', total: 'тотал', btts: 'обе забьют' }
 
@@ -231,7 +220,7 @@ const wName = (w: W) => `${Math.round((1 - w.x12) * 100)}/${Math.round(w.x12 * 1
 table(
   ['Веса (линия/Пуассон, доля xG в голах)', 'Подбор', 'Проверка'],
   [
-    [`сейчас: ${wName(CURRENT)}`, f3(gridLoss(train, CURRENT)), f3(gridLoss(test, CURRENT))],
+    [`сейчас: ${CURRENT.x12 ? wName(CURRENT) : 'только линия'}`, f3(gridLoss(train, CURRENT)), f3(gridLoss(test, CURRENT))],
     ...grid.map((g) => [`${g.w.x12 === 0 ? 'только консенсус' : wName(g.w)}${g === best ? ' — лучшее на подборе' : ''}`, f3(g.train), f3(g.test)]),
   ],
 )
@@ -329,7 +318,7 @@ for (const f of withMar) {
   const cands = buildCandidates(f.books, f.model)
   const settle = (c: (typeof cands)[number]): Bet => {
     const q = (c.bestPartner ?? c.best)!
-    return { key: c.key, market: c.market, odd: q.value, ev: c.ev!, prob: c.prob, profit: won(c.key, f.h, f.a) ? q.value - 1 : -1 }
+    return { key: c.key, market: c.market, odd: q.value, ev: c.ev!, prob: c.prob, profit: betWon(c.key, f.h, f.a) ? q.value - 1 : -1 }
   }
   const pick = choosePick(cands)
   if (pick?.kind === 'value') pickBets.push(settle(pick.candidate))
@@ -364,6 +353,81 @@ const marMargin = mean(withMar.flatMap((f) => {
   return fx ? [fx.margin] : []
 }))
 say(`Для сравнения: маржа Марафона на исход матча — ${pc(marMargin)}; ставка наугад в среднем теряет примерно столько же.`)
+
+// 6. Как снимать маржу
+say()
+say(`## 6. Как снимать маржу`)
+say()
+say(`Консенсус по тем же букмекерам и весам — меняется только способ снятия маржи (\`devig\` в \`lib/odds.ts\`). Δ — разница с пропорциональным и её 95%-й разброс, меньше — лучше; половины — по времени, как в разделе 2.`)
+say()
+const label = (m: Devig) => `${{ proportional: 'Пропорционально', power: 'Степенной', shin: 'Метод Шина' }[m]}${m === DEVIG ? ' (сейчас)' : ''}`
+const byMethod = new Map(DEVIGS.map((m) => [m, full.map((f) => (m === DEVIG ? f.cons : buildConsensus(f.books, m)))] as const))
+const half2 = Math.floor(full.length / 2)
+const dStr = (xs: number[]) => {
+  const d = ci(xs)
+  return `${d.m >= 0 ? '+' : ''}${f3(d.m)} (${f3(d.lo)}…${f3(d.hi)})`
+}
+const llOf = (m: Devig) => byMethod.get(m)!.map((c, i) => ll(c.x12!, resOf(full[i].h, full[i].a)))
+const baseLL = llOf('proportional')
+table(
+  ['Способ', 'Исход: ошибка', 'Брайер', 'Δ', 'Δ 1-я половина', 'Δ 2-я половина'],
+  DEVIGS.map((m) => {
+    const l = llOf(m)
+    const d = l.map((x, i) => x - baseLL[i])
+    const b = mean(byMethod.get(m)!.map((c, i) => brier(c.x12!, resOf(full[i].h, full[i].a))))
+    return m === 'proportional'
+      ? [label(m), f3(mean(l)), f3(b), '—', '—', '—']
+      : [label(m), f3(mean(l)), f3(b), dStr(d), dStr(d.slice(0, half2)), dStr(d.slice(half2))]
+  }),
+)
+const twoWay = (m: Devig, k: 'over' | 'btts') =>
+  full.flatMap((f, i) => {
+    const pick = (c: Consensus) => (k === 'over' ? c.over['2.5'] : c.btts)
+    const p = pick(byMethod.get(m)![i])
+    const base = pick(byMethod.get('proportional')![i])
+    if (p == null || base == null) return []
+    const hit = k === 'over' ? f.h + f.a > 2.5 : f.h > 0 && f.a > 0
+    return [{ l: ll2(p, hit), d: ll2(p, hit) - ll2(base, hit) }]
+  })
+table(
+  ['Способ', '3+ гола: ошибка', 'Δ', 'Обе забьют: ошибка', 'Δ'],
+  DEVIGS.map((m) => {
+    const o = twoWay(m, 'over')
+    const b = twoWay(m, 'btts')
+    const first = m === 'proportional'
+    return [label(m), f3(mean(o.map((x) => x.l))), first ? '—' : dStr(o.map((x) => x.d)), f3(mean(b.map((x) => x.l))), first ? '—' : dStr(b.map((x) => x.d))]
+  }),
+)
+const calib = (m: Devig) => {
+  const out = new Map<number, { p: number[]; hit: number[] }>()
+  byMethod.get(m)!.forEach((c, i) => {
+    const r = resOf(full[i].h, full[i].a)
+    for (const k of ['home', 'draw', 'away'] as Res[]) {
+      const p = c.x12![k]
+      const b = Math.min(9, Math.floor(p * 10))
+      const e = out.get(b) ?? { p: [], hit: [] }
+      e.p.push(p)
+      e.hit.push(k === r ? 1 : 0)
+      out.set(b, e)
+    }
+  })
+  return out
+}
+const cal = DEVIGS.map(calib)
+say(`Давали → сбылось (исходов) — у каждого способа свои корзины. Честнее тот, где стрелка не меняет число:`)
+say()
+table(
+  ['Шанс', ...DEVIGS.map(label)],
+  [...new Set(cal.flatMap((c) => [...c.keys()]))]
+    .sort((a, b) => a - b)
+    .map((b) => [
+      `${b * 10}–${b * 10 + 10}%`,
+      ...cal.map((c) => {
+        const e = c.get(b)
+        return e && e.p.length >= 30 ? `${pc(mean(e.p))} → ${pc(mean(e.hit))} (${e.p.length})` : '—'
+      }),
+    ]),
+)
 
 const report = lines.join('\n')
 writeFileSync(path.join(DIR, 'report.md'), report)

@@ -1,12 +1,14 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { partnerForApiBookmaker } from '@/config/bookmakers'
 import { isFeatured } from '@/config/leagues'
 import { leagueTitle } from './flags'
 import { matchHref } from './links'
 import { addDays, appNow, todayYmd, ymdInTz } from './format'
-import type { Consensus, ModelOutput } from './model'
+import { isValue, quoteOf, type Candidate, type Consensus, type ModelOutput } from './model'
+import type { BookOdds } from './odds'
 import { singleton } from './runtime'
-import type { Forecast } from './track-record'
+import type { Forecast, ValueTrack } from './track-record'
 import type { Match } from './types'
 
 /**
@@ -60,11 +62,35 @@ function flushLater(ymd: string, d: Day) {
 const r3 = (x: number) => Math.round(x * 1000) / 1000
 const r3n = (x: number | null | undefined) => (x == null ? null : r3(x))
 
-/** Последняя оценка перед началом матча (из `computeMatchInsights`). */
-export async function recordForecast(m: Match, model: ModelOutput | null, cons: Consensus) {
+/**
+ * Ставки «Выгодно» до начала: новая — с кэфом букмекера сейчас (`first`), у прежних — последний кэф того же букмекера на ту
+ * же ставку (`last`), даже если она уже не выгодна; пропала линия — `last` прежний.
+ */
+export function trackValues(prev: ValueTrack[], books: BookOdds[], candidates: Candidate[], now: number): ValueTrack[] {
+  const out = new Map(prev.map((v) => [`${v.key}:${v.slug}`, { ...v }]))
+  for (const v of out.values()) {
+    const b = books.find((x) => partnerForApiBookmaker(x.bookmakerId, x.bookmakerName)?.slug === v.slug)
+    const q = b ? quoteOf(b, v.key) : undefined
+    if (q) {
+      v.last = q.value
+      v.lastAt = now
+    }
+  }
+  for (const c of candidates) {
+    const slug = c.bestPartner?.partner?.slug
+    if (!slug || !isValue(c) || out.has(`${c.key}:${slug}`)) continue
+    const odd = c.bestPartner!.value
+    out.set(`${c.key}:${slug}`, { key: c.key, slug, prob: r3(c.prob), first: odd, firstAt: now, last: odd, lastAt: now })
+  }
+  return [...out.values()]
+}
+
+/** Последняя оценка перед началом матча (из `computeMatchInsights`); `books`/`candidates` — для «Выгодно» (`trackValues`). */
+export async function recordForecast(m: Match, model: ModelOutput | null, cons: Consensus, books: BookOdds[] = [], candidates: Candidate[] = []) {
   if (IN_MOCK || !model || m.status !== 'scheduled' || m.ts <= appNow()) return
   const ymd = ymdInTz(m.ts)
   const d = await day(ymd)
+  const value = trackValues(d.rows.get(m.id)?.value ?? [], books, candidates, appNow())
   d.rows.set(m.id, {
     id: m.id,
     ts: m.ts,
@@ -79,6 +105,7 @@ export async function recordForecast(m: Match, model: ModelOutput | null, cons: 
     line: cons.x12
       ? { home: r3(cons.x12.home), draw: r3(cons.x12.draw), away: r3(cons.x12.away), over25: r3n(cons.over['2.5']), btts: r3n(cons.btts) }
       : null,
+    ...(value.length ? { value } : {}),
   })
   flushLater(ymd, d)
 }
