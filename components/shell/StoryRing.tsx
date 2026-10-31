@@ -10,23 +10,30 @@ const SEEN = 'rgb(255 255 255 / 0.22)'
 export const LIVE = '#ff5c63'
 /**
  * Сегменты кольца, как в Instagram (владелец: «на кружках на историях сделать разделения если больше 1 истории? как в
- * инсте»): по дуге на матч от верха по часовой, между дугами — зазор `gap` (в долях `pathLength` 100). Матчей больше
- * `max` — одно сплошное кольцо: из 15–30 дуг выходила рябь, а на круге 36px уже 8 штрихов читались пунктиром.
- * Возвращает дуги `[начало, длина]` или `null` — рисовать сплошным.
+ * инсте»): по дуге на матч от верха по часовой. Матчей больше `max` — одно сплошное кольцо (из 15–30 дуг выходила рябь),
+ * тогда `null`.
+ *
+ * Дуги — готовыми путями `<path d="M … A …">`, посчитанными по углам, а не штрихами `stroke-dasharray` по `pathLength`
+ * (владелец: «разрывы в кружках кривые»): Chrome рисует круг четырьмя кривыми Безье и длину по ним меряет неточно —
+ * зазоры выходили разной ширины, а верхний — не по центру. Концы дуг круглые (`strokeLinecap="round"`), видимый зазор —
+ * ровно `gap` пикселей: дуга короче на `gap + толщина`.
  */
-export function ringSegments(n: number, max: number, gap: number): [number, number][] | null {
+export function ringArcs(n: number, max: number, c: { cx: number; cy: number; r: number }, gap: number, width: number): string[] | null {
   if (n < 2 || n > max) return null
-  const step = 100 / n
-  return Array.from({ length: n }, (_, i) => [i * step + gap / 2, step - gap])
+  const step = (2 * Math.PI) / n
+  const pad = (gap + width) / c.r / 2
+  const pt = (a: number) => `${(c.cx + c.r * Math.sin(a)).toFixed(3)} ${(c.cy - c.r * Math.cos(a)).toFixed(3)}`
+  return Array.from({ length: n }, (_, i) => {
+    const a0 = i * step + pad
+    const a1 = (i + 1) * step - pad
+    return `M ${pt(a0)} A ${c.r} ${c.r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${pt(a1)}`
+  })
 }
-
-/** Дуга `[начало, длина]` для `<circle pathLength={100}>`, повёрнутого на −90° (начало — сверху). */
-export const arc = ([start, len]: [number, number]) => ({ strokeDasharray: `${len} ${100 - len}`, strokeDashoffset: -start })
 
 /**
  * Кольцо вокруг круга в боковых панелях, как вокруг сторис (владелец: «индикаторы как вокруг сторис вокруг категорий и
  * лиг»): клик по кругу открывает сторис — матчи подборки или лиги подряд; непросмотренные — белые, просмотренные —
- * серые. Матчей от 2 до 12 — дугами по матчу (`ringSegments`, зазор 2px), больше — сплошное кольцо, просмотренная доля
+ * серые. Матчей от 2 до 12 — дугами по матчу (`ringArcs`, зазор 2,5px), больше — сплошное кольцо, просмотренная доля
  * сереет от верха по часовой. Отметки — те же, что у сторис (`seenKey(группа, матч)` в localStorage). Родитель —
  * `relative`, круг 36px; кольцо — на 3px снаружи.
  */
@@ -51,13 +58,17 @@ export function StoryRing({
   if (!n) return null
   const flags = ids.map((id) => muted || seen.has(seenKey(group, id)))
   const c = { cx: 21, cy: 21, r: 20, fill: 'none', strokeWidth: 2, pathLength: 100 } as const
-  // зазор 2px: длина окружности r 20 — ~126px; до 12 дуг, как у кружков «Подборок дня» (владелец: «почему в ла лиге и
-  // лиге 1 нет разделителей» — в туре 9–10 матчей, при max 8 кольцо было сплошным)
-  const segs = ringSegments(n, 12, (2 / (2 * Math.PI * 20)) * 100)
+  // зазор 2,5px; до 12 дуг, как у кружков «Подборок дня» (владелец: «почему в ла лиге и лиге 1 нет разделителей» — в
+  // туре 9–10 матчей, при max 8 кольцо было сплошным); svg повёрнут на −90° для сплошного кольца — дуги поворачиваем назад
+  const segs = ringArcs(n, 12, c, 2.5, 2)
   // muted — серое кольцо целиком (турниры «Завтра»: не спорят с сегодняшними)
   const done = muted ? 100 : Math.round((flags.filter(Boolean).length / n) * 100)
   const body = segs ? (
-    segs.map((s, i) => <circle key={i} {...c} stroke={flags[i] ? SEEN : UNSEEN} {...arc(s)} />)
+    <g transform="rotate(90 21 21)">
+      {segs.map((d, i) => (
+        <path key={i} d={d} fill="none" strokeWidth={2} strokeLinecap="round" stroke={flags[i] ? SEEN : UNSEEN} />
+      ))}
+    </g>
   ) : (
     <>
       <circle {...c} stroke={done > 0 ? SEEN : UNSEEN} />
