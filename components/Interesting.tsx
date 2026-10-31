@@ -82,9 +82,12 @@ export function Interesting({ facts }: { facts: Fact[] }) {
             <Link
               key={slug}
               href={matchHref(m)}
-              className="flex flex-col rounded-card p-4 transition-[filter] hover:brightness-125"
+              className="relative isolate flex flex-col overflow-hidden rounded-card p-4 transition-[filter] hover:brightness-125"
               style={{ background: `color-mix(in oklch, ${tone} 12%, var(--color-panel-2))` }}
             >
+              {/* знак подборки крупно на фоне, срезан правым краем (владелец: «в подборках на заднем фоне ставить как то
+                  аккуратно значки? типа прогруз линия вниз»): 10% цвета подборки, под текстом — читается как тиснение */}
+              <StorySymbol k={slug} tone={tone} className="pointer-events-none absolute -right-6 top-6 -z-10 size-[128px] opacity-[0.1]" />
               <p className="flex min-w-0 items-center gap-1.5 text-[13px] font-semibold" style={{ color: tone }}>
                 <StorySymbol k={slug} tone={tone} className="h-4 w-4 shrink-0" />
                 <span className="truncate">{TAG_BY_SLUG.get(slug)?.title}</span>

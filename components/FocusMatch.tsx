@@ -107,9 +107,11 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
         // текст — от левого края плашки, без отступа под значок (владелец прислал прототип ChatGPT: «иконку … и сам
         // блок как то подкрасить? и не делай такой большой отступ слева у текста»)
         <div
-          className="mt-4 rounded-tile px-4 py-3"
+          className="relative isolate mt-4 overflow-hidden rounded-tile px-4 py-3"
           style={{ background: `color-mix(in oklch, ${tone} 12%, transparent)` }}
         >
+          {/* знак подборки крупно на фоне, у правого края — как в «Интересно сегодня» */}
+          {fact.sym ? <StorySymbol k={fact.sym} tone={tone} className="pointer-events-none absolute -right-4 top-1/2 -z-10 size-[88px] -translate-y-1/2 opacity-[0.1]" /> : null}
           <p className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: tone }}>
             {fact.sym ? (
               <StorySymbol k={fact.sym} tone={tone} className="h-4 w-4 shrink-0" />
