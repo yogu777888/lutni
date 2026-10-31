@@ -113,21 +113,6 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     .map((g) => g.id)
     .join(',')
   const [games, setGames] = useState<CompactMatch[]>([])
-  // «текущая» лига подсвечивается напрямую в DOM (`data-on` у строки, `aria-current` у ссылки), без состояния React: при
-  // прокрутке она меняется часто, и перерисовка всей панели (кольца, эмблемы с тенью) давала задачи по 20–30 мс — центр
-  // подлагивал (владелец: «всё равно подлагивает, а я хочу чтоб летало»)
-  const setActive = (id: string | null) => {
-    document.querySelectorAll<HTMLElement>('[data-row][data-on]').forEach((el) => {
-      if (el.dataset.row === id) return
-      delete el.dataset.on
-      el.querySelector('a[aria-current]')?.removeAttribute('aria-current')
-    })
-    const el = id ? document.querySelector<HTMLElement>(`[data-row="${id}"]`) : null
-    if (el && !('on' in el.dataset)) {
-      el.dataset.on = ''
-      el.querySelector('a')?.setAttribute('aria-current', 'location')
-    }
-  }
   // просмотренные сторис — для колец вокруг флагов (те же отметки, что у подборок)
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
   useEffect(() => {
@@ -157,31 +142,19 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     }
   }, [ids, favGames, today])
 
-  // пришли по ссылке «/#league-…» — раскрыть и прокрутить; дальше — какая лига сейчас вверху центра
+  // пришли по ссылке «/#league-…» — раскрыть и прокрутить. «Текущую» лигу по ходу прокрутки больше не подсвечиваем
+  // (владелец: «всё равно из-за подсветки в левом блоке тормозит»): смена подсветки перерисовывала строки панели вместе
+  // с тенями эмблем (SVG-фильтр — самое дорогое на странице), и прокрутка центра подлагивала. Без неё панель во время
+  // прокрутки не перерисовывается совсем
   useEffect(() => {
     const hash = window.location.hash.slice(1)
     if (hash.startsWith('league-') || hash === 'live') setTimeout(() => reveal(hash), 50)
-    const blocks = [...document.querySelectorAll<HTMLElement>('#live, [id^="league-"]')]
-    if (!blocks.length) return setActive(null)
-    const io = new IntersectionObserver(
-      (entries) => {
-        // пока страницу не листали — ничего не подсвечено (иначе «Сейчас идут» выглядит выбранным пунктом)
-        if (window.scrollY < 40) return setActive(null)
-        const top = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
-        if (top) setActive(top.target.id)
-      },
-      // «текущая» — та, что пересекает полосу чуть ниже шапки и липкой строки дней
-      { rootMargin: '-150px 0px -70% 0px' },
-    )
-    blocks.forEach((b) => io.observe(b))
-    return () => io.disconnect()
   }, [pathname])
 
   const go = (id: string, href: string) => (e: React.MouseEvent) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
     e.preventDefault()
     if (reveal(id)) {
-      setActive(id)
       history.replaceState(null, '', `#${id}`)
     } else router.push(href)
   }
@@ -294,9 +267,8 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
         {/* «Завтра» (jump=false) — тише сегодняшних (владелец согласился: 17 одинаково белых колец, четыре — про завтра):
             название серым, кольцо серое, флаг прозрачнее; при наведении — обычной яркости */}
         <div
-          data-row={jump ? id : undefined}
           className={`group -mx-2 ${row} ${
-            jump ? 'text-fg/85 hover:bg-white/[0.04] hover:text-fg data-[on]:bg-white/[0.07] data-[on]:text-fg' : 'text-dim hover:bg-white/[0.04] hover:text-fg'
+            jump ? 'text-fg/85 hover:bg-white/[0.04] hover:text-fg' : 'text-dim hover:bg-white/[0.04] hover:text-fg'
           }`}
         >
           <button
@@ -425,7 +397,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             // «Сейчас идут» — тоже история (владелец: «а почему у сейчас в игре нет сторис?»): значок — сторис идущих
             // матчей подряд (группа 'live', как у прежних кружков), кольцо — непросмотренные; название — к блоку
             <li>
-              <div data-row="live" className={`group -mx-2 ${row} hover:bg-white/[0.04] data-[on]:bg-white/[0.07]`}>
+              <div className={`group -mx-2 ${row} hover:bg-white/[0.04]`}>
                 <button type="button" data-story-key="live"
             onClick={playLive} aria-label="Сейчас идут: смотреть разбор матчей" className="relative shrink-0 rounded-full">
                   <span aria-hidden className="relative block h-9 w-9 rounded-full">
