@@ -20,8 +20,8 @@ function Corner({ pos }: { pos: 'tl' | 'tr' | 'bl' | 'br' }) {
 export function ShellFrame() {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-30 hidden xl:block">
-      {/* сверху — под шапкой (64px), снизу — у края окна; по 8px цвета фона */}
-      <div className="fixed left-[calc(var(--shell-l)+16px)] right-[calc(var(--shell-r)+16px)] top-16 h-2" style={{ background: BG }}>
+      {/* сверху — под шапкой (56px), снизу — у края окна; по 8px цвета фона */}
+      <div className="fixed left-[calc(var(--shell-l)+16px)] right-[calc(var(--shell-r)+16px)] top-14 h-2" style={{ background: BG }}>
         <Corner pos="tl" />
         <Corner pos="tr" />
       </div>

@@ -273,7 +273,7 @@ export async function DayView({
             типа как на ютубе там тоже только на главной они есть»; на остальных страницах шапка — одной строкой, `HeaderRow`);
             на «Матчах» — первой строкой страницы; lg–xl — плашкой цвета панели, липкой под шапкой; от xl — правила
             .bare-panel в app/globals.css */}
-        <div className={`bare-panel max-lg:-mx-4 ${view === 'home' ? 'hdr-sub max-lg:sticky max-lg:top-[53px] max-lg:z-30' : ''} lg:max-xl:sticky lg:max-xl:top-[65px] lg:max-xl:z-30 lg:max-xl:bg-[#090c10] lg:max-xl:pb-2`}>
+        <div className={`bare-panel max-lg:-mx-4 ${view === 'home' ? 'hdr-sub max-lg:sticky max-lg:top-[53px] max-lg:z-30' : ''} lg:max-xl:sticky lg:max-xl:top-[57px] lg:max-xl:z-30 lg:max-xl:bg-[#090c10] lg:max-xl:pb-2`}>
         {listHead ? (
           // заголовок — как у полок выше: одна схема на всю страницу
           <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
