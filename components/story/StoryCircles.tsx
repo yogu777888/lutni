@@ -8,6 +8,8 @@ import { readSeen, SEEN_EVENT } from './seen'
 import { PLATE } from '../LeagueMark'
 import { GroupMark } from './GroupMark'
 import { ringArcs } from '../shell/StoryRing'
+import { StorySymbol } from './StorySymbol'
+import { Icon } from '../Icon'
 
 /**
  * Истории — круглые входы в подборки: круг, залитый оттенком подборки, знак категории (StorySymbol) и кольцо
@@ -56,12 +58,43 @@ const plural = (n: number) => {
   return MATCH_WORDS[m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 1 : 2]
 }
 
-/** Подпись — в одну строку, короткое название (`short`: «Главные»; в две строки ряд был неровным, под ним — пустая строка); число матчей — в подсказке кружка. */
+/**
+ * Подпись — в одну строку, короткое название (`short`: «Главные»; в две строки ряд был неровным, под ним — пустая строка);
+ * слева — знак подборки 12px цветом подписи (владелец: «слева от названий историй тоже иконки ставить?»): в круге — эмблема
+ * команды, и о чём подборка, говорит знак. Число матчей — в подсказке кружка.
+ */
 function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
+  const live = g.kind === 'live' || g.key === 'live'
   return (
-    <>
-      <span className={`block truncate text-[12px] font-semibold leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>{g.short ?? g.label}</span>
-    </>
+    <span className={`flex items-center justify-center gap-[3px] text-[12px] font-semibold leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>
+      <StorySymbol k={live ? 'live' : g.key} tone="currentColor" className="h-3 w-3 shrink-0" />
+      <span className="min-w-0 truncate">{g.short ?? g.label}</span>
+    </span>
+  )
+}
+
+/**
+ * «▶» слева от заголовка «Подборки дня» (владелец: «на мобильном слева от подборки дня иконку плэй типа сделать?»): истории
+ * подряд с первой подборки, где есть непросмотренное, — как кнопка «слушать» у плейлиста; всё просмотрено — с начала.
+ */
+export function PlayAll({ groups }: { groups: StoryGroup[] }) {
+  if (!groups.length) return null
+  const play = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const seen = readSeen()
+    const gi = Math.max(0, groups.findIndex((g) => seenCount(g, seen) < g.items.length))
+    const { queue, startId } = circleQueue(groups, gi, seen, {})
+    openStory({ id: startId, href: groups[gi].href, opener: e.currentTarget, queue })
+  }
+  return (
+    <button
+      type="button"
+      onClick={play}
+      aria-label="Смотреть подборки дня подряд"
+      title="Смотреть подряд"
+      className="-ml-1 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-ink transition-transform active:scale-95"
+    >
+      <Icon k="play-fill" size={16} className="translate-x-[1px]" />
+    </button>
   )
 }
 
@@ -115,10 +148,10 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
     openStory({ id: startId, href: groups[gi].href, opener: e.currentTarget, queue })
   }
 
-  // ряд на фоне, без карточки: первый круг — ровно по левому краю карточек ниже (`-ml-1.5` — поле кружка 70px вокруг
+  // ряд на фоне, без карточки: первый круг — ровно по левому краю карточек ниже (`-ml-2.5` — поле кружка 80px вокруг
   // круга 58px), справа ряд листается до края экрана (обёртка в DayView — `-mr-4`), без затухания
   return (
-    <nav aria-label="Истории дня" className="scrollbar-none -ml-1.5 flex gap-1.5 overflow-x-auto pb-1 pr-4 pt-1.5">
+    <nav aria-label="Истории дня" className="scrollbar-none -ml-2.5 flex gap-1 overflow-x-auto pb-1 pr-4 pt-1.5">
       {groups.map((g, gi) => {
         const n = seenCount(g, seen)
         const done = n === g.items.length
@@ -129,7 +162,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             onClick={(e) => open(gi, e)}
             title={g.hint.includes(':') ? g.hint : `${g.hint}: ${g.items.length} ${plural(g.items.length)}`}
             aria-label={`${g.label}. ${g.hint}. Смотреть истории`}
-            className="group flex w-[70px] shrink-0 flex-col items-center focus-visible:outline-none"
+            className="group flex w-[80px] shrink-0 flex-col items-center focus-visible:outline-none"
           >
             {/* фокус с клавиатуры — белым кругом вокруг кружка */}
             <span data-story-key={g.key} className={`relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 h-[58px] w-[58px] lg:h-[clamp(46px,calc(14vh_-_50px),58px)] lg:w-[clamp(46px,calc(14vh_-_50px),58px)]`}>

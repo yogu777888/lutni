@@ -21,7 +21,7 @@ import { BlockTitle } from './Section'
 import { Sidebar } from './Sidebar'
 import { dayPicks } from '@/lib/day-picks'
 import { MatchFilter } from './MatchFilter'
-import { StoryCircles } from './story/StoryCircles'
+import { PlayAll, StoryCircles } from './story/StoryCircles'
 import { TAGS } from '@/lib/tags'
 import { Icon } from '@/components/Icon'
 
@@ -350,7 +350,12 @@ export async function DayView({
             <BlockTitle
               rows
               id="picks-title"
-              title="Подборки дня"
+              title={
+                <span className="flex items-center gap-2.5">
+                  <PlayAll groups={storyGroups} />
+                  Подборки дня
+                </span>
+              }
               aside={
                 <Link href="/tags" className="font-medium text-dim transition-colors hover:text-fg">
                   Все →

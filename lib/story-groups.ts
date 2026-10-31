@@ -182,6 +182,9 @@ const CIRCLE_LABEL: Record<string, string> = {
   'много угловых': 'Угловые',
   'много карточек': 'Карточки',
   'кэф упал': 'Прогруз',
+  // со знаком слева в 80px «Выгодные ставки» и «Много голов» обрезались
+  выгодно: 'Выгодно',
+  'много голов': 'Голы',
 }
 
 export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
