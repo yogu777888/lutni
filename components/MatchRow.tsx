@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import type { MatchSummary } from '@/lib/data'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
-import { formatOdd, formatTime } from '@/lib/format'
+import { appNow, formatOdd, formatTime } from '@/lib/format'
 import type { X12Line } from '@/lib/lines'
 import { matchHref } from '@/lib/links'
 import type { TagHit } from '@/lib/tags'
 import type { Match } from '@/lib/types'
 import { Tick } from './Live'
+import { Until } from './Until'
 import { TeamLogo } from './TeamLogo'
 import { Icon } from '@/components/Icon'
 
@@ -178,7 +179,7 @@ export function MatchRow({
   return (
     <div
       data-mid={m.id}
-      className={`relative grid items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:gap-x-4 sm:gap-y-2.5 sm:py-2.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : `odds-row ${ROW_COLS}`} ${className}`}
+      className={`relative grid items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:gap-x-4 sm:gap-y-2.5 sm:py-2.5 transition-colors hover:bg-white/[0.02] sm:px-5 ${noOdds ? ROW_COLS_NO_ODDS : ROW_COLS} ${className}`}
     >
       <div className="self-start pt-0.5 sm:self-center sm:pt-0">
         <StatusCell m={m} />
@@ -210,6 +211,13 @@ export function MatchRow({
               вдвое ниже */}
           {/* место ячеек держит высоту строки на компьютере, когда кэфы выключены или у выбранного букмекера линии нет */}
           {lines ? <span aria-hidden className="hidden sm:col-start-3 sm:row-start-1 sm:block sm:h-[34px]" /> : null}
+          {/* «Без кэфов» — на месте счёта отсчёт до начала (владелец: «матчи без счёта там всё равно пусто»); виден только
+              при `html[data-odds=off]` (`data-odds-off`, lib/odds-pick.ts) */}
+          {lines ? (
+            <span data-odds-off="" className="col-start-3 row-start-1 h-[34px] items-center justify-center">
+              <Until ts={m.ts} skew={appNow() - Date.now()} />
+            </span>
+          ) : null}
           {lines?.length ? (
             lines.map((l, i) => (
               <div key={l.slug} data-bk={l.slug} data-bk-first={i === 0 ? '' : undefined} className="col-span-3 col-start-1 sm:col-span-1 sm:col-start-3 sm:row-start-1">
@@ -223,7 +231,7 @@ export function MatchRow({
           )}
         </>
       ) : (
-        <div className="odds-score flex items-center justify-end sm:h-[34px] sm:justify-center">
+        <div className="flex items-center justify-end sm:h-[34px] sm:justify-center">
           <Score m={m} big />
         </div>
       )}
