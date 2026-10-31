@@ -73,7 +73,7 @@ function ValueRow({ it }: { it: FeedItem }) {
   const prob = Number.isFinite(p.prob) && p.prob > 0 && p.prob < 1 ? p.prob : null
   const ev = p.ev != null && Number.isFinite(p.ev) ? p.ev : null
   return (
-    <div className="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-4 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:grid-cols-[3.75rem_minmax(0,1fr)_auto] sm:px-5">
+    <div className="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-4 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:px-5">
       <span className="num display-num self-start pt-0.5 text-[18px]">{formatTime(m.ts)}</span>
       <div className="min-w-0">
         <Link href={matchHref(m)} prefetch={false} className="block text-[15px] font-semibold leading-snug first-letter:uppercase after:absolute after:inset-0 sm:text-[16px]">
@@ -127,7 +127,7 @@ function TagRow({ it, hit, bet }: { it: FeedItem; hit: TagHit; bet: ReturnType<t
   const m = it.match
   const live = m.status === 'live'
   return (
-    <div className="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-4 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:grid-cols-[3.75rem_minmax(0,1fr)_auto] sm:px-5">
+    <div className="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-4 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:px-5">
       <span className={`num display-num self-start pt-0.5 text-[18px] ${live ? 'text-live' : ''}`}>{live ? `${m.elapsed ?? ''}′` : formatTime(m.ts)}</span>
       <div className="min-w-0">
         <Link href={matchHref(m)} prefetch={false} className="block truncate text-[15px] font-semibold after:absolute after:inset-0 sm:text-[16px]">

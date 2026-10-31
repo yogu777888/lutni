@@ -87,7 +87,7 @@ export function FavMatches({ ymd }: { ymd: string }) {
           return (
             <li
               key={m.id}
-              className="relative grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-x-3 px-4 py-2.5 transition-colors hover:bg-white/[0.02] sm:grid-cols-[3.75rem_minmax(0,1fr)_11.25rem] sm:gap-x-4 sm:px-5"
+              className="relative grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-x-3 px-4 py-2.5 transition-colors hover:bg-white/[0.02] sm:grid-cols-[3rem_minmax(0,1fr)_11.25rem] sm:gap-x-4 sm:px-5"
             >
               <span className="self-start pt-0.5 sm:self-center sm:pt-0">
                 <span className={`num display-num relative -top-0.5 block whitespace-nowrap text-[18px] leading-none ${m.live ? 'text-live' : m.finished ? 'text-mute' : 'text-fg'}`}>

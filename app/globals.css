@@ -765,7 +765,7 @@ html[data-shell-rc] .shell-r-rail {
   .shell-center:has(.bare-page) .bare-panel > div {
     border-radius: var(--radius-card);
     background: var(--color-panel);
-    padding: 8px 10px 8px 22px;
+    padding: 8px 8px 8px 16px;
   }
   /* под строкой — как рамка под шапкой (ShellFrame): ровная полоска цвета фона 8px и под ней два «уголка» радиусом
      карточки — уезжающий список уходит под строку со скруглённым верхом, без щелей по краям (раньше тень повторяла

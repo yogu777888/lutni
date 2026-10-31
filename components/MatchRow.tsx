@@ -15,8 +15,8 @@ import { Icon } from '@/components/Icon'
  * везде есть, счёт не везде есть»): время · матч · счёт · кэфы. На телефоне — время · команды в две строки · счёт, кэфы ниже.
  */
 // на телефоне колонка времени 44px (было 52 + зазор 16 — под временем пустовала треть строки; владелец: «а по блокам на главной что скажешь?»)
-export const ROW_COLS = 'grid-cols-[2.75rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_11.25rem]'
-const ROW_COLS_NO_ODDS = 'grid-cols-[2.75rem_minmax(0,1fr)_auto] sm:grid-cols-[3.75rem_minmax(0,1fr)_auto]'
+export const ROW_COLS = 'grid-cols-[2.75rem_minmax(0,1fr)_auto] sm:grid-cols-[3rem_minmax(0,1fr)_11.25rem]'
+const ROW_COLS_NO_ODDS = 'grid-cols-[2.75rem_minmax(0,1fr)_auto] sm:grid-cols-[3rem_minmax(0,1fr)_auto]'
 
 const isLive = (m: Match) => m.status === 'live' || m.status === 'suspended'
 
