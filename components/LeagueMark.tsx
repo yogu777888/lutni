@@ -33,30 +33,35 @@ const tile = (bare: boolean) => ({ width: bare ? '86%' : '70%', height: bare ? '
 export const PLATE = '#cdd2d8'
 
 /**
- * Тень эмблемы на светлой подложке — «длинная», с твёрдыми краями, уходит вниз вправо и срезается кругом (владелец: «да не
- * размытую а с твердыми углами. и чтоб вниз вправо уходила например?»). SVG-фильтр `CrestShadowDefs` (стоит один раз в
- * app/layout.tsx): силуэт эмблемы сдвигается по 0,5px 16 раз (8px), копии сливаются в сплошной след цвета подложки темнее.
- * Цепочка CSS `drop-shadow` не годится: доли пикселя Chrome отбрасывает, а по 1px на ретине видны ступеньки.
- * Только на `PLATE`; светлый контур не делать — владелец отверг. Длина — `STEPS`, цвет — `SHADOW_TONE`.
+ * Тень эмблемы на светлой подложке — «длинная», с твёрдыми краями, уходит вниз вправо до края круга, круг её срезает
+ * (владелец: «да не размытую а с твердыми углами. и чтоб вниз вправо уходила например?», потом «надо тень до края круга
+ * делать»). SVG-фильтр `CrestShadowDefs` (стоит один раз в app/layout.tsx): силуэт эмблемы удваиваем со сдвигом 0,5 → 1 →
+ * 2 → … px (каждый шаг — объединение с собой, сдвинутым на текущую длину), за `DOUBLINGS` шагов — след 0,5 × 2^N px, залит
+ * подложкой темнее. Цепочка CSS `drop-shadow` не годится: доли пикселя Chrome отбрасывает, а по 1px на ретине видны
+ * ступеньки. Только на `PLATE`; светлый контур не делать — владелец отверг. Цвет — `SHADOW_TONE`.
  */
 const SHADOW_TONE = '#a7aeb6'
-const STEPS = 16
+/** 7 удвоений — след 64px: длиннее радиуса самого крупного круга, до края доходит всегда */
+const DOUBLINGS = 7
 export const CREST_SHADOW = 'url(#crest-shadow)'
 
 export function CrestShadowDefs() {
   return (
     <svg aria-hidden width="0" height="0" className="pointer-events-none absolute">
-      <filter id="crest-shadow" x="0" y="0" width="200%" height="200%" colorInterpolationFilters="sRGB">
-        {Array.from({ length: STEPS }, (_, i) => (
-          <feOffset key={i} in="SourceAlpha" dx={(i + 1) / 2} dy={(i + 1) / 2} result={`o${i}`} />
-        ))}
-        <feMerge result="trail">
-          {Array.from({ length: STEPS }, (_, i) => (
-            <feMergeNode key={i} in={`o${i}`} />
-          ))}
-        </feMerge>
+      <filter id="crest-shadow" x="0" y="0" width="400%" height="400%" colorInterpolationFilters="sRGB">
+        {Array.from({ length: DOUBLINGS }, (_, i) => {
+          const from = i ? `t${i - 1}` : 'SourceAlpha'
+          const d = 2 ** i / 2
+          return [
+            <feOffset key={`o${i}`} in={from} dx={d} dy={d} result={`o${i}`} />,
+            <feMerge key={`m${i}`} result={`t${i}`}>
+              <feMergeNode in={from} />
+              <feMergeNode in={`o${i}`} />
+            </feMerge>,
+          ]
+        })}
         <feFlood floodColor={SHADOW_TONE} />
-        <feComposite in2="trail" operator="in" result="shadow" />
+        <feComposite in2={`t${DOUBLINGS - 1}`} operator="in" result="shadow" />
         <feMerge>
           <feMergeNode in="shadow" />
           <feMergeNode in="SourceGraphic" />
