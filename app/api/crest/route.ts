@@ -6,7 +6,7 @@ import { bakeCrest } from '@/lib/crest-shadow'
 export const dynamic = 'force-dynamic'
 
 /**
- * Эмблема с длинной тенью готовой картинкой (lib/crest-shadow.ts): ?u=<адрес эмблемы>&a=<ширина/высота>. Первый раз —
+ * Эмблема с длинной тенью готовой картинкой (lib/crest-shadow.ts): ?u=<адрес эмблемы>&a=<ширина/высота> (&t=1 — плитка). Первый раз —
  * скачиваем эмблему, дорисовываем тень и кладём на диск (`CREST_DIR`, по умолчанию .cache/crests), дальше отдаём с диска;
  * браузер хранит год. Только эмблемы SStats и логотипы лиг из public/leagues — чужие адреса не качаем.
  */
@@ -22,12 +22,12 @@ async function source(u: string): Promise<Buffer> {
   return Buffer.from(await r.arrayBuffer())
 }
 
-async function baked(u: string, a: number): Promise<Buffer> {
-  const file = path.join(DIR, `${createHash('sha1').update(`${u}|${a}`).digest('hex')}.webp`)
+async function baked(u: string, a: number, t: boolean): Promise<Buffer> {
+  const file = path.join(DIR, `${createHash('sha1').update(`${u}|${a}${t ? '|t' : ''}`).digest('hex')}.webp`)
   try {
     return await readFile(file)
   } catch {}
-  const out = await bakeCrest(await source(u), a)
+  const out = await bakeCrest(await source(u), a, t)
   await mkdir(DIR, { recursive: true })
   await writeFile(file, out).catch(() => {})
   return out
@@ -36,13 +36,15 @@ async function baked(u: string, a: number): Promise<Buffer> {
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams
   const u = q.get('u') ?? ''
-  const a = Math.round(Math.min(8, Math.max(0.125, Number(q.get('a')) || 1)) * 1000) / 1000
+  // t=1 — логотип-плитка с квадратной подложкой: скруглённым квадратом, пропорция не нужна
+  const t = q.get('t') === '1'
+  const a = t ? 1 : Math.round(Math.min(8, Math.max(0.125, Number(q.get('a')) || 1)) * 1000) / 1000
   if (!REMOTE.test(u) && !LOCAL.test(u)) return new Response('bad crest', { status: 400 })
-  const key = `${u}|${a}`
+  const key = `${u}|${a}|${t}`
   try {
     let p = busy.get(key)
     if (!p) {
-      p = baked(u, a).finally(() => busy.delete(key))
+      p = baked(u, a, t).finally(() => busy.delete(key))
       busy.set(key, p)
     }
     const body = await p

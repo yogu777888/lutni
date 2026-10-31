@@ -21,13 +21,19 @@ export function crestBox(aspect: number) {
   return aspect >= 1 ? { w: SIZE, h: Math.max(1, Math.round(SIZE / aspect)) } : { w: Math.max(1, Math.round(SIZE * aspect)), h: SIZE }
 }
 
-export async function bakeCrest(src: Buffer, aspect: number): Promise<Buffer> {
-  const { w, h } = crestBox(aspect)
-  const logo = await sharp(src, { density: 288 })
-    .resize(w, h, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .ensureAlpha()
-    .raw()
-    .toBuffer()
+/**
+ * `tile` — логотип с квадратной подложкой в самом файле (Бундеслига, `TILES` в lib/league-logos.ts): квадрат на всю
+ * картинку и скругление 22%, как прежде делал `border-radius`; тень — от скруглённого квадрата.
+ */
+export async function bakeCrest(src: Buffer, aspect: number, tile = false): Promise<Buffer> {
+  const { w, h } = crestBox(tile ? 1 : aspect)
+  let img = sharp(src, { density: 288 }).resize(w, h, tile ? { fit: 'cover' } : { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+  if (tile) {
+    const r = Math.round(w * 0.22)
+    const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" rx="${r}" ry="${r}"/></svg>`)
+    img = sharp(await img.ensureAlpha().composite([{ input: mask, blend: 'dest-in' }]).png().toBuffer())
+  }
+  const logo = await img.ensureAlpha().raw().toBuffer()
   const t = Math.ceil(TRAIL * Math.max(w, h))
   const W = w + t
   const H = h + t

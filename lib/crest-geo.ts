@@ -9,4 +9,5 @@ export function crestScale(aspect: number) {
 }
 
 /** Адрес эмблемы с тенью. */
-export const crestSrc = (src: string, aspect = 1) => `/api/crest?u=${encodeURIComponent(src)}${aspect === 1 ? '' : `&a=${Math.round(aspect * 1000) / 1000}`}`
+export const crestSrc = (src: string, aspect = 1, tile = false) =>
+  `/api/crest?u=${encodeURIComponent(src)}${tile ? '&t=1' : aspect === 1 ? '' : `&a=${Math.round(aspect * 1000) / 1000}`}`

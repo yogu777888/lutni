@@ -34,60 +34,20 @@ const tile = (bare: boolean) => ({ width: bare ? '86%' : '70%', height: bare ? '
 export const PLATE = '#cdd2d8'
 
 /**
- * Тень эмблемы на светлой подложке — «длинная», с твёрдыми краями, уходит вниз вправо до края круга, круг её срезает
- * (владелец: «да не размытую а с твердыми углами. и чтоб вниз вправо уходила например?», потом «надо тень до края круга
- * делать»). SVG-фильтр `CrestShadowDefs` (стоит один раз в app/layout.tsx): силуэт эмблемы удваиваем со сдвигом 0,5 → 1 →
- * 2 → … px (каждый шаг — объединение с собой, сдвинутым на текущую длину), за `DOUBLINGS` шагов — след 0,5 × 2^N px, залит
- * подложкой темнее. Цепочка CSS `drop-shadow` не годится: доли пикселя Chrome отбрасывает, а по 1px на ретине видны
- * ступеньки. Только на `PLATE`; светлый контур не делать — владелец отверг. Цвет — `SHADOW_TONE`.
+ * Тень эмблемы на светлой подложке — «длинная», с твёрдыми краями, вниз вправо до края круга (владелец: «да не размытую а с
+ * твердыми углами»). Рисует сервер готовой картинкой (`/api/crest`, lib/crest-shadow.ts, цвет `#bbc1c8`); SVG-фильтра
+ * `#crest-shadow` в браузере больше нет — ни у эмблем, ни у логотипов-плиток. Светлый контур не делать — владелец отверг.
  */
-const SHADOW_TONE = '#bbc1c8'
-/** 7 удвоений — след 64px: длиннее радиуса самого крупного круга, до края доходит всегда */
-const DOUBLINGS = 7
-export const CREST_SHADOW = 'url(#crest-shadow)'
-
-export function CrestShadowDefs() {
-  return (
-    <svg aria-hidden width="0" height="0" className="pointer-events-none absolute">
-      <filter id="crest-shadow" x="0" y="0" width="400%" height="400%" colorInterpolationFilters="sRGB">
-        {Array.from({ length: DOUBLINGS }, (_, i) => {
-          const from = i ? `t${i - 1}` : 'SourceAlpha'
-          const d = 2 ** i / 2
-          return [
-            <feOffset key={`o${i}`} in={from} dx={d} dy={d} result={`o${i}`} />,
-            <feMerge key={`m${i}`} result={`t${i}`}>
-              <feMergeNode in={from} />
-              <feMergeNode in={`o${i}`} />
-            </feMerge>,
-          ]
-        })}
-        <feFlood floodColor={SHADOW_TONE} />
-        <feComposite in2={`t${DOUBLINGS - 1}`} operator="in" result="shadow" />
-        <feMerge>
-          <feMergeNode in="shadow" />
-          <feMergeNode in="SourceGraphic" />
-        </feMerge>
-      </filter>
-    </svg>
-  )
-}
-
-/**
- * Эмблема с длинной тенью — картинкой внутри SVG, а не `<img style="filter: url(#crest-shadow)">`: Safari на iPhone
- * у CSS-фильтра на HTML-элементе срезает всё, что вышло за рамку картинки, — от следа в 64px оставался обрубок у края эмблемы
- * (владелец: «с айфона… тени у лого обрезанные какието»). Внутри SVG область фильтра (400%) работает и в Safari, и в Chrome;
- * `overflow: visible` — след выходит за рамку, срезает его круг подложки. `x`/`y`/размер `image` в процентах — единицы
- * фильтра остаются пикселями CSS, как было.
- */
-export function ShadowCrest({ src, aspect = 1, className = '', style }: { src: string; aspect?: number; className?: string; style?: CSSProperties }) {
+/** Эмблема с длинной тенью — готовой картинкой; `tile` — логотип с квадратной подложкой, скруглённым квадратом. */
+export function ShadowCrest({ src, aspect = 1, tile = false, className = '', style }: { src: string; aspect?: number; tile?: boolean; className?: string; style?: CSSProperties }) {
   // тень — уже в картинке (/api/crest, lib/crest-shadow.ts): эмблема в левом верхнем углу, след вправо и вниз; место — по
   // эмблеме, картинка шире и выше его и выходит за рамку, круг подложки срезает
-  const k = crestScale(aspect)
+  const k = crestScale(tile ? 1 : aspect)
   return (
     <span className={`relative block ${className}`} style={style}>
       {/* eslint-disable-next-line @next/next/no-img-element -- готовая картинка с нашего сервера */}
       <img
-        src={crestSrc(src, aspect)}
+        src={crestSrc(src, aspect, tile)}
         alt=""
         loading="lazy"
         decoding="async"
@@ -103,7 +63,14 @@ export function ShadowCrest({ src, aspect = 1, className = '', style }: { src: s
 export function LeagueMark({ id, flag, size, bare = false, fill, light = false, fallback = null, className = '' }: { id: number; flag: string | null; size: number; bare?: boolean; fill?: string; light?: boolean; fallback?: ReactNode; className?: string }) {
   const logo = leagueLogoInfo(id)
   if (light) fill = PLATE
-  if (logo && fill === PLATE && !logo.tile && !(logo.dark && !light))
+  // логотипы-плитки (Бундеслига) — тоже готовой картинкой: скругление и тень уже в ней (`t=1` у /api/crest)
+  if (logo && fill === PLATE && logo.tile)
+    return (
+      <span aria-hidden className={`grid shrink-0 grid-cols-1 grid-rows-1 place-items-center ${bare ? '' : 'overflow-hidden rounded-full'} ${className}`} style={{ width: size, height: size, ...(!bare ? { background: fill } : {}) }}>
+        <ShadowCrest src={logo.src} tile style={{ width: tile(bare).width, height: tile(bare).height }} />
+      </span>
+    )
+  if (logo && fill === PLATE && !(logo.dark && !light))
     return (
       <span aria-hidden className={`grid shrink-0 grid-cols-1 grid-rows-1 place-items-center ${bare ? '' : 'overflow-hidden rounded-full'} ${className}`} style={{ width: size, height: size, ...(!bare ? { background: fill } : {}) }}>
         <ShadowCrest src={logo.src} aspect={logo.aspect} style={fit(logo.aspect, bare)} />
@@ -120,7 +87,7 @@ export function LeagueMark({ id, flag, size, bare = false, fill, light = false, 
           height={size}
           loading="lazy"
           className={logo.tile ? 'object-cover' : 'object-contain'}
-          style={{ ...(logo.tile ? tile(bare) : fit(logo.aspect, bare)), ...(logo.dark && !light ? { filter: 'invert(1) hue-rotate(180deg)' } : fill === PLATE ? { filter: CREST_SHADOW } : {}) }}
+          style={{ ...(logo.tile ? tile(bare) : fit(logo.aspect, bare)), ...(logo.dark && !light ? { filter: 'invert(1) hue-rotate(180deg)' } : {}) }}
         />
       </span>
     )
