@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { SITE } from '@/config/site'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayLeague, DayLeagues } from '@/lib/day-leagues'
-import { leagueColor, leagueLogo } from '@/lib/league-logos'
+import { leagueLogo } from '@/lib/league-logos'
 import { useFavMatches, useFavorites } from '../favorites'
 import { ymdInTz } from '@/lib/format'
 import { LeagueMark, PLATE } from '../LeagueMark'
@@ -22,13 +22,6 @@ import { matchesN, StateLine } from './StateLine'
 import { LIVE, StoryRing } from './StoryRing'
 import { Icon } from '@/components/Icon'
 
-/** Кольцо турнира — оттенок логотипа, светлота и насыщенность общие (OKLCH L 0,74, C 0,12), как подборки справа
- * (владелец: «остальные истории в левом меню тоже как-то не очень» — цвета логотипов разной силы, красные спорили с «В игре») */
-const ringTone = (id: number) => {
-  const h = leagueColor(id)?.match(/oklch\([\d.]+ [\d.]+ ([\d.]+)\)/)?.[1]
-  // чёрно-белый логотип или флаг — серый той же светлоты (белое кольцо было ярче цветных)
-  return h ? `oklch(0.74 0.12 ${h})` : 'oklch(0.74 0 0)'
-}
 /** круг «Сейчас идут» — на светлой подложке, как все круги историй (владелец: «и идут с выгодно тоже подложку»); красный — у знака и кольца */
 const LIVE_FILL = { background: PLATE }
 
@@ -224,7 +217,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
       className="relative shrink-0 rounded-full transition-opacity hover:opacity-80"
     >
       <LeagueFlag l={l} />
-      <StoryRing group={`league-${l.id}`} ids={l.items.map((m) => m.id)} seen={seen} color={ringTone(l.id)} />
+      <StoryRing group={`league-${l.id}`} ids={l.items.map((m) => m.id)} seen={seen} />
     </button>
   )
   // у турниров «Завтра» подписи нет (владелец: «не слишком много мелкого текста из-за подписей?» — пять одинаковых
@@ -258,7 +251,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     return (
       <span className="relative block h-9 w-9 rounded-full">
         {l ? <LeagueFlag l={l} /> : null}
-        <StoryRing group={g.key} ids={ids} seen={s} muted={muted} color={l ? ringTone(l.id) : null} />
+        <StoryRing group={g.key} ids={ids} seen={s} muted={muted} />
       </span>
     )
   }
@@ -301,7 +294,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
               <LeagueFlag l={l} />
             </span>
             <PlayOverlay />
-            <StoryRing group={id} ids={l.items.map((m) => m.id)} seen={seen} muted={!jump} color={ringTone(l.id)} />
+            <StoryRing group={id} ids={l.items.map((m) => m.id)} seen={seen} muted={!jump} />
           </button>
           <a
             href={l.href}

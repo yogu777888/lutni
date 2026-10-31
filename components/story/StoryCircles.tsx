@@ -5,7 +5,7 @@ import type { CircleKind, StoryGroup } from '@/lib/story-groups'
 import { openStory } from './events'
 import { circleQueue, seenCount } from './queue'
 import { readSeen, SEEN_EVENT } from './seen'
-import { symbolSoft } from './StorySymbol'
+import { PLATE } from '../LeagueMark'
 import { GroupMark } from './GroupMark'
 import { ringArcs } from '../shell/StoryRing'
 
@@ -66,16 +66,10 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
   )
 }
 
-/** «Выгодно» — лаймом, как круг «Выгодно сегодня» в свёрнутой правой панели (лайм — деньги и «выгодно»). */
-const ACID = '#c8ff2e'
-/**
- * Цвет кружка — как у подборок в правой панели на компьютере (владелец: «а почему они отличаются от компьютерной
- * версии?» — «да»): знак, непросмотренные дуги кольца и заливка круга 14% — приглушённым оттенком подборки
- * (`symbolSoft`: общие светлота и насыщенность); «Идут» — красным `LIVE`, как «Сейчас идут» в левой панели;
- * «Выгодно» — лаймовым кругом с тёмным знаком. Были яркие диски с белым знаком и белые кольца.
- */
+/** Цвет непросмотренных дуг — подложка кругов `PLATE`, как в панелях; «Идут» — красным `LIVE`. Ниже по истории git — цвета подборок. */
 function toneOf(g: StoryGroup) {
-  return g.kind === 'live' || g.key === 'live' ? LIVE : g.key === 'value' ? ACID : symbolSoft(g.key)
+  // кольца — цветом подложки кругов, как в панелях (владелец: «кружки на историях везде сделаем как цвет подложки»)
+  return g.kind === 'live' || g.key === 'live' ? LIVE : PLATE
 }
 
 /** Диск: светлая подложка с эмблемой или знаком (`GroupMark`); своя картинка из public/stories/<ключ>.* — вместо всего этого. */

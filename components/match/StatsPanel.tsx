@@ -7,6 +7,7 @@ import { XgTerm } from './Xg'
 import { MirrorBars, mirrorWidths } from './SplitBar'
 import { TeamHead } from './TeamHead'
 import { Icon } from '@/components/Icon'
+import { StatIcon } from './StatIcon'
 
 type Side = { id: number; name: string; logo?: string | null }
 type Mode = 'main' | 'all'
@@ -15,7 +16,7 @@ type Mode = 'main' | 'all'
 const KEY_ROWS = ['expectedGoals', 'xgOnTarget', 'bigChances', 'shotsOnGoal']
 
 /** Капсула-переключатель, как вкладки `Tabs small`; кнопки 36px — под палец. */
-function Seg<K extends string>({ items, cur, pick, label }: { items: { key: K; label: string }[]; cur: K; pick: (k: K) => void; label: string }) {
+export function Seg<K extends string>({ items, cur, pick, label }: { items: { key: K; label: string }[]; cur: K; pick: (k: K) => void; label: string }) {
   return (
     <div role="group" aria-label={label} className="flex w-full gap-1 rounded-full bg-white/[0.07] p-1 sm:w-auto">
       {items.map((t) => (
@@ -77,6 +78,7 @@ function Row({ r, first }: { r: StatRow; first: boolean }) {
       <div className="grid grid-cols-[minmax(3.5rem,1fr)_minmax(0,auto)_minmax(3.5rem,1fr)] items-baseline gap-x-2 sm:gap-x-3">
         {num(r.home, r.away, false, r.detail?.home)}
         <span className={`text-balance text-center text-[14px] leading-snug ${key ? 'font-medium text-fg/85' : 'text-dim'}`}>
+          <StatIcon k={r.key} group={r.group} />
           <Label r={r} />
         </span>
         {num(r.away, r.home, true, r.detail?.away)}

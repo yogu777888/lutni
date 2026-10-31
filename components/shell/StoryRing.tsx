@@ -1,10 +1,9 @@
 'use client'
 
 import { seenKey } from '../story/seen'
+import { PLATE } from '../LeagueMark'
 
-/** Не смотрели — белое (лаймом 13 колец разом были ярче всего на экране; владелец: «сделай непросмотренные белыми»),
- * просмотрено — приглушённый белый. Лайм — только кнопкам и выгодным кэфам. */
-const WHITE = 'rgb(255 255 255 / 0.9)'
+/** Не смотрели — цветом подложки кругов `PLATE`, просмотрено — приглушённый белый. Лайм — только кнопкам и выгодным кэфам. */
 const SEEN = 'rgb(255 255 255 / 0.22)'
 /** «Сейчас идут» — красное, как кружок «В игре» на телефоне (`StoryCircles`); у лиг с идущими матчами — белое */
 export const LIVE = '#ff5c63'
@@ -43,18 +42,17 @@ export function StoryRing({
   seen,
   muted = false,
   live = false,
-  color = null,
 }: {
   group: string
   ids: number[]
   seen: Set<string>
   muted?: boolean
   live?: boolean
-  /** цвет непросмотренных у турниров — главный цвет логотипа (`leagueColor`; владелец: «как у нас в графиках команд») */
-  color?: string | null
 }) {
   const n = ids.length
-  const UNSEEN = live ? LIVE : (color ?? WHITE)
+  // непросмотренные — цветом подложки кругов `PLATE` у всех (владелец: «кружки на историях везде сделаем как цвет
+  // подложки»): были цвета подборок и логотипов турниров; «Идут» — красным
+  const UNSEEN = live ? LIVE : PLATE
   if (!n) return null
   const flags = ids.map((id) => muted || seen.has(seenKey(group, id)))
   const c = { cx: 21, cy: 21, r: 20, fill: 'none', strokeWidth: 2, pathLength: 100 } as const

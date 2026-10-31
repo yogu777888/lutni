@@ -189,7 +189,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
     disc: (g, s) => (
       <span className="relative grid h-9 w-9 place-items-center rounded-full" style={{ background: `color-mix(in oklch, ${symbolSoft(g.key)} 14%, transparent)` }}>
         <GroupMark g={g} className="h-[18px] w-[18px]" crest="h-[22px] w-[22px]" />
-        <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={s} color={symbolSoft(g.key)} />
+        <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={s} />
       </span>
     ),
   }
@@ -226,7 +226,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
             style={{ background: `color-mix(in oklch, ${symbolSoft(g.key)} 14%, transparent)` }}
           >
             <GroupMark g={g} className="h-[18px] w-[18px]" crest="h-[22px] w-[22px]" />
-            <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} color={symbolSoft(g.key)} />
+            <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} />
           </button>
         ))}
         {/* «Выгодно сегодня» не пропадает целиком: лаймовый круг со знаком процента внизу (лайм — деньги и «выгодно») */}
@@ -286,7 +286,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                           <Play className="ml-0.5 h-3.5 w-3.5" />
                         </span>
                         {/* кольцо, как вокруг сторис: непросмотренные матчи подборки — приглушённым цветом подборки (как знак и заливка круга), просмотренные — серые */}
-                        <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} color={symbolSoft(g.key)} />
+                        <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} />
                         {/* точки «идёт» на значках подборок нет: при многих идущих их было шесть подряд; «3 идут» — в подписи,
                             а сигнал «идёт» — в центре и у турниров слева (владелец согласился) */}
                       </button>

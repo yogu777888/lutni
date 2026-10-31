@@ -13,8 +13,8 @@ import { XgTerm, XgText } from '@/components/match/Xg'
 import { Strengths } from '@/components/match/Strengths'
 import { mainPoint, teamPoints } from '@/lib/team-xg'
 import { ClubVars } from '@/components/match/ClubVars'
-import { FormBlock } from '@/components/match/FormBlock'
-import { SetPiecesBlock } from '@/components/match/SetPiecesBlock'
+import { TeamStatsPanel } from '@/components/match/TeamStatsPanel'
+import { formStrip, teamStatRows } from '@/lib/team-stats'
 import { H2HBlock } from '@/components/match/H2HBlock'
 import { InjuriesBlock } from '@/components/match/InjuriesBlock'
 import { Lineups } from '@/components/match/Lineups'
@@ -501,18 +501,15 @@ export default async function MatchPage({ params }: Props) {
   )
   // цвета клубов (`--club-h/-a`) — полосам «Формы» и «Статистики», линиям «Давления», номерам в «Составах»
   const clubVars = (node: React.ReactNode) => <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>{node}</ClubVars>
+  const side = (t: typeof m.home) => ({ id: t.id, name: t.name, logo: t.logo })
+  const statRows = teamStatRows({ home: ins.homeForm, away: ins.awayForm }, xg, sp)
   const sec_form = (
     <>
-          {ins.homeForm || ins.awayForm ? (
-            // цифры — по последним (до 10) матчам: выборку называем числом (было «последние матчи», а в карточке — три разные выборки)
-            <Section outside title="Форма команд">
-              {clubVars(<FormBlock home={m.home} away={m.away} homeForm={ins.homeForm} awayForm={ins.awayForm} />)}
-            </Section>
-          ) : null}
-          {sp.home || sp.away ? (
-            // только статистика прошлых игр, без прогноза (владелец: «пока просто визуально сделай»)
-            <Section outside title="Угловые и карточки" note="Средние за последние матчи каждой команды (до 5); сверху — всего за матч в их играх. Статистика прошлых игр, а не прогноз.">
-              {clubVars(<SetPiecesBlock home={m.home} away={m.away} h={sp.home} a={sp.away} />)}
+          {statRows.length ? (
+            // одним блоком «Основные / Все показатели», как «Статистика» идущего матча (владелец: «не будем на несколько
+            // блоков разбивать»): были «Форма команд» и «Угловые и карточки»
+            <Section outside title="Статистика команд" note="По последним матчам каждой команды: голы — до 10, очки — за 5, xG, угловые и карточки — до 5. Статистика прошлых игр, а не прогноз.">
+              {clubVars(<TeamStatsPanel home={side(m.home)} away={side(m.away)} rows={statRows} strip={{ home: formStrip(ins.homeForm), away: formStrip(ins.awayForm) }} />)}
             </Section>
           ) : null}
 
