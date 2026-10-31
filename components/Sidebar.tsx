@@ -1,7 +1,7 @@
 import { BlockMore } from './BlockMore'
 import { PARTNERS } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
-import type { ValueRow } from '@/lib/day-picks'
+import type { DayPicks, ValueRow } from '@/lib/day-picks'
 import type { DayNumbers } from '@/lib/day-numbers'
 import { DayNumbersBlock } from './DayNumbersBlock'
 import { BlockTitle } from './Section'
@@ -13,12 +13,12 @@ import { ValueBlock } from './shell/RightPanel'
  * правой панели нет, а это блок, который приносит деньги) и «Где ставить». «Как читать теги» убрана: тегов в строках
  * давно нет, легенда объясняла то, чего на экране нет (владелец: «а на телефоне главная как?»).
  */
-export function Sidebar({ values = [], numbers = null }: { values?: ValueRow[]; numbers?: DayNumbers | null }) {
+export function Sidebar({ values = [], valuesBy = {}, numbers = null }: { values?: ValueRow[]; valuesBy?: DayPicks['valuesBy']; numbers?: DayNumbers | null }) {
   return (
     <aside className="space-y-8 lg:sticky lg:top-24 lg:self-start">
       {/* «Сегодня в цифрах» — перед «Выгодно сегодня»: сначала с чем сравнивать, потом где кэф выше оценки */}
       {numbers ? <DayNumbersBlock n={numbers} card /> : null}
-      {values.length ? <ValueBlock rows={values} card /> : null}
+      {values.length || Object.values(valuesBy).some((v) => v.rows.length) ? <ValueBlock rows={values} by={valuesBy} card /> : null}
       {/* заголовок над карточкой, как «Где поставить» на странице матча */}
       <section className="min-w-0">
         {/* «Реклама · 18+» — одна на блок, справа в строке заголовка (владелец прислал вариант ChatGPT); значка раздела нет

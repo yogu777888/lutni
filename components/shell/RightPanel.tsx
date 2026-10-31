@@ -67,11 +67,35 @@ function Right({ m, stat, hot }: { m: CompactMatch; stat?: string; hot: boolean 
  * блок выглядит поломкой); внизу «Все выгодные ставки →» — по всем легальным партнёрам (/tag/value).
  */
 /** `card` — отдельной панелью (ниже xl правой панели нет, блок стоит в боковой колонке списка — `Sidebar`). */
-export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: boolean }) {
+/**
+ * «Выгодно сегодня» с выбором букмекера (`OddsPick`; владелец: «если выбираешь марафон то блок выгодное сегодня показывает
+ * кэфы марафон?»): выбора нет — как было (сначала PARI, потом другие); выбран партнёр — только его выгодные (`by`, по его
+ * линии), нет у него — «Сегодня у Марафон выгодных ставок нет»; «Без кэфов» — блока нет. Варианты — все в разметке
+ * (`data-bk`), нужный показывает CSS (lib/odds-pick.ts), как кэфы в строках.
+ */
+export function ValueBlock({ rows, by = {}, card = false }: { rows: ValueRow[]; by?: DayPicks['valuesBy']; card?: boolean }) {
+  const slugs = Object.keys(by)
+  if (!slugs.length) return <ValueBody rows={rows} card={card} />
+  return (
+    <>
+      <div data-bk="*" data-bk-first="">
+        <ValueBody rows={rows} card={card} />
+      </div>
+      {slugs.map((slug) => (
+        <div key={slug} data-bk={slug}>
+          <ValueBody rows={by[slug].rows} card={card} book={by[slug].name} />
+        </div>
+      ))}
+    </>
+  )
+}
+
+function ValueBody({ rows, card = false, book }: { rows: ValueRow[]; card?: boolean; book?: string }) {
   const hintId = useId()
-  // все ставки — PARI: он назван в заголовке, как было; есть другие — подписан каждый кэф (имя другого букмекера в заголовке
-  // не влезало в 288px: «Марафон · Реклама · 18+» переносилось вместе с «Выгодно сегодня»)
-  const onlyPari = rows.length > 0 && rows.every((r) => r.slug === 'pari')
+  // все ставки одного букмекера: он назван в заголовке, как было; есть другие — подписан каждый кэф (имя другого букмекера в
+  // заголовке не влезало в 288px: «Марафон · Реклама · 18+» переносилось вместе с «Выгодно сегодня»)
+  const one = book ?? (rows.length > 0 && rows.every((r) => r.slug === 'pari') ? 'PARI' : null)
+  const onlyPari = Boolean(one)
   return (
     // карточкой (под списком ниже xl) — заголовок над ней, на фоне страницы, как блоки лиг и разделы матча
     <section className={card ? 'relative min-w-0' : 'relative mt-6 border-t border-edge pt-4'}>
@@ -98,15 +122,15 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
             <span className="mt-1.5 block text-mute">Расчёт, а не гарантия · 18+</span>
           </span>
         </span>
-        {rows.length ? <span className={`${card ? 'text-[12px]' : 'text-[11.5px]'} font-normal tracking-normal text-mute`}>{onlyPari ? 'PARI · ' : ''}Реклама · 18+</span> : null}
+        {rows.length ? <span className={`${card ? 'text-[12px]' : 'text-[11.5px]'} font-normal tracking-normal text-mute`}>{one ? `${one} · ` : ''}Реклама · 18+</span> : null}
       </h3>
       {/* карточкой — строки через черту от края до края карточки, как «Где ставить» под ним и все списки (владелец: «правильно
           что в ставках разделительные линии не до конца?»), и крупнее: 15/13px и плашка 40px (владелец прислал вариант
           ChatGPT; в узкой правой панели — как было) */}
       <div className={card ? 'card px-4 pb-4 sm:px-5' : ''}>
-      {rows.length ? null : <p className={`${card ? 'py-4' : 'mt-2'} text-[13px] text-dim`}>Сегодня выгодных ставок нет.</p>}
+      {rows.length ? null : <p className={`${card ? 'py-4' : 'mt-2'} text-[13px] text-dim`}>{book ? `Сегодня у ${book} выгодных ставок нет.` : 'Сегодня выгодных ставок нет.'}</p>}
       {/* у PARI пусто, а у других есть — так и пишем: главного партнёра в блоке не видно, и это не поломка */}
-      {rows.length && !rows.some((r) => r.slug === 'pari') ? (
+      {!book && rows.length && !rows.some((r) => r.slug === 'pari') ? (
         <p className={`${card ? 'pt-3 text-[13px]' : 'mt-1.5 text-[12.5px]'} leading-snug text-mute`}>У PARI сегодня выгодных нет — у других легальных букмекеров:</p>
       ) : null}
       <ul className={card ? '-mx-4 divide-y divide-edge sm:-mx-5' : 'mt-2 space-y-1'}>
@@ -380,7 +404,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
             <p className="mt-2 text-[13.5px] text-dim">Подборки появятся, когда будут матчи дня.</p>
           )}
           {picks.numbers ? <DayNumbersBlock n={picks.numbers} /> : null}
-          <ValueBlock rows={picks.values} />
+          <ValueBlock rows={picks.values} by={picks.valuesBy} />
         </div>
       </div>
     </div>

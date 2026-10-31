@@ -531,6 +531,12 @@ export type MatchSummary = {
   } | null
   /** лучшая выгодная ставка именно по линии PARI (для «Выгодно сегодня» в правой панели — только PARI), иначе null */
   pari?: { key: string; label: string; prob: number; odd: number; ev: number } | null
+  /**
+   * лучшая выгодная ставка по линии каждого партнёра, у кого линия есть (ключ — слаг; null — линия есть, выгодного нет):
+   * «Выгодно сегодня» при выборе букмекера в `OddsPick` показывает его кэфы (владелец: «если выбираешь марафон то блок
+   * выгодное сегодня показывает кэфы марафон?»)
+   */
+  byBook?: Record<string, { key: string; label: string; prob: number; odd: number; ev: number } | null>
   /** оценка tag.bet (модель) — для «Сегодня в цифрах» (средние по матчам дня, `lib/day-numbers.ts`); нет модели — null */
   probs?: { home: number; draw: number; away: number; over25: number | null; btts: number | null } | null
   at: number
@@ -593,7 +599,21 @@ function summaryPick(pick: Pick | null): MatchSummary['pick'] {
  * (владелец: «а можно блок выгодно сегодня сделать только про пари?»), поэтому лучший кэф другого партнёра здесь не в счёт.
  */
 function pariValue(books: BookOdds[], candidates: Candidate[]): MatchSummary['pari'] {
-  const book = books.find((b) => partnerForApiBookmaker(b.bookmakerId, b.bookmakerName)?.slug === 'pari')
+  return bookValue(books.find((b) => partnerForApiBookmaker(b.bookmakerId, b.bookmakerName)?.slug === 'pari'), candidates)
+}
+
+/** Выгодные ставки по линии каждого легального партнёра, у кого она есть, — тем же правилом, что у PARI. */
+function bookValues(books: BookOdds[], candidates: Candidate[]): NonNullable<MatchSummary['byBook']> {
+  const out: NonNullable<MatchSummary['byBook']> = {}
+  for (const b of books) {
+    // только у кого есть линия на исход — те же партнёры, что в выборе букмекера (`x12All`)
+    const slug = b.x12?.home && b.x12.draw && b.x12.away ? partnerForApiBookmaker(b.bookmakerId, b.bookmakerName)?.slug : null
+    if (slug && !(slug in out)) out[slug] = bookValue(b, candidates) ?? null
+  }
+  return out
+}
+
+function bookValue(book: BookOdds | undefined, candidates: Candidate[]): MatchSummary['pari'] {
   if (!book) return null
   const quote: Record<string, number | undefined> = {
     home: book.x12?.home?.value,
@@ -664,7 +684,7 @@ async function computeMatchInsights(id: number, opts: Opts): Promise<MatchInsigh
   const facts = teamFacts({ homeForm, awayForm, h2h })
   // «История точности»: последняя оценка до начала матча — на диск (после начала не меняется)
   void recordForecast(m, model, cons, books, candidates).catch(() => {})
-  const summary: MatchSummary = { id, tags, form, facts, pick: summaryPick(pick), pari: m.status === 'scheduled' ? pariValue(books, candidates) : null, probs: model ? { ...model.x12, over25: model.over['2.5'] ?? null, btts: model.btts ?? null } : null, at: Date.now() }
+  const summary: MatchSummary = { id, tags, form, facts, pick: summaryPick(pick), pari: m.status === 'scheduled' ? pariValue(books, candidates) : null, byBook: m.status === 'scheduled' ? bookValues(books, candidates) : {}, probs: model ? { ...model.x12, over25: model.over['2.5'] ?? null, btts: model.btts ?? null } : null, at: Date.now() }
   cache.set(`summary:${id}`, summary, { ttl: 3 * H, stale: 9 * H, persist: false })
 
   return { full, match: m, books, oddsAt, cons, glicko, model, candidates, pick, homeForm, awayForm, h2h, injuries, standings, tags, preview }

@@ -32,6 +32,8 @@ export type DayPicks = {
   /** «Выгодно сегодня» внизу панели — лучшие выгодные ставки дня (ещё не начались): сначала по линии PARI, не хватает —
    * у других легальных партнёров */
   values: ValueRow[]
+  /** выгодные по линии одного партнёра (слаг → до трёх) — для выбора букмекера в `OddsPick`; партнёры, у кого линия есть хоть у одного матча */
+  valuesBy: Record<string, { name: string; rows: ValueRow[] }>
   /** «Сегодня в цифрах» — средние шансы tag.bet по матчам топ-турниров дня (`lib/day-numbers.ts`); мало матчей — null */
   numbers: DayNumbers | null
 }
@@ -88,7 +90,7 @@ export const dayPicks = cache(async (): Promise<DayPicks> => {
       })
     }
     const byId = new Map(matches.map((m) => [m.id, m]))
-    const out: DayPicks = { groups: [], matches: {}, stats: {}, totals: {}, values: [], states: {}, teams: {}, numbers: null }
+    const out: DayPicks = { groups: [], matches: {}, stats: {}, totals: {}, values: [], valuesBy: {}, states: {}, teams: {}, numbers: null }
     // «Выгодно сегодня» — сначала по линии PARI (владелец: «а можно блок выгодно сегодня сделать только про пари?»): кэф PARI
     // выше честной цены (`summary.pari` в lib/data.ts). У PARI выгодное бывает примерно раз в два дня (замер на настоящем API,
     // 17–18 октября: 1 ставка PARI из 13 выгодных, остальные — Марафон), и блок почти всегда стоял пустым — поэтому, если у
@@ -131,6 +133,23 @@ export const dayPicks = cache(async (): Promise<DayPicks> => {
         return row(m, p.key, p.odd!, p.ev, getPartner(p.partnerSlug!)!)
       })
     out.values = [...fromPari, ...fromOthers]
+    // выбран букмекер — только его выгодные (по матчу одну, лучшие по выгоде); линия у него есть, выгодных нет — пустой список
+    for (const it of ahead) for (const slug of Object.keys(it.summary?.byBook ?? {})) out.valuesBy[slug] ??= { name: slug, rows: [] }
+    for (const slug of Object.keys(out.valuesBy)) {
+      const partner = getPartner(slug)
+      if (!partner) {
+        delete out.valuesBy[slug]
+        continue
+      }
+      out.valuesBy[slug] = { name: partner.name, rows: ahead
+        .filter((i) => i.summary?.byBook?.[slug])
+        .sort((a, b) => b.summary!.byBook![slug]!.ev - a.summary!.byBook![slug]!.ev)
+        .slice(0, VALUES)
+        .map(({ match: m, summary }) => {
+          const v = summary!.byBook![slug]!
+          return row(m, v.key, v.odd, v.ev, partner)
+        }) }
+    }
     out.numbers = await dayNumbers(todayYmd())
     for (const g of groups) {
       // «В игре» — в левой панели («Сейчас идут»); подборка из одного матча — уже не подборка (владелец согласился)
@@ -183,6 +202,6 @@ export const dayPicks = cache(async (): Promise<DayPicks> => {
     }
     return out
   } catch {
-    return { groups: [], matches: {}, stats: {}, totals: {}, values: [], states: {}, teams: {}, numbers: null }
+    return { groups: [], matches: {}, stats: {}, totals: {}, values: [], valuesBy: {}, states: {}, teams: {}, numbers: null }
   }
 })
