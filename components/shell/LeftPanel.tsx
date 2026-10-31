@@ -9,7 +9,7 @@ import type { DayLeague, DayLeagues } from '@/lib/day-leagues'
 import { leagueColor, leagueLogo } from '@/lib/league-logos'
 import { useFavMatches, useFavorites } from '../favorites'
 import { ymdInTz } from '@/lib/format'
-import { LeagueMark } from '../LeagueMark'
+import { LeagueMark, PLATE } from '../LeagueMark'
 import { TeamLogo } from '../TeamLogo'
 import type { StoryGroup } from '@/lib/story-groups'
 import { openStory, type StoryRow } from '../story/events'
@@ -29,8 +29,6 @@ const ringTone = (id: number) => {
   // чёрно-белый логотип или флаг — серый той же светлоты (белое кольцо было ярче цветных)
   return h ? `oklch(0.74 0.12 ${h})` : 'oklch(0.74 0 0)'
 }
-/** заливка круга турнира — оттенок кольца 14%, как круги подборок справа; без цвета (чёрно-белый логотип, флаг) — серый круг, как был */
-const discFill = (id: number) => (leagueColor(id) ? `color-mix(in oklch, ${ringTone(id)} 14%, transparent)` : undefined)
 /** заливка круга «Сейчас идут» — красным 14%, как круги подборок справа их цветом */
 const LIVE_FILL = { background: `color-mix(in oklch, ${LIVE} 14%, transparent)` }
 
@@ -57,10 +55,11 @@ function reveal(id: string): boolean {
 
 /** Знак турнира в плашке 36px — как значки подборок в правой панели: логотип лиги кругом во всю плашку, флаг — 20px; нет ни того, ни другого (еврокубки без логотипа) — первая буква. */
 function LeagueFlag({ l }: { l: Pick<DayLeague, 'id' | 'flag' | 'name'> }) {
-  if (leagueLogo(l.id)) return <LeagueMark id={l.id} flag={l.flag} size={36} fill={discFill(l.id)} />
+  // все круги историй — на светлой подложке `PLATE`, как эмблемы подборок справа (владелец: «давай на все истории подложку»)
+  if (leagueLogo(l.id)) return <LeagueMark id={l.id} flag={l.flag} size={36} light />
   return (
-    <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.1]">
-      <LeagueMark id={l.id} flag={l.flag} size={20} fallback={<span className="text-[12px] font-semibold text-dim">{l.name.charAt(0)}</span>} />
+    <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full" style={{ background: PLATE }}>
+      <LeagueMark id={l.id} flag={l.flag} size={20} fallback={<span className="text-[12px] font-semibold text-ink/70">{l.name.charAt(0)}</span>} />
     </span>
   )
 }

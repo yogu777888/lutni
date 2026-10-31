@@ -25,8 +25,17 @@ const tile = (bare: boolean) => ({ width: bare ? '86%' : '70%', height: bare ? '
  * яркостью (`dark`), иначе на графите пропадают; логотип с квадратной подложкой (Бундеслига) — скруглённым квадратом в круге; `bare` —
  * без круга и крупнее (заголовки блоков лиг); нет логотипа — флаг страны, нет и его — `fallback`.
  */
-export function LeagueMark({ id, flag, size, bare = false, fill, fallback = null, className = '' }: { id: number; flag: string | null; size: number; bare?: boolean; fill?: string; fallback?: ReactNode; className?: string }) {
+/**
+ * Светлая круглая подложка под эмблемы и логотипы в кругах историй (владелец: «может добавим логотипам круглую светлую
+ * подложку?», потом «чуть темнее… и давай на все истории»): эмблемы рисуют под белый фон — тёмные на графите пропадали.
+ * Чуть темнее белого `#e6e9ed` — чистый светлый круг был ярче названий в панели.
+ */
+export const PLATE = '#cdd2d8'
+
+/** `light` — на светлой подложке `PLATE` (круги историй): тёмные логотипы тогда без перевёрнутой яркости. */
+export function LeagueMark({ id, flag, size, bare = false, fill, light = false, fallback = null, className = '' }: { id: number; flag: string | null; size: number; bare?: boolean; fill?: string; light?: boolean; fallback?: ReactNode; className?: string }) {
   const logo = leagueLogoInfo(id)
+  if (light) fill = PLATE
   if (logo)
     return (
       <span aria-hidden className={`grid shrink-0 place-items-center ${bare ? '' : `overflow-hidden rounded-full ${fill ? '' : 'bg-white/[0.1]'}`} ${className}`} style={{ width: size, height: size, ...(fill && !bare ? { background: fill } : {}) }}>
@@ -38,7 +47,7 @@ export function LeagueMark({ id, flag, size, bare = false, fill, fallback = null
           height={size}
           loading="lazy"
           className={logo.tile ? 'object-cover' : 'object-contain'}
-          style={{ ...(logo.tile ? tile(bare) : fit(logo.aspect, bare)), ...(logo.dark ? { filter: 'invert(1) hue-rotate(180deg)' } : {}) }}
+          style={{ ...(logo.tile ? tile(bare) : fit(logo.aspect, bare)), ...(logo.dark && !light ? { filter: 'invert(1) hue-rotate(180deg)' } : {}) }}
         />
       </span>
     )

@@ -1,5 +1,6 @@
 import type { StoryGroup } from '@/lib/story-groups'
 import { StorySymbol } from './StorySymbol'
+import { PLATE } from '../LeagueMark'
 
 /**
  * Что внутри круга подборки (владелец на «вместо значка — эмблема команды» — «давай 1»): эмблема главной команды
@@ -27,7 +28,7 @@ export function GroupMark({
   // Родитель — `relative`; цвет подборки остаётся у кольца
   if (lead?.logo)
     return (
-      <span className={`absolute inset-0 grid place-items-center rounded-full bg-[#e6e9ed] ${fade}`}>
+      <span className={`absolute inset-0 grid place-items-center rounded-full ${fade}`} style={{ background: PLATE }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={lead.logo} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className={`${crest} object-contain`} />
       </span>
