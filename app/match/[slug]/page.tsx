@@ -725,6 +725,8 @@ export default async function MatchPage({ params }: Props) {
       {/* крошки — для поисковиков (BreadcrumbList); на экране «назад» — полоса `MatchBar` (телефон) и капсула в табло */}
       <Breadcrumbs chip className="hidden" items={crumbs} />
       <MatchBar
+        id={m.id}
+        ts={m.ts}
         back={leagueHref(m.league)}
         backLabel={leagueTitle(m.league.name)}
         home={{ name: m.home.name, logo: m.home.logo ?? null }}

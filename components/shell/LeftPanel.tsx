@@ -7,7 +7,8 @@ import { SITE } from '@/config/site'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayLeague, DayLeagues } from '@/lib/day-leagues'
 import { leagueColor, leagueLogo } from '@/lib/league-logos'
-import { useFavorites } from '../favorites'
+import { useFavMatches, useFavorites } from '../favorites'
+import { ymdInTz } from '@/lib/format'
 import { LeagueMark } from '../LeagueMark'
 import { TeamLogo } from '../TeamLogo'
 import type { StoryGroup } from '@/lib/story-groups'
@@ -116,6 +117,11 @@ function Legal() {
 
 export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
   const favs = useFavorites()
+  // избранные матчи сегодня (звёздочка в шапке матча)
+  const favGames = useFavMatches()
+    .filter((g) => ymdInTz(g.ts) === today)
+    .map((g) => g.id)
+    .join(',')
   const [games, setGames] = useState<CompactMatch[]>([])
   const [active, setActive] = useState<string | null>(null)
   // просмотренные сторис — для колец вокруг флагов (те же отметки, что у подборок)
@@ -132,10 +138,10 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
   const ids = favs.map((t) => t.id).join(',')
 
   useEffect(() => {
-    if (!ids) return
+    if (!ids && !favGames) return
     let stop = false
     const load = () =>
-      fetch(`/api/favorites?teams=${ids}&date=${today}`)
+      fetch(`/api/favorites?teams=${ids}&matches=${favGames}&date=${today}`)
         .then((r) => r.json())
         .then((d) => !stop && setGames(d.items ?? []))
         .catch(() => {})
@@ -145,7 +151,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
       stop = true
       clearInterval(t)
     }
-  }, [ids, today])
+  }, [ids, favGames, today])
 
   // пришли по ссылке «/#league-…» — раскрыть и прокрутить; дальше — какая лига сейчас вверху центра
   useEffect(() => {
@@ -177,6 +183,12 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
   }
 
   const gameOf = (id: number) => (ids ? games.find((g) => g.home.id === id || g.away.id === id) : undefined)
+  // избранные матчи — отдельными строками, кроме матчей избранных команд: они и так в строке команды
+  const favSet = new Set(favs.map((t) => t.id))
+  const starred = favGames
+    ? games.filter((g) => favGames.split(',').includes(String(g.id)) && !favSet.has(g.home.id) && !favSet.has(g.away.id))
+    : []
+  const anyFav = favs.length > 0 || starred.length > 0
   const lineOf = (g: CompactMatch | undefined) =>
     g ? (g.live ? `${g.score?.[0] ?? 0} : ${g.score?.[1] ?? 0} · ${g.minute}` : g.finished && g.score ? `${g.score[0]} : ${g.score[1]} · итог` : `Сегодня в ${g.time}`) : 'Сегодня не играет'
 
@@ -350,12 +362,33 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
           <PanelToggle side="l" open />
         </h2>
 
-        {/* избранные команды (звёздочка на странице матча) — первыми, как «Ваши команды» в центре (владелец: «было бы логичнее если
-            бы в левом меню мои команды были сверху») */}
-        {favs.length ? (
+        {/* избранное — первым, как «Избранное» в центре (владелец: «было бы логичнее если бы в левом меню мои команды были
+            сверху»): избранные матчи сегодня (звёздочка в шапке матча) — эмблемы внахлёст, «Барселона — Леванте» и время или
+            счёт; ниже избранные команды (звёздочка у названия команды) и их матч сегодня */}
+        {anyFav ? (
           <section className="mt-2">
-            <h3 className="text-[12px] font-medium text-mute">Мои команды</h3>
+            <h3 className="text-[12px] font-medium text-mute">Избранное</h3>
             <ul className="mt-1.5 space-y-0.5">
+              {starred.map((g) => (
+                <li key={`m${g.id}`}>
+                  <Link href={g.href} prefetch={false} className={`-mx-2 ${row} hover:bg-white/[0.04]`}>
+                    <span aria-hidden className="relative h-9 w-9 shrink-0 rounded-full bg-white/[0.06]">
+                      <span className="absolute left-1 top-1">
+                        <TeamLogo name={g.home.name} src={g.home.logo} size={16} />
+                      </span>
+                      <span className="absolute bottom-1 right-1">
+                        <TeamLogo name={g.away.name} src={g.away.logo} size={16} />
+                      </span>
+                    </span>
+                    <span className="min-w-0 flex-1 leading-tight">
+                      <span className="block truncate">
+                        {g.home.name} — {g.away.name}
+                      </span>
+                      <span className={`mt-0.5 block truncate text-[12.5px] font-normal ${g.live ? 'text-live' : 'text-dim'}`}>{lineOf(g)}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
               {favs.map((t) => {
                 const g = gameOf(t.id)
                 const body = (
@@ -385,9 +418,9 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
           </section>
         ) : null}
 
-        {/* с избранными сверху — подпись «Сегодня», иначе турниры читались бы продолжением «Моих команд» */}
-        {favs.length ? <h3 className="mt-5 text-[12px] font-medium text-mute">Сегодня</h3> : null}
-        <ul className={`${favs.length ? 'mt-1.5' : 'mt-2'} space-y-0.5`}>
+        {/* с избранным сверху — подпись «Сегодня», иначе турниры читались бы продолжением «Избранного» */}
+        {anyFav ? <h3 className="mt-5 text-[12px] font-medium text-mute">Сегодня</h3> : null}
+        <ul className={`${anyFav ? 'mt-1.5' : 'mt-2'} space-y-0.5`}>
           {day.live ? (
             // «Сейчас идут» — тоже история (владелец: «а почему у сейчас в игре нет сторис?»): значок — сторис идущих
             // матчей подряд (группа 'live', как у прежних кружков), кольцо — непросмотренные; название — к блоку

@@ -12,7 +12,7 @@ import { Scorers } from './Scorers'
 import { Flag } from '../Flag'
 import type { Res } from '@/lib/stats'
 import { appNow } from '@/lib/format'
-import { untilText } from '../shell/StateLine'
+import { Countdown } from './Countdown'
 
 /** Ячейка табло: шанс исхода, лучший коэффициент и честная цена; hot — платят больше честного. */
 export type BoardCell = {
@@ -177,13 +177,15 @@ export function MatchHero({
           {row(m.away, 'away')}
         </div>
         {!started ? (
-          // до начала — время справа от обеих строк, под ним «мск» и отсчёт (меньше суток)
+          // до начала — время справа от обеих строк, под ним «мск» и обратный отсчёт
           <div className="shrink-0 self-stretch border-l border-edge py-3 pl-4 text-right sm:pl-6">
             <div className="flex h-full flex-col justify-center">
               <div className="num text-[34px] font-semibold leading-none tracking-[-0.04em] sm:text-[44px]">{formatTime(m.ts)}</div>
               <div className="mt-1.5 text-[13px] text-dim">{SITE.tzLabel.toLowerCase()}</div>
-              {m.ts - appNow() > 0 && m.ts - appNow() < 86_400_000 ? (
-                <div className="text-[13px] text-fg/80">{untilText(Math.round((m.ts - appNow()) / 60_000))}</div>
+              {/* обратный отсчёт тикает каждую секунду (владелец: «почти на всех сайтах видел что до начала матча еще есть
+                  обратный отсчет»; было «через 1 ч 30 мин» — только меньше суток и без секунд), дальше недели — не нужен */}
+              {m.ts - appNow() < 7 * 86_400_000 ? (
+                <Countdown ts={m.ts} now={appNow()} skew={appNow() - Date.now()} className="whitespace-nowrap text-[13px] font-semibold text-fg sm:text-[15px]" />
               ) : null}
             </div>
           </div>

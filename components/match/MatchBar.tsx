@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { BackButton } from '../BackButton'
 import { HeaderRow } from '../HeaderRow'
+import { MatchFavStar } from '../FavStar'
 import { teamCode } from '@/lib/i18n/codes'
 
 type Side = { name: string; logo?: string | null }
@@ -16,6 +17,8 @@ type Side = { name: string; logo?: string | null }
  * потом из-под шапки выезжала отдельная полоска, а кэфы в ней появлялись третьим шагом.
  */
 export function MatchBar({
+  id,
+  ts,
   home,
   away,
   center,
@@ -23,6 +26,9 @@ export function MatchBar({
   back = '/matches',
   backLabel = 'Матчи',
 }: {
+  /** матч и его начало — для звёздочки «в избранное» справа */
+  id: number
+  ts: number
   home: Side
   away: Side
   /** «1 : 0» или «21:00» */
@@ -80,14 +86,24 @@ export function MatchBar({
       {team(away, true)}
     </div>
   )
-  // справа — минута обычным тихим текстом («59′»; у сыгранного — «итог», до начала — ничего)
+  // справа — минута обычным тихим текстом («59′»; у сыгранного — «итог», до начала — ничего) и звёздочка «в избранное»
   const badge = minute ? <span className="whitespace-nowrap text-[13px] font-medium leading-none text-dim">{minute.text}</span> : null
   return (
     <>
       {/* ниже lg — в самой шапке, как в Apple Sports (владелец: «мне не нравится двухэтажный хедер на мобильных» — «да»):
           слева «‹», по центру — команды, а когда крупный счёт ушёл под шапку — между ними счёт (`bar`), справа минута; кэфов там
           нет — внизу своя плашка */}
-      <HeaderRow fallback={{ href: back, label: backLabel }} idle={bar('text-[18px]')} right={badge} />
+      <HeaderRow
+        fallback={{ href: back, label: backLabel }}
+        idle={bar('text-[18px]')}
+        right={
+          <>
+            {badge}
+            <MatchFavStar id={id} ts={ts} bar />
+          </>
+        }
+        wide={Boolean(badge)}
+      />
       {/* от lg — закреплённая плашка над табло, видна всегда (владелец: «не нравится что сейчас стрелочка на время пропадает»,
           потом «может сразу названия команд и счет в самом верхнем блоке сделать? и убрать рядом со стрелкой название лиги?»):
           «‹», команды и счёт с самого начала и ничего не сменяется; турнир и минута — строкой в табло ниже; когда
@@ -100,11 +116,15 @@ export function MatchBar({
             }`}
           >
             {/* по центру плашки — команды и счёт (владелец: «по центру»), слева «‹»; кэфов нет (владелец: «а ты можешь кэфы
-                из самого верхнего блока убрать?») — правая колонка пустая той же ширины, что левая */}
+                из самого верхнего блока убрать?») — правая колонка той же ширины, что левая, в ней минута и звёздочка */}
             <BackButton fallback={back} className="justify-self-start" />
             {bar('text-[19px]')}
-            {/* минута — справа тихим текстом «59′» (у сыгранного — «итог»): под счётом она сбивала его с середины по высоте */}
-            <span className="justify-self-end">{badge}</span>
+            {/* справа — минута тихим текстом «59′» (у сыгранного — «итог»; под счётом она сбивала его с середины по высоте) и у края
+                звёздочка «матч в избранное» — кругом, как «‹» слева */}
+            <span className="flex items-center gap-3 justify-self-end">
+              {badge}
+              <MatchFavStar id={id} ts={ts} />
+            </span>
           </div>
         </div>
       </div>

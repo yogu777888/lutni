@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { useFavorites } from './favorites'
+import { useFavMatches, useFavorites } from './favorites'
+import { ymdInTz } from '@/lib/format'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
 import { Icon } from '@/components/Icon'
@@ -21,20 +22,25 @@ type Item = {
 }
 
 /**
- * «Ваши команды» — матчи избранных команд (звёздочка на странице матча) первыми в «Все матчи дня». Избранное —
- * в браузере, матчи — /api/favorites за выбранный день, обновляются раз в минуту. Нет избранных — блока нет;
- * команды в этот день не играют — одна тихая строка.
+ * «Избранное» — первыми в «Все матчи дня»: избранные матчи (звёздочка справа в шапке матча) и матчи избранных команд
+ * (звёздочка у названия команды). Избранное — в браузере, матчи — /api/favorites за выбранный день, обновляются раз в
+ * минуту. Нечего показать — блока нет; избранные команды в этот день не играют — одна тихая строка.
  */
 export function FavMatches({ ymd }: { ymd: string }) {
   const fav = useFavorites()
+  // избранные матчи — только этого дня (по началу матча в часовом поясе сайта)
+  const games = useFavMatches()
+    .filter((g) => ymdInTz(g.ts) === ymd)
+    .map((g) => g.id)
+    .join(',')
   const [items, setItems] = useState<Item[] | null>(null)
   const ids = fav.map((t) => t.id).join(',')
 
   useEffect(() => {
-    if (!ids) return
+    if (!ids && !games) return
     let alive = true
     const load = () =>
-      fetch(`/api/favorites?teams=${ids}&date=${ymd}`)
+      fetch(`/api/favorites?teams=${ids}&matches=${games}&date=${ymd}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((d: { items: Item[] } | null) => alive && d && setItems(d.items))
         .catch(() => {})
@@ -44,11 +50,11 @@ export function FavMatches({ ymd }: { ymd: string }) {
       alive = false
       window.clearInterval(t)
     }
-  }, [ids, ymd])
+  }, [ids, games, ymd])
 
-  if (!fav.length || !items) return null
+  if ((!ids && !games) || !items) return null
   if (!items.length)
-    return (
+    return games || !fav.length ? null : (
       <p className="px-1 text-[13px] text-mute">
         ★ Ваши команды в этот день не играют: {fav.map((t) => t.name).join(', ')}.
       </p>
@@ -59,11 +65,11 @@ export function FavMatches({ ymd }: { ymd: string }) {
   const hide = `#matches :is(${own}){display:none}#matches [data-block]:not(:has([data-mid]:not(${own}))){display:none}#matches .divide-y>:has(+:is(${own}):last-child){border-bottom-width:0}`
   return (
     // заголовок над карточкой, как у блоков лиг
-    <section className="min-w-0" aria-label="Ваши команды">
+    <section className="min-w-0" aria-label="Избранное">
       <style>{hide}</style>
       <div className="mb-2.5 flex items-center gap-2 px-4 sm:px-5">
         <Icon k="star-fill" className="h-4 w-4 text-fg" />
-        <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">Ваши команды</h2>
+        <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">Избранное</h2>
       </div>
       {/* строки — той же разметкой, что `MatchRow` в блоках ниже (владелец: «смотри как отличается матч сохраненной команды»):
           время Oswald 18px, эмблемы 22px, названия 16px, счёт Oswald 24px белым по центру колонки кэфов, клик — страница матча */}
