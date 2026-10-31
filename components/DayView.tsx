@@ -282,7 +282,7 @@ export async function DayView({
         {/* на телефоне дни и порядок — одной строкой: порядок значками (список / часы) слева (владелец: «может сортировку по времени
             влево перенести?»), дни листаются вбок до края экрана */}
         <div
-          className={`flex items-center justify-between gap-x-3 gap-y-3 max-lg:py-[5px] max-lg:pl-4 max-lg:pr-0 lg:flex-wrap lg:gap-x-6 lg:max-xl:rounded-card lg:max-xl:bg-panel lg:max-xl:py-1.5 lg:max-xl:pl-4 lg:max-xl:pr-1.5 lg:max-xl:shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${listHead ? 'mt-5' : ''}`}
+          className={`flex items-center justify-between gap-x-3 gap-y-3 max-lg:pt-0 max-lg:pb-2 max-lg:pl-4 max-lg:pr-0 lg:flex-wrap lg:gap-x-6 lg:max-xl:rounded-card lg:max-xl:bg-panel lg:max-xl:py-1.5 lg:max-xl:pl-4 lg:max-xl:pr-1.5 lg:max-xl:shadow-[0_10px_30px_rgb(0_0_0/0.45)] ${listHead ? 'mt-5' : ''}`}
         >
           <div className="min-w-0 flex-1 lg:w-auto lg:flex-none">
             <DateTabs
