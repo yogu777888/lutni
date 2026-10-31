@@ -460,7 +460,7 @@ export async function DayView({
           </div>
           {/* на главной от xl «Где ставить» и прочее — не нужно: подборки и вход — в правой панели */}
           <div className="xl:hidden">
-            <Sidebar values={values} valuesBy={picks?.valuesBy ?? {}} numbers={picks?.numbers ?? null} />
+            <Sidebar values={values} valuesBy={picks?.valuesBy ?? {}} />
           </div>
         </div>
       </section>

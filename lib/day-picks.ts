@@ -10,7 +10,6 @@ import { compactMatch, type CompactMatch } from './compact'
 import type { Match } from './types'
 import { getMatchesByDate, tagsFor, type FeedItem } from './data'
 import { soonMatches } from './day-summary'
-import { dayNumbers, type DayNumbers } from './day-numbers'
 import { appNow, formatTime, todayYmd } from './format'
 import { matchHref } from './links'
 import { isLive } from './rank'
@@ -34,8 +33,6 @@ export type DayPicks = {
   values: ValueRow[]
   /** выгодные по линии одного партнёра (слаг → до трёх) — для выбора букмекера в `OddsPick`; партнёры, у кого линия есть хоть у одного матча */
   valuesBy: Record<string, { name: string; rows: ValueRow[] }>
-  /** «Сегодня в цифрах» — средние шансы tag.bet по матчам топ-турниров дня (`lib/day-numbers.ts`); мало матчей — null */
-  numbers: DayNumbers | null
 }
 
 /** Состояние подборки: идёт матчей, время ближайшего не начавшегося, начинались ли уже. */
@@ -90,7 +87,7 @@ export const dayPicks = cache(async (): Promise<DayPicks> => {
       })
     }
     const byId = new Map(matches.map((m) => [m.id, m]))
-    const out: DayPicks = { groups: [], matches: {}, stats: {}, totals: {}, values: [], valuesBy: {}, states: {}, teams: {}, numbers: null }
+    const out: DayPicks = { groups: [], matches: {}, stats: {}, totals: {}, values: [], valuesBy: {}, states: {}, teams: {} }
     // «Выгодно сегодня» — сначала по линии PARI (владелец: «а можно блок выгодно сегодня сделать только про пари?»): кэф PARI
     // выше честной цены (`summary.pari` в lib/data.ts). У PARI выгодное бывает примерно раз в два дня (замер на настоящем API,
     // 17–18 октября: 1 ставка PARI из 13 выгодных, остальные — Марафон), и блок почти всегда стоял пустым — поэтому, если у
@@ -150,7 +147,6 @@ export const dayPicks = cache(async (): Promise<DayPicks> => {
           return row(m, v.key, v.odd, v.ev, partner)
         }) }
     }
-    out.numbers = await dayNumbers(todayYmd())
     for (const g of groups) {
       // «В игре» — в левой панели («Сейчас идут»); подборка из одного матча — уже не подборка (владелец согласился)
       // «Выгодно» — блоком «Выгодно сегодня» внизу панели (с кэфами и ссылками), подборкой не повторяем
@@ -202,6 +198,6 @@ export const dayPicks = cache(async (): Promise<DayPicks> => {
     }
     return out
   } catch {
-    return { groups: [], matches: {}, stats: {}, totals: {}, values: [], valuesBy: {}, states: {}, teams: {}, numbers: null }
+    return { groups: [], matches: {}, stats: {}, totals: {}, values: [], valuesBy: {}, states: {}, teams: {} }
   }
 })
