@@ -12,7 +12,9 @@ import { openStory, type StoryRow } from '../story/events'
 import { circleQueue } from '../story/queue'
 import { readSeen, SEEN_EVENT } from '../story/seen'
 import { symbolSoft } from '../story/StorySymbol'
-import { GroupMark, PlateSymbol } from '../story/GroupMark'
+import { GroupMark, PlateMark } from '../story/GroupMark'
+
+const valueLogo = (v: ValueRow) => (v.side === 'away' ? v.awayLogo || v.homeLogo : v.homeLogo || v.awayLogo)
 import { PLATE } from '../LeagueMark'
 import { pluralN } from '@/lib/format'
 import { PanelToggle } from './PanelToggle'
@@ -241,7 +243,8 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
               className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full ring-2 ring-acid ring-offset-[3px] ring-offset-panel transition-[filter] hover:brightness-110"
               style={{ background: PLATE }}
             >
-              <PlateSymbol k="value" className="h-[18px] w-[18px]" />
+              {/* эмблема команды первой выгодной ставки, как у всех подборок (владелец: «в выгодно вместо иконки лого клуба») */}
+              <PlateMark sym="value" logo={valueLogo(picks.values[0])} className="h-[18px] w-[18px]" crest="h-[22px] w-[22px]" />
             </Link>
           </>
         ) : null}

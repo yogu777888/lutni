@@ -51,8 +51,10 @@ export function StoryRing({
 }) {
   const n = ids.length
   // непросмотренные — цветом подложки кругов `PLATE` у всех (владелец: «кружки на историях везде сделаем как цвет
-  // подложки»): были цвета подборок и логотипов турниров; «Идут» — красным
-  const UNSEEN = live ? LIVE : PLATE
+  // подложки»): были цвета подборок и логотипов турниров; «Идут» — тоже (владелец: «давай у лайв матчей кружочки тоже
+  // белыми сделаем?»), `live` остался в пропсах — красного больше нет
+  void live
+  const UNSEEN = PLATE
   if (!n) return null
   const flags = ids.map((id) => muted || seen.has(seenKey(group, id)))
   const c = { cx: 21, cy: 21, r: 20, fill: 'none', strokeWidth: 2, pathLength: 100 } as const

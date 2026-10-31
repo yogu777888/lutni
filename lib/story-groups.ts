@@ -198,10 +198,10 @@ export function buildStoryGroups(items: FeedItem[]): StoryGroup[] {
       stat: g.stat ?? (first.tag ? statFor(first.tag.slug, first.tag.reason) : '#'),
       items: list.map(({ it, tag }) => ({ id: it.match.id, href: matchHref(it.match), focus: focusOf(tag) })),
       crests: crestsOf(list.map((x) => x.it)),
-      ...(g.key === 'value' ? { lead: null } : (() => {
+      ...(() => {
         const leads = leadsOf(list.map((x) => ({ it: x.it, reason: x.tag?.reason ?? '' })))
         return { lead: leads[0] ?? null, leads }
-      })()),
+      })(),
     })
   }
 

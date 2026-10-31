@@ -18,7 +18,6 @@ const D = 76
 /** Кольцо 2px по радиусу 36.5: между кольцом и диском — 3px воздуха. Не смотрели — оттенком подборки (`toneOf`),
  *  «Идут» — красное, просмотрено — тусклое. */
 const R = 36.5
-const LIVE = '#ff5c63'
 const SEEN = 'rgb(255 255 255 / 0.22)'
 
 /**
@@ -26,8 +25,8 @@ const SEEN = 'rgb(255 255 255 / 0.22)'
  * `seen` дуг, приглушённые. Больше 12 — одним контуром, просмотренная доля приглушённая от верха по часовой: из 15–30 дуг
  * вышла бы рябь.
  */
-function Ring({ kind, n, seen, tone }: { kind: CircleKind; n: number; seen: number; tone: string }) {
-  const color = kind === 'live' ? LIVE : tone
+function Ring({ n, seen, tone }: { kind: CircleKind; n: number; seen: number; tone: string }) {
+  const color = tone
   const done = Math.round((seen / Math.max(1, n)) * 100)
   // без `vector-effect: non-scaling-stroke`: с ним Chrome считал штрихи в пикселях экрана, а не в долях `pathLength` —
   // дуги выходили неровными, а сверху торчал обрубок; толщина 2,6 единицы — 2px на круге 58px
@@ -69,7 +68,8 @@ function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
 /** Цвет непросмотренных дуг — подложка кругов `PLATE`, как в панелях; «Идут» — красным `LIVE`. Ниже по истории git — цвета подборок. */
 function toneOf(g: StoryGroup) {
   // кольца — цветом подложки кругов, как в панелях (владелец: «кружки на историях везде сделаем как цвет подложки»)
-  return g.kind === 'live' || g.key === 'live' ? LIVE : PLATE
+  // «Идут» — тоже светлым (владелец: «давай у лайв матчей кружочки тоже белыми сделаем?»)
+  return PLATE
 }
 
 /** Диск: светлая подложка с эмблемой или знаком (`GroupMark`); своя картинка из public/stories/<ключ>.* — вместо всего этого. */
