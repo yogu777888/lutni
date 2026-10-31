@@ -274,7 +274,7 @@ export async function DayView({
             типа как на ютубе там тоже только на главной они есть»; на остальных страницах шапка — одной строкой, `HeaderRow`);
             на «Матчах» — первой строкой страницы; lg–xl — плашкой цвета панели, липкой под шапкой; от xl — правила
             .bare-panel в app/globals.css */}
-        <div className={`bare-panel max-lg:-mx-4 ${view === 'home' ? 'hdr-sub max-lg:sticky max-lg:top-[53px] max-lg:z-30' : ''} lg:max-xl:sticky lg:max-xl:top-[57px] lg:max-xl:z-30 lg:max-xl:bg-[#090c10] lg:max-xl:pb-2`}>
+        <div className={`bare-panel @container max-lg:-mx-4 ${view === 'home' ? 'hdr-sub max-lg:sticky max-lg:top-[53px] max-lg:z-30' : ''} lg:max-xl:sticky lg:max-xl:top-[57px] lg:max-xl:z-30 lg:max-xl:bg-[#090c10] lg:max-xl:pb-2`}>
         {listHead ? (
           // заголовок — как у полок выше: одна схема на всю страницу
           <h2 className="h2 text-[24px] leading-none sm:text-[28px]">{past ? 'Как сыграли' : 'Все матчи дня'}</h2>
@@ -333,9 +333,14 @@ export async function DayView({
                         prefetch={false}
                         scroll={false}
                         aria-current={(k === 'time') === byTime ? 'true' : undefined}
-                        className={`rounded-md px-3.5 py-1.5 transition-colors ${(k === 'time') === byTime ? 'bg-white/[0.08] text-fg' : 'text-dim hover:text-fg'}`}
+                        title={label}
+                        aria-label={label}
+                        className={`rounded-md px-3.5 py-1.5 transition-colors @max-[48rem]:px-2.5 ${(k === 'time') === byTime ? 'bg-white/[0.08] text-fg' : 'text-dim hover:text-fg'}`}
                       >
-                        {label}
+                        {/* в узкой колонке (обе панели развёрнуты, ~1280px) — значками, как на телефоне: со словами и меню кэфов
+                            строка дней переносилась на второй ряд (владелец: «может просто иконку ставить чтоб не ломалось?») */}
+                        <span className="@max-[48rem]:hidden">{label}</span>
+                        <Icon k={k === 'time' ? 'sort-time' : 'sort-list'} size={18} className="block @min-[48rem]:hidden" />
                       </Link>
                     ))}
                   </nav>

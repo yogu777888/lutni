@@ -81,7 +81,8 @@ export function OddsPick({ books, chip = false, className = '' }: { books: PickB
   if (!books.length) return null
   const off = cur === 'off'
   // выбран букмекер, которого на странице нет, — показываем его имя всё равно: выбор не теряется
-  const chosen = off ? null : (books.find((b) => b.slug === cur) ?? (cur ? null : books[0]))
+  // незнакомый слаг скрипт в <head> не ставит — в строках тогда первая линия, и здесь первый букмекер
+  const chosen = off ? null : (books.find((b) => b.slug === cur) ?? books[0])
   const label = off ? 'Без кэфов' : chosen ? `Кэфы ${chosen.name}` : 'Кэфы'
   const pick = (v: string) => {
     write(v)
@@ -98,19 +99,20 @@ export function OddsPick({ books, chip = false, className = '' }: { books: PickB
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`${label}. Выбрать, чьи кэфы показывать`}
-        title="Чьи кэфы показывать"
+        title={`${label} · выбрать, чьи кэфы показывать`}
         className={
           chip
             ? 'grid h-[30px] w-11 place-items-center rounded-full bg-white/[0.08] text-fg/85 transition-colors active:bg-white/[0.14]'
-            : 'inline-flex h-9 items-center gap-2 rounded-ctl bg-white/[0.04] pl-2 pr-2.5 text-[14px] font-medium text-dim transition-colors hover:bg-white/12 hover:text-fg'
+            : 'inline-flex h-9 items-center gap-1 rounded-ctl bg-white/[0.04] px-2 text-dim transition-colors hover:bg-white/12 hover:text-fg'
         }
       >
         {chip ? (
           chosen ? <Logo b={chosen} size={18} /> : <span className="num text-[12px] font-semibold text-mute line-through">1X2</span>
         ) : (
           <>
-            {chosen ? <Logo b={chosen} size={20} /> : null}
-            <span className={chosen ? '' : 'pl-1'}>{label}</span>
+            {/* только знак букмекера, без «Кэфы Марафон»: со словами строка дней переносилась на второй ряд (владелец:
+                «может просто иконку ставить чтоб не ломалось?»); название — в подсказке и для диктора */}
+            {chosen ? <Logo b={chosen} size={20} /> : <span className="num px-0.5 text-[12px] font-semibold text-mute line-through">1X2</span>}
             <Icon k="chevron-down" size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
           </>
         )}
