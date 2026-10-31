@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "inspect-api": "node scripts/inspect-api.mjs",
-    "team-logos": "node scripts/team-logos.mjs"
+    "team-logos": "node scripts/team-logos.mjs",
+    "model:fetch": "node --env-file-if-exists=.env --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/model/register.mjs scripts/model/fetch.ts",
+    "model:backtest": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/model/register.mjs scripts/model/backtest.ts"
   },
   "engines": {
     "node": ">=20.9"

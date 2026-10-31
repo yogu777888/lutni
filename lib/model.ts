@@ -132,7 +132,9 @@ export function poisson(lh: number, la: number, withScores = true): PoissonOut {
   let draw = 0
   let away = 0
   let btts = 0
-  const over: Record<string, number> = Object.fromEntries(LINES.map((l) => [String(l), 0]))
+  // тоталы — массивом, а не объектом со строковыми ключами: `fitLambdas` зовёт Пуассона ~1600 раз на матч, и строки
+  // в самом внутреннем цикле стоили ~130 мс на подбор (порядок сложения тот же — числа не меняются)
+  const acc = LINES.map(() => 0)
   const scores: ScoreProb[] = []
   for (let i = 0; i <= MAX_GOALS; i++) {
     for (let j = 0; j <= MAX_GOALS; j++) {
@@ -141,10 +143,11 @@ export function poisson(lh: number, la: number, withScores = true): PoissonOut {
       else if (i === j) draw += p
       else away += p
       if (i > 0 && j > 0) btts += p
-      for (const l of LINES) if (i + j > l) over[String(l)] += p
+      for (let k = 0; k < LINES.length; k++) if (i + j > LINES[k]) acc[k] += p
       if (withScores && i <= 5 && j <= 5) scores.push({ home: i, away: j, p })
     }
   }
+  const over: Record<string, number> = Object.fromEntries(LINES.map((l, k) => [String(l), acc[k]]))
   const s = home + draw + away
   return {
     x12: { home: home / s, draw: draw / s, away: away / s },
