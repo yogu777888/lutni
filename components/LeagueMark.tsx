@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { leagueLogoInfo } from '@/lib/league-logos'
 
 /** Размер знака в круге — по площади, а не по длинной стороне: квадратный щит и надпись «eredivisie» на вид одного
@@ -71,10 +71,31 @@ export function CrestShadowDefs() {
   )
 }
 
+/**
+ * Эмблема с длинной тенью — картинкой внутри SVG, а не `<img style="filter: url(#crest-shadow)">`: Safari на iPhone
+ * у CSS-фильтра на HTML-элементе срезает всё, что вышло за рамку картинки, — от следа в 64px оставался обрубок у края эмблемы
+ * (владелец: «с айфона… тени у лого обрезанные какието»). Внутри SVG область фильтра (400%) работает и в Safari, и в Chrome;
+ * `overflow: visible` — след выходит за рамку, срезает его круг подложки. `x`/`y`/размер `image` в процентах — единицы
+ * фильтра остаются пикселями CSS, как было.
+ */
+export function ShadowCrest({ src, className = '', style }: { src: string; className?: string; style?: CSSProperties }) {
+  return (
+    <svg aria-hidden className={`overflow-visible ${className}`} style={style}>
+      <image href={src} x="0" y="0" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" filter={CREST_SHADOW} />
+    </svg>
+  )
+}
+
 /** `light` — на светлой подложке `PLATE` (круги историй): тёмные логотипы тогда без перевёрнутой яркости. */
 export function LeagueMark({ id, flag, size, bare = false, fill, light = false, fallback = null, className = '' }: { id: number; flag: string | null; size: number; bare?: boolean; fill?: string; light?: boolean; fallback?: ReactNode; className?: string }) {
   const logo = leagueLogoInfo(id)
   if (light) fill = PLATE
+  if (logo && fill === PLATE && !logo.tile && !(logo.dark && !light))
+    return (
+      <span aria-hidden className={`grid shrink-0 grid-cols-1 grid-rows-1 place-items-center ${bare ? '' : 'overflow-hidden rounded-full'} ${className}`} style={{ width: size, height: size, ...(!bare ? { background: fill } : {}) }}>
+        <ShadowCrest src={logo.src} style={fit(logo.aspect, bare)} />
+      </span>
+    )
   if (logo)
     return (
       <span aria-hidden className={`grid shrink-0 place-items-center ${bare ? '' : `overflow-hidden rounded-full ${fill ? '' : 'bg-white/[0.1]'}`} ${className}`} style={{ width: size, height: size, ...(fill && !bare ? { background: fill } : {}) }}>

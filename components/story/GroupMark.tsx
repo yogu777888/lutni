@@ -1,6 +1,6 @@
 import type { StoryGroup } from '@/lib/story-groups'
 import { StorySymbol } from './StorySymbol'
-import { CREST_SHADOW, PLATE } from '../LeagueMark'
+import { PLATE, ShadowCrest } from '../LeagueMark'
 
 /** Знак «Идут» на светлой подложке — темнее красного `LIVE` (#ff5c63 на светло-сером почти не виден); остальные знаки — графитом. */
 export const LIVE_ON_PLATE = '#d93036'
@@ -21,10 +21,9 @@ export function PlateSymbol({ k, className }: { k: string; className: string }) 
  */
 export function PlateMark({ sym, logo, className, crest, fade = '' }: { sym: string; logo?: string | null; className: string; crest: string; fade?: string }) {
   return (
-    <span className={`absolute inset-0 grid place-items-center overflow-hidden rounded-full ${fade}`} style={{ background: PLATE }}>
+    <span className={`absolute inset-0 grid grid-cols-1 grid-rows-1 place-items-center overflow-hidden rounded-full ${fade}`} style={{ background: PLATE }}>
       {logo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={logo} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className={`${crest} object-contain`} style={{ filter: CREST_SHADOW }} />
+        <ShadowCrest src={logo} className={crest} />
       ) : (
         <PlateSymbol k={sym} className={className} />
       )}
