@@ -59,16 +59,32 @@ const plural = (n: number) => {
 }
 
 /**
- * Подпись — в одну строку, короткое название (`short`: «Главные»; в две строки ряд был неровным, под ним — пустая строка);
- * слева — знак подборки 12px цветом подписи (владелец: «слева от названий историй тоже иконки ставить?»): в круге — эмблема
- * команды, и о чём подборка, говорит знак. Число матчей — в подсказке кружка.
+ * Подпись — в одну строку, короткое название (`short`: «Главные»; в две строки ряд был неровным, под ним — пустая строка).
+ * Знака у подписи нет — он значком на круге (`Badge`). Число матчей — в подсказке кружка.
  */
 function Caption({ g, dim }: { g: StoryGroup; dim: boolean }) {
+  return (
+    <span className={`block truncate text-[12px] font-semibold leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>
+      {g.short ?? g.label}
+    </span>
+  )
+}
+
+/**
+ * Знак подборки — значком в правом нижнем углу круга, как «в сети» у аватара (владелец прислал эскиз со значком на круге:
+ * «как тебе вариант вот так иконки перенести вместо того чтобы они слева от текста были?» — «сделай как знаешь лучше»):
+ * графитовый круг 22px, знак 12px белым («Идут» — красным, красный — только «идёт»), обводка цветом фона 2px «вырезает»
+ * кольцо. Нет эмблемы — знак и так по центру круга, значка нет.
+ */
+function Badge({ g }: { g: StoryGroup }) {
+  if (!g.lead?.logo) return null
   const live = g.kind === 'live' || g.key === 'live'
   return (
-    <span className={`flex items-center justify-center gap-[3px] text-[12px] font-semibold leading-tight ${dim ? 'text-white/70' : 'text-white'}`}>
-      <StorySymbol k={live ? 'live' : g.key} tone="currentColor" className="h-3 w-3 shrink-0" />
-      <span className="min-w-0 truncate">{g.short ?? g.label}</span>
+    <span
+      aria-hidden
+      className={`absolute -bottom-0.5 -right-0.5 grid h-[22px] w-[22px] place-items-center rounded-full border-2 border-[#090c10] bg-[#1c242d] ${live ? 'text-live' : 'text-white'}`}
+    >
+      <StorySymbol k={live ? 'live' : g.key} tone="currentColor" className="h-3 w-3" />
     </span>
   )
 }
@@ -169,6 +185,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             <span data-story-key={g.key} className={`relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 h-[58px] w-[58px] lg:h-[clamp(46px,calc(14vh_-_50px),58px)] lg:w-[clamp(46px,calc(14vh_-_50px),58px)]`}>
               <Ring kind={g.kind} n={g.items.length} seen={n} tone={toneOf(g)} />
               <Disc g={g} cover={covers[g.key]} />
+              {covers[g.key] ? null : <Badge g={g} />}
             </span>
             <span className="mt-1.5 w-full px-0.5 text-center">
               <Caption g={g} dim={done} />
