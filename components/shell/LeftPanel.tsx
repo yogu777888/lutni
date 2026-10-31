@@ -113,7 +113,21 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
     .map((g) => g.id)
     .join(',')
   const [games, setGames] = useState<CompactMatch[]>([])
-  const [active, setActive] = useState<string | null>(null)
+  // «текущая» лига подсвечивается напрямую в DOM (`data-on` у строки, `aria-current` у ссылки), без состояния React: при
+  // прокрутке она меняется часто, и перерисовка всей панели (кольца, эмблемы с тенью) давала задачи по 20–30 мс — центр
+  // подлагивал (владелец: «всё равно подлагивает, а я хочу чтоб летало»)
+  const setActive = (id: string | null) => {
+    document.querySelectorAll<HTMLElement>('[data-row][data-on]').forEach((el) => {
+      if (el.dataset.row === id) return
+      delete el.dataset.on
+      el.querySelector('a[aria-current]')?.removeAttribute('aria-current')
+    })
+    const el = id ? document.querySelector<HTMLElement>(`[data-row="${id}"]`) : null
+    if (el && !('on' in el.dataset)) {
+      el.dataset.on = ''
+      el.querySelector('a')?.setAttribute('aria-current', 'location')
+    }
+  }
   // просмотренные сторис — для колец вокруг флагов (те же отметки, что у подборок)
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
   useEffect(() => {
@@ -275,14 +289,14 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
   // строка: флаг — кнопка сторис (кольцо — непросмотренные матчи, при наведении — белая ▶), название — переход к блоку лиги
   const league = (l: DayLeague, list: DayLeague[], jump = true) => {
     const id = `league-${l.id}`
-    const on = jump && active === id
     return (
       <li key={l.id}>
         {/* «Завтра» (jump=false) — тише сегодняшних (владелец согласился: 17 одинаково белых колец, четыре — про завтра):
             название серым, кольцо серое, флаг прозрачнее; при наведении — обычной яркости */}
         <div
+          data-row={jump ? id : undefined}
           className={`group -mx-2 ${row} ${
-            on ? 'bg-white/[0.07] text-fg' : jump ? 'text-fg/85 hover:bg-white/[0.04] hover:text-fg' : 'text-dim hover:bg-white/[0.04] hover:text-fg'
+            jump ? 'text-fg/85 hover:bg-white/[0.04] hover:text-fg data-[on]:bg-white/[0.07] data-[on]:text-fg' : 'text-dim hover:bg-white/[0.04] hover:text-fg'
           }`}
         >
           <button
@@ -302,7 +316,6 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             href={l.href}
             onClick={jump ? go(id, l.href) : undefined}
             title={`${l.full} · ${matchesN(l.total)}${!jump && l.next ? ` · начало в ${l.next}` : ''}`}
-            aria-current={on ? 'location' : undefined}
             className="flex min-w-0 flex-1 items-center self-stretch"
           >
             {name(l, jump)}
@@ -412,7 +425,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
             // «Сейчас идут» — тоже история (владелец: «а почему у сейчас в игре нет сторис?»): значок — сторис идущих
             // матчей подряд (группа 'live', как у прежних кружков), кольцо — непросмотренные; название — к блоку
             <li>
-              <div className={`group -mx-2 ${row} ${active === 'live' ? 'bg-white/[0.07]' : 'hover:bg-white/[0.04]'}`}>
+              <div data-row="live" className={`group -mx-2 ${row} hover:bg-white/[0.04] data-[on]:bg-white/[0.07]`}>
                 <button type="button" data-story-key="live"
             onClick={playLive} aria-label="Сейчас идут: смотреть разбор матчей" className="relative shrink-0 rounded-full">
                   <span aria-hidden className="relative block h-9 w-9 rounded-full">
@@ -424,7 +437,6 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
                 <a
                   href="/#live"
                   onClick={go('live', '/#live')}
-                  aria-current={active === 'live' ? 'location' : undefined}
                   className="flex min-w-0 flex-1 items-center self-stretch"
                 >
                   <span className="min-w-0 flex-1 leading-tight">

@@ -1128,11 +1128,22 @@ html[data-shell-rc] .shell-r-rail {
   display: none;
 }
 @supports (animation-timeline: scroll()) {
-  .edge-fade {
-    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--edge)), transparent);
-    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--edge)), transparent);
-    animation: edge-out linear both;
-    animation-timeline: scroll(self);
+  /* низ панели — полоска цвета панели, прилипшая к нижнему краю прокрутки, а не маска на весь список: маска (и смешивание
+     у слоёв страницы ниже) заставляла браузер каждый кадр прокрутки страницы заново собирать весь экран (владелец:
+     «подлагивает центральная часть при прокрутках», «хочу чтоб летало»; замер — ×2,3 работы композитора) */
+  .edge-fade::after {
+    content: '';
+    display: block;
+    flex-shrink: 0;
+    position: sticky;
+    bottom: -16px;
+    height: 32px;
+    margin: -32px -16px -16px;
+    pointer-events: none;
+    background: linear-gradient(transparent, var(--color-panel));
+    opacity: 0;
+    animation: edge-page-out linear both;
+    animation-timeline: scroll(nearest);
     animation-range: calc(100% - 32px) 100%;
   }
   /* без `opacity: 0` полоска висела всегда, когда список панели помещается целиком: шкала прокрутки тогда неактивна,
@@ -1154,6 +1165,24 @@ html[data-shell-rc] .shell-r-rail {
        страницы делал низ карточек тёмной полосой (владелец: «такое чувство что все еще разные затухания») */
     background: var(--color-panel);
     mix-blend-mode: darken;
+  }
+  /* от xl слой (html — правила ниже по файлу иначе перебили бы) — по колонке центра, где почти всё — карточки: обычный градиент цвета карточки без смешивания и маски.
+     `darken` поверх прокручиваемой страницы — самое дорогое при прокрутке (браузер каждый кадр перечитывает весь экран
+     под слоем; замер — больше трети работы композитора). В зазорах 8px между карточками полоска на тон светлее фона —
+     на глаз не видно */
+  @media (min-width: 1280px) {
+    html .edge-fade-page,
+    html .edge-fade-top {
+      mix-blend-mode: normal;
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+    html .edge-fade-page {
+      background: linear-gradient(transparent, var(--color-panel));
+    }
+    html .edge-fade-top {
+      background: linear-gradient(var(--color-panel), transparent);
+    }
   }
   .edge-fade-page {
     display: block;
