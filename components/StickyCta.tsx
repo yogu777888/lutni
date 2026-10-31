@@ -17,7 +17,7 @@ export function StickyCta({ partner, href, title, subtitle, action }: { partner:
       // и кнопка ставка не совпадает со скруглением попапа»: была карточка 20px шире меню, а кнопка внутри — капсулой);
       // высота 52px, кнопка 36px с отступом 8px — её скругление вложено в скругление плашки (26 = 18 + 8); владелец: «а по
       // размерам эти элементы как?» — меню 50px, плашка 52px, между ними 6px
-      className="sticky-cta fixed inset-x-4 bottom-[var(--tabbar)] z-40 mx-auto max-w-[360px] rounded-full bg-[#151b22]/90 py-2 pl-2.5 pr-2 shadow-[0_12px_40px_rgb(0_0_0/0.55),inset_0_0_0_1px_rgb(255_255_255/0.09),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl backdrop-saturate-150 min-[380px]:inset-x-5 lg:hidden"
+      className="sticky-cta fixed inset-x-4 bottom-[calc(var(--tabbar)+8px)] z-40 mx-auto max-w-[360px] rounded-full bg-[#151b22]/90 py-2 pl-2.5 pr-2 shadow-[0_12px_40px_rgb(0_0_0/0.55),inset_0_0_0_1px_rgb(255_255_255/0.09),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl backdrop-saturate-150 min-[380px]:inset-x-5 lg:hidden"
     >
       <a href={href} target="_blank" rel={SPONSORED_REL} className="flex items-center gap-2.5">
         <PartnerBadge partner={partner} size={32} />
