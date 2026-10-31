@@ -368,21 +368,6 @@ function Goals({ s, story }: { s: S<'goals'>; story: StoryData }) {
         {s.over25 != null ? <ChanceLine p={s.over25} label="3 гола и больше" delay={450} /> : null}
         {s.btts != null ? <ChanceLine p={s.btts} label="Обе забьют" delay={550} /> : null}
       </Card>
-      {s.scores.length ? (
-        <div className="st-rise mt-4" style={wait(650)}>
-          <div className="text-[13px] font-semibold text-dim">Вероятный счёт</div>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {s.scores.map((x, i) => (
-              <div key={i} className={`rounded-tile px-2 py-2.5 text-center ${i === 0 ? 'bg-white/[0.08]' : 'bg-white/[0.04]'}`}>
-                <div className="num display-num text-[24px] leading-none">
-                  {x.home}:{x.away}
-                </div>
-                <div className="num mt-1 text-[12px] text-dim">{Math.round(x.p * 100)}%</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
     </Frame>
   )
 }
@@ -512,7 +497,7 @@ function GoalsTimeline({ s, story }: { s: S<'goalsTimeline'>; story: StoryData }
 function PickSlide({ s }: { s: S<'pick'> }) {
   // у выгодной ставки — суть перевеса: наш шанс выше того, что заложен в кэф
   const bars = [
-    { key: 'model', label: 'Шанс по оценке tag.bet', p: s.prob, cls: s.value ? 'bg-acid' : 'bg-fg/85' },
+    { key: 'model', label: 'Шанс по кэфам без маржи', p: s.prob, cls: s.value ? 'bg-acid' : 'bg-fg/85' },
     ...(s.odd ? [{ key: 'book', label: `Шанс, заложенный в кэф ${s.odd.toFixed(2)}`, p: 1 / s.odd, cls: 'bg-white/30' }] : []),
   ]
   const tiles = [
@@ -551,7 +536,7 @@ function PickSlide({ s }: { s: S<'pick'> }) {
             </div>
           ))}
         </dl>
-        <p className="mt-3 text-[11px] text-mute">Оценка, а не гарантия результата · 18+</p>
+        <p className="mt-3 text-[11px] text-mute">Шанс, а не гарантия результата · 18+</p>
       </div>
     </Frame>
   )

@@ -57,7 +57,7 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
         const top = [...item.tags].sort((a, b) => b.score - a.score).find((t) => t.slug !== 'value' && t.reason)
         if (top) return { title: top.reason, sym: top.slug, label: TAG_BY_SLUG.get(top.slug)?.title }
         const v = buildVerdict({ match: m, tags: item.tags })
-        return v ? { title: v.headline, text: v.goals ? `${v.goals}.` : undefined, sym: 'favorit', label: 'Оценка tag.bet' } : null
+        return v ? { title: v.headline, text: v.goals ? `${v.goals}.` : undefined, sym: 'favorit', label: 'Шансы по кэфам' } : null
       })()
 
   // цвет плашки факта: до начала — подборки (приглушённый, как в правой панели), по ходу — синий «Главного»

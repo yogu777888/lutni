@@ -196,7 +196,7 @@ export function MatchHero({
       {cells && !started ? (
         <>
           {/* те же проценты на графике «Как менялись шансы» названы «оценка tag.bet» — одно имя */}
-          <p className="mt-8 text-[13px] font-medium text-dim">{played ? 'Оценка tag.bet до матча' : 'Оценка tag.bet'}</p>
+          <p className="mt-8 text-[13px] font-medium text-dim">{played ? 'Шансы по кэфам до матча' : 'Шансы по кэфам'}</p>
           <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
             {cells.map((c) => (
               <div key={c.key} className="min-w-0 rounded-tile bg-white/[0.04] px-2 pb-3 pt-3 text-center">
@@ -270,7 +270,7 @@ export function MatchHero({
             </div>
           ) : null}
           <p className={`mt-4 text-[13px] text-mute ${over ? 'hidden' : ''}`}>
-            Оценка — по кэфам{books > 1 ? ` ${books} букмекеров` : ''} без их наценки.
+            Шансы — по кэфам{books > 1 ? ` ${books} букмекеров` : ''} без их наценки.
             {line?.live ? ` Кэфы ${line.name} — по ходу матча, меняются каждую минуту.` : ' Лаймом — кэф выше честной цены.'}
             {line ? ' Реклама · 18+' : ''}
           </p>

@@ -16,7 +16,7 @@ export function DayNumbersBlock({ n, card = false }: { n: DayNumbers; card?: boo
     n.over25 != null ? { k: '3 гола и больше', p: n.over25 } : null,
     n.btts != null ? { k: 'Обе забьют', p: n.btts } : null,
   ].filter((r) => r != null)
-  const sub = `Средние шансы по ${pluralN(n.n, ['матчу', 'матчам', 'матчам'])} топ-турниров · оценка tag.bet`
+  const sub = `Средние шансы по ${pluralN(n.n, ['матчу', 'матчам', 'матчам'])} топ-турниров · по кэфам без маржи`
   return (
     <section className={card ? 'min-w-0' : 'mt-6 border-t border-edge pt-4'}>
       <h3 className={card ? 'px-4 text-[20px] font-bold leading-tight tracking-[-0.01em] sm:px-5' : 'text-[15px] font-semibold'}>Сегодня в цифрах</h3>

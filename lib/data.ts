@@ -563,7 +563,10 @@ function modelFor(m: Match, books: BookOdds[], glicko: Glicko | null) {
   // если полной линии нет — используем короткие кэфы из списка матчей
   const consensusBooks = books.length ? books : m.odds ? [{ bookmakerId: 0, bookmakerName: MARKET_BOOK, ...m.odds }] : []
   const cons = buildConsensus(consensusBooks)
-  const model = buildModel(cons, glicko)
+  // шансы — только по кэфам (владелец: «без всей этой истории с аналитической моделью… чистая статистика и математические
+  // расчёты»): рейтинг и xG SStats в шансы не берём, линии нет — шансов нет
+  void glicko
+  const model = buildModel(cons, null)
   return { cons, model, candidates: buildCandidates(books, model) }
 }
 

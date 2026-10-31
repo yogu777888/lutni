@@ -18,9 +18,9 @@ describe('сторис матча', () => {
     // вероятности 1X2 в сумме — 100%
     const odds = story!.slides.find((s) => s.kind === 'odds')
     if (odds?.kind === 'odds') expect(odds.probs.home + odds.probs.draw + odds.probs.away).toBeCloseTo(1, 5)
-    // три самых вероятных счёта — по убыванию
+    // шанс «3 гола и больше» — доля, а точного счёта нет (шансы только по кэфам)
     const g = story!.slides.find((s) => s.kind === 'goals')
-    if (g?.kind === 'goals') expect(g.scores.map((x) => x.p)).toEqual([...g.scores.map((x) => x.p)].sort((a, b) => b - a))
+    if (g?.kind === 'goals' && g.over25 != null) expect(g.over25).toBeGreaterThan(0)
     // прогноз — последним слайдом, ссылка партнёра с местом размещения story
     if (ins!.pick) expect(kinds.at(-1)).toBe('pick')
     expect(story!.cta?.href).toMatch(/^\/go\/[a-z-]+\?p=story&m=\d+$/)

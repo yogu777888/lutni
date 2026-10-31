@@ -71,7 +71,7 @@ export function OddsTable({
   // пояснение — только про то, что есть на экране (лайм, жирный); стрелки ▼▲ — в подписи раздела
   const note = (
     <>
-      {[anyValue ? 'Лаймом — кэф выше честной цены (по оценке tag.bet)' : '', anyBest ? 'белым жирным — лучший в колонке' : '']
+      {[anyValue ? 'Лаймом — кэф выше честной цены (по кэфам всех букмекеров без маржи)' : '', anyBest ? 'белым жирным — лучший в колонке' : '']
         .filter(Boolean)
         .join(', ')
         .replace(/^./, (ch) => ch.toUpperCase())}
@@ -147,7 +147,7 @@ export function OddsTable({
             {model ? (
               // наш знак, как логотипы букмекеров рядом (владелец: «а может в честно лого типа мой фавикон вставить?»); подпись
               // «Честная» видна всегда — без неё колонку не понять
-              <span className="flex flex-col items-center gap-1 text-center" title="Честная цена tag.bet — сколько стоит исход по нашей оценке, без маржи букмекера">
+              <span className="flex flex-col items-center gap-1 text-center" title="Честная цена — сколько стоит исход по кэфам всех букмекеров без маржи">
                 {/* eslint-disable-next-line @next/next/no-img-element -- маленький SVG */}
                 <img
                   src="/brand/icon.svg"

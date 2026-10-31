@@ -151,7 +151,7 @@ export function PredictShare({ card }: { card: PredictCard }) {
       }
       text(card.bet.fair, L, yy + 52, '400 26px', '#a3abb5', 'left', R - L)
     }
-    text('Оценка tag.bet, а не гарантия. Ставки — это риск · 18+', P, H - 112, '400 22px', '#8a939e')
+    text('Шанс по кэфам, а не гарантия. Ставки — это риск · 18+', P, H - 112, '400 22px', '#8a939e')
     text(card.url.replace(/^https?:\/\//, ''), P, H - 62, '400 20px', '#6b747f', 'left', W - 2 * P - 200)
     g.font = `700 34px ${font}`
     const bw = g.measureText('bet').width

@@ -38,17 +38,17 @@ export function tagLine(t: TagHit, home: Team, away: Team, started: boolean, inj
   const before = started ? 'перед матчем' : null
   switch (t.slug) {
     case 'favorit':
-      return t.p != null ? join(team, `предматчевая оценка ${pc(t.p)}`) : join(team, rest)
+      return t.p != null ? join(team, `шанс до матча ${pc(t.p)}`) : join(team, rest)
     case 'tb-2-5':
     case 'tm-2-5':
     case 'obe-zabyut': {
       if (t.p == null || !/шанс/i.test(fact)) return join(rest, before)
       const what = t.slug === 'tb-2-5' ? '3+ гола' : t.slug === 'tm-2-5' ? 'Не больше 2 голов' : null
-      return join(what, `${what ? 'п' : 'П'}редматчевая оценка ${pc(t.p)}`)
+      return join(what, `${what ? 'ш' : 'Ш'}анс до матча ${pc(t.p)}`)
     }
     case 'ravnye': {
       const m = fact.match(/«(.+?)»\s—\s(\d+%),\s«(.+?)»\s—\s(\d+%)/)
-      return m ? `Предматчевая оценка: ${m[1]} ${m[2]}, ${m[3]} ${m[4]}` : fact
+      return m ? `Шансы до матча: ${m[1]} ${m[2]}, ${m[3]} ${m[4]}` : fact
     }
     case 'progruz': {
       // «Победа «X»: 7.42 → 6.37 (−14%)»

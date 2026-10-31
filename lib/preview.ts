@@ -180,19 +180,17 @@ export function buildPreview(p: PreviewInput): Paragraph[] {
           ]),
         )
       }
-      if (cons.books > 1) parts.push(`Оценка по ${pluralN(cons.books, ['букмекеру', 'букмекерам', 'букмекерам'])} после снятия маржи.`)
+      if (cons.books > 1) parts.push(`Шансы по ${pluralN(cons.books, ['букмекеру', 'букмекерам', 'букмекерам'])} после снятия маржи.`)
     }
     if (model) {
-      const s = model.topScores
-      // самый вероятный счёт — только до начала (как в блоке «Голы и счёт»: по ходу матча читался как прогноз сейчас);
-      // «рейтинга силы команд» нет — числа без шкалы новичку ничего не говорят (убран и из блока)
-      const score = m.status === 'scheduled' && s[0] ? `; самый вероятный счёт — ${s[0].home}:${s[0].away} (${pct(s[0].p)})${s[1] ? `, затем ${s[1].home}:${s[1].away}` : ''}` : ''
-      parts.push(`Модель tag.bet ожидает ${dec(model.lambdas.home)} гола от хозяев и ${dec(model.lambdas.away)} от гостей${score}.`)
+      // «самого вероятного счёта» нет (владелец: шансы — только по кэфам, без собственной модели счёта); голы команд —
+      // подбор под линию на исход и тотал
+      parts.push(`По линии ожидается ${dec(model.lambdas.home)} гола от хозяев и ${dec(model.lambdas.away)} от гостей.`)
       parts.push(`Шанс, что будет 3 гола и больше, — ${pct(model.over['2.5'])}, что забьют обе команды, — ${pct(model.btts)}.`)
     }
     const move = p.tags.find((t) => t.slug === 'progruz')
     if (move) parts.push(`${move.reason}.`)
-    if (parts.length) out.push({ title: 'Линия букмекеров и модель', text: parts.join(' ') })
+    if (parts.length) out.push({ title: 'Линия букмекеров', text: parts.join(' ') })
   }
 
   // ── Кадры
@@ -225,7 +223,7 @@ export function buildPreview(p: PreviewInput): Paragraph[] {
     if (pick.kind === 'value') {
       // выгодная ставка — не «наш прогноз» (владелец: «а прогноз на матч как?»): «Наш прогноз — победа «Райо Вальекано»»
       // при шансе 35% читалось как «tag.bet считает, что победит «Райо»», а фаворит абзацем выше — соперник
-      text = `Выгодная ставка — ${describePick(c, m)}: по нашей оценке шанс ${pct(c.prob)} (честная цена ${c.fairOdd.toFixed(2)})`
+      text = `Выгодная ставка — ${describePick(c, m)}: по кэфам без маржи шанс ${pct(c.prob)} (честная цена ${c.fairOdd.toFixed(2)})`
       text += o?.partner
         ? `, а ${o.partner.name} платит ${o.value.toFixed(2)} — на ${((c.ev ?? 0) * 100).toFixed(1).replace('.', ',')}% больше, чем исход стоит.`
         : '.'
@@ -234,7 +232,7 @@ export function buildPreview(p: PreviewInput): Paragraph[] {
       const k = c.key as 'home' | 'draw' | 'away'
       if (x && k in x && x[k] < Math.max(x.home, x.draw, x.away)) text += ' Это не самый вероятный исход — выгоден коэффициент.'
     } else {
-      text = `Наш прогноз — ${describePick(c, m)}. Шанс по нашей оценке — ${pct(c.prob)}, честная цена — ${c.fairOdd.toFixed(2)}.`
+      text = `Наш прогноз — ${describePick(c, m)}. Шанс по кэфам без маржи — ${pct(c.prob)}, честная цена — ${c.fairOdd.toFixed(2)}.`
       if (o?.partner) text += ` Лучший коэффициент у партнёров — ${o.value.toFixed(2)} (${o.partner.name}).`
       text += ' Букмекеры не переплачивают за этот исход — это просто самый вероятный исход с приемлемым коэффициентом.'
     }

@@ -93,7 +93,7 @@ export function ChanceChart({ series, end }: { series: ChanceSeries[]; end: numb
         height={H}
         role="img"
         aria-label={`Как менялись шансы по линии: ${series
-          .map((s) => `${s.label} — с ${s.pts[0]?.v}% до ${s.pts[s.pts.length - 1]?.v}%${s.est != null ? `, оценка tag.bet ${s.est}%` : ''}`)
+          .map((s) => `${s.label} — с ${s.pts[0]?.v}% до ${s.pts[s.pts.length - 1]?.v}%${s.est != null ? `, без маржи по всем букмекерам ${s.est}%` : ''}`)
           .join('; ')}`}
         onPointerMove={(e) => {
           const r = e.currentTarget.getBoundingClientRect()

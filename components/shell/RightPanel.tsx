@@ -94,8 +94,8 @@ export function ValueBlock({ rows, card = false }: { rows: ValueRow[]; card?: bo
             className={`pointer-events-none absolute z-20 ${card ? 'inset-x-0 top-9' : 'inset-x-0 top-11'} rounded-tile border border-edge bg-panel-2 p-3 text-[13px] font-normal leading-snug text-dim opacity-0 shadow-[0_10px_30px_rgb(0_0_0/0.45)] transition-opacity group-focus-within/vh:opacity-100 group-hover/vh:opacity-100`}
           >
             <b className="mb-1 block font-semibold text-fg">Почему «выгодно»</b>
-            Кэф выше, чем стоит исход по оценке tag.bet. Например, мы даём победе 40% — честный кэф для неё 2.50, а букмекер платит 2.68.
-            <span className="mt-1.5 block text-mute">Оценка, а не гарантия · 18+</span>
+            Кэф выше, чем стоит исход по кэфам всех букмекеров без маржи. Например, у победы шанс 40% — честный кэф 2.50, а букмекер платит 2.68.
+            <span className="mt-1.5 block text-mute">Расчёт, а не гарантия · 18+</span>
           </span>
         </span>
         {rows.length ? <span className={`${card ? 'text-[12px]' : 'text-[11.5px]'} font-normal tracking-normal text-mute`}>{onlyPari ? 'PARI · ' : ''}Реклама · 18+</span> : null}

@@ -191,7 +191,7 @@ export function PredictBlock({
         </div>
       ) : null}
       {/* оговорка — внутри карточки, а не строкой под ней */}
-      <p className="mt-4 text-center text-[13px] text-mute">Оценка tag.bet, а не гарантия. Ставки — это риск · 18+</p>
+      <p className="mt-4 text-center text-[13px] text-mute">Шанс по кэфам, а не гарантия. Ставки — это риск · 18+</p>
     </div>
   )
 }

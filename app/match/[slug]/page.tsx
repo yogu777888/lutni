@@ -220,13 +220,13 @@ export default async function MatchPage({ params }: Props) {
     const name = (k: string) => { const t = outcomeText(k, m); return t[0].toUpperCase() + t.slice(1) }
     const first =
       Math.abs(top.b.v - top.a.v) >= 2
-        ? `${name(top.sr.key)}: по линии ${top.a.v}% → ${top.b.v}%${top.sr.est != null ? `, наша оценка — ${top.sr.est}%` : ''}.`
+        ? `${name(top.sr.key)}: по линии ${top.a.v}% → ${top.b.v}%${top.sr.est != null ? `, без маржи по всем букмекерам — ${top.sr.est}%` : ''}.`
         : 'Шансы по линии почти не менялись.'
     const val = scheduled && x ? moves.find((mv) => x[mv.sr.key as 'home' | 'draw' | 'away'] * mv.b.odd - 1 >= valueThreshold(mv.b.odd)) : null
     const second = val
       ? ` ${name(val.sr.key)}: кэф PARI ${val.b.odd.toFixed(2)} выше честной цены ${(1 / x![val.sr.key as 'home' | 'draw' | 'away']).toFixed(2)} — линия недооценивает исход.`
       : est
-        ? ' Линия и наша оценка близки — заметной выгоды у PARI нет.'
+        ? ' Линия PARI и шанс по всем букмекерам близки — заметной выгоды у PARI нет.'
         : ''
     return first + second
   })()
@@ -329,7 +329,7 @@ export default async function MatchPage({ params }: Props) {
             // чьи голы — названиями («1.95 : 0.85» читалось счётом с дробями), без плашек внутри карточки и без
             // «рейтинга силы» (1684 / 1478 новичку ничего не говорят); «Вероятный счёт» — только до начала: на 59′
             // при 1:0 «1:1 — 10%» читалось как прогноз сейчас
-            <Section outside title={scheduled ? 'Голы и счёт' : 'Голы и счёт до матча'}>
+            <Section outside title={scheduled ? 'Голы' : 'Голы до матча'}>
               {/* одна таблица строками «название — значение», как «Форма команд» (владелец: «в блоке голы и счет как то некрасиво
                   навалено всего» — полосы, черта, фраза с переносом и чипы счёта были четырьмя разными видами) */}
               {/* сверху одна крупная цифра, как счёт на табло; ниже все строки одной схемы — подпись слева, значение справа,
@@ -394,25 +394,6 @@ export default async function MatchPage({ params }: Props) {
                     : null,
                   over25 != null ? { k: '3 гола и больше', v: <span className="num font-semibold">{pct(over25)}</span>, p: over25, day: model ? day?.over25 : null } : null,
                   btts != null ? { k: 'Обе забьют', v: <span className="num font-semibold">{pct(btts)}</span>, p: btts, day: model ? day?.btts : null } : null,
-                  model && scheduled
-                    ? {
-                        k: 'Вероятный счёт',
-                        p: null,
-                        v: (
-                          <span className="flex flex-wrap justify-end gap-x-3 gap-y-0.5">
-                            {model.topScores.slice(0, 3).map((sc, i) => (
-                              // ниже 380px — два счёта: с третьим строка переносилась
-                              <span key={`${sc.home}-${sc.away}`} className={`num whitespace-nowrap ${i === 2 ? 'max-[379px]:hidden' : ''}`}>
-                                <b className="font-semibold">
-                                  {sc.home}:{sc.away}
-                                </b>{' '}
-                                <span className="text-dim">{pct(sc.p)}</span>
-                              </span>
-                            ))}
-                          </span>
-                        ),
-                      }
-                    : null,
                 ]
                   .filter((r) => r != null)
                   .map((r) => (
@@ -468,7 +449,7 @@ export default async function MatchPage({ params }: Props) {
               note={
                 <>
                   {chanceText ? <>{chanceText} </> : null}
-                  Линия — шансы из кэфов PARI без маржи букмекера, пунктир — оценка tag.bet.
+                  Линия — шансы из кэфов PARI без маржи букмекера, пунктир — шанс по кэфам всех букмекеров без маржи.
                 </>
               }
             >

@@ -78,8 +78,6 @@ export type StorySlide =
       teams: { home: number; away: number }
       over25: number | null
       btts: number | null
-      /** три самых вероятных счёта */
-      scores: { home: number; away: number; p: number }[]
     }
   | { kind: 'form'; title: string; sub: string; home: FormSide | null; away: FormSide | null }
   | { kind: 'stats'; title: string; sub: string; rows: CompareRow[] }
@@ -128,21 +126,6 @@ const dec = (x: number, d = 1) => x.toFixed(d).replace('.', ',')
 
 function adText(p: Partner) {
   return ['Реклама', p.ad.advertiser, p.ad.erid ? `erid: ${p.ad.erid}` : '', '18+'].filter(Boolean).join(' · ')
-}
-
-function poissonGrid(lh: number, la: number, n = 5): number[][] {
-  const pmf = (l: number) => {
-    const out: number[] = []
-    let p = Math.exp(-l)
-    for (let k = 0; k < n; k++) {
-      out.push(p)
-      p = (p * l) / (k + 1)
-    }
-    return out
-  }
-  const ph = pmf(lh)
-  const pa = pmf(la)
-  return ph.map((x) => pa.map((y) => x * y))
 }
 
 const WORSE_MORE = new Set(['fouls', 'yellowCards', 'redCards', 'offsides'])
@@ -243,7 +226,7 @@ export function buildStory(ins: MatchInsights): StoryData | null {
     slides.push({
       kind: 'odds',
       title,
-      sub: 'Шансы — оценка tag.bet. Под ними — честная цена и кэф букмекера',
+      sub: 'Шансы — по кэфам букмекеров без маржи. Под ними — честная цена и кэф букмекера',
       probs: x,
       fair: { home: 1 / x.home, draw: 1 / x.draw, away: 1 / x.away },
       line: ref
@@ -265,19 +248,14 @@ export function buildStory(ins: MatchInsights): StoryData | null {
     let title = 'Голов — как обычно'
     if (over25 != null && over25 >= 0.6) title = 'Скорее будут голы'
     else if (over25 != null && over25 <= 0.42) title = 'Голов будет немного'
-    const scores = poissonGrid(model.lambdas.home, model.lambdas.away)
-      .flatMap((row, i) => row.map((p, j) => ({ home: i, away: j, p })))
-      .sort((a, b) => b.p - a.p)
-      .slice(0, 3)
     slides.push({
       kind: 'goals',
       title,
-      sub: 'Оценка tag.bet по силе атаки и обороны команд',
+      sub: 'По кэфам букмекеров без маржи',
       total,
       teams: { home: model.lambdas.home, away: model.lambdas.away },
       over25,
       btts: model.btts,
-      scores,
     })
   }
 
@@ -318,7 +296,7 @@ export function buildStory(ins: MatchInsights): StoryData | null {
       // исход словами, а не «П1»; пояснение — как в «Прогнозе tag.bet» на странице матча
       label: cap(outcomeText(c.key, m)),
       desc: value
-        ? 'Букмекер платит за этот исход больше, чем он стоит по оценке tag.bet'
+        ? 'Букмекер платит за этот исход больше, чем он стоит по кэфам без маржи'
         : c.ev != null && c.ev < 0
           ? 'Самый вероятный исход, но кэф ниже честной цены — выгоды нет'
           : 'Самый вероятный исход, кэф — около честной цены',

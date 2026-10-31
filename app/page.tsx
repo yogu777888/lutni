@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { absolute: `${dayTitle(today, today)}: коэффициенты, теги и прогнозы | tag.bet` },
     description:
-      'Матчи сегодня с коэффициентами букмекеров и тегами ставок: value, прогрузы, тоталы, «обе забьют». Вероятности без маржи, форма команд и прогнозы tag.bet.',
+      'Матчи сегодня с коэффициентами букмекеров и тегами ставок: value, прогрузы, тоталы, «обе забьют». Шансы по кэфам без маржи и статистика команд.',
     alternates: { canonical: '/' },
   }
 }
