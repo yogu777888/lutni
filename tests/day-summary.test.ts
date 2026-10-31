@@ -3,7 +3,7 @@ import { activeNav } from '@/components/NavLinks'
 import type { FeedItem, MatchSummary } from '@/lib/data'
 import { dayCounts, goalsPicks, linePicks, mainMatches, moveExample } from '@/lib/day-summary'
 import type { OddsSnap } from '@/lib/lines'
-import type { BookOdds } from '@/lib/odds'
+import { devig, type BookOdds } from '@/lib/odds'
 import type { Match } from '@/lib/types'
 
 const NOW = Date.UTC(2026, 9, 2, 12)
@@ -63,7 +63,7 @@ describe('сводка дня', () => {
 
   it('«Голевые матчи»: шанс по паре ТБ/ТМ одного букмекера, от порога, сильнейшие первыми; без линии — мимо', () => {
     const snaps = new Map<number, OddsSnap>([
-      [1, snapFor([2, 3.4, 3.6], null, [1.6, 2.4])], // 1/1.6 / (1/1.6 + 1/2.4) = 60%
+      [1, snapFor([2, 3.4, 3.6], null, [1.6, 2.4])], // поровну — 60%, методом Шина — чуть больше
       [2, snapFor([2, 3.4, 3.6], null, [2.05, 1.8])], // 47% — ниже порога
       [3, snapFor([2, 3.4, 3.6], null, [1.5, 2.65])], // 64%
     ])
@@ -72,7 +72,7 @@ describe('сводка дня', () => {
     expect(covered).toBe(3)
     expect(picks.map((p) => p.it.match.id)).toEqual([3, 1])
     expect(picks[0].g).toMatchObject({ bookmaker: 'Фонбет', over: 1.5, under: 2.65 })
-    expect(picks[1].g.p).toBeCloseTo(0.6, 3)
+    expect(picks[1].g.p).toBeCloseTo(devig([1 / 1.6, 1 / 2.4])[0], 9)
   })
 
   it('«Движение коэффициентов»: открытие → последнее значение одного букмекера; пример — сначала доматчевый', () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { lineFact, namedFact, pickFacts, teamFacts } from '@/lib/facts'
 import { biggestMove, goalsLine, lineMoves, periodEnd, x12Line, type OddsSnap } from '@/lib/lines'
-import type { BookOdds } from '@/lib/odds'
+import { devig, type BookOdds } from '@/lib/odds'
 import type { FormGame, H2H, TeamForm } from '@/lib/stats'
 
 // 4 октября 2026, 19:30 МСК
@@ -29,10 +29,11 @@ describe('линия одного букмекера', () => {
   })
 
   it('шанс 3+ голов — из пары ТБ/ТМ 2,5 одного букмекера без маржи', () => {
-    // 1/1.80 = 0.5556, 1/2.10 = 0.4762 → 0.5556 / 1.0317 = 53.8%
+    // 1/1.80 = 0.5556, 1/2.10 = 0.4762: поровну — 53,85%, методом Шина (как на сайте) короткому кэфу чуть больше
     const g = goalsLine(snap(book(3, 'Pari', null, [1.8, 2.1])))
     expect(g?.bookmaker).toBe('PARI')
-    expect(g?.p).toBeCloseTo(0.5385, 3)
+    expect(g?.p).toBeCloseTo(devig([1 / 1.8, 1 / 2.1])[0], 9)
+    expect(g!.p).toBeGreaterThan(0.5385)
     // нет пары у первого партнёра — берём следующего, у кого она есть, а не смешиваем
     const g2 = goalsLine(snap(book(1, 'Fonbet', [2, 3.4, 3.6]), book(2, 'Winline', null, [1.6, 2.4])))
     expect(g2?.bookmaker).toBe('Winline')

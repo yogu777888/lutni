@@ -9,7 +9,7 @@
  */
 import { PARTNERS, partnerForApiBookmaker, type Partner } from '@/config/bookmakers'
 import { formatDayMonth, formatTime, ymdInTz } from './format'
-import { totalAt, type BookOdds, type Quote } from './odds'
+import { devig, totalAt, type BookOdds, type Quote } from './odds'
 
 /** Коэффициенты всех букмекеров на матч и момент, когда мы их взяли. */
 export type OddsSnap = { books: BookOdds[]; at: number }
@@ -61,8 +61,8 @@ export function x12For(snap: OddsSnap | null | undefined, slug?: string | null):
 export type GoalsLine = Source & { p: number; over: number; under: number }
 
 /**
- * Шанс 3+ голов — из пары кэфов «больше 2,5 / меньше 2,5» одного букмекера в одном снимке линии, без маржи:
- * (1/ТБ) / (1/ТБ + 1/ТМ). Средние голы команд вероятность не подменяют. Пары нет — оценки нет.
+ * Шанс 3+ голов — из пары кэфов «больше 2,5 / меньше 2,5» одного букмекера в одном снимке линии, без маржи (тем же способом,
+ * что везде, — `devig`). Средние голы команд вероятность не подменяют. Пары нет — оценки нет.
  */
 export function goalsLine(snap: OddsSnap | null | undefined): GoalsLine | null {
   if (!snap) return null
@@ -73,7 +73,7 @@ export function goalsLine(snap: OddsSnap | null | undefined): GoalsLine | null {
     const iu = 1 / t.under.value
     // сумма обратных — 1 плюс маржа; вне разумных пределов — битая пара
     if (io + iu < 0.97 || io + iu > 1.25) continue
-    return { bookmaker: partner.name, slug: partner.slug, at: snap.at, p: io / (io + iu), over: t.over.value, under: t.under.value }
+    return { bookmaker: partner.name, slug: partner.slug, at: snap.at, p: devig([io, iu])[0], over: t.over.value, under: t.under.value }
   }
   return null
 }

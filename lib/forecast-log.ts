@@ -5,7 +5,7 @@ import { isFeatured } from '@/config/leagues'
 import { leagueTitle } from './flags'
 import { matchHref } from './links'
 import { addDays, appNow, todayYmd, ymdInTz } from './format'
-import { isValue, quoteOf, type Candidate, type Consensus, type ModelOutput } from './model'
+import { buildConsensus, isValue, quoteOf, type Candidate, type Consensus, type ModelOutput } from './model'
 import type { BookOdds } from './odds'
 import { singleton } from './runtime'
 import type { Forecast, ValueTrack } from './track-record'
@@ -91,6 +91,9 @@ export async function recordForecast(m: Match, model: ModelOutput | null, cons: 
   const ymd = ymdInTz(m.ts)
   const d = await day(ymd)
   const value = trackValues(d.rows.get(m.id)?.value ?? [], books, candidates, appNow())
+  // «Линия» для сравнения — та же линия, но маржа снята поровну со всех исходов, как без нашего расчёта: иначе с оценкой
+  // tag.bet (метод Шина, `DEVIG`) она совпадала бы
+  const base = books.length ? buildConsensus(books, 'proportional') : cons
   d.rows.set(m.id, {
     id: m.id,
     ts: m.ts,
@@ -102,8 +105,8 @@ export async function recordForecast(m: Match, model: ModelOutput | null, cons: 
     href: matchHref(m),
     at: appNow(),
     p: { home: r3(model.x12.home), draw: r3(model.x12.draw), away: r3(model.x12.away), over25: r3n(model.over['2.5']), btts: r3n(model.btts) },
-    line: cons.x12
-      ? { home: r3(cons.x12.home), draw: r3(cons.x12.draw), away: r3(cons.x12.away), over25: r3n(cons.over['2.5']), btts: r3n(cons.btts) }
+    line: base.x12
+      ? { home: r3(base.x12.home), draw: r3(base.x12.draw), away: r3(base.x12.away), over25: r3n(base.over['2.5']), btts: r3n(base.btts) }
       : null,
     ...(value.length ? { value } : {}),
   })

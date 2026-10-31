@@ -47,6 +47,7 @@ import { leagueHref, listHref, matchHref } from '@/lib/links'
 import { NOINDEX, indexMatch } from '@/lib/seo'
 import type { Match } from '@/lib/types'
 import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
+import { devig } from '@/lib/odds'
 import { Icon } from '@/components/Icon'
 
 // готовая страница хранится 30 с и отдаётся всем (ISR; владелец: «если будет 10000 посетителей…»): данные и так
@@ -197,7 +198,8 @@ export default async function MatchPage({ params }: Props) {
     for (const t of times) {
       const o = { home: stepAt(h.home, t), draw: stepAt(h.draw, t), away: stepAt(h.away, t) }
       if (!o.home || !o.draw || !o.away) continue
-      const pc = split100({ home: 1 / o.home, draw: 1 / o.draw, away: 1 / o.away })
+      const [ph, pd, pa] = devig([1 / o.home, 1 / o.draw, 1 / o.away])
+      const pc = split100({ home: ph, draw: pd, away: pa })
       out.forEach((sr) => {
         const k = sr.key as 'home' | 'draw' | 'away'
         const last = sr.pts[sr.pts.length - 1]

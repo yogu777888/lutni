@@ -709,14 +709,15 @@ export function featuredFirst(a: Match, b: Match) {
 /** Итоги одного прошедшего дня для «Проверки шансов» — маленькие, хранятся долго: прошлое не меняется. */
 function chanceDay(ymd: string, opts: Opts): Promise<ChanceTally> {
   const recent = diffDays(ymd, todayYmd()) >= -2
-  return cache.get(`chance-day:${ymd}`, async () => tallyChances(await getMatchesByDate(ymd, opts)), recent ? { ttl: 6 * H, stale: 24 * H } : { ttl: 7 * 24 * H })
+  // v2 — маржа снимается методом Шина (`DEVIG`), прежние итоги дня посчитаны пропорционально
+  return cache.get(`chance-day:v2:${ymd}`, async () => tallyChances(await getMatchesByDate(ymd, opts)), recent ? { ttl: 6 * H, stale: 24 * H } : { ttl: 7 * 24 * H })
 }
 
 /** Сбываются ли шансы на сайте: 30 дней до сегодняшнего, по корзинам «около 10% … 90%» (lib/chance-check.ts). */
 export async function getChanceCheck(opts: Opts = {}): Promise<ChanceCheck | null> {
   const today = todayYmd()
   return cache.get(
-    `chance-check:${today}`,
+    `chance-check:v2:${today}`,
     async () => {
       const days = await Promise.all(
         Array.from({ length: CHANCE_DAYS }, (_, i) => settle(chanceDay(addDays(today, -1 - i), opts), null)),

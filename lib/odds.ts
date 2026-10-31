@@ -155,8 +155,12 @@ export type Fair1x2 = { home: number; draw: number; away: number }
  */
 export type Devig = 'proportional' | 'power' | 'shin'
 export const DEVIGS: Devig[] = ['proportional', 'power', 'shin']
-/** Способ на сайте. */
-export const DEVIG: Devig = 'proportional'
+/**
+ * Способ на сайте — метод Шина (владелец прислал раздел 6 отчёта, 4 506 матчей): логарифмическая ошибка исхода на 0,0007
+ * меньше пропорционального (разброс 0,0002…0,0013), на первой половине тоже, у степенного выигрыш 0,0009, но разброс шире;
+ * «давали 60–70%» — сбылось 65,2% вместо 68,1%.
+ */
+export const DEVIG: Devig = 'shin'
 
 const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0)
 
