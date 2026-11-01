@@ -1,4 +1,4 @@
-import { ICONS } from '@/components/NavIcon'
+import { BALL as BALL_PATH } from '@/components/NavIcon'
 import { TeamLogo } from '@/components/TeamLogo'
 import { surname, type LineupPlayer, type Lineups as LineupsData, type TeamLineup } from '@/lib/sstats/ls'
 import { Tabs } from './Tabs'
@@ -6,7 +6,7 @@ import { Tabs } from './Tabs'
 type Side = { name: string; logo: string | null }
 
 /** Мяч у игрока — тот же знак, что «Матчи» в нижнем меню (Phosphor, MIT) */
-const BALL = ICONS['/'][1]
+const BALL = BALL_PATH
 
 /** Оценка — белой пилюлей у лучшего в матче, у остальных — тихой (лайм у нас только про деньги и «выгодно»). */
 function Rating({ p }: { p: LineupPlayer }) {

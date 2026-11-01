@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { lateNote, momentumSummary, playedTime, pressShares } from '@/lib/match-notes'
 import { minuteLabel, type MomentumPoint } from '@/lib/sstats/ls'
 import type { MatchEvent } from '@/lib/types'
-import { ICONS, NavIcon } from '../NavIcon'
+import { BALL, BallIcon } from '../NavIcon'
 import { withScore } from './EventsBlock'
 import { SplitBar } from './SplitBar'
 import { Icon, type IconKey } from '@/components/Icon'
@@ -195,7 +195,7 @@ export function Momentum({ points, events, final = null, url, league, status, ho
 
   /**
    * Картинка для соцсетей — рисуем заново на canvas по тем же точкам (без подсказок и кнопок), цвета линий — с экрана.
-   * 1080px в ширину, всё в 2× от экрана: линии 4px, текст от 22px. Мяч — тот же SVG-путь, что в метках (`ICONS['/']`).
+   * 1080px в ширину, всё в 2× от экрана: линии 4px, текст от 22px. Мяч — тот же SVG-путь, что в метках (`BALL`).
    */
   const png = async (): Promise<Blob | null> => {
     await document.fonts?.ready
@@ -205,7 +205,7 @@ export function Momentum({ points, events, final = null, url, league, status, ho
     const css = (k: 'h' | 'a') => (lines.current[k] ? getComputedStyle(lines.current[k]!) : null)
     const col = (k: 'h' | 'a') => css(k)?.stroke || (k === 'h' ? '#dfe3e8' : '#7d8794')
     const dashed = css('a')?.strokeDasharray && css('a')!.strokeDasharray !== 'none'
-    const ball = new Path2D(ICONS['/'][1])
+    const ball = new Path2D(BALL)
     const cl = 96 // слева — шкала
     const cw = W - P - cl
     const cx = (x: number) => cl + (x / xMax) * cw
@@ -553,7 +553,7 @@ export function Momentum({ points, events, final = null, url, league, status, ho
                     onClick={() => setGAct(i)}
                     className={`flex h-[22px] items-center gap-1 whitespace-nowrap rounded-full px-1.5 text-[12px] font-medium tabular-nums transition-colors ${gAct === i ? 'bg-white/[0.12] text-fg' : 'bg-white/[0.06] text-dim hover:text-fg'}`}
                   >
-                    <NavIcon href="/" on size={12} />
+                    <BallIcon size={12} />
                     {g.label}
                     <span className="sr-only">, {what}{team ? ` «${team}»` : ''}{g.e.player ? `, ${g.e.player}` : ''}{g.score ? `, счёт ${g.score}` : ''}</span>
                   </button>
