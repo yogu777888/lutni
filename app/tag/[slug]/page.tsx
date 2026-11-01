@@ -110,13 +110,15 @@ function ValueRow({ it }: { it: FeedItem }) {
           rel={SPONSORED_REL}
           title={`${capFirst(outcome)}: ${p.odd!.toFixed(2)} в ${partner.name} · Реклама 18+`}
           aria-label={`${p.odd!.toFixed(2)} в ${partner.name}`}
-          // лаймовая рамка: знак и кэф — отдельными блоками внутри лаймовой плашки (владелец: «вернуть лайм просто чтоб кэф был в
-          // отдельном блоке … чтоб рамочка получилась лаймовая»), кэф — белым на цвете карточки; одной ширины у всех строк (кэфы — ровной колонкой), знак — во всю высоту с полем 4px: его скругление (9px)
-          // вложено в скругление кнопки (14 = 9 + 4), кнопка читается одной плашкой, а не знаком, прилипшим к краю
-          className="group/odd flex h-11 w-[108px] items-center gap-1 rounded-tile bg-acid p-1 transition-colors hover:bg-acid/85"
+          // знак букмекера — отдельно на цвете карточки, лаймовая рамка — только вокруг кэфа (владелец: «а в плане цветовой иерархии в
+          // кнопке с кэфом все норм?» — розовый Марафона и бирюзовый PARI на лайме спорили с ним и были ярче кэфа; «да»): по яркости
+          // первым — кэф в рамке, потом знак; одной ширины у всех строк (108px — кэфы ровной колонкой), рамка 4px, скругление кэфа вложено в её
+          className="group/odd flex h-11 w-[108px] items-center gap-2"
         >
           <PartnerBadge partner={partner} size={36} />
-          <span className="num grid h-full flex-1 place-items-center rounded-lg bg-panel text-[17px] font-bold text-fg">{p.odd!.toFixed(2)}</span>
+          <span className="flex h-full flex-1 rounded-tile bg-acid p-1 transition-colors group-hover/odd:bg-acid/85">
+            <span className="num grid flex-1 place-items-center rounded-lg bg-panel text-[17px] font-bold text-fg">{p.odd!.toFixed(2)}</span>
+          </span>
         </a>
       </div>
     </div>
