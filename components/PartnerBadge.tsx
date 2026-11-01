@@ -4,7 +4,7 @@ import type { Partner } from '@/config/bookmakers'
  * Знак букмекера — квадратная иконка из `public/bookmakers/<slug>.svg` (прислал владелец: «тут лого всех легальных бк»)
  * с мягким «сквиркл»-углом. Новый букмекер в `config/bookmakers.ts` — положите и его иконку (SVG 64×64 с подложкой).
  */
-export function PartnerBadge({ partner, size = 36 }: { partner: Partner; size?: number }) {
+export function PartnerBadge({ partner, size = 36 }: { partner: Pick<Partner, 'slug'>; size?: number }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element -- маленький SVG, оптимизация next/image не нужна
     <img

@@ -7,6 +7,7 @@ import type { CompactMatch } from '@/lib/compact'
 import type { DayPicks, ValueRow } from '@/lib/day-picks'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import { CrestPlate } from '../CrestPlate'
+import { PartnerBadge } from '../PartnerBadge'
 import { openStory, type StoryRow } from '../story/events'
 import { circleQueue } from '../story/queue'
 import { readSeen, SEEN_EVENT } from '../story/seen'
@@ -99,7 +100,6 @@ function ValueBody({ rows, card = false, book }: { rows: ValueRow[]; card?: bool
   // все ставки одного букмекера: он назван в заголовке, как было; есть другие — подписан каждый кэф (имя другого букмекера в
   // заголовке не влезало в 288px: «Марафон · Реклама · 18+» переносилось вместе с «Выгодно сегодня»)
   const one = book ?? (rows.length > 0 && rows.every((r) => r.slug === 'pari') ? 'PARI' : null)
-  const onlyPari = Boolean(one)
   return (
     // карточкой (под списком ниже xl) — заголовок над ней, на фоне страницы, как блоки лиг и разделы матча
     <section className={card ? 'relative min-w-0' : 'relative mt-6 border-t border-edge pt-4'}>
@@ -147,19 +147,24 @@ function ValueBody({ rows, card = false, book }: { rows: ValueRow[]; card?: bool
                 {r.time} · {r.side === 'home' ? `против ${r.away}` : r.side === 'away' ? `против ${r.home}` : `${r.home} — ${r.away}`}
               </span>
             </Link>
-            <span className="flex shrink-0 flex-col items-center gap-0.5">
-              <a
-                href={goHref(r.slug, 'panel', r.id)}
-                target="_blank"
-                rel={SPONSORED_REL}
-                title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выше честной цены на ${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
-                // как лаймовая ячейка кэфа в строке списка (34px, 15px): три высоких плашки с букмекером были ярче всего на странице
-                className={`num grid place-items-center rounded-ctl bg-acid font-semibold text-acid-ink transition-colors hover:bg-acid/85 ${card ? 'h-10 w-16 text-[16px]' : 'h-[34px] w-14 text-[15px]'}`}
-              >
-                {r.odd.toFixed(2)}
-              </a>
-              {onlyPari ? null : <span className="text-[10.5px] leading-none text-mute">{r.bookmaker}</span>}
-            </span>
+            {/* кнопка — как в «Выгодных ставках» (владелец: «давай в блоке выгодно сегодня так же кнопки сделаем?»): знак букмекера
+                рядом на цвете карточки, лаймовая рамка — только вокруг кэфа; наведение и фокус — кэф заливается лаймом, нажатие —
+                сжимается. Имени букмекера под кнопкой больше нет — его говорит знак (полное — в подсказке и для диктора) */}
+            <a
+              href={goHref(r.slug, 'panel', r.id)}
+              target="_blank"
+              rel={SPONSORED_REL}
+              title={`${r.outcome}: ${r.odd.toFixed(2)} в ${r.bookmaker}${r.ev ? ` — выше честной цены на ${Math.round(r.ev * 100)}%` : ''} · Реклама 18+`}
+              aria-label={`${r.odd.toFixed(2)} в ${r.bookmaker}`}
+              className={`group/odd flex shrink-0 items-center transition-transform duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 ${card ? 'h-11 w-[108px] gap-2' : 'h-9 w-[92px] gap-1.5'}`}
+            >
+              <PartnerBadge partner={{ slug: r.slug }} size={card ? 36 : 28} />
+              <span className="flex h-full flex-1 rounded-tile bg-acid p-1">
+                <span className={`num grid flex-1 place-items-center rounded-lg bg-panel font-bold text-fg transition-colors duration-150 group-hover/odd:bg-acid group-hover/odd:text-ink group-focus-visible/odd:bg-acid group-focus-visible/odd:text-ink ${card ? 'text-[17px]' : 'text-[15px]'}`}>
+                  {r.odd.toFixed(2)}
+                </span>
+              </span>
+            </a>
           </li>
         ))}
       </ul>
