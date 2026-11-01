@@ -66,7 +66,7 @@ export default async function LeaguesPage() {
                     <Link href={l.href} prefetch={false} className="group/r flex min-h-[72px] items-center gap-3.5 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:px-5">
                       <Disc id={l.id} flag={l.flag} size={44} />
                       <span className="min-w-0 flex-1">
-                        <span className={`block truncate text-[16px] font-semibold ${l.over ? 'text-dim' : ''}`}>{l.name}</span>
+                        <span data-name className={`block truncate text-[16px] font-semibold ${l.over ? 'text-dim' : ''}`}>{l.name}</span>
                         {/* подпись у каждой строки: страна (две «Премьер-лиги») и состояние, если есть матчи сегодня или завтра */}
                         <span className="block text-[13px] leading-snug text-mute">{l.state ? `${l.place} · ${l.state}` : l.place}</span>
                       </span>

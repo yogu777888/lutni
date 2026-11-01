@@ -1316,3 +1316,9 @@ html[data-shell-rc] .shell-r-rail {
 .site-header[data-scrolled]::before {
   opacity: 0;
 }
+
+/* найденное фильтром «Лиг и турниров» (`LeagueFilter`, CSS Custom Highlight API) — светлой плашкой, не лаймом: лайм — деньги */
+::highlight(league-q) {
+  background-color: rgb(255 255 255 / 0.22);
+  color: var(--color-fg);
+}
