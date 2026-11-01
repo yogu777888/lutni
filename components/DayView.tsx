@@ -278,7 +278,7 @@ export async function DayView({
       {showList ? (
       <section
         id="matches"
-        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : view === 'home' ? '-mt-4 sm:-mt-6 lg:mt-0' : 'mt-3 sm:mt-6'} xl:mt-0`}
+        className={`scroll-mt-24 ${listHead ? 'mt-12 sm:mt-14' : view === 'home' ? '-mt-2 sm:-mt-6 lg:mt-0' : 'mt-3 sm:mt-6'} xl:mt-0`}
       >
         {/* ниже lg (телефон, планшет) на главной — второй ряд шапки, как чипы у YouTube: только на главной, липкий вплотную
             под шапкой и уходит вместе с ней при прокрутке вниз (владелец: «а может сортировки вернуть в хедер на главной?
