@@ -27,6 +27,7 @@ import { hasMoves, OddsTable } from '@/components/match/OddsTable'
 import { PredictBlock } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
 import { MatchTags } from '@/components/match/MatchTags'
+import { LiveChances, type LiveChanceRow } from '@/components/match/LiveChances'
 import { BlockNote, BlockTitle, Section } from '@/components/Section'
 import { TeamLogo } from '@/components/TeamLogo'
 import { TenScale, tenText } from '@/components/TenScale'
@@ -623,6 +624,50 @@ export default async function MatchPage({ params }: Props) {
       <KeyEvents events={full.events} home={m.home} away={m.away} final={m.score ?? null} reds={ls?.reds} />
     </Section>
   ) : null
+  // ─── Во время матча ───
+  // «Шансы сейчас»: live-кэфы PARI без маржи рядом с шансом до матча (по кэфам всех букмекеров без маржи); кэф — кнопкой
+  // к PARI, без лайма: «выгодно» по ходу матча не считаем
+  const liveRows: LiveChanceRow[] = (() => {
+    if (!isLive || !liveOdds || !pariPartner) return []
+    // почти невозможный исход PARI снимает с линии (на 2:0 к 80′ — победы отстающих нет): считаем по оставшимся, его строки нет
+    const ks = (['home', 'draw', 'away'] as const).filter((k) => liveOdds[k])
+    const rows: LiveChanceRow[] = []
+    if (ks.length >= 2) {
+      const ps = devig(ks.map((k) => 1 / liveOdds[k]!))
+      const now = split100({ home: 0, draw: 0, away: 0, ...Object.fromEntries(ks.map((k, i) => [k, ps[i]])) })
+      for (const k of ks)
+        rows.push({
+          key: k,
+          label: k === 'draw' ? 'Ничья' : `Победа «${k === 'home' ? m.home.name : m.away.name}»`,
+          before: est ? est[k] : null,
+          now: now[k],
+          odd: liveOdds[k]!,
+        })
+    }
+    const o = liveOdds?.over25
+    const u = liveOdds?.under25
+    if (o && u) {
+      const [po] = devig([1 / o, 1 / u])
+      rows.push({ key: 'over', label: '3 гола и больше', before: over25 != null ? Math.round(over25 * 100) : null, now: Math.round(po * 100), odd: o })
+    }
+    return rows
+  })()
+  const liveGone = liveRows.length
+    ? (['home', 'draw', 'away'] as const)
+        .filter((k) => !liveRows.some((r) => r.key === k))
+        .map((k) => (k === 'draw' ? 'Ничьей' : `Победы «${k === 'home' ? m.home.name : m.away.name}»`))
+        .join(' и ')
+    : ''
+  const sec_live = liveRows.length && pariPartner ? (
+    <Section
+      outside
+      title="Шансы сейчас"
+      aside="PARI · Реклама · 18+"
+      note={`${liveGone ? `${liveGone} в линии PARI сейчас нет. ` : ''}Сейчас — по кэфам PARI по ходу матча без маржи букмекера, до матча — по кэфам всех букмекеров без маржи. Кэфы меняются с каждой минутой; шанс — не обещание.`}
+    >
+      <LiveChances rows={liveRows} href={goHref(pariPartner, 'match-live-chances', m.id)} />
+    </Section>
+  ) : null
   // «Сильное и слабое место» — по xG прошлых матчей (`getTeamXg`), без него — по голам формы
   const anyPoint = [points.home, points.away].some((p) => p.strong || p.weak)
   const byXg = points.home.byXg || points.away.byXg
@@ -773,7 +818,7 @@ export default async function MatchPage({ params }: Props) {
           // сыгран — «чем кончилось, почему и сбылся ли расклад»; «Матч в подборках» — во вкладке «До матча»: это сведения до начала
           finished
             ? { key: 'overview', label: 'Обзор', on: Boolean(sec_notes || sec_events || sec_best || sec_check || sec_momentum || sec_next), content: <>{sec_notes}{sec_events}{sec_best}{sec_check}{sec_momentum}{sec_next}</> }
-            : { key: 'overview', label: 'Обзор', on: Boolean(sec_notes || sec_events || sec_momentum || shownTags.length), content: <>{sec_notes}{sec_events}{sec_momentum}{sec_tags}</> },
+            : { key: 'overview', label: 'Обзор', on: Boolean(sec_notes || sec_events || sec_live || sec_momentum), content: <>{sec_notes}{sec_events}{sec_live}{sec_momentum}</> },
           { key: 'stats', label: 'Статистика', on: Boolean(sec_stats), content: sec_stats },
           { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
           {
