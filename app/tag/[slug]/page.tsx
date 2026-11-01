@@ -130,37 +130,45 @@ const capFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /**
  * Строка матча подборки (владелец: «страница подборки как?»): время, матч и турнир, факт подборки коротко («3 гола и больше —
- * шанс 77%», «Победа «Хетафе»: 7.42 → 6.37 (−14%)») и справа кэф на ставку этой подборки у легального партнёра (`tagBet`) —
- * серой ячейкой, как кэфы в строках главной (лайм — только «выгодно»). Без «Прогноз ТМ 3.5» (шёл против самой подборки) и
- * чипов других подборок. Идущий — минута красным, без кнопки: доматчевые кэфы уже не действуют.
+ * шанс 77%», «Победа «Хетафе»: 7.42 → 6.37 (−14%)») и справа кэф на ставку этой подборки у легального партнёра (`tagBet`).
+ * Кнопка — та же, что в «Выгодных ставках» (владелец: «можешь на всех страницах подборок сделать кнопку с кэфом как мы с тобой
+ * делали до этого?»): знак букмекера на цвете карточки и рядом кэф в рамке 4px — серой (лайм — только «выгодно»), наведение —
+ * кэф белеет, как в строках главной; «Реклама · 18+» — одна под карточкой дня. На телефоне время — в строке турнира: колонка
+ * времени рядом с кнопкой 108px сжимала матч до «Атлетик Бильба…». Идущий — минута красным, без кнопки.
  */
 function TagRow({ it, hit, bet }: { it: FeedItem; hit: TagHit; bet: ReturnType<typeof tagBet> }) {
   const m = it.match
   const live = m.status === 'live'
+  const when = live ? `${m.elapsed ?? ''}′` : formatTime(m.ts)
   return (
-    <div className="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-4 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:px-5">
-      <span className={`num display-num self-start pt-0.5 text-[18px] ${live ? 'text-live' : ''}`}>{live ? `${m.elapsed ?? ''}′` : formatTime(m.ts)}</span>
+    <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-4 py-3.5 transition-colors hover:bg-white/[0.02] sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:px-5">
+      <span className={`num display-num self-start pt-0.5 text-[18px] max-sm:hidden ${live ? 'text-live' : ''}`}>{when}</span>
       <div className="min-w-0">
-        <Link href={matchHref(m)} prefetch={false} className="block truncate text-[15px] font-semibold after:absolute after:inset-0 sm:text-[16px]">
+        <Link href={matchHref(m)} prefetch={false} className="line-clamp-2 block text-[15px] font-semibold leading-snug after:absolute after:inset-0 sm:text-[16px]">
           {m.home.name} — {m.away.name}
         </Link>
         <p className="mt-0.5 text-[14px] leading-snug text-fg/85">{hit.short ?? hit.reason}</p>
-        <p className="mt-0.5 truncate text-[13px] text-mute">{m.league.name}</p>
+        <p className="mt-0.5 truncate text-[13px] text-mute">
+          <span className={`num sm:hidden ${live ? 'text-live' : 'text-dim'}`}>{when} · </span>
+          {m.league.name}
+        </p>
       </div>
       {bet ? (
-        <div className="relative z-10 flex flex-col items-end gap-1">
-          <a
-            href={goHref(bet.partner, 'tag', m.id)}
-            target="_blank"
-            rel={SPONSORED_REL}
-            title={`${bet.label}: ${bet.odd.toFixed(2)} в ${bet.partner.name} · Реклама 18+`}
-            className="flex h-11 min-w-[76px] flex-col items-center justify-center rounded-ctl bg-white/[0.06] px-3 leading-none transition-colors hover:bg-white/[0.14]"
-          >
-            <span className="num text-[16px] font-bold">{bet.odd.toFixed(2)}</span>
-            <span className="mt-0.5 text-[11px] text-dim">{bet.partner.name}</span>
-          </a>
-          <span className="text-[11px] text-mute">Реклама · 18+</span>
-        </div>
+        <a
+          href={goHref(bet.partner, 'tag', m.id)}
+          target="_blank"
+          rel={SPONSORED_REL}
+          title={`${bet.label}: ${bet.odd.toFixed(2)} в ${bet.partner.name} · Реклама 18+`}
+          aria-label={`${bet.label}: ${bet.odd.toFixed(2)} в ${bet.partner.name}`}
+          className="group/odd relative z-10 flex h-11 w-[108px] items-center gap-2 transition-transform duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
+        >
+          <PartnerBadge partner={bet.partner} size={36} />
+          <span className="flex h-full flex-1 rounded-tile bg-white/10 p-1 transition-colors duration-150 group-hover/odd:bg-fg group-focus-visible/odd:bg-fg">
+            <span className="num grid flex-1 place-items-center rounded-lg bg-panel text-[17px] font-bold text-fg transition-colors duration-150 group-hover/odd:bg-fg group-hover/odd:text-ink group-focus-visible/odd:bg-fg group-focus-visible/odd:text-ink">
+              {bet.odd.toFixed(2)}
+            </span>
+          </span>
+        </a>
       ) : null}
     </div>
   )
@@ -255,16 +263,25 @@ export default async function TagPage({ params }: Props) {
           }
         >
           {isValue ? null : (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            // одной плашкой (владелец: «Что обычно ставят … Перейти в PARI … Реклама · 18+ как то не очень красиво выглядит»):
+            // слева — ставка подборки подписью и словами, справа — кнопка к букмекеру и под ней пометка рекламы; на телефоне —
+            // друг под другом, кнопка во всю ширину. Нет одной ставки («Серии», «Травмы»…) — только кнопка с пометкой
+            <div className="flex flex-col gap-3 rounded-tile bg-white/[0.04] p-3 sm:flex-row sm:items-center sm:gap-4 sm:pl-4">
               {t.bet ? (
-                <span className="text-[13px] text-mute">
-                  Что обычно ставят: <span className="font-medium text-fg">{t.bet}</span>
-                </span>
-              ) : null}
-              <CtaLink href={goHref(partner, 'tag')} size="sm">
-                Перейти в {partner.name}
-              </CtaLink>
-              <AdMark partner={partner} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] text-mute">Что обычно ставят</p>
+                  <p className="text-[16px] font-semibold leading-snug">{capFirst(t.bet)}</p>
+                </div>
+              ) : (
+                <p className="min-w-0 flex-1 text-[14px] text-dim">Одной типичной ставки у подборки нет — кэфы на каждый матч в его разборе.</p>
+              )}
+              <div className="flex shrink-0 flex-col items-stretch gap-1 sm:items-center">
+                <CtaLink href={goHref(partner, 'tag')} size="sm" className="gap-2 !pl-1.5 max-sm:w-full">
+                  <PartnerBadge partner={partner} size={24} />
+                  Перейти в {partner.name}
+                </CtaLink>
+                <AdMark partner={partner} className="text-center" />
+              </div>
             </div>
           )}
         </PageHead>
@@ -328,16 +345,22 @@ pluralN(list.length, ['ставка', 'ставки', 'ставок'])
           )
         ) : ahead.length || liveHits.length ? (
           <>
-            {tagDayList.map(([ymd, list]) => (
-              <section key={ymd}>
-                <BlockTitle rows title={dayHead(ymd, list[0].match.ts, today)} aside={pluralN(list.length, ['матч', 'матча', 'матчей'])} />
-                <div className="card divide-y divide-edge overflow-hidden">
-                  {list.map((it) => (
-                    <TagRow key={it.match.id} it={it} hit={hitOf(it)} bet={betOf(it)} />
-                  ))}
-                </div>
-              </section>
-            ))}
+            {tagDayList.map(([ymd, list]) => {
+              const bets = list.map(betOf)
+              // пометка — одна на блок дня, с букмекерами его кнопок, как в «Выгодных ставках» и под блоками лиг
+              const names = [...new Set(bets.filter(Boolean).map((b) => b!.partner.name))]
+              return (
+                <section key={ymd}>
+                  <BlockTitle rows title={dayHead(ymd, list[0].match.ts, today)} aside={pluralN(list.length, ['матч', 'матча', 'матчей'])} />
+                  <div className="card divide-y divide-edge overflow-hidden">
+                    {list.map((it, i) => (
+                      <TagRow key={it.match.id} it={it} hit={hitOf(it)} bet={bets[i]} />
+                    ))}
+                  </div>
+                  {names.length ? <p className="mt-2 px-4 text-right text-[12px] text-mute sm:px-5">{names.join(', ')} · Реклама · 18+</p> : null}
+                </section>
+              )
+            })}
             {liveHits.length ? (
               <section>
                 <BlockTitle rows title="Уже идут" aside="кэфы до матча не действуют" />
