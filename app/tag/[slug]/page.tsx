@@ -276,7 +276,10 @@ export default async function TagPage({ params }: Props) {
 
         {isValue ? (
           values.length ? (
-            [...days].map(([ymd, list]) => (
+            [...days].map(([ymd, list], i, all) => {
+              const ad = `${[...new Set(list.map((it) => getPartner(it.summary!.pick!.partnerSlug!)!.name))].join(', ')} · Реклама · 18+`
+              const last = i === all.length - 1
+              return (
               <section key={ymd}>
                 <BlockTitle rows title={dayHead(ymd, list[0].match.ts, today)} aside={
                     // на телефоне — только число: «Завтра · 5 октября» с «3 ставки · Реклама · 18+» не влезали в строку, и подпись
@@ -299,19 +302,25 @@ pluralN(list.length, ['ставка', 'ставки', 'ставок'])
                   </div>
                 </div>
                 {/* пометка — одна на блок, под карточкой справа с букмекерами этого дня, как «PARI · Реклама · 18+» под блоками
-                    лиг (владелец: «может подписи бк реклама под блок перенести как везде а не под каждой кнопкой?») */}
-                <p className="mt-2 px-4 text-right text-[12px] text-mute sm:px-5">
-                  {[...new Set(list.map((it) => getPartner(it.summary!.pick!.partnerSlug!)!.name))].join(', ')} · Реклама · 18+
-                </p>
+                    лиг (владелец: «может подписи бк реклама под блок перенести как везде а не под каждой кнопкой?»); под последним
+                    днём — в одной строке с пояснением про вероятность: отдельной строкой она сдвигала пояснение вниз (владелец: «в самом
+                    нижнем блоке под выгодно описание про вероятность изза надписи реклама стоит ниже») */}
+                {last ? (
+                  <div className="mt-2 flex items-start gap-4 px-4 sm:px-5">
+                    <p className="min-w-0 flex-1 text-[13px] text-mute">
+                      Вероятность — по кэфам букмекеров без маржи, кэф — предложение букмекера. Не гарантия выигрыша: ставки — это риск · 18+ ·{' '}
+                      <Link href="/about#vygodno" className="underline underline-offset-2 hover:text-fg">
+                        Как мы считаем
+                      </Link>
+                    </p>
+                    <p className="max-w-[40%] shrink-0 pt-px text-right text-[12px] text-mute">{ad}</p>
+                  </div>
+                ) : (
+                  <p className="mt-2 px-4 text-right text-[12px] text-mute sm:px-5">{ad}</p>
+                )}
               </section>
-            )).concat(
-              <p key="note" className="-mt-5 px-4 text-[13px] text-mute sm:px-5">
-                Вероятность — по кэфам букмекеров без маржи, кэф — предложение букмекера. Не гарантия выигрыша: ставки — это риск · 18+ ·{' '}
-                <Link href="/about#vygodno" className="underline underline-offset-2 hover:text-fg">
-                  Как мы считаем
-                </Link>
-              </p>,
-            )
+              )
+            })
           ) : (
             <p className="card px-4 py-4 text-[14px] leading-relaxed text-dim sm:px-5">
               Сейчас выгодных ставок нет: кэфы легальных букмекеров не выше честных. Список обновляется в течение дня.
