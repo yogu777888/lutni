@@ -596,7 +596,7 @@ export default async function MatchPage({ params }: Props) {
                 </>
               }
               aside={<span className="-my-2 -mr-2 block"><PredictShareButton {...predictProps} /></span>}>
-              <PredictBlock {...predictProps} />
+              {clubVars(<PredictBlock {...predictProps} />)}
             </Section>
           ) : null}
 

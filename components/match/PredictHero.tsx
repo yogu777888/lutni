@@ -8,7 +8,6 @@ import { outcomeText, split100, type Verdict } from '@/lib/verdict'
 import { AdMark } from '../AdMark'
 import { CtaLink } from '../CtaLink'
 import type { TagHit } from '@/lib/tags'
-import { StorySymbol } from '../story/StorySymbol'
 import { PredictShare, type PredictCard } from './PredictShare'
 import { Icon } from '@/components/Icon'
 
@@ -34,7 +33,7 @@ type Props = {
 }
 
 /** Всё, что считает блок: картинка «···» и данные ставки — общие для блока и кнопки в заголовке (`PredictShareButton`). */
-function compute({ m, v, pick, probs, tags = [], when, url }: Props) {
+function compute({ m, v, pick, probs, when, url }: Props) {
   const n = probs ? split100(probs) : null
   const c = pick?.candidate
   const value = pick?.kind === 'value'
@@ -58,7 +57,6 @@ function compute({ m, v, pick, probs, tags = [], when, url }: Props) {
         .filter(Boolean)
         .join(', ')
     : ''
-  const fs = facts(tags, m, pick)
   const card: PredictCard = {
     home: m.home.name,
     away: m.away.name,
@@ -71,7 +69,7 @@ function compute({ m, v, pick, probs, tags = [], when, url }: Props) {
           top: k === (n.home >= n.draw && n.home >= n.away ? 'home' : n.away >= n.draw ? 'away' : 'draw'),
         }))
       : null,
-    facts: fs.map((f) => (f.side ? `${f.pro ? 'За ' : ''}${f.side.name}: ${f.text}` : f.text.charAt(0).toUpperCase() + f.text.slice(1))),
+    facts: [],
     bet: c && value
       ? {
           label: 'Выгодная ставка',
@@ -81,7 +79,7 @@ function compute({ m, v, pick, probs, tags = [], when, url }: Props) {
       : null,
     url,
   }
-  return { n, c, value, partner, odd, x12, why, fs, card }
+  return { n, c, value, partner, odd, x12, why, card }
 }
 
 /** «···» — справа в строке заголовка «Расклада по кэфам» (владелец на план «до матча» — «да»: строки с командами в блоке нет — они на табло). */
@@ -91,7 +89,7 @@ export function PredictShareButton(p: Props) {
 
 export function PredictBlock(p: Props) {
   const { m, v, pick } = p
-  const { n, c, value, partner, odd, x12, why, fs } = compute(p)
+  const { n, c, value, partner, odd, x12, why } = compute(p)
   const top = n ? (n.home >= n.draw && n.home >= n.away ? 'home' : n.away >= n.draw ? 'away' : 'draw') : null
   return (
     <div>
@@ -104,7 +102,7 @@ export function PredictBlock(p: Props) {
             {(['home', 'draw', 'away'] as const).map((k, i) => (
               <div
                 key={k}
-                className={`h-full ${i === 0 ? 'rounded-l-full' : ''} ${i === 2 ? 'rounded-r-full' : ''} ${k === top ? 'bg-white/85' : 'bg-white/25'}`}
+                className={`h-full ${i === 0 ? 'rounded-l-full' : ''} ${i === 2 ? 'rounded-r-full' : ''} ${k !== top ? 'bg-white/30' : k === 'home' ? 'club-bar-h' : k === 'away' ? 'club-bar-a' : 'bg-white/85'}`}
                 style={{ width: `${n[k]}%` }}
               />
             ))}
@@ -119,24 +117,6 @@ export function PredictBlock(p: Props) {
             ))}
           </div>
         </div>
-      ) : null}
-      {fs.length ? (
-        // «Почему так» — факты подборок (владелец: «а может оставить пилюли а факты вынести красиво в прогноз?» — «да»):
-        // серии, дома, травмы, падение кэфа, форма аутсайдера, личные встречи; шансы исходов и голов здесь не повторяем —
-        // они на полосе и в «Голах и счёте»; команда в начале факта — эмблемой; до четырёх, сначала про команду ставки
-        // плашками в ряд, команда — названием перед фактом (владелец прислал второй вариант блока: «как тебе?» — «да»;
-        // эмблемой 18px было непонятно, о ком речь); плашку «tag.bet оценивает матч как близкий» не делаем — повтор заголовка
-        <ul className="mt-5 flex flex-wrap gap-2">
-          {fs.map((f) => (
-            <li key={f.slug} className="flex min-w-0 items-start gap-2.5 rounded-tile bg-white/[0.06] px-3.5 py-2.5 text-[15px] leading-snug">
-              <StorySymbol k={f.slug} tone="currentColor" className="mt-[3px] h-4 w-4 shrink-0 text-mute" />
-              <span className="min-w-0">
-                {f.side ? <>{f.pro ? `За ${f.side.name}: ` : `${f.side.name}: `}</> : null}
-                {f.side ? f.text : <span className="inline-block first-letter:uppercase">{f.text}</span>}
-              </span>
-            </li>
-          ))}
-        </ul>
       ) : null}
       </div>
       {c && value ? (
@@ -198,23 +178,3 @@ export function PredictBlock(p: Props) {
   )
 }
 
-/** Подборки-доводы для «Почему так»: без шансов исходов и голов (они на полосе и в «Голах и счёте») и без «Выгодно». */
-const FACT_SLUGS = ['progruz', 'seriya', 'krepost', 'andedog', 'kadry', 'h2h', 'top-match']
-
-function facts(tags: TagHit[], m: Match, pick: Pick | null) {
-  const key = pick?.candidate.key
-  const pickTeam = key === 'home' ? m.home.name : key === 'away' ? m.away.name : null
-  return tags
-    .filter((t) => FACT_SLUGS.includes(t.slug))
-    .map((t) => {
-      const fact = t.short ?? t.reason
-      const side = [m.home, m.away].find((tm) => /^[:,]/.test(fact.slice(tm.name.length + 2)) && fact.startsWith(`«${tm.name}»`)) ?? null
-      const text = side ? fact.slice(side.name.length + 2).replace(/^[:,]\s*/, '') : fact
-      // за кого довод: падение кэфа, «дома не проигрывают», форма аутсайдера и серия побед — за команду; травмы, серия
-      // без побед — нет (владелец: довод «Эльче · 13 очков…» под «Скорее выиграет Атлетико» читался спором с заголовком)
-      const pro = ['progruz', 'krepost', 'andedog'].includes(t.slug) || (t.slug === 'seriya' && !/без побед|поражени/.test(text))
-      return { slug: t.slug, side, text, pro, mine: Boolean(pickTeam && fact.includes(`«${pickTeam}»`)) }
-    })
-    .sort((a, b) => Number(b.mine) - Number(a.mine))
-    .slice(0, 4)
-}
