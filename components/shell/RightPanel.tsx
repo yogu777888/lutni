@@ -216,7 +216,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
         <GroupMark g={g} className="h-[18px] w-[18px]" crest="h-[22px] w-[22px]" />
         <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={s} />
         {/* знак подборки на углу, как у кружков на телефоне; обводка — цветом фона блока историй */}
-        <GroupBadge g={g} className="-right-[6px] -top-[6px] h-4 w-4 border-[1.5px] border-ink" />
+        <GroupBadge g={g} className="-right-[7px] -top-[7px] h-[18px] w-[18px] border-[1.5px] border-ink" />
       </span>
     ),
   }
@@ -255,7 +255,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
             <GroupMark g={g} className="h-[18px] w-[18px]" crest="h-[22px] w-[22px]" />
             <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} />
             {/* в полоске названий нет — какая это подборка, говорит значок на углу (эмблема «Барселоны» этого не скажет) */}
-            <GroupBadge g={g} className="-right-[6px] -top-[6px] h-4 w-4 border-[1.5px] border-panel" />
+            <GroupBadge g={g} className="-right-[7px] -top-[7px] h-[18px] w-[18px] border-[1.5px] border-panel" />
           </button>
         ))}
         {/* «Выгодно сегодня» не пропадает целиком: лаймовый круг со знаком процента внизу (лайм — деньги и «выгодно») */}
@@ -317,6 +317,13 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                         </span>
                         {/* кольцо, как вокруг сторис: непросмотренные матчи подборки — приглушённым цветом подборки (как знак и заливка круга), просмотренные — серые */}
                         <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} />
+                        {/* знак подборки на углу — и в развёрнутой панели (владелец: «может на пк в несложенном состоянии в правом
+                            блоке тоже сделаем эти кружочки на историях?»), как в полоске и на телефоне; при наведении прячется вместе с
+                            эмблемой — на её месте ▶. Обводка — цветом панели (у раскрытой — её плашки) */}
+                        <GroupBadge
+                          g={g}
+                          className={`-right-[7px] -top-[7px] h-[18px] w-[18px] border-[1.5px] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0 ${on ? 'border-[#1c2126]' : 'border-panel'}`}
+                        />
                         {/* точки «идёт» на значках подборок нет: при многих идущих их было шесть подряд; «3 идут» — в подписи,
                             а сигнал «идёт» — в центре и у турниров слева (владелец согласился) */}
                       </button>

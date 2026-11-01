@@ -102,7 +102,7 @@ export function OddsPick({ books, chip = false, className = '' }: { books: PickB
         title={`${label} · выбрать, чьи кэфы показывать`}
         className={
           chip
-            ? 'grid h-[30px] w-11 place-items-center rounded-full bg-white/[0.08] text-fg/85 transition-colors active:bg-white/[0.14]'
+            ? 'grid h-9 w-10 place-items-center rounded-ctl text-dim transition-colors active:bg-white/12'
             : 'inline-flex h-9 items-center gap-1 rounded-ctl bg-white/[0.04] px-2 text-dim transition-colors hover:bg-white/12 hover:text-fg'
         }
       >

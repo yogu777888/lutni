@@ -8,7 +8,7 @@ import { Icon } from '@/components/Icon'
  * Кнопка «календарь» рядом с вкладками дней: любой день в пределах года назад и двух месяцев вперёд.
  * Сам выбор — системный календарь браузера (input type=date), без своих попапов.
  */
-export function DatePicker({ active, today, min, max, hash = '', section, chips = false }: { active: string; today: string; min: string; max: string; hash?: string; section?: string; chips?: boolean }) {
+export function DatePicker({ active, today, min, max, hash = '', section }: { active: string; today: string; min: string; max: string; hash?: string; section?: string }) {
   const router = useRouter()
   const input = useRef<HTMLInputElement>(null)
 
@@ -29,10 +29,9 @@ export function DatePicker({ active, today, min, max, hash = '', section, chips 
       <button
         type="button"
         onClick={open}
-        // `chips` — ниже lg чипом, как дни рядом (ряд шапки на главной)
-        className={`inline-flex h-9 items-center gap-1.5 rounded-ctl px-3 text-[15px] font-medium text-dim transition-colors hover:text-fg lg:hover:bg-white/12 ${
-          chips ? 'max-lg:h-[30px] max-lg:rounded-full max-lg:bg-white/[0.08] max-lg:text-[14px] max-lg:text-fg/85' : 'hover:bg-white/12'
-        }`}
+        // как дни рядом — текстом без заливки, на всех ширинах
+        className="inline-flex h-9 items-center gap-1.5 rounded-ctl px-3 text-[15px] font-medium text-dim transition-colors hover:bg-white/12 hover:text-fg"
+
         aria-label="Выбрать дату"
         title="Выбрать дату"
       >

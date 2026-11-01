@@ -315,7 +315,7 @@ export async function DayView({
                     scroll={false}
                     title={`${cur[1]} · нажмите — ${other[1].toLowerCase()}`}
                     aria-label={`Порядок: ${cur[1].toLowerCase()}. Показать ${other[1].toLowerCase()}`}
-                    className="order-first grid h-[30px] w-11 shrink-0 place-items-center rounded-full bg-white/[0.08] text-fg/85 transition-colors active:bg-white/[0.14] lg:hidden"
+                    className="order-first -ml-2.5 grid h-9 w-10 shrink-0 place-items-center rounded-ctl text-dim transition-colors active:bg-white/12 lg:hidden"
                   >
                     <SortIcon k={cur[0]} />
                   </Link>

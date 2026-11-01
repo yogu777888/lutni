@@ -170,7 +170,7 @@ export function StoryCircles({ groups, covers = {} }: { groups: StoryGroup[]; co
             <span data-story-key={g.key} className={`relative block rounded-full transition-transform duration-300 group-hover:-translate-y-0.5 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-fg group-active:scale-95 h-[var(--c)] w-[var(--c)] lg:h-[clamp(46px,calc(14vh_-_50px),58px)] lg:w-[clamp(46px,calc(14vh_-_50px),58px)]`}>
               <Ring kind={g.kind} n={g.items.length} seen={n} tone={toneOf(g)} />
               <Disc g={g} cover={covers[g.key]} />
-              {covers[g.key] ? null : <GroupBadge g={g} className="-right-[3px] -top-[3px] h-6 w-6 border-2 border-[#090c10]" />}
+              {covers[g.key] ? null : <GroupBadge g={g} className="-right-1 -top-1 h-[26px] w-[26px] border-2 border-[#090c10]" />}
             </span>
             <span className="mt-1.5 w-full px-0.5 text-center">
               <Caption g={g} dim={done} />

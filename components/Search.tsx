@@ -105,7 +105,7 @@ export function Search() {
         title="Поиск"
         // ниже lg — круглой кнопкой у правого края шапки, последней (`order-last`; владелец: «не нравится, где стоит кнопка
         // поиска» — лупа висела посередине между надписью и «Рекламой»), как у YouTube
-        className="hdr-search order-last grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.08] text-fg/85 transition-colors hover:bg-white/[0.14] hover:text-fg lg:hidden"
+        className="hdr-search order-last -mr-2 grid h-10 w-10 shrink-0 place-items-center rounded-full text-fg transition-colors active:bg-white/12 lg:hidden"
       >
         <Icon k="search" className="h-[18px] w-[18px]" />
       </button>
