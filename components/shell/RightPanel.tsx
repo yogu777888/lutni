@@ -169,7 +169,7 @@ function ValueBody({ rows, card = false, book }: { rows: ValueRow[]; card?: bool
       </div>
       {/* карточкой — пометка под карточкой справа, как «PARI · Реклама · 18+» под блоками лиг (владелец: «может бк реклама вниз
           перенести? а то ломает блок изза марафона» — справа от заголовка «Марафон · Реклама · 18+» на телефоне переносилось) */}
-      {rows.length && card ? <p className="mt-2 px-4 text-right text-[12px] text-mute/70 sm:px-5">{one ? `${one} · ` : ''}Реклама · 18+</p> : null}
+      {rows.length && card ? <p className="mt-2 px-4 text-right text-[12px] text-mute sm:px-5">{one ? `${one} · ` : ''}Реклама · 18+</p> : null}
     </section>
   )
 }

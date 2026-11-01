@@ -87,7 +87,7 @@ function ValueRow({ it }: { it: FeedItem }) {
           <span className="num">{formatTime(m.ts)}</span> · {vs}
         </p>
         {/* цифры — одной тихой строкой: лайм только у кнопки (зелёное «Выше честной на 10,6%» рядом с лаймовой кнопкой спорило с ней) */}
-        <p className="mt-0.5 text-[13px] text-mute">
+        <p className="mt-0.5 text-[13px] text-fg/52">
           {prob != null ? (
             <>
               <span className="whitespace-nowrap">Шанс {pct(prob)} · честный кэф {(1 / prob).toFixed(2)}</span>
@@ -297,7 +297,7 @@ pluralN(list.length, ['ставка', 'ставки', 'ставок'])
                 </div>
                 {/* пометка — одна на блок, под карточкой справа с букмекерами этого дня, как «PARI · Реклама · 18+» под блоками
                     лиг (владелец: «может подписи бк реклама под блок перенести как везде а не под каждой кнопкой?») */}
-                <p className="mt-2 px-4 text-right text-[12px] text-mute/70 sm:px-5">
+                <p className="mt-2 px-4 text-right text-[12px] text-mute sm:px-5">
                   {[...new Set(list.map((it) => getPartner(it.summary!.pick!.partnerSlug!)!.name))].join(', ')} · Реклама · 18+
                 </p>
               </section>

@@ -36,7 +36,7 @@ function AdNote({ items, lines, under }: { items: FeedItem[]; lines: Record<numb
     </span>
   )
   const body = [note(first, '*', true), ...[...all].map(([slug, name]) => note([name], slug))]
-  return under ? <p className="mt-2 px-4 text-right text-[12px] text-mute/70 sm:px-5">{body}</p> : <span className="text-mute/70">{body}</span>
+  return under ? <p className="mt-2 px-4 text-right text-[12px] text-mute sm:px-5">{body}</p> : <span className="text-mute">{body}</span>
 }
 
 export function LeagueBlock({
