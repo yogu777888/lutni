@@ -74,40 +74,50 @@ export function OddsTable({
   )
   if (part === 'note') return note
 
-  /** Ячейка кэфа: число по центру колонки, выгодный — лаймовой плашкой, лучший — жирным; у партнёра — ссылка к нему. */
+  /** Ячейка кэфа: у партнёра — кнопка-ссылка к нему (рамка, у выгодного лаймовая), без ссылки — число; лучший — жирным. */
   const cell = (b: BookOdds, c: Col, partner: Partner | null | undefined) => {
     const { q, isBest, p, val } = info(b, c)
     if (!q) return <span className="text-mute">—</span>
     const moved = q.opening ? q.value / q.opening - 1 : 0
-    const chip = (
-      // ячейкой, как кэфы в строках главной (владелец: «блок Коэффициенты букмекеров некрасивый» — числа висели в воздухе,
-      // и было не понять, что на них можно нажать): серая плашка, выгодный — лаймом, лучший в колонке — жирным
-      // число без плашки, как цифры в «Форме команд»; плашка — только у выгодного, лаймом (владелец: «Коэффициенты
-      // букмекеров тоже некрасивый» — девять серых ячеек давали сетку коробочек); лучший в колонке — жирным
-      <span
-        className={`num inline-flex h-8 min-w-[52px] items-center justify-center rounded-full px-1.5 text-[15px] ${
-          val ? 'bg-acid font-semibold text-acid-ink' : isBest ? 'font-semibold text-fg' : 'font-medium text-fg/90'
+    const tip = [`${c.title ?? c.label}: ${formatOdd(q.value)}`, val && p ? `выгодно — выше честной цены ${(1 / p).toFixed(2)}` : '', isBest ? 'лучший кэф' : '', q.opening ? `открытие ${q.opening.toFixed(2)}` : '']
+      .filter(Boolean)
+      .join(' · ')
+    const arrow = (cls: string) =>
+      moved <= -0.05 ? (
+        <span className={`ml-0.5 text-[10px] ${cls || 'text-hot'}`}>▼</span>
+      ) : moved >= 0.05 ? (
+        <span className={`ml-0.5 text-[10px] ${cls || 'text-mute'}`}>▲</span>
+      ) : null
+    // без ссылки (не партнёр или матч начался) — простое число: рамка — знак кнопки, а нажать некуда
+    if (!(partner && open))
+      return (
+        <span className={`num text-[15px] ${val ? 'font-semibold text-acid' : isBest ? 'font-semibold text-fg' : 'font-medium text-fg/90'}`} title={tip}>
+          {formatOdd(q.value)}
+          {arrow('')}
+        </span>
+      )
+    // кнопкой той же формы, что кэфы в строках главной и «Выгодных ставок» (владелец: «и в блоке Коэффициенты букмекеров на
+    // странице матча тоже»): рамка 4px серая, у выгодного — лаймовая, число — блоком цвета карточки; лучший в колонке — жирным;
+    // наведение — обычный белеет, выгодный заливается лаймом, число графитовое; нажатие — сжатие
+    return (
+      <a
+        href={goHref(partner, 'odds-table', match.id)}
+        target="_blank"
+        rel={SPONSORED_REL}
+        title={`${tip} · Реклама 18+`}
+        className={`group/odd mx-auto flex h-[34px] w-full max-w-[84px] rounded-ctl p-1 transition-transform duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 ${
+          val ? 'bg-acid' : 'bg-white/10'
         }`}
-        title={
-          [`${c.title ?? c.label}: ${formatOdd(q.value)}`, val && p ? `выгодно — выше честной цены ${(1 / p).toFixed(2)}` : '', isBest ? 'лучший кэф' : '', q.opening ? `открытие ${q.opening.toFixed(2)}` : '']
-            .filter(Boolean)
-            .join(' · ')
-        }
       >
-        {formatOdd(q.value)}
-        {moved <= -0.05 ? (
-          <span className={`ml-0.5 text-[10px] ${val ? '' : 'text-hot'}`}>▼</span>
-        ) : moved >= 0.05 ? (
-          <span className={`ml-0.5 text-[10px] ${val ? '' : 'text-mute'}`}>▲</span>
-        ) : null}
-      </span>
-    )
-    return partner && open ? (
-      <a href={goHref(partner, 'odds-table', match.id)} target="_blank" rel={SPONSORED_REL} className="inline-block rounded-full transition-colors hover:bg-white/[0.08]">
-        {chip}
+        <span
+          className={`num flex flex-1 items-center justify-center rounded-md bg-panel text-[15px] text-fg transition-colors duration-150 group-hover/odd:text-ink group-focus-visible/odd:text-ink ${
+            val ? 'font-semibold group-hover/odd:bg-acid group-focus-visible/odd:bg-acid' : `${isBest ? 'font-semibold' : 'font-medium'} group-hover/odd:bg-fg group-focus-visible/odd:bg-fg`
+          }`}
+        >
+          {formatOdd(q.value)}
+          {arrow('group-hover/odd:text-ink group-focus-visible/odd:text-ink')}
+        </span>
       </a>
-    ) : (
-      chip
     )
   }
   const fair = (c: Col) => {
