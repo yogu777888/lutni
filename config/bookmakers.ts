@@ -369,7 +369,14 @@ export const hasFacts = (p: Partner): boolean => Object.entries(p.facts ?? {}).s
  * проверенные факты или линия в наших данных (PARI — раздел /Pari, Марафон — /Odds; у остальных партнёров линии в API нет).
  * Пустая страница — только кнопка и общие слова — для поисковиков «тонкая партнёрская»: `noindex` и не в sitemap, пока не заполнят.
  */
-export const indexable = (p: Partner): boolean => hasFacts(p) || p.slug === 'pari' || p.slug === 'marathonbet'
+export const indexable = (p: Partner): boolean => hasFacts(p) || onSite(p)
+
+/**
+ * Чья реклама на сайте видна: кэфы-ссылки есть только у PARI (раздел /Pari) и Марафона (/Odds), «Бонус» в шапке — главный
+ * партнёр; страницы «Букмекеры» и «Где ставить» убраны, других букмекеров на сайте нет — и в «Реклама: …» их не пишем
+ * (владелец: «внизу на мобильном реклама и там много лишних бк которых на сайте нет»). Появятся кэфы другого — допишите.
+ */
+export const onSite = (p: Partner): boolean => p.slug === 'pari' || p.slug === 'marathonbet'
 
 export const realBonus = (p: Partner): string | null => (p.bonus && p.bonus !== GENERIC_BONUS ? p.bonus : null)
 

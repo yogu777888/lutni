@@ -37,8 +37,8 @@ function Logo({ b, size }: { b: PickBook; size: number }) {
       aria-hidden
       width={size}
       height={size}
-      className="shrink-0 outline outline-1 -outline-offset-1 outline-white/10"
-      style={{ width: size, height: size, borderRadius: Math.round(size * 0.25), background: b.color }}
+      className="shrink-0"
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.25), boxShadow: '0 0 0 1px rgb(255 255 255 / 0.1)' }}
     />
   )
 }

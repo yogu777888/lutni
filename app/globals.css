@@ -1177,11 +1177,15 @@ html[data-shell-rc] .shell-r-rail {
       -webkit-mask-image: none;
       mask-image: none;
     }
+    /* цветом фона страницы, а не карточки: слой во всю колонку центра, и в просветах между карточками (фон темнее
+       карточки) градиент цвета карточки светлел полосой с острыми углами и вылезал за блоки (владелец: «на пк
+       затемнение снизу в центральном блоке сломалось там острые углы и оно вылазит за блоки»); цветом фона просветы
+       не меняются, а карточки уходят в фон у края окна — как в полоску рамки под ними */
     html .edge-fade-page {
-      background: linear-gradient(transparent, var(--color-panel));
+      background: linear-gradient(rgb(9 12 16 / 0), #090c10);
     }
     html .edge-fade-top {
-      background: linear-gradient(var(--color-panel), transparent);
+      background: linear-gradient(#090c10, rgb(9 12 16 / 0));
     }
   }
   .edge-fade-page {

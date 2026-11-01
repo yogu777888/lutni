@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { PARTNERS } from '@/config/bookmakers'
+import { onSite, PARTNERS } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 
 /** Ссылки строкой: «·» приклеена к концу ссылки (nowrap) — при переносе строка кончается точкой, а не начинается с «· Cookie». */
@@ -31,10 +31,8 @@ function Links({ label, items, className = '' }: { label: string; items: [string
  * (владелец: «а футер как тебе?»). От xl подвала нет.
  */
 export function Footer() {
-  // рекламодатели — те, у кого есть партнёрская ссылка (`AFF_<SLUG>_URL`); пока ни у кого нет — первые шесть партнёров
-  // (легальных букмекеров 17, у остальных «На сайт» ведёт на официальный сайт — это не реклама по договору)
-  const configured = PARTNERS.filter((p) => p.configured)
-  const advertisers = configured.length ? configured : PARTNERS.slice(0, 6)
+  // рекламодатели — только те, чья реклама на сайте видна (`onSite`: кэфы-ссылки и «Бонус»), порядок — партнёрский
+  const advertisers = PARTNERS.filter(onSite)
   const info: [string, string][] = [
     ['/about', 'Как мы считаем'],
     ['/o-proekte', 'О проекте'],

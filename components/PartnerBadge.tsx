@@ -14,9 +14,11 @@ export function PartnerBadge({ partner, size = 36 }: { partner: Partner; size?: 
       width={size}
       height={size}
       loading="lazy"
-      // тонкая обводка изнутри — тёмные знаки (Leon, Zenit, Bettery) иначе сливаются с графитовой карточкой
-      className="inline-block shrink-0 outline outline-1 -outline-offset-1 outline-white/10"
-      style={{ width: size, height: size, borderRadius: Math.round(size * 0.25), background: partner.color }}
+      // тонкая обводка — тёмные знаки (Leon, Zenit, Bettery) иначе сливаются с графитовой карточкой; тенью, а не `outline`:
+      // Safari на iPhone рисовал outline квадратом поверх скругления — белый квадрат вокруг знака (владелец: «иконки бк
+      // … как будто квадрат белый на них»); заливки цветом букмекера нет — она проступала жёлтой каймой по краю скругления
+      className="inline-block shrink-0"
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.25), boxShadow: '0 0 0 1px rgb(255 255 255 / 0.1)' }}
     />
   )
 }
