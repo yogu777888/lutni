@@ -28,6 +28,8 @@ export function Search() {
   const [q, setQ] = useState('')
   const [res, setRes] = useState<Res | null>(null)
   const [busy, setBusy] = useState(false)
+  // окно поиска рисуется только в браузере (открыто — значит, после клика), ширину можно спросить прямо при отрисовке
+  const wide = open && typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
   const input = useRef<HTMLInputElement>(null)
   const [hints, setHints] = useState<Suggest | null>(null)
   const [mac, setMac] = useState(true)
@@ -107,7 +109,7 @@ export function Search() {
         // поиска» — лупа висела посередине между надписью и «Рекламой»), как у YouTube
         className="hdr-search order-last -mr-2 grid h-10 w-10 shrink-0 place-items-center rounded-full text-fg transition-colors active:bg-white/12 lg:hidden"
       >
-        <Icon k="search" className="h-[18px] w-[18px]" />
+        <Icon k="search" className="h-[22px] w-[22px]" />
       </button>
       {open ? (
         <div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/60 px-3 pt-[12vh] backdrop-blur-sm" onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}>
@@ -119,11 +121,19 @@ export function Search() {
                 autoFocus
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Команда или турнир: «Спартак», «Ла Лига»"
-                className="h-14 w-full bg-transparent text-[16px] text-fg outline-none placeholder:text-mute"
+                // на телефоне — коротко: примеры в «…» не влезали и обрезались на полуслове
+                placeholder={wide ? 'Команда или турнир: «Спартак», «Ла Лига»' : 'Команда или турнир'}
+                className="h-14 w-full min-w-0 bg-transparent text-[16px] text-fg outline-none placeholder:text-mute"
               />
-              <button type="button" onClick={() => setOpen(false)} className="rounded-ctl px-2 py-1 text-[12px] text-mute hover:text-fg">
-                Esc
+              {/* «Esc» — подсказка клавиатуры: на телефоне клавиши нет, там — крестик */}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Закрыть поиск"
+                className="-mr-2 grid h-10 min-w-10 shrink-0 place-items-center rounded-ctl px-2 text-[12px] text-mute hover:text-fg"
+              >
+                <span className="hidden lg:inline">Esc</span>
+                <Icon k="close" className="h-[18px] w-[18px] lg:hidden" />
               </button>
             </div>
             <div className="max-h-[60vh] overflow-y-auto">
