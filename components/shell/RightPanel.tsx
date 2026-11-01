@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { BlockMore } from '../BlockMore'
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { CompactMatch } from '@/lib/compact'
 import type { DayPicks, ValueRow } from '@/lib/day-picks'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
@@ -22,6 +22,7 @@ import { useRailTip } from './RailTip'
 import { matchesN, StateLine, stateText } from './StateLine'
 import { StoryRing } from './StoryRing'
 import { Icon } from '@/components/Icon'
+import { Hint } from '@/components/match/Hint'
 
 /** Заглавная первая буква строкой, а не `first-letter:uppercase`: Safari не применяет `::first-letter` у `line-clamp`
  * (`-webkit-box`) — «победа Аякс» со строчной. */
@@ -95,7 +96,6 @@ export function ValueBlock({ rows, by = {}, card = false }: { rows: ValueRow[]; 
 }
 
 function ValueBody({ rows, card = false, book }: { rows: ValueRow[]; card?: boolean; book?: string }) {
-  const hintId = useId()
   // все ставки одного букмекера: он назван в заголовке, как было; есть другие — подписан каждый кэф (имя другого букмекера в
   // заголовке не влезало в 288px: «Марафон · Реклама · 18+» переносилось вместе с «Выгодно сегодня»)
   const one = book ?? (rows.length > 0 && rows.every((r) => r.slug === 'pari') ? 'PARI' : null)
@@ -103,30 +103,20 @@ function ValueBody({ rows, card = false, book }: { rows: ValueRow[]; card?: bool
   return (
     // карточкой (под списком ниже xl) — заголовок над ней, на фоне страницы, как блоки лиг и разделы матча
     <section className={card ? 'relative min-w-0' : 'relative mt-6 border-t border-edge pt-4'}>
-      <h3 className={`flex items-baseline justify-between ${card ? 'mb-2.5 px-4 text-[20px] font-bold leading-tight tracking-[-0.01em] sm:px-5' : 'text-[15px] font-semibold'}`}>
+      <h3 className={`relative flex items-baseline justify-between ${card ? 'mb-2.5 px-4 text-[20px] font-bold leading-tight tracking-[-0.01em] sm:px-5' : 'text-[15px] font-semibold'}`}>
         {/* ⓘ — почему «выгодно» (владелец согласился: объяснение было только в подсказке плашки, её почти никто не находит);
-            простыми словами и с примером, без «заработать»: оценка, а не гарантия */}
-        <span className="group/vh flex items-baseline gap-1.5 whitespace-nowrap">
+            простыми словами и с примером, без «заработать»: оценка, а не гарантия. `Hint` — по нажатию тоже (владелец: «на
+            телефоне в блоке выгодно сегодня не работает значок пояснение» — окошко открывалось только наведением и фокусом,
+            а Safari на iPhone кнопку по нажатию в фокус не ставит); окошко — под заголовком (`relative` у h3) */}
+        <span className="flex items-baseline whitespace-nowrap">
           Выгодно сегодня
-          <button
-            type="button"
-            aria-describedby={hintId}
-            aria-label="Почему «выгодно»"
-            className="text-[13px] font-normal text-mute transition-colors hover:text-fg focus-visible:text-fg"
-          >
-            ⓘ
-          </button>
-          <span
-            id={hintId}
-            role="tooltip"
-            className={`pointer-events-none absolute z-20 ${card ? 'inset-x-0 top-9' : 'inset-x-0 top-11'} whitespace-normal rounded-tile border border-edge bg-panel-2 p-3 text-[13px] font-normal leading-snug text-dim opacity-0 shadow-[0_10px_30px_rgb(0_0_0/0.45)] transition-opacity group-focus-within/vh:opacity-100 group-hover/vh:opacity-100`}
-          >
-            <b className="mb-1 block font-semibold text-fg">Почему «выгодно»</b>
-            Кэф выше, чем стоит исход по кэфам всех букмекеров без маржи. Например, у победы шанс 40% — честный кэф 2.50, а букмекер платит 2.68.
-            <span className="mt-1.5 block text-mute">Расчёт, а не гарантия · 18+</span>
+          <span className="text-[15px] font-normal">
+            <Hint
+              title="Почему «выгодно»"
+              text="Кэф выше, чем стоит исход по кэфам всех букмекеров без маржи. Например, у победы шанс 40% — честный кэф 2.50, а букмекер платит 2.68. Расчёт, а не гарантия · 18+"
+            />
           </span>
         </span>
-        {rows.length && card ? <span className="text-[12px] font-normal tracking-normal text-mute">{one ? `${one} · ` : ''}Реклама · 18+</span> : null}
       </h3>
       {/* в узкой панели пометка — строкой под заголовком: справа от него «Марафон · Реклама · 18+» в 288px переносилось,
           заголовок ломался в две строки, а ⓘ прилипал к пометке (владелец прислал скриншот: «блок выгодно сегодня
@@ -177,6 +167,9 @@ function ValueBody({ rows, card = false, book }: { rows: ValueRow[]; card?: bool
         Все выгодные ставки
       </BlockMore>
       </div>
+      {/* карточкой — пометка под карточкой справа, как «PARI · Реклама · 18+» под блоками лиг (владелец: «может бк реклама вниз
+          перенести? а то ломает блок изза марафона» — справа от заголовка «Марафон · Реклама · 18+» на телефоне переносилось) */}
+      {rows.length && card ? <p className="mt-2 px-4 text-right text-[12px] text-mute/70 sm:px-5">{one ? `${one} · ` : ''}Реклама · 18+</p> : null}
     </section>
   )
 }
