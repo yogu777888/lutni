@@ -110,13 +110,13 @@ function ValueRow({ it }: { it: FeedItem }) {
           rel={SPONSORED_REL}
           title={`${capFirst(outcome)}: ${p.odd!.toFixed(2)} в ${partner.name} · Реклама 18+`}
           aria-label={`${p.odd!.toFixed(2)} в ${partner.name}`}
-          // графитовая, лайм — только у числа (владелец: «а то что кнопки зеленые это норм?»: на этой странице выгодна каждая
-          // строка — восемь лаймовых плашек ничего не выделяли и были громче исходов); одной ширины у всех строк (кэфы — ровной колонкой), знак — во всю высоту с полем 4px: его скругление (9px)
+          // лаймовая рамка: знак и кэф — отдельными блоками внутри лаймовой плашки (владелец: «вернуть лайм просто чтоб кэф был в
+          // отдельном блоке … чтоб рамочка получилась лаймовая»), кэф — белым на цвете карточки; одной ширины у всех строк (кэфы — ровной колонкой), знак — во всю высоту с полем 4px: его скругление (9px)
           // вложено в скругление кнопки (14 = 9 + 4), кнопка читается одной плашкой, а не знаком, прилипшим к краю
-          className="flex h-11 w-[104px] items-center rounded-tile bg-white/[0.06] p-1 transition-colors hover:bg-white/[0.14]"
+          className="group/odd flex h-11 w-[108px] items-center gap-1 rounded-tile bg-acid p-1 transition-colors hover:bg-acid/85"
         >
           <PartnerBadge partner={partner} size={36} />
-          <span className="num flex-1 text-center text-[17px] font-bold text-acid">{p.odd!.toFixed(2)}</span>
+          <span className="num grid h-full flex-1 place-items-center rounded-lg bg-panel text-[17px] font-bold text-fg">{p.odd!.toFixed(2)}</span>
         </a>
       </div>
     </div>
