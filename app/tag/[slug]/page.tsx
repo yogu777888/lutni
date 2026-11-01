@@ -14,6 +14,7 @@ import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import { daySnaps, getUpcomingFeed, peekOddsSnap, type FeedItem } from '@/lib/data'
 import { appNow, dayLabel, formatDayMonth, formatTime, pct, pluralN, signedPct, todayYmd, ymdInTz } from '@/lib/format'
 import { matchHref } from '@/lib/links'
+import { tagBets, type TagBet } from '@/lib/tag-bets'
 import { x12All, type X12Line } from '@/lib/lines'
 import { Odds } from '@/components/MatchRow'
 import { OddsPick } from '@/components/OddsPick'
@@ -130,17 +131,20 @@ const capFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /**
  * Строка матча подборки (владелец: «страница подборки как?»): время, матч и турнир, факт подборки коротко («3 гола и больше —
- * шанс 77%», «Победа «Хетафе»: 7.42 → 6.37 (−14%)») и справа кэфы 1X2 — у всех подборок одни, как в строках главной
- * (владелец: «а почему в некоторых категориях только 1 кэф? можешь сделать чтоб везде 3 было?»; одну кнопку со ставкой
- * подборки — `tagBets` в `lib/tag-bets.ts` — убрали). Линии всех партнёров в разметке, видна выбранная в `OddsPick`
- * (`data-bk`, `lib/odds-pick.ts`); «Реклама · 18+» — одна под карточкой дня. На телефоне время — в строке турнира, кэфы —
- * строкой во всю ширину под текстом. Идущий — минута красным, без кэфов: доматчевые уже не действуют.
+ * шанс 77%», «Победа «Хетафе»: 7.42 → 6.37 (−14%)») и справа кэф на ставку этой подборки у легального партнёра (`tagBets`).
+ * Кнопка — та же, что в «Выгодных ставках» (владелец: «можешь на всех страницах подборок сделать кнопку с кэфом как мы с тобой
+ * делали до этого?»): знак букмекера на цвете карточки и рядом кэф в рамке 4px — серой (лайм — только «выгодно»), наведение —
+ * кэф белеет, как в строках главной. У подборки без одной ставки («Серии», «Личные встречи», «Топ-матч») — кэфы 1X2, как в
+ * строках главной (владелец: «можно чтоб у каждого матча были кэфы?»). Кнопки всех партнёров в разметке, видна выбранная в
+ * `OddsPick` (`data-bk`, `lib/odds-pick.ts`); «Реклама · 18+» — одна под карточкой дня. На телефоне время — в строке турнира:
+ * колонка времени рядом с кнопкой 108px сжимала матч до «Атлетик Бильба…»; 1X2 — строкой во всю ширину под текстом.
+ * Идущий — минута красным, без кнопки.
  */
-function TagRow({ it, hit, lines }: { it: FeedItem; hit: TagHit; lines: X12Line[] }) {
+function TagRow({ it, hit, bets, lines }: { it: FeedItem; hit: TagHit; bets: TagBet[] | null; lines: X12Line[] }) {
   const m = it.match
   const live = m.status === 'live'
   const when = live ? `${m.elapsed ?? ''}′` : formatTime(m.ts)
-  const x12 = !live && lines.length > 0
+  const x12 = !live && bets === null && lines.length > 0
   return (
     <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2.5 px-4 py-3.5 transition-colors hover:bg-white/[0.02] sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:px-5">
       <span className={`num display-num self-start pt-0.5 text-[18px] max-sm:hidden ${live ? 'text-live' : ''}`}>{when}</span>
@@ -154,6 +158,34 @@ function TagRow({ it, hit, lines }: { it: FeedItem; hit: TagHit; lines: X12Line[
           {m.league.name}
         </p>
       </div>
+      {!live && bets?.length
+        ? bets.map((bet, i) => (
+            // под кнопкой — на что ставка (владелец: «так верни где очевидные ставки, просто подпись поставь на что ставка»)
+            <div
+              key={bet.partner.slug}
+              data-bk={bet.partner.slug}
+              data-bk-first={i === 0 ? '' : undefined}
+              className="relative z-10 col-start-2 row-start-1 w-[108px] sm:col-start-3"
+            >
+            <a
+              href={goHref(bet.partner, 'tag', m.id)}
+              target="_blank"
+              rel={SPONSORED_REL}
+              title={`${bet.label}: ${bet.odd.toFixed(2)} в ${bet.partner.name} · Реклама 18+`}
+              aria-label={`${bet.label}: ${bet.odd.toFixed(2)} в ${bet.partner.name}`}
+              className="group/odd flex h-11 w-full items-center gap-2 transition-transform duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 sm:col-start-3"
+            >
+              <PartnerBadge partner={bet.partner} size={36} />
+              <span className="flex h-full flex-1 rounded-tile bg-white/10 p-1 transition-colors duration-150 group-hover/odd:bg-fg group-focus-visible/odd:bg-fg">
+                <span className="num grid flex-1 place-items-center rounded-lg bg-panel text-[17px] font-bold text-fg transition-colors duration-150 group-hover/odd:bg-fg group-hover/odd:text-ink group-focus-visible/odd:bg-fg group-focus-visible/odd:text-ink">
+                  {bet.odd.toFixed(2)}
+                </span>
+              </span>
+            </a>
+            <p className="mt-1.5 line-clamp-2 text-center text-[12px] leading-tight text-dim">{bet.label.replace(/[«»]/g, '')}</p>
+            </div>
+          ))
+        : null}
       {x12
         ? lines.map((l, i) => (
             <div key={l.slug} data-bk={l.slug} data-bk-first={i === 0 ? '' : undefined} className="col-span-2 col-start-1 sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:w-[11.25rem]">
@@ -216,10 +248,12 @@ export default async function TagPage({ params }: Props) {
   )
   const hitOf = (it: FeedItem) => it.tags.find((x) => x.slug === t.slug)!
   const snapOf = (it: FeedItem) => snaps.get(it.match.id) ?? peekOddsSnap(it.match.id)
-  const odds = new Map(ahead.map((it) => [it.match.id, x12All(snapOf(it))]))
+  const odds = new Map(ahead.map((it) => [it.match.id, { bets: tagBets(t.slug, hitOf(it), it.match, snapOf(it)), lines: x12All(snapOf(it)) }]))
   // букмекеры, чьи кнопки есть на странице, — для переключателя (`OddsPick`) и пометки рекламы под днём
   const slugsOf = (id: number) => {
-    return (odds.get(id) ?? []).map((l) => l.slug)
+    const o = odds.get(id)
+    if (!o) return []
+    return o.bets === null ? o.lines.map((l) => l.slug) : o.bets.map((b) => b.partner.slug)
   }
   const seenBk = new Set(ahead.flatMap((it) => slugsOf(it.match.id)))
   const pickBooks = PARTNERS.filter((p) => seenBk.has(p.slug)).map((p) => ({ slug: p.slug, name: p.name, color: p.color }))
@@ -356,7 +390,7 @@ pluralN(list.length, ['ставка', 'ставки', 'ставок'])
                   <BlockTitle rows title={dayHead(ymd, list[0].match.ts, today)} aside={pluralN(list.length, ['матч', 'матча', 'матчей'])} />
                   <div className="card divide-y divide-edge overflow-hidden">
                     {list.map((it) => (
-                      <TagRow key={it.match.id} it={it} hit={hitOf(it)} lines={odds.get(it.match.id)!} />
+                      <TagRow key={it.match.id} it={it} hit={hitOf(it)} bets={odds.get(it.match.id)!.bets} lines={odds.get(it.match.id)!.lines} />
                     ))}
                   </div>
                   {books.length ? (
@@ -377,7 +411,7 @@ pluralN(list.length, ['ставка', 'ставки', 'ставок'])
                 <BlockTitle rows title="Уже идут" aside="кэфы до матча не действуют" />
                 <div className="card divide-y divide-edge overflow-hidden">
                   {liveHits.map((it) => (
-                    <TagRow key={it.match.id} it={it} hit={hitOf(it)} lines={[]} />
+                    <TagRow key={it.match.id} it={it} hit={hitOf(it)} bets={[]} lines={[]} />
                   ))}
                 </div>
               </section>
