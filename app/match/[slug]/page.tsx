@@ -24,7 +24,7 @@ import { Hint } from '@/components/match/Hint'
 import { Tabs, type TabItem } from '@/components/match/Tabs'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
 import { hasMoves, OddsTable } from '@/components/match/OddsTable'
-import { PredictBlock } from '@/components/match/PredictHero'
+import { PredictBlock, PredictShareButton } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
 import { MatchTags } from '@/components/match/MatchTags'
 import { LiveChances, type LiveChanceRow } from '@/components/match/LiveChances'
@@ -547,11 +547,12 @@ export default async function MatchPage({ params }: Props) {
               после начала — «Перед матчем» («Обзор матча» обещал события, а в тексте расклад до матча); ширина строки — ~75 знаков */}
           {ins.preview.length ? (
             <Section outside title={`${scheduled ? 'Прогноз на матч' : 'Перед матчем:'} ${pair}`} note={disclaimer}>
-              {/* владелец: «блок прогноз на матч длинный и скучный» — «да»: сверху крупно сам прогноз (до начала — «Прогноз»,
-                  после — «О матче»), остальные части — строками-раскрывашками с шевроном, как вопросы на странице букмекера;
+              {/* владелец: «блок прогноз на матч длинный и скучный» — «да»: сверху абзац «О матче» (прогноз повторял бы
+                  «Расклад по кэфам» в начале вкладки — он под раскрывашкой, на плане «до матча» — «да»), остальные части —
+                  строками-раскрывашками с шевроном, как вопросы на странице букмекера;
                   текст целиком остаётся в коде страницы — он нужен поисковикам по запросу «прогноз на матч X — Y» */}
               {(() => {
-                const lead = ins.preview.find((p) => p.title === 'Прогноз') ?? ins.preview[0]
+                const lead = ins.preview.find((p) => p.title === 'О матче') ?? ins.preview[0]
                 const rest = ins.preview.filter((p) => p !== lead)
                 return (
                   <div className="prose-ru">
@@ -577,11 +578,13 @@ export default async function MatchPage({ params }: Props) {
 
     </>
   )
+  const predictProps = { m, v: verdict, pick, probs: x, tags, url: `${SITE.url}${canonical}`, when: `${leagueTitle(m.league.name)} · ${dayLabel(ymdInTz(m.ts)).toLowerCase()}` }
   const sec_predict = (
     <>
           {scheduled && (verdict || pick) ? (
-            <Section outside title="Расклад по кэфам" className="!p-4">
-              <PredictBlock m={m} v={verdict} pick={pick} probs={x} tags={tags} url={`${SITE.url}${canonical}`} when={`${leagueTitle(m.league.name)} · ${dayLabel(ymdInTz(m.ts)).toLowerCase()}`} />
+            // строки с командами в блоке нет — они на табло; «···» (картинка и «Поделиться») — справа в строке заголовка
+            <Section outside title="Расклад по кэфам" className="!p-4" aside={<span className="-my-2 -mr-2 block"><PredictShareButton {...predictProps} /></span>}>
+              <PredictBlock {...predictProps} />
             </Section>
           ) : null}
 
@@ -834,9 +837,9 @@ export default async function MatchPage({ params }: Props) {
             key: 'predict',
             label: 'Обзор',
             on: Boolean(hasPredict || shownTags.length || x || chanceMoved || scheduled || ins.preview.length),
-            content: <>{sec_predict}{sec_points}{sec_tags}{sec_goals}{sec_chance}{sec_odds}{sec_preview}</>,
+            content: <>{sec_predict}{sec_odds}{sec_goals}{sec_chance}{sec_tags}{sec_preview}</>,
           },
-          { key: 'teams', label: 'Команды', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings), content: <>{sec_form}{sec_h2h}{sec_inj}{sec_table}</> },
+          { key: 'teams', label: 'Команды', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings || sec_points), content: <>{sec_form}{sec_points}{sec_h2h}{sec_inj}{sec_table}</> },
           { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
         ]
   )

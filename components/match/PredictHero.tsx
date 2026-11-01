@@ -8,7 +8,6 @@ import { AdMark } from '../AdMark'
 import { CtaLink } from '../CtaLink'
 import type { TagHit } from '@/lib/tags'
 import { StorySymbol } from '../story/StorySymbol'
-import { TeamLogo } from '../TeamLogo'
 import { PredictShare, type PredictCard } from './PredictShare'
 import { Icon } from '@/components/Icon'
 
@@ -21,15 +20,7 @@ import { Icon } from '@/components/Icon'
  * цифр («Честная цена — 1.51, PARI платит на 5,5% больше») и кнопка «Поставить в PARI» (кэф уже крупно рядом). Было:
  * «Явный фаворит — «X»» и тут же «Победа «X»» двумя заголовками, столбик «Честная цена / Кэф PARI / Выгода».
  */
-export function PredictBlock({
-  m,
-  v,
-  pick,
-  probs,
-  tags = [],
-  when,
-  url,
-}: {
+type Props = {
   m: Match
   v: Verdict | null
   pick: Pick | null
@@ -39,7 +30,10 @@ export function PredictBlock({
   when: string
   /** адрес матча на tag.bet — для картинки и «Поделиться» */
   url: string
-}) {
+}
+
+/** Всё, что считает блок: картинка «···» и данные ставки — общие для блока и кнопки в заголовке (`PredictShareButton`). */
+function compute({ m, v, pick, probs, tags = [], when, url }: Props) {
   const n = probs ? split100(probs) : null
   const c = pick?.candidate
   const value = pick?.kind === 'value'
@@ -86,40 +80,22 @@ export function PredictBlock({
       : null,
     url,
   }
+  return { n, c, value, partner, odd, x12, why, fs, card }
+}
+
+/** «···» — справа в строке заголовка «Расклада по кэфам» (владелец на план «до матча» — «да»: строки с командами в блоке нет — они на табло). */
+export function PredictShareButton(p: Props) {
+  return <PredictShare card={compute(p).card} />
+}
+
+export function PredictBlock(p: Props) {
+  const { m, v, pick } = p
+  const { n, c, value, partner, odd, x12, why, fs } = compute(p)
   const top = n ? (n.home >= n.draw && n.home >= n.away ? 'home' : n.away >= n.draw ? 'away' : 'draw') : null
   return (
     <div>
-      {/* шапка — матч, турнир и время, справа «···»: сохранить картинку или переслать (владелец: «сверху добавь счет и лигу
-          и время как на фото и справа кнопочку чтоб можно было фото сохранить или переслать»); до начала счёта нет — «—» */}
-      {/* команды — во всю ширину карточки: хозяева от левого края, гости от правого (владелец: «а можно команды как то на
-          всю ширину сделать … а то они сжаты сверху»); время — между ними, как на табло, турнир и день — строкой над ними, «···» — справа в той же строке */}
-      <div className="px-4">
-        <div className="-mr-2 flex items-center justify-between gap-3">
-          <p className="min-w-0 truncate text-[14px] text-dim">{card.when}</p>
-          <PredictShare card={card} />
-        </div>
-        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 text-[17px] font-semibold">
-          {[m.home, null, m.away].map((t, i) =>
-            t ? (
-              // на телефоне эмблема над названием — в строку «Райо Валье…» обрезалось
-              <span
-                key={i}
-                className={`flex min-w-0 flex-col gap-1.5 sm:items-center sm:gap-2.5 ${i === 0 ? 'items-start sm:flex-row' : 'items-end text-right sm:flex-row-reverse'}`}
-              >
-                <span className="shrink-0">
-                  <TeamLogo name={t.name} src={t.logo} size={44} />
-                </span>
-                <span className="line-clamp-2 break-words leading-tight">{t.name}</span>
-              </span>
-            ) : (
-              // по центру — прочерк на месте счёта, время — в строке с турниром (владелец: «время рядом с лигой писать а по центру между командами прочерк»)
-              <span key={i} className="num display-num text-[28px] leading-none text-mute sm:text-[30px]" aria-hidden>—</span>
-            ),
-          )}
-        </div>
-      </div>
       {/* вывод, полоса шансов и доводы — своим внутренним блоком, как ставка ниже; поля и зазоры — как в «Давлении команд» */}
-      <div className="mt-4 rounded-tile bg-white/[0.04] p-4">
+      <div className="rounded-tile bg-white/[0.04] p-4">
       {v ? <p className="text-[20px] font-bold leading-tight tracking-[-0.02em] sm:text-[22px]">{v.headline}</p> : null}
       {n ? (
         <div className="mt-4">
