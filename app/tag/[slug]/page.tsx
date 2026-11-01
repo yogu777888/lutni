@@ -6,6 +6,7 @@ import { AdMark } from '@/components/AdMark'
 import { BlockMore } from '@/components/BlockMore'
 import { BlockTitle } from '@/components/Section'
 import { PageHead } from '@/components/PageHead'
+import { PartnerBadge } from '@/components/PartnerBadge'
 import { StorySymbol } from '@/components/story/StorySymbol'
 import { CtaLink } from '@/components/CtaLink'
 import { Hint } from '@/components/match/Hint'
@@ -72,50 +73,55 @@ function ValueRow({ it }: { it: FeedItem }) {
   // вероятность — точная из модели (`prob`), округляем только при показе; преимущество — `prob × кэф − 1` (`ev`, `buildCandidates`)
   const prob = Number.isFinite(p.prob) && p.prob > 0 && p.prob < 1 ? p.prob : null
   const ev = p.ev != null && Number.isFinite(p.ev) ? p.ev : null
+  const outcome = outcomeText(p.key, m).replace(/[«»]/g, '')
+  // ставка за одну команду — она уже названа строкой выше, здесь только соперник, как в «Выгодно сегодня» на главной
+  const vs =
+    p.key === 'home' || p.key === 'hd' ? `против ${m.away.name}` : p.key === 'away' || p.key === 'da' ? `против ${m.home.name}` : `${m.home.name} — ${m.away.name}`
   return (
-    <div className="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-4 px-4 py-3 transition-colors hover:bg-white/[0.02] sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:px-5">
-      <span className="num display-num self-start pt-0.5 text-[18px]">{formatTime(m.ts)}</span>
+    <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-4 py-3.5 transition-colors hover:bg-white/[0.02] sm:px-5">
       <div className="min-w-0">
         <Link href={matchHref(m)} prefetch={false} className="block text-[15px] font-semibold leading-snug first-letter:uppercase after:absolute after:inset-0 sm:text-[16px]">
-          {outcomeText(p.key, m)}
+          {outcome}
         </Link>
-        <p className="mt-0.5 truncate text-[13px] text-dim">
-          {m.home.name} — {m.away.name} · {m.league.name}
+        <p className="mt-0.5 line-clamp-2 text-[13px] text-dim" title={m.league.name}>
+          <span className="num">{formatTime(m.ts)}</span> · {vs}
         </p>
-        {/* на телефоне — «Справедливый 1.83»: строка короче, смысл тот же */}
+        {/* цифры — одной тихой строкой: лайм только у кнопки (зелёное «Выше честной на 10,6%» рядом с лаймовой кнопкой спорило с ней) */}
         <p className="mt-0.5 text-[13px] text-mute">
           {prob != null ? (
             <>
-              <span className="whitespace-nowrap">Вероятность {pct(prob)}</span> ·{' '}
-              <span className="whitespace-nowrap">
-                Справедливый<span className="max-sm:hidden"> кэф</span> {(1 / prob).toFixed(2)}
-              </span>
+              <span className="whitespace-nowrap">Шанс {pct(prob)} · честный кэф {(1 / prob).toFixed(2)}</span>
             </>
           ) : null}
           {ev != null ? (
-            // на телефоне — своей строкой: в одну с «Вероятностью» не влезает рядом с плашкой кэфа
-            <span className="whitespace-nowrap text-good max-sm:block">
-              {prob != null ? <span className="max-sm:hidden"> · </span> : null}Выше честной на {signedPct(ev).replace('+', '')}
+            // на телефоне — своей строкой: в одну рядом с кнопкой не влезает, а перенос посередине рвал «Шанс 55% · / честный…»
+            <span className="whitespace-nowrap max-sm:block">
+              {prob != null ? <span className="max-sm:hidden"> · </span> : null}выше на {signedPct(ev).replace('+', '')}
             </span>
           ) : null}
         </p>
       </div>
       <div className="relative z-10 flex flex-col items-end gap-1">
+        {/* в кнопке — знак букмекера и кэф (владелец: «может в кнопке коеффициента ставить лого бк както?»): знак узнаётся
+            быстрее подписи 11px; имя — в подсказке и для диктора */}
         <a
           href={goHref(partner, 'value', m.id)}
           target="_blank"
           rel={SPONSORED_REL}
-          title={`${outcomeText(p.key, m)}: ${p.odd!.toFixed(2)} в ${partner.name} · Реклама 18+`}
-          className="flex h-10 min-w-[72px] flex-col items-center justify-center rounded-ctl bg-acid px-2.5 leading-none text-acid-ink transition-colors hover:bg-acid/85"
+          title={`${capFirst(outcome)}: ${p.odd!.toFixed(2)} в ${partner.name} · Реклама 18+`}
+          aria-label={`${p.odd!.toFixed(2)} в ${partner.name}`}
+          className="flex h-11 items-center gap-2 rounded-ctl bg-acid pl-1.5 pr-3 text-acid-ink transition-colors hover:bg-acid/85"
         >
+          <PartnerBadge partner={partner} size={30} />
           <span className="num text-[16px] font-bold">{p.odd!.toFixed(2)}</span>
-          <span className="mt-0.5 text-[11px] font-medium">{partner.name}</span>
         </a>
-        <span className="text-[11px] text-mute">Реклама · 18+</span>
+        <span className="text-[12px] text-mute">Реклама · 18+</span>
       </div>
     </div>
   )
 }
+
+const capFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /**
  * Строка матча подборки (владелец: «страница подборки как?»): время, матч и турнир, факт подборки коротко («3 гола и больше —
