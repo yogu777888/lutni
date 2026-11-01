@@ -52,7 +52,7 @@ export function StatusCell({ m }: { m: Match }) {
  * (раньше клик по «кнопке» открывал сторис — владелец согласился сделать переход). Линии партнёра нет — простые числа
  * без плашек, не притворяются кнопками. Выгодный — лаймовой рамкой, остальные — серой.
  */
-function Odds({ m, hotKey, line }: { m: Match; hotKey: string | null; line: X12Line | null }) {
+export function Odds({ m, hotKey, line }: { m: Match; hotKey: string | null; line: X12Line | null }) {
   const x = m.odds?.x12
   return (
     <span className="relative z-10 grid grid-cols-3 gap-1.5">
