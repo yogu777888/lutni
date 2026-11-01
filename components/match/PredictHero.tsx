@@ -41,10 +41,9 @@ function compute({ m, v, pick, probs, when, url }: Props) {
   const odd = c?.bestPartner?.value ?? null
   const x12 = c ? c.key === 'home' || c.key === 'draw' || c.key === 'away' : false
   const pctComma = (x: number) => `${Math.abs(x * 100).toFixed(1).replace('.', ',')}%`
-  // одна фраза: шанс (если ставка не исход матча — исходы уже на полосе), честная цена и что с ней у букмекера
+  // одна фраза: честная цена (шанс — на полосе: исходы матча сверху, у других ставок — своя полоса `BetBar`) и что с ней у букмекера
   const why = c
     ? [
-        x12 ? null : `Шанс ${pct(c.prob)}`,
         `честная цена — ${c.fairOdd.toFixed(2)}`,
         odd == null
           ? null
@@ -135,6 +134,7 @@ export function PredictBlock(p: Props) {
               </div>
             ) : null}
           </div>
+          {x12 ? null : <BetBar k={c.key} prob={c.prob} m={m} />}
           <p className="mt-3 text-[14px] leading-snug text-dim first-letter:uppercase">{why}.</p>
           {/* #pick-cta — по нему нижняя плашка на телефоне прячется, пока эта кнопка на экране (`StickyCta`) */}
           <div id="pick-cta" className="mt-4">
@@ -149,12 +149,12 @@ export function PredictBlock(p: Props) {
         // выгоды нет — без «Нашего выбора» и лаймовой кнопки (владелец: «а сам блок безопасный?» — «да»): совет ставить при
         // «кэф ниже — выгоды нет» внутри рекламы читался бы недостоверно; одна строка с кэфом и честной ценой и тихая ссылка
         // кнопка с кэфом — той же формы, что в подборках и «Выгодных ставках» (знак букмекера и кэф в серой рамке; лайм — только «выгодно»)
-        <div className="mt-4 flex items-center justify-between gap-4 rounded-tile bg-white/[0.04] p-4">
+        <div className="mt-4 rounded-tile bg-white/[0.04] p-4">
+        <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             {/* подпись, как «Выгодная ставка» у выгодной: иначе «Не больше 2 голов» под «Скорее выиграет «X»» читалась спором */}
             <p className="text-[14px] font-semibold text-dim">Самая вероятная ставка</p>
             <p className="mt-1 text-[16px] font-semibold first-letter:uppercase">{outcomeText(c.key, m)}</p>
-            <p className="mt-0.5 text-[13px] text-dim first-letter:uppercase">{why}</p>
           </div>
           <div id="pick-cta" className="w-[108px] shrink-0">
             <a
@@ -175,8 +175,48 @@ export function PredictBlock(p: Props) {
             <AdMark partner={partner} className="mt-1.5 text-center" />
           </div>
         </div>
+          {x12 ? null : <BetBar k={c.key} prob={c.prob} m={m} />}
+          <p className="mt-3 text-[13px] text-dim first-letter:uppercase">{why}</p>
+        </div>
       ) : null}
     </div>
   )
 }
 
+/** Противоположная ставка: тотал «больше» ↔ «меньше», «обе забьют» ↔ «кто-то не забьёт», двойной шанс ↔ оставшийся исход. */
+function otherKey(k: string): string | null {
+  const t = /^(over|under)([\d.]+)$/.exec(k)
+  if (t) return `${t[1] === 'over' ? 'under' : 'over'}${t[2]}`
+  return ({ bttsYes: 'bttsNo', bttsNo: 'bttsYes', hd: 'away', da: 'home', ha: 'draw' } as Record<string, string>)[k] ?? null
+}
+
+/**
+ * Полоса шанса ставки, если она не исход матча (владелец: «а почему статистика про победу осталась а не про голы или
+ * что-то по теме?»): ставка и противоположная ей, в сумме 100, ставка — белой, другая — серой, как полоса исходов выше.
+ */
+function BetBar({ k, prob, m }: { k: string; prob: number; m: Match }) {
+  const o = otherKey(k)
+  if (!o) return null
+  const a = Math.round(prob * 100)
+  const parts = [
+    { v: a, label: outcomeText(k, m), on: true },
+    { v: 100 - a, label: outcomeText(o, m), on: false },
+  ]
+  return (
+    <div className="mt-4">
+      <div className="flex h-1.5 gap-0.5" aria-hidden>
+        {parts.map((x, i) => (
+          <div key={i} className={`h-full ${i === 0 ? 'rounded-l-full bg-white/85' : 'rounded-r-full bg-white/30'}`} style={{ width: `${x.v}%` }} />
+        ))}
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-2 text-dim">
+        {parts.map((x, i) => (
+          <div key={i} className={`min-w-0 ${i === 1 ? 'text-right' : ''}`}>
+            <div className={`num text-[15px] font-semibold ${x.on ? 'text-fg' : ''}`}>{x.v}%</div>
+            <div className="line-clamp-2 text-[13px] leading-snug first-letter:uppercase">{x.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
