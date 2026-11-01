@@ -22,6 +22,10 @@ import { matchesN, StateLine, stateText } from './StateLine'
 import { StoryRing } from './StoryRing'
 import { Icon } from '@/components/Icon'
 
+/** Заглавная первая буква строкой, а не `first-letter:uppercase`: Safari не применяет `::first-letter` у `line-clamp`
+ * (`-webkit-box`) — «победа Аякс» со строчной. */
+const capFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
 const BETS = ['ставка', 'ставки', 'ставок'] as const
 /** «Выгодно сегодня» — названия без кавычек (владелец: «может в блоке выгодно сегодня не писать названия команд в скобках?»):
  *  в узкой панели кавычки вокруг каждого названия — лишний шум; в подсказке плашки — как было */
@@ -101,7 +105,7 @@ function ValueBody({ rows, card = false, book }: { rows: ValueRow[]; card?: bool
       <h3 className={`flex items-baseline justify-between ${card ? 'mb-2.5 px-4 text-[20px] font-bold leading-tight tracking-[-0.01em] sm:px-5' : 'text-[15px] font-semibold'}`}>
         {/* ⓘ — почему «выгодно» (владелец согласился: объяснение было только в подсказке плашки, её почти никто не находит);
             простыми словами и с примером, без «заработать»: оценка, а не гарантия */}
-        <span className="group/vh flex items-baseline gap-1.5">
+        <span className="group/vh flex items-baseline gap-1.5 whitespace-nowrap">
           Выгодно сегодня
           <button
             type="button"
@@ -121,8 +125,12 @@ function ValueBody({ rows, card = false, book }: { rows: ValueRow[]; card?: bool
             <span className="mt-1.5 block text-mute">Расчёт, а не гарантия · 18+</span>
           </span>
         </span>
-        {rows.length ? <span className={`${card ? 'text-[12px]' : 'text-[11.5px]'} font-normal tracking-normal text-mute`}>{one ? `${one} · ` : ''}Реклама · 18+</span> : null}
+        {rows.length && card ? <span className="text-[12px] font-normal tracking-normal text-mute">{one ? `${one} · ` : ''}Реклама · 18+</span> : null}
       </h3>
+      {/* в узкой панели пометка — строкой под заголовком: справа от него «Марафон · Реклама · 18+» в 288px переносилось,
+          заголовок ломался в две строки, а ⓘ прилипал к пометке (владелец прислал скриншот: «блок выгодно сегодня
+          немного пофиксить надо») */}
+      {rows.length && !card ? <p className="mt-0.5 text-[12px] text-mute">{one ? `${one} · ` : ''}Реклама · 18+</p> : null}
       {/* карточкой — строки через черту от края до края карточки, как «Где ставить» под ним и все списки (владелец: «правильно
           что в ставках разделительные линии не до конца?»), и крупнее: 15/13px и плашка 40px (владелец прислал вариант
           ChatGPT; в узкой правой панели — как было) */}
@@ -139,7 +147,7 @@ function ValueBody({ rows, card = false, book }: { rows: ValueRow[]; card?: bool
           <li key={r.id} className={card ? 'flex items-center gap-3 px-4 py-3.5 sm:px-5' : '-mx-2 flex items-center gap-3 rounded-tile px-2 py-1.5 transition-colors hover:bg-white/[0.04]'}>
             {/* главное — на что ставка (сверху, белым, в узкой панели — в две строки, не обрезаем); матч и время — ниже серым: обрезается второстепенное */}
             <Link href={r.href} prefetch={false} className="min-w-0 flex-1 leading-tight">
-              <span className={`line-clamp-2 ${card ? 'text-[15px] font-semibold' : 'text-[13.5px] font-medium'} first-letter:uppercase`}>{plain(r.outcome)}</span>
+              <span className={`line-clamp-2 ${card ? 'text-[15px] font-semibold' : 'text-[13.5px] font-medium'} `}>{capFirst(plain(r.outcome))}</span>
               {/* вторая строка — время и матч (владелец: «как тебе выгодно сегодня, только честно?» — «Марафон · 22:00 ·
                   Саутгемпт…» обрезало матч, а букмекер посетителю важен меньше всего) */}
               <span className={`mt-0.5 line-clamp-2 ${card ? 'text-[13px]' : 'text-[12.5px]'} text-dim`}>

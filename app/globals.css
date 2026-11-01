@@ -1238,6 +1238,66 @@ html[data-shell-rc] .shell-r-rail {
   }
 }
 
+/* Затухание центра от xl — у каждой карточки своё, как в боковых панелях (владелец: «тень по центру отличается от теней
+   в правом и левом блоке»): полоска цвета карточки прилипает к низу окна (над полоской рамки 8px) и к верху под шапкой
+   внутри самой карточки — обрезается её скруглением и не заходит в просветы между карточками (слой во всю колонку
+   центра светлел там полосой с острыми углами — владелец: «острые углы и оно вылазит за блоки»; цветом фона — карточка
+   у края темнела, а не растворялась, как в панелях). Видна, только пока за краем окна у карточки ещё есть что листать:
+   прозрачность по шкале её видимости (`view()`, `entry-crossing` / `exit-crossing` — и у карточки выше окна).
+   `overflow: clip` вместо `hidden`: при `hidden` карточка — свой контейнер прокрутки, и `sticky` внутри неё не липнет.
+   Без `animation-timeline: view()` — общий слой `.edge-fade-page` / `.edge-fade-top`, как был. */
+@supports (animation-timeline: view()) {
+  @media (min-width: 1280px) {
+    html .edge-fade-page,
+    html .edge-fade-top {
+      display: none;
+    }
+    .shell-center .card:not(.card .card) {
+      view-timeline: --card-fade block;
+      view-timeline-inset: 56px 8px;
+    }
+    .shell-center .card.overflow-hidden:not(.card .card) {
+      overflow: clip;
+    }
+    .shell-center .card:not(.card .card, .grid, .flex)::before,
+    .shell-center .card:not(.card .card, .grid, .flex)::after {
+      content: '';
+      display: block;
+      /* плавающий: отрицательный отступ, которым полоска «не занимает места», у обычного блока схлопывался с
+         отрицательным отступом соседа (`-mb-5` у «Всей таблицы») — карточка вырастала; у плавающего отступы не
+         схлопываются. Карточки-сетки и flex (`.grid`, `.flex`) — без затухания: там полоска стала бы ячейкой */
+      float: left;
+      clear: both;
+      width: 100%;
+      /* поле плавающего — нулевое и по ширине: иначе блоки с своим контекстом (flex-список «Выгодных ставок») обходили
+         его и уезжали вниз */
+      margin-right: -100%;
+      position: sticky;
+      z-index: 2;
+      height: 32px;
+      pointer-events: none;
+      opacity: 0;
+    }
+    .shell-center .card:not(.card .card, .grid, .flex)::before {
+      top: 56px;
+      margin-bottom: -32px;
+      background: linear-gradient(var(--color-panel), transparent);
+      animation: edge-in linear both;
+      animation-timeline: --card-fade;
+      animation-range: exit-crossing 0% exit-crossing 32px;
+    }
+    .shell-center .card:not(.card .card, .grid, .flex)::after {
+      bottom: 8px;
+      margin-top: -32px;
+      background: linear-gradient(transparent, var(--color-panel));
+      animation: edge-page-out linear both;
+      animation-timeline: --card-fade;
+      animation-range: entry-crossing calc(100% - 32px) entry-crossing 100%;
+    }
+  }
+}
+
+
 /* Свечение по верхней границе сайта (владелец: «а может по верхней границе сайта сделать свечение?» — после того как
    убрали свечение у логотипа): тонкая светлая черта по самому верху окна, ярче к середине, и под ней мягкий белый
    свет, гаснущий вниз. Белое, не лаймовое — лайм только деньги и «выгодно». Живёт в шапке и уходит вместе с ней;
