@@ -26,7 +26,6 @@ import { hasMoves, OddsTable } from '@/components/match/OddsTable'
 import { PredictBlock } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
 import { MatchTags } from '@/components/match/MatchTags'
-import { PartnerCard } from '@/components/PartnerCard'
 import { BlockNote, BlockTitle, Section } from '@/components/Section'
 import { TeamLogo } from '@/components/TeamLogo'
 import { TenScale, tenText } from '@/components/TenScale'
@@ -114,7 +113,7 @@ async function RelatedMatches({ m, matchDay, today }: { m: Match; matchDay: stri
       // — две колонки, иначе название слева и счёт в 1500px справа; внизу — весь список дня
       <section>
         <BlockTitle title="Другие матчи" />
-        {/* шрифт и поля — как у «Где поставить» над ним (владелец: «я вижу что тут различие по размеру шрифтов»):
+        {/* шрифт и поля — как были у «Где поставить» (владелец: «я вижу что тут различие по размеру шрифтов»):
             строки `px-4 sm:px-5`, названия 16px (от lg 17,5 — как на `/bookmakers`), «Все матчи дня» — как «Все букмекеры» */}
         <div className="@container card overflow-hidden">
         {/* две колонки заполняются сверху вниз — сначала левая, потом правая (по строкам порядок читался зигзагом) */}
@@ -773,17 +772,6 @@ export default async function MatchPage({ params }: Props) {
           {ins.preview.length ? null : <BlockNote className="!mt-8">{disclaimer}</BlockNote>}
         </div>
         <aside className="space-y-6 sm:space-y-8 lg:sticky lg:top-24 lg:self-start xl:static xl:space-y-6 2xl:sticky 2xl:top-14">
-          <section>
-            {/* заголовок — над блоком, как у разделов страницы (`Section outside`) */}
-            <BlockTitle title="Где поставить" />
-            <div className="card overflow-hidden">
-              <div className="divide-y divide-edge">
-                {PARTNERS.slice(0, 3).map((p, i) => (
-                  <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} className="px-4 sm:px-5" />
-                ))}
-              </div>
-            </div>
-          </section>
           {/* догружается следом, не задерживая страницу: список дня бывает не в кэше */}
           <Suspense fallback={null}>
             <RelatedMatches m={m} matchDay={matchDay} today={today} />
