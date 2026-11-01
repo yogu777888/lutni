@@ -24,6 +24,7 @@ import { matchesN, StateLine, stateText } from './StateLine'
 import { StoryRing } from './StoryRing'
 import { Icon } from '@/components/Icon'
 import { Hint } from '@/components/match/Hint'
+import { TitleIcon } from '@/components/Section'
 
 /** Заглавная первая буква строкой, а не `first-letter:uppercase`: Safari не применяет `::first-letter` у `line-clamp`
  * (`-webkit-box`) — «победа Аякс» со строчной. */
@@ -103,7 +104,7 @@ function ValueBody({ rows, card = false, book }: { rows: ValueRow[]; card?: bool
   return (
     // карточкой (под списком ниже xl) — заголовок над ней, на фоне страницы, как блоки лиг и разделы матча
     <section className={card ? 'relative min-w-0' : 'relative mt-6 border-t border-edge pt-4'}>
-      <h3 className={`relative flex items-baseline justify-between ${card ? 'mb-2.5 px-4 text-[20px] font-bold leading-tight tracking-[-0.01em] sm:px-5' : 'text-[15px] font-semibold'}`}>
+      <h3 className={`relative flex justify-between ${card ? 'mb-2.5 items-center px-4 text-[20px] font-bold leading-tight tracking-[-0.01em] sm:px-5' : 'items-baseline text-[15px] font-semibold'}`}>
         {/* ⓘ — почему «выгодно» (владелец согласился: объяснение было только в подсказке плашки, её почти никто не находит);
             простыми словами и с примером, без «заработать»: оценка, а не гарантия. `Hint` — по нажатию тоже (владелец: «на
             телефоне в блоке выгодно сегодня не работает значок пояснение» — окошко открывалось только наведением и фокусом,
@@ -117,6 +118,9 @@ function ValueBody({ rows, card = false, book }: { rows: ValueRow[]; card?: bool
             />
           </span>
         </span>
+        {/* карточкой — справа значок раздела, как у «Интересно сегодня» (владелец: «а справа от выгодно сегодня будем иконку
+            делать как у интересное сегодня?» — «да»); в узкой правой панели — нет: там у заголовков значков нет */}
+        {card ? <TitleIcon href="/tag/value" label="Все выгодные ставки" /> : null}
       </h3>
       {/* в узкой панели пометка — строкой под заголовком: справа от него «Марафон · Реклама · 18+» в 288px переносилось,
           заголовок ломался в две строки, а ⓘ прилипал к пометке (владелец прислал скриншот: «блок выгодно сегодня
