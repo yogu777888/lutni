@@ -20,7 +20,7 @@ import { LiveRefresh } from './Live'
 import { FavMatches } from './FavMatches'
 import { LeagueBlock, LiveBlock, TimeBlock } from './LeagueBlock'
 import { BlockTitle } from './Section'
-import { Sidebar } from './Sidebar'
+import { hasSidebar, Sidebar } from './Sidebar'
 import { dayPicks } from '@/lib/day-picks'
 import { MatchFilter } from './MatchFilter'
 import { PlayAll, StoryCircles } from './story/StoryCircles'
@@ -181,6 +181,7 @@ export async function DayView({
   const heading = dayHeading(ymd, today)
   // «Выгодно сегодня» в колонке под списком (ниже xl правой панели нет) — только у сегодняшнего дня
   const values = picks?.values ?? []
+  const side = hasSidebar(values, picks?.valuesBy ?? {})
   const past = diffDays(ymd, today) < 0
   // заголовок «Все матчи дня» над списком не нужен: на главной в центре — только матчи (владелец: «по центру только лайв
   // и матчи лиг, без матча дня и выгодно сегодня»; «Матч дня» — DayHero, «Выгодно сегодня» — ValueBoard остались в коде)
@@ -394,7 +395,7 @@ export async function DayView({
           </section>
         ) : null}
         <div
-          className={`mt-6 grid gap-8 sm:mt-8 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] ${view === 'home' ? 'xl:mt-6 xl:!grid-cols-1 xl:gap-8' : ''}`}
+          className={`mt-6 grid gap-8 sm:mt-8 sm:gap-10 ${side ? 'lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px]' : ''} ${view === 'home' ? 'xl:mt-6 xl:!grid-cols-1 xl:gap-8' : ''}`}
         >
           {/* между блоками 32px, от заголовка до карточки 10px — как на странице матча: заголовки теперь над карточками, и при
               12px заголовок читался подписью к блоку выше */}
@@ -458,10 +459,12 @@ export async function DayView({
               </div>
             ) : null}
           </div>
-          {/* на главной от xl «Где ставить» и прочее — не нужно: подборки и вход — в правой панели */}
-          <div className="xl:hidden">
-            <Sidebar values={values} valuesBy={picks?.valuesBy ?? {}} />
-          </div>
+          {/* на главной от xl «Выгодно сегодня» — в правой панели */}
+          {side ? (
+            <div className="xl:hidden">
+              <Sidebar values={values} valuesBy={picks?.valuesBy ?? {}} />
+            </div>
+          ) : null}
         </div>
       </section>
       ) : null}

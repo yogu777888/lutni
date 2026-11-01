@@ -1,5 +1,4 @@
 import type { MetadataRoute } from 'next'
-import { PARTNERS, indexable } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { getLeagues, getMatchesByDate, peekOddsSnap, settle, tagsFor } from '@/lib/data'
 import { goalsPicks, linePicks } from '@/lib/day-summary'
@@ -18,10 +17,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const days = Array.from({ length: SITE.daysAhead + 2 }, (_, i) => addDays(today, i - 1))
   const urls: MetadataRoute.Sitemap = [
     { url: `${base}/`, lastModified: now, changeFrequency: 'hourly', priority: 1 },
-    ...['/tags', '/leagues', '/bookmakers'].map((p) => ({ url: `${base}${p}`, lastModified: now, changeFrequency: 'daily' as const, priority: 0.8 })),
+    ...['/tags', '/leagues'].map((p) => ({ url: `${base}${p}`, lastModified: now, changeFrequency: 'daily' as const, priority: 0.8 })),
     ...['/about', '/tochnost', '/veroyatnost', '/o-proekte', '/responsible-gaming', '/privacy', '/nalog'].map((p) => ({ url: `${base}${p}`, changeFrequency: 'monthly' as const, priority: 0.3 })),
     ...TAGS.map((t) => ({ url: `${base}/tag/${t.slug}`, lastModified: now, changeFrequency: 'hourly' as const, priority: 0.8 })),
-    ...PARTNERS.filter(indexable).map((p) => ({ url: `${base}/bookmakers/${p.slug}`, changeFrequency: 'weekly' as const, priority: 0.6 })),
     ...days.filter((d) => d !== today).map((d) => ({ url: `${base}/matches/${d}`, lastModified: now, changeFrequency: 'hourly' as const, priority: 0.6 })),
     // полный список матчей: сегодня — /matches, другие дни — /matches/<дата>/all
     { url: `${base}/matches`, lastModified: now, changeFrequency: 'hourly' as const, priority: 0.9 },

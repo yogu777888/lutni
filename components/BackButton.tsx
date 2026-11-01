@@ -26,7 +26,7 @@ const stack: Page[] = []
 /** Подпись страницы для «← …»: разделы — словом меню, остальное — заголовком страницы (h1), длинное — «Назад». */
 function pageLabel(path: string): string {
   if (path === '/' || path === '/matches' || /^\/matches\/[^/]+\/all$/.test(path)) return 'Матчи'
-  const fixed: Record<string, string> = { '/leagues': 'Лиги', '/tags': 'Подборки', '/bookmakers': 'Букмекеры', '/tag/value': 'Выгодно' }
+  const fixed: Record<string, string> = { '/leagues': 'Лиги', '/tags': 'Подборки', '/tag/value': 'Выгодно' }
   if (fixed[path]) return fixed[path]
   const h1 = (document.querySelector('main h1, h1')?.textContent ?? '').trim()
   // у матча h1 — для поисковиков: «Прогноз на матч X — Y», «X — Y: результат матча» — оставляем пару

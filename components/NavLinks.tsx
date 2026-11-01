@@ -10,7 +10,6 @@ export const NAV = [
   { href: '/tags', label: 'Подборки' },
   { href: '/tag/value', label: 'Выгодно' },
   { href: '/leagues', label: 'Лиги' },
-  { href: '/bookmakers', label: 'Букмекеры' },
 ] as const
 
 /** Какой пункт меню подсветить: главная, список, дни и страница матча — «Матчи», страницы тегов — «Подборки». */
@@ -19,7 +18,6 @@ export function activeNav(path: string): string | null {
   if (path === '/tag/value') return '/tag/value'
   if (path === '/tags' || path.startsWith('/tag/')) return '/tags'
   if (path === '/leagues' || path.startsWith('/league/')) return '/leagues'
-  if (path.startsWith('/bookmakers')) return '/bookmakers'
   return null
 }
 

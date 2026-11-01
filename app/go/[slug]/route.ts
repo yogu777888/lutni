@@ -13,7 +13,7 @@ const BOT_UA = /bot|crawl|spider|slurp|yandex|google|bing|baidu|facebookexternal
 export async function GET(req: NextRequest, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params
   const partner = getPartner(slug)
-  if (!partner) return NextResponse.redirect(new URL('/bookmakers', req.url), 302)
+  if (!partner) return NextResponse.redirect(new URL('/', req.url), 302)
 
   const sp = req.nextUrl.searchParams
   const placement = (sp.get('p') || 'direct').replace(/[^a-z0-9-]/gi, '').slice(0, 32) || 'direct'

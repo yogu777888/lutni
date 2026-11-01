@@ -4,8 +4,6 @@ import { formatOdd } from '@/lib/format'
 import { isValue, valueThreshold, type Candidate, type ModelOutput } from '@/lib/model'
 import type { BookOdds, Quote } from '@/lib/odds'
 import type { Match } from '@/lib/types'
-import { pluralN } from '@/lib/format'
-import { BlockMore } from '../BlockMore'
 import { PartnerBadge } from '../PartnerBadge'
 
 type Col = { key: string; label: string; title?: string; get: (b: BookOdds) => Quote | undefined }
@@ -53,11 +51,6 @@ export function OddsTable({
   const rows = [...books].sort((a, b) => partnerOrder(a) - partnerOrder(b) || a.bookmakerName.localeCompare(b.bookmakerName))
   const open = match.status === 'scheduled'
   const boldBest = rows.length >= 3
-  // легальные партнёры, чьих кэфов нет в API (Фонбет, Winline, BetBoom, Лига Ставок — их нет в /Odds SStats): ссылка
-  // на сайт, а не прочерки — шесть «—» подряд читаются как «сломалось» (владелец: «у кого нет кэфов просто ссылку на их
-  // сайт»); чужие кэфы под их имя не подставляем
-  const shown = new Set(rows.map((b) => partnerForApiBookmaker(b.bookmakerId, b.bookmakerName)?.slug))
-  const others = open ? PARTNERS.filter((p) => !shown.has(p.slug)) : []
 
   const info = (b: BookOdds, c: Col) => {
     const q = c.get(b)
@@ -180,12 +173,6 @@ export function OddsTable({
         </div>
       ) : null}
 
-      {others.length ? (
-        // остальные легальные — одной строкой внизу блока (чипы в три строки были ярче самой таблицы)
-        <BlockMore href="/bookmakers" className="-mx-5 -mb-5 mt-3 !px-5 !py-3.5 sm:-mx-7 sm:-mb-7 sm:!px-7">
-          {rows.length ? `Ещё ${pluralN(others.length, ['легальный букмекер', 'легальных букмекера', 'легальных букмекеров'])}` : 'Линия — на сайтах легальных букмекеров'}
-        </BlockMore>
-      ) : null}
 
       {part === 'all' ? <p className="mt-4 text-[13px] text-mute">{note}</p> : null}
     </div>

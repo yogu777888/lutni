@@ -782,9 +782,6 @@ export default async function MatchPage({ params }: Props) {
                   <PartnerCard key={p.slug} partner={p} placement="match-cta" rank={i + 1} className="px-4 sm:px-5" />
                 ))}
               </div>
-              {/* легальных букмекеров 17, здесь — три: остальные — на странице «Букмекеры» */}
-              {/* поля и шрифт — как у строк букмекеров над ней (`px-4 sm:px-5`) и «Показать ещё» в «Матче в подборках» */}
-              <BlockMore href="/bookmakers">Все букмекеры</BlockMore>
             </div>
           </section>
           {/* догружается следом, не задерживая страницу: список дня бывает не в кэше */}

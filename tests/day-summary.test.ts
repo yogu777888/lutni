@@ -125,7 +125,6 @@ describe('меню', () => {
     expect(activeNav('/tag/progruz')).toBe('/tags')
     expect(activeNav('/tags')).toBe('/tags')
     expect(activeNav('/league/england-premier-league-39')).toBe('/leagues')
-    expect(activeNav('/bookmakers/fonbet')).toBe('/bookmakers')
     expect(activeNav('/about')).toBeNull()
   })
 })

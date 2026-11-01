@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
   // CDN и браузеры могут отдавать устаревшую копию, пока обновляют её, не дольше 2 минут (по умолчанию — год)
   expireTime: 120,
   // главная хранится готовой одной на всех (ISR) и параметров адреса не читает; «По времени» — своя страница
+  // «Букмекеров» пока нет (владелец: «а давай уберем вообще страницу букмекеры пока? … если что потом добавим?»):
+  // старые ссылки — временно (307) на главную; вернём страницу — уберите. Слаг без точки: знаки `/bookmakers/<slug>.svg` нужны
+  async redirects() {
+    return [
+      { source: '/bookmakers', destination: '/', permanent: false },
+      { source: '/bookmakers/:slug([^./]+)', destination: '/', permanent: false },
+    ]
+  },
   async rewrites() {
     return {
       beforeFiles: [{ source: '/', has: [{ type: 'query', key: 'sort', value: 'time' }], destination: '/matches/po-vremeni' }],

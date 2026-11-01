@@ -5,7 +5,6 @@ import { BlockTitle } from '@/components/Section'
 import { PageHead } from '@/components/PageHead'
 import { Flag } from '@/components/Flag'
 import { MatchRow } from '@/components/MatchRow'
-import { Sidebar } from '@/components/Sidebar'
 import { StandingsTable } from '@/components/StandingsTable'
 import { currentSeason, daySnaps, getLeague, getSeasonGames, getStandings, peekOddsSnap, settle, tagsFor } from '@/lib/data'
 import { flagCode, leagueTitle } from '@/lib/flags'
@@ -133,7 +132,7 @@ export default async function LeaguePage({ params }: Props) {
   return (
     <>
       <span hidden className="bare-sub" />
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-1 xl:gap-2">
+      <div className="grid gap-4 xl:gap-2">
         <div className="min-w-0 space-y-4 xl:space-y-2">
           <PageHead
             crumbs={[{ href: '/leagues', label: 'Лиги' }, { href: canonical, label: league.name }]}
@@ -207,11 +206,6 @@ export default async function LeaguePage({ params }: Props) {
             </section>
           ) : null}
           </div>
-        </div>
-        {/* «Где ставить» — ниже xl (от xl справа панель с «Выгодно сегодня», как на главной); «Как читать теги» не нужен —
-            тегов в строках нет */}
-        <div className="xl:hidden">
-          <Sidebar />
         </div>
       </div>
     </>
