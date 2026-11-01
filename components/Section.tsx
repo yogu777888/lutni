@@ -54,9 +54,12 @@ export function BlockTitle({
   className = '',
   rows = false,
   id,
+  asideClass = '',
 }: {
   title: React.ReactNode
   aside?: React.ReactNode
+  /** обёртке подписи справа — например, `max-sm:basis-full`: поле фильтра на телефоне во всю ширину строки */
+  asideClass?: string
   className?: string
   /** блок строками (главная: лиги, «Сейчас идут»): поля строк `px-4 sm:px-5` — заголовок на линии с ними */
   rows?: boolean
@@ -69,7 +72,7 @@ export function BlockTitle({
     // текста белого внутри блоков?»)
     <div className={`mb-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 ${rows ? 'px-4 sm:px-5' : 'px-5 sm:px-7'} ${className}`}>
       <h2 id={id} className="min-w-0 text-[20px] font-bold leading-tight tracking-[-0.01em] text-fg">{title}</h2>
-      {aside ? <div className="text-[13px] text-mute">{aside}</div> : null}
+      {aside ? <div className={`text-[13px] text-mute ${asideClass}`}>{aside}</div> : null}
     </div>
   )
 }

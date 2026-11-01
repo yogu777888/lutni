@@ -8,6 +8,10 @@ import type { IndexGroup } from '@/lib/league-index'
 /** Сколько стран на «Лигах и турнирах» видно сразу; остальные — под «Ещё N стран» (на телефоне 170 раскрывашек давали ~12 000px). */
 export const SHOWN = 20
 
+/** Оформление строк турниров — у списка, а не у каждой из 1249; им же — найденное фильтром (`LeagueFilter`). */
+export const LEAGUE_ROWS =
+  'text-[15px] [&_a]:flex [&_a]:min-h-[56px] [&_a]:items-center [&_a]:gap-3.5 [&_a]:py-2 [&_a]:pl-[calc(1rem+4px)] [&_a]:pr-4 [&_a]:text-dim [&_a]:transition-colors [&_a:hover]:bg-white/[0.02] [&_a:hover]:text-fg [&_a:hover_svg]:text-fg sm:[&_a]:pl-[calc(1.25rem+4px)] sm:[&_a]:pr-5'
+
 /**
  * Знак в сером круге, как в Apple Sports (владелец: «добавь круглые подложки как в эппл спортс»): логотип турнира — во весь
  * круг (`LeagueMark`, 64% круга), нет логотипа — флаг кругом поменьше внутри, у международных — глобус.
@@ -49,12 +53,16 @@ export function Group({ g }: { g: IndexGroup }) {
           <Chevron className="rotate-90 transition-transform group-open/c:-rotate-90" />
         </summary>
         {/* оформление ссылок — у списка, а не у каждой из 1249: страница и так ~1 МБ; знак — в круге 36px, под знаком страны */}
-        <ul className="pb-2 text-[15px] [&_a]:flex [&_a]:min-h-[56px] [&_a]:items-center [&_a]:gap-3.5 [&_a]:py-2 [&_a]:pl-[calc(1rem+4px)] [&_a]:pr-4 [&_a]:text-dim [&_a]:transition-colors [&_a:hover]:bg-white/[0.02] [&_a:hover]:text-fg [&_a:hover_svg]:text-fg sm:[&_a]:pl-[calc(1.25rem+4px)] sm:[&_a]:pr-5">
+        <ul className={`pb-2 ${LEAGUE_ROWS}`}>
           {g.leagues.map((l) => (
             <li key={l.id} data-league data-q={l.q || undefined}>
               <Link href={l.href} prefetch={false}>
                 <Disc id={l.id} flag={g.flag} size={36} />
-                <span data-name className="min-w-0 flex-1">{l.name}</span>
+                {/* страна под названием — только в найденном фильтром (там турнир стоит отдельно от своей страны) */}
+                <span className="min-w-0 flex-1">
+                  <span data-name className="block">{l.name}</span>
+                  <span data-sub hidden className="block text-[13px] leading-snug text-mute">{g.name}</span>
+                </span>
                 <Chevron />
               </Link>
             </li>

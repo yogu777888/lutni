@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BlockTitle } from '@/components/Section'
 import { LeagueFilter } from '@/components/LeagueFilter'
-import { Chevron, Disc, Group, SHOWN } from '@/components/LeagueGroup'
+import { Chevron, Disc, Group, LEAGUE_ROWS, SHOWN } from '@/components/LeagueGroup'
 import { MoreCountries } from '@/components/MoreCountries'
 import { PageHead } from '@/components/PageHead'
 import { getLeagues } from '@/lib/data'
@@ -89,10 +89,11 @@ export default async function LeaguesPage() {
                     Страны и турниры <span className="text-[13px] font-normal text-mute">{pluralN(countries, ['страна', 'страны', 'стран'])}</span>
                   </>
                 }
-                aside={<div className="keep-size"><LeagueFilter target="league-index" /></div>}
+                aside={<div className="keep-size"><LeagueFilter target="league-index" rows={LEAGUE_ROWS} /></div>}
+                asideClass="max-sm:basis-full"
               />
               <div className="card @container overflow-hidden">
-              <ul className="[&>li:first-child]:border-t-0">
+              <ul data-list className="[&>li:first-child]:border-t-0">
                 {shown.map((g) => (
                   <Group key={g.key} g={g} />
                 ))}
