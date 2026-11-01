@@ -67,8 +67,11 @@ export function FavMatches({ ymd }: { ymd: string }) {
     // заголовок над карточкой, как у блоков лиг
     <section className="min-w-0" aria-label="Избранное">
       <style>{hide}</style>
-      <div className="mb-2.5 flex items-center gap-2 px-4 sm:px-5">
-        <Icon k="star-fill" className="h-4 w-4 text-fg" />
+      {/* звёздочка — по центру места шириной логотипа лиги (28px), как точка «Сейчас идут»: название на одной линии с «Ла Лигой» */}
+      <div className="mb-2.5 flex items-center gap-2.5 px-4 sm:px-5">
+        <span className="grid w-7 shrink-0 place-items-center" aria-hidden>
+          <Icon k="star-fill" className="h-[18px] w-[18px] text-fg" />
+        </span>
         <h2 className="text-[20px] font-bold leading-tight tracking-[-0.01em]">Избранное</h2>
       </div>
       {/* строки — той же разметкой, что `MatchRow` в блоках ниже (владелец: «смотри как отличается матч сохраненной команды»):
