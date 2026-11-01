@@ -255,35 +255,39 @@ export default async function TagPage({ params }: Props) {
               t.title
             )
           }
-          sub={t.about}
+          sub={
+            isValue ? (
+              t.about
+            ) : (
+              <>
+                {t.about}
+                {/* ставка подборки — строкой под описанием, без плашки внутри шапки (владелец: «этот подблок всеравно не очень
+                    красиво выглядит и может написать не что обычно ставят а на что обычно ставят?») */}
+                {t.bet ? (
+                  <span className="mt-2.5 block">
+                    На что обычно ставят: <span className="whitespace-nowrap font-semibold text-fg">{t.bet}</span>
+                  </span>
+                ) : null}
+              </>
+            )
+          }
           // порядок — справа в строке заголовка (на телефоне — под подписью во всю ширину, половинами): висел под подписью
           // слева, с пустотой справа (владелец: «кнопки сортировки как то не очень удачно сейчас стоят»)
           aside={
-            isValue && values.length > 1 ? <ValueSort target="value-list" /> : undefined
-          }
-        >
-          {isValue ? null : (
-            // одной плашкой (владелец: «Что обычно ставят … Перейти в PARI … Реклама · 18+ как то не очень красиво выглядит»):
-            // слева — ставка подборки подписью и словами, справа — кнопка к букмекеру и под ней пометка рекламы; на телефоне —
-            // друг под другом, кнопка во всю ширину. Нет одной ставки («Серии», «Травмы»…) — только кнопка с пометкой
-            <div className="flex flex-col gap-3 rounded-tile bg-white/[0.04] p-3 sm:flex-row sm:items-center sm:gap-4 sm:pl-4">
-              {t.bet ? (
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] text-mute">Что обычно ставят</p>
-                  <p className="text-[16px] font-semibold leading-snug">{capFirst(t.bet)}</p>
-                </div>
-              ) : (
-                <p className="min-w-0 flex-1 text-[14px] text-dim">Одной типичной ставки у подборки нет — кэфы на каждый матч в его разборе.</p>
-              )}
-              <div className="flex shrink-0 flex-col items-stretch gap-1 sm:items-center">
-                <CtaLink href={goHref(partner, 'tag')} size="sm" className="gap-2 !pl-1.5 max-sm:w-full">
-                  <PartnerBadge partner={partner} size={24} />
+            isValue ? (
+              values.length > 1 ? <ValueSort target="value-list" /> : undefined
+            ) : (
+              // к букмекеру — справа от заголовка и описания, «Реклама · 18+» под кнопкой; на телефоне — под описанием во всю ширину
+              <div className="flex flex-col items-stretch gap-1.5 sm:items-center">
+                <CtaLink href={goHref(partner, 'tag')} size="md" className="gap-2 !pl-2 max-sm:w-full">
+                  <PartnerBadge partner={partner} size={28} />
                   Перейти в {partner.name}
                 </CtaLink>
                 <AdMark partner={partner} className="text-center" />
               </div>
-            </div>
-          )}
+            )
+          }
+        >
         </PageHead>
 
         {/* .match-body — от lg текст списка крупнее, как на главной и странице матча (app/globals.css); шапка — как была */}
