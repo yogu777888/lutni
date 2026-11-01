@@ -16,6 +16,7 @@ import { GroupBadge, GroupMark, PlateMark } from '../story/GroupMark'
 const valueLogo = (v: ValueRow) => (v.side === 'away' ? v.awayLogo || v.homeLogo : v.homeLogo || v.awayLogo)
 import { PLATE } from '../LeagueMark'
 import { pluralN } from '@/lib/format'
+import { edgeScroll } from './edge-scroll'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
 import { matchesN, StateLine, stateText } from './StateLine'
@@ -287,7 +288,7 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
       {tipNode}
 
       <div className="shell-r-full flex h-full flex-col">
-        <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto p-4 edge-fade">
+        <div ref={edgeScroll} className="scrollbar-none min-h-0 flex-1 overflow-y-auto p-4 edge-fade">
           <h2 className="sticky -top-4 z-10 -mx-4 -mt-4 flex items-center justify-between bg-panel px-4 pb-2 pt-4 text-[15px] font-semibold edge-top">
             Подборки дня
             <PanelToggle side="r" open />

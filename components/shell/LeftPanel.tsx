@@ -16,6 +16,7 @@ import type { StoryGroup } from '@/lib/story-groups'
 import { openStory, type StoryRow } from '../story/events'
 import { circleQueue } from '../story/queue'
 import { readSeen, SEEN_EVENT } from '../story/seen'
+import { edgeScroll } from './edge-scroll'
 import { PanelToggle } from './PanelToggle'
 import { useRailTip } from './RailTip'
 import { matchesN, StateLine } from './StateLine'
@@ -386,7 +387,7 @@ export function LeftPanel({ today, day }: { today: string; day: DayLeagues }) {
       {tipNode}
 
       <div className="shell-l-full flex h-full flex-col">
-      <div className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto p-4 edge-fade">
+      <div ref={edgeScroll} className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto p-4 edge-fade">
         <h2 className="sticky -top-4 z-10 -mx-4 -mt-4 flex items-center justify-between bg-panel px-4 pb-2 pt-4 text-[15px] font-semibold edge-top">
           Турниры дня
           <PanelToggle side="l" open />

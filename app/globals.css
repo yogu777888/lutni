@@ -1122,6 +1122,13 @@ html[data-shell-rc] .shell-r-rail {
   top: 100%;
   height: 32px;
   background: linear-gradient(var(--color-panel), transparent);
+  /* проявляется, когда панель прокрутили (`data-scrolled` ставит `edgeScroll` из components/shell/edge-scroll.ts), —
+     одинаково во всех браузерах; шкала прокрутки (`animation-timeline`) в Safari в левой панели не срабатывала */
+  opacity: 0;
+  transition: opacity 0.15s linear;
+}
+[data-scrolled] > .edge-top::after {
+  opacity: 1;
 }
 .edge-fade-page,
 .edge-fade-top {
@@ -1145,14 +1152,6 @@ html[data-shell-rc] .shell-r-rail {
     animation: edge-page-out linear both;
     animation-timeline: scroll(nearest);
     animation-range: calc(100% - 32px) 100%;
-  }
-  /* без `opacity: 0` полоска висела всегда, когда список панели помещается целиком: шкала прокрутки тогда неактивна,
-     анимация не действует, и остаётся непрозрачный `::after` (владелец: «под турнирами дня тень») */
-  .edge-top::after {
-    opacity: 0;
-    animation: edge-in linear both;
-    animation-timeline: scroll(nearest);
-    animation-range: 0 32px;
   }
   .edge-fade-page,
   .edge-fade-top {
