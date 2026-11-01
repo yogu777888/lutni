@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { BlockMore } from '@/components/BlockMore'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { cache, Suspense } from 'react'
@@ -35,11 +36,12 @@ import { StickyCta } from '@/components/StickyCta'
 import { PARTNERS, partnerForApiBookmaker, primaryPartner } from '@/config/bookmakers'
 import { SITE } from '@/config/site'
 import { goHref } from '@/lib/affiliate'
-import { getLiveOdds, getMatchInsights, getMatchesByDate, getPariHistory, settle, waitLsExtra, waitTeamSetPieces, waitTeamXg } from '@/lib/data'
+import { getLiveOdds, getMatchInsights, getSeasonGames, getMatchesByDate, getPariHistory, settle, waitLsExtra, waitTeamSetPieces, waitTeamXg } from '@/lib/data'
 import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
 import { matchNotes } from '@/lib/match-notes'
+import { bestPlayer, forecastCheck, lastName, nextOf, playerDeeds, resultNote } from '@/lib/match-result'
 import { appNow, dayLabel, formatDateShort, formatTime, idFromSlug, pct, updatedText, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
 import { leagueHref, listHref, matchHref } from '@/lib/links'
@@ -150,7 +152,8 @@ export default async function MatchPage({ params }: Props) {
   // все ожидания — одновременно (владелец: «чтоб не все сразу грузилось»): по очереди они складывались в 5–6 с
   // на холодном кэше, вместе — не дольше самого долгого (2 с); «Другие матчи» догружаются отдельно (`RelatedMatches`)
   const isLive = m.status === 'live' || m.status === 'suspended'
-  const [ls, xg, sp, pari, liveOdds] = await Promise.all([
+  const finished = m.status === 'finished'
+  const [ls, xg, sp, pari, liveOdds, season] = await Promise.all([
     waitLsExtra(m, new Set(base.stats.map((s) => s.key))),
     waitTeamXg(ins.homeForm, ins.awayForm),
     // угловые и жёлтые прошлых матчей — те же карточки матчей, что у xG (запросов не прибавляет)
@@ -159,6 +162,10 @@ export default async function MatchPage({ params }: Props) {
     Promise.race([getPariHistory(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 2000))]),
     // идёт матч — на табло кэфы PARI по ходу матча (доматчевые там уже история, поставить по ним нельзя)
     isLive ? Promise.race([getLiveOdds(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))]) : null,
+    // сыгран — следующий матч каждой команды в турнире (список сезона; ждём не дольше 1,2 с, дальше — из кэша в следующий раз)
+    finished && m.season
+      ? Promise.race([getSeasonGames(m.league.id, m.season.year).catch(() => [] as Match[]), new Promise<Match[]>((r) => setTimeout(() => r([]), 1200))])
+      : ([] as Match[]),
   ])
   // средние шансы по матчам дня — с чем сравнить «3 гола и больше» у этого матча (только оценка модели: среднее — тоже по ней)
   const day = ins.model ? await dayNumbers(ymdInTz(m.ts)) : null
@@ -337,9 +344,11 @@ export default async function MatchPage({ params }: Props) {
               {model ? (
                 <div className="flex items-end gap-3 pb-5">
                   <span className="display-num text-[52px] leading-[0.9] text-fg">{dec1(model.lambdas.home + model.lambdas.away)}</span>
+                  {/* после матча — прошедшим временем и с итогом рядом (было «ждём», когда уже забили 5) */}
                   <span className="pb-0.5 text-[14px] leading-snug text-dim">
-                    гола ждём
-                    <br />в среднем
+                    {finished ? 'гола ждали' : 'гола ждём'}
+                    <br />
+                    {finished && m.score ? `в среднем · забито ${m.score.home + m.score.away}` : 'в среднем'}
                   </span>
                 </div>
               ) : null}
@@ -583,9 +592,12 @@ export default async function MatchPage({ params }: Props) {
   // «Главное» — два-три вывода словами из статистики и давления (как «Главное за минуту» в прототипе владельца)
   // сильное и слабое место по прошлым матчам — и для блока, и для «Главного» идущего матча («снова не реализует»)
   const points = { home: teamPoints(xg.home, ins.homeForm), away: teamPoints(xg.away, ins.awayForm) }
-  const notes = started
+  const statNotes = started
     ? matchNotes({ home: m.home.name, away: m.away.name, score: m.score ?? null, stats: full.stats, events: full.events, momentum: ls?.momentum ?? null, live: isLive, minute: m.elapsed, points })
     : []
+  // сыгран — первым выводом итог словами («Победа «Реал Мадрид» в гостях — 4:1» и решающий факт), дальше два из статистики
+  const result = finished ? resultNote(m, full.events) : null
+  const notes = result ? [result, ...statNotes.slice(0, 2)] : statNotes
   const sec_notes = notes.length ? (
     <Section outside title="Главное">
       <div className="@container">
@@ -593,9 +605,11 @@ export default async function MatchPage({ params }: Props) {
           {notes.map((n) => (
             <li key={n.title} className="relative py-3 first:pt-1 last:pb-1 @3xl:px-5 @3xl:py-1 @3xl:first:pl-0 @3xl:last:pr-0">
               <p className="text-[16px] font-semibold leading-snug">{n.title}</p>
-              <p className="mt-1 text-[14px] leading-snug text-dim">
-                <XgText text={n.text} />
-              </p>
+              {n.text ? (
+                <p className="mt-1 text-[14px] leading-snug text-dim">
+                  <XgText text={n.text} />
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -658,19 +672,116 @@ export default async function MatchPage({ params }: Props) {
       {clubVars(<Lineups data={ls.lineups} home={m.home} away={m.away} />)}
     </Section>
   ) : null
+  // ─── После матча ───
+  // «Как сыграл расклад»: что было вероятнее всего до начала — и сбылось ли; без денег и без итога выгодной ставки
+  const finalFT = m.scoreFT ?? m.score
+  const check = finished && finalFT ? forecastCheck({ home: m.home.name, away: m.away.name, est, over25: over25 ?? null, btts: btts ?? null, score: finalFT }) : []
+  const sec_check = check.length ? (
+    <Section
+      outside
+      title="Как сыграл расклад"
+      className="overflow-hidden"
+      note={`Шансы — по кэфам букмекеров без маржи перед началом, итог — по основному времени. ${pct(check[0].p)} — не обещание: из десяти таких исходов часть не сбывается.`}
+    >
+      {/* сверху одна крупная цифра, как «гола ждём» в «Голах» */}
+      <div className="flex items-end gap-3 pb-4">
+        <span className="display-num text-[52px] leading-[0.9] text-fg">
+          {check.filter((r) => r.hit).length} из {check.length}
+        </span>
+        <span className="pb-0.5 text-[14px] leading-snug text-dim">
+          сбылось
+          <br />
+          {model ? `ждали ${dec1(model.lambdas.home + model.lambdas.away)} гола` : 'из расклада'}
+        </span>
+      </div>
+      <ul>
+        {check.map((r) => (
+          <li key={r.label} className="flex items-center justify-between gap-4 border-t border-edge py-3">
+            <div className="min-w-0">
+              <p className="text-[16px] font-semibold leading-snug">{r.label}</p>
+              <p className="mt-0.5 text-[13px] text-dim">
+                до матча <span className="num text-fg">{pct(r.p)}</span> · итог — {r.fact}
+              </p>
+            </div>
+            {/* сбылось — белым, нет — серым: ни лайма (деньги), ни красного («идёт») */}
+            <span className={`flex shrink-0 items-center gap-1.5 text-[14px] font-medium ${r.hit ? 'text-fg' : 'text-mute'}`}>
+              <span className={`grid h-6 w-6 place-items-center rounded-full ${r.hit ? 'bg-white/[0.14]' : 'bg-white/[0.05]'}`} aria-hidden>
+                <Icon k={r.hit ? 'check' : 'close'} className="h-3.5 w-3.5" />
+              </span>
+              {r.hit ? 'сбылось' : 'нет'}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <BlockMore href="/tochnost" className="-mx-5 -mb-5 mt-1 !px-5 !py-3.5 sm:-mx-7 sm:-mb-7 sm:!px-7">
+        История точности
+      </BlockMore>
+    </Section>
+  ) : null
+  // лучший игрок — по оценкам в составах: одна строка, кто и что сделал
+  const star = finished ? bestPlayer(ls?.lineups) : null
+  const starTeam = star ? (star.side === 'home' ? m.home : m.away) : null
+  const sec_best = star && starTeam ? (
+    <Section outside title="Лучший игрок">
+      <div className="flex items-center gap-4">
+        <span className="display-num grid h-14 w-14 shrink-0 place-items-center rounded-tile bg-fg text-[26px] text-ink">{star.p.rating!.toFixed(1).replace('.', ',')}</span>
+        <div className="min-w-0">
+          <p className="truncate text-[17px] font-semibold leading-snug" title={star.p.name}>
+            {lastName(star.p.name)}
+          </p>
+          <p className="mt-0.5 flex items-center gap-1.5 text-[14px] text-dim">
+            <TeamLogo name={starTeam.name} src={starTeam.logo ?? null} size={18} />
+            <span className="truncate">{[starTeam.name, playerDeeds(star.p)].filter(Boolean).join(' · ')}</span>
+          </p>
+        </div>
+      </div>
+    </Section>
+  ) : null
+  // следующий матч каждой команды — страница не тупик (раньше дальше вели только «Другие матчи» этого дня)
+  const nexts = finished
+    ? [m.home, m.away].map((t) => ({ t, g: nextOf(season, t.id, m.ts) })).filter((r): r is { t: typeof m.home; g: Match } => Boolean(r.g))
+    : []
+  const sec_next = nexts.length ? (
+    <Section outside title="Следующие матчи" className="overflow-hidden !p-0" note={`Матчи турнира «${leagueTitle(m.league.name)}»: кубков и еврокубков здесь нет.`}>
+      <ul className="divide-y divide-edge">
+        {nexts.map(({ t, g }) => {
+          const home = g.home.id === t.id
+          const opp = home ? g.away : g.home
+          return (
+            <li key={t.id}>
+              <Link href={matchHref(g)} prefetch={false} className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.02] sm:px-5">
+                <TeamLogo name={t.name} src={t.logo ?? null} size={28} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[16px] font-semibold leading-snug">{t.name}</p>
+                  <p className="mt-0.5 text-[14px] text-dim">
+                    {dayLabel(ymdInTz(g.ts), today)}, {formatTime(g.ts)} · {home ? 'дома' : 'в гостях'} против «{opp.name}»
+                  </p>
+                </div>
+                <Icon k="chevron-right" className="h-4 w-4 shrink-0 text-mute transition-colors group-hover:text-fg" />
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
+    </Section>
+  ) : null
+
   const hasPredict = scheduled && Boolean(verdict || pick)
   const tabs: TabItem[] = (
     started
       ? [
-          { key: 'overview', label: 'Обзор', on: Boolean(sec_notes || sec_events || sec_momentum || shownTags.length), content: <>{sec_notes}{sec_events}{sec_momentum}{sec_tags}</> },
+          // сыгран — «чем кончилось, почему и сбылся ли расклад»; «Матч в подборках» — во вкладке «До матча»: это сведения до начала
+          finished
+            ? { key: 'overview', label: 'Обзор', on: Boolean(sec_notes || sec_events || sec_best || sec_check || sec_momentum || sec_next), content: <>{sec_notes}{sec_events}{sec_best}{sec_check}{sec_momentum}{sec_next}</> }
+            : { key: 'overview', label: 'Обзор', on: Boolean(sec_notes || sec_events || sec_momentum || shownTags.length), content: <>{sec_notes}{sec_events}{sec_momentum}{sec_tags}</> },
           { key: 'stats', label: 'Статистика', on: Boolean(sec_stats), content: sec_stats },
           { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
           {
             key: 'before',
             label: 'До матча',
             // у идущего матча вкладки нет (владелец: «убери раздел до матча из лайв матча») — у сыгранного осталась
-            on: !isLive && Boolean(x || chanceMoved || ins.homeForm || ins.awayForm || ins.h2h || ins.standings || ins.preview.length),
-            content: <>{sec_goals}{sec_chance}{sec_form}{sec_points}{sec_h2h}{sec_table}{sec_preview}</>,
+            on: !isLive && Boolean(x || chanceMoved || shownTags.length || ins.homeForm || ins.awayForm || ins.h2h || ins.standings || ins.preview.length),
+            content: <>{sec_goals}{sec_chance}{sec_tags}{sec_form}{sec_points}{sec_h2h}{sec_table}{sec_preview}</>,
           },
         ]
       : [
