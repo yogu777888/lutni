@@ -14,6 +14,8 @@ import { NavIcon } from './NavIcon'
  * выбранный — белый залитый значок, остальные — контурные `fg/60`. Ниже «плавающая капсула» — история.
  * Пунктов четыре — колонок четыре (`grid-cols-4`; с пятой пустой всё съезжало влево после того, как убрали «Букмекеры»);
  * фон — графит 60% (был 80%; владелец: «может его чуть более прозрачным сделать?»), размытие то же.
+ * Подписей нет — только значки 26px (владелец: «может уберем подписи у кнопок в нижнем меню на телефоне, чтоб только иконки
+ * остались?»); название — в подсказке и для экранного диктора (`sr-only`), выбранный — белый залитый, высота полосы та же.
  * Место под ним — `--tabbar` в app/globals.css: отступ страницы снизу, нижняя плашка ставки и cookie — над ним.
  */
 export function TabBar() {
@@ -31,12 +33,12 @@ export function TabBar() {
             href={n.href}
             aria-current={on ? 'page' : undefined}
             title={n.label}
-            className={`group/t flex h-12 min-w-0 flex-col items-center justify-center gap-0.5 transition-colors ${on ? 'text-fg' : 'text-fg/60'}`}
+            className={`group/t grid h-12 min-w-0 place-items-center transition-colors ${on ? 'text-fg' : 'text-fg/60'}`}
           >
-            <span className="grid h-6 w-11 place-items-center rounded-full transition-colors group-active/t:bg-white/[0.08]">
-              <NavIcon href={n.href} on={on} />
+            <span className="grid h-9 w-14 place-items-center rounded-full transition-colors group-active/t:bg-white/[0.08]">
+              <NavIcon href={n.href} on={on} size={26} />
             </span>
-            <span className="max-w-full truncate px-0.5 text-[10.5px] font-medium leading-tight">{n.label}</span>
+            <span className="sr-only">{n.label}</span>
           </Link>
         )
       })}
