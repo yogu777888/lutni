@@ -117,6 +117,16 @@ export async function DayView({
           .filter((it, i, a) => a.findIndex((x) => x.match.id === it.match.id) === i)
           .slice(0, 3)
       : []
+  // идущие из «Матча в фокусе» ниже xl в «Сейчас идут» не повторяем (на телефоне одна и та же «Барселона 2:0 Леванте»
+  // стояла дважды на одном экране); страница одна на все ширины — прячем CSS, как свои матчи в `FavMatches`; от xl
+  // фокуса нет — список полный. Остались только они — блока ниже xl нет
+  const focusIds = focusList.filter((f) => isLive(f.match)).map((f) => `[data-mid="${f.match.id}"]`).join(',')
+  const focusHide = focusIds
+    ? `@media (max-width:1279.98px){#live :is(${focusIds}){display:none}` +
+      `#live .divide-y>:not(:is(${focusIds})):not(:has(~:not(:is(${focusIds})))){border-bottom-width:0}` +
+      `#live .divide-y:not(:has(>:not(:is(${focusIds}))))+details{border-top-width:0}` +
+      `#live:not(:has([data-mid]:not(:is(${focusIds})))){display:none}}`
+    : ''
   const liveMain = liveSorted.filter((i) => featuredRank(i.match.league) >= 0)
   const liveTop = liveMain.slice(0, LIVE_LIMIT)
   const liveRest = liveSorted.filter((i) => featuredRank(i.match.league) < 0)
@@ -387,7 +397,8 @@ export async function DayView({
           // заголовка»); в самой карточке — только турнир и минута
           <section aria-labelledby="focus-title" className="mt-6 xl:hidden">
             <BlockTitle rows id="focus-title" title="Матч в фокусе" />
-            <Carousel label="Матч в фокусе">
+            {focusHide ? <style>{focusHide}</style> : null}
+            <Carousel label="Матч в фокусе" dots={false}>
               {focusList.map((f, i) => (
                 <FocusMatch key={f.match.id} item={f} full={focusFull[i]} />
               ))}

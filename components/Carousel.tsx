@@ -7,7 +7,7 @@ import { Children, useEffect, useRef, useState, type ReactNode } from 'react'
  * прототипе ChatGPT): на телефоне карточка 88% ширины и край следующей, от sm — `(100% − 10px) / 2,15`; справа лента
  * до края экрана. Точки — какая карточка у левого края; нажатие — к ней. Одна карточка — во всю ширину, без точек.
  */
-export function Carousel({ children, label }: { children: ReactNode; label: string }) {
+export function Carousel({ children, label, dots = true }: { children: ReactNode; label: string; dots?: boolean }) {
   const items = Children.toArray(children)
   const ref = useRef<HTMLDivElement>(null)
   const [at, setAt] = useState(0)
@@ -43,7 +43,8 @@ export function Carousel({ children, label }: { children: ReactNode; label: stri
       >
         {items}
       </div>
-      <div className="mt-3 flex justify-center gap-1" role="tablist" aria-label={label}>
+      {/* без точек — край следующей карточки и так говорит, что лента листается («Матч в фокусе») */}
+      {dots ? <div className="mt-3 flex justify-center gap-1" role="tablist" aria-label={label}>
         {items.map((_, i) => (
           <button
             key={i}
@@ -58,7 +59,7 @@ export function Carousel({ children, label }: { children: ReactNode; label: stri
             <span className={`h-1.5 w-1.5 rounded-full transition-colors ${i === at ? 'bg-fg' : 'bg-white/25'}`} />
           </button>
         ))}
-      </div>
+      </div> : null}
     </div>
   )
 }

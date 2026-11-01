@@ -9,7 +9,10 @@ import { lastN, type Point, type TeamPoints } from './team-xg'
 
 /** `icon` — значок к выводу в «Матче в фокусе» на главной (`Icon`): о чём мысль — моменты, удары, удаление, владение. */
 /** topic — о чём вывод одним словом: подпись плашки в «Матче в фокусе» (было «Главное» у всех) */
-export type MatchNote = { title: string; text: string; icon?: 'chart' | 'ball' | 'card' | 'swap'; topic?: string }
+export type MatchNote = { title: string; text: string; icon?: 'chart' | 'ball' | 'card' | 'swap'; topic?: string; bar?: NoteBar }
+/** цифры вывода строкой сравнения — для «Матча в фокусе» вместо текста, который их пересказывает: `kind` — как писать
+ *  (`dec` — с запятой, `pct` — проценты и шкала 0–100) */
+export type NoteBar = { label: string; home: number; away: number; kind: 'int' | 'dec' | 'pct' }
 
 type Ctx = {
   home: string
@@ -222,13 +225,14 @@ export function matchNotes(c: Ctx): MatchNote[] {
           topic: 'Моменты',
           title: `«${name(top)}» опаснее, но ${mine < theirs ? 'уступает' : 'не впереди'}`,
           text: `xG: «${name(top)}» — ${dec(a)}, «${other(top)}» — ${dec(b)}. А на табло ${sc.home}:${sc.away}.`,
+          bar: { label: 'xG', home: xg.home, away: xg.away, kind: 'dec' },
         },
       })
     else
       out.push({
         p: 6,
         g: `dom:${top}`,
-        n: { icon: 'chart', topic: 'Моменты', title: `«${name(top)}» ведёт по делу`, text: `По моментам тоже впереди: xG — ${dec(a)}, у «${other(top)}» — ${dec(b)}.` },
+        n: { icon: 'chart', topic: 'Моменты', title: `«${name(top)}» ведёт по делу`, text: `По моментам тоже впереди: xG — ${dec(a)}, у «${other(top)}» — ${dec(b)}.`, bar: { label: 'xG', home: xg.home, away: xg.away, kind: 'dec' } },
       })
   }
 
@@ -294,7 +298,7 @@ export function matchNotes(c: Ctx): MatchNote[] {
       out.push({
         p: 7,
         g: `dom:${side}`,
-        n: { icon: 'ball', topic: 'Удары', title, text: `Удары: «${name(side)}» — ${a}, «${other(side)}» — ${b || 'ни одного'}.` },
+        n: { icon: 'ball', topic: 'Удары', title, text: `Удары: «${name(side)}» — ${a}, «${other(side)}» — ${b || 'ни одного'}.`, bar: { label: 'Удары', home: shots.home, away: shots.away, kind: 'int' } },
       })
     }
   }
@@ -306,7 +310,7 @@ export function matchNotes(c: Ctx): MatchNote[] {
     out.push({
       p: 3,
       g: `dom:${side}`,
-      n: { icon: 'swap', topic: 'Владение', title: `Мяч чаще у «${name(side)}»`, text: `Владение: «${name(side)}» — ${poss[side]}%, «${other(side)}» — ${poss[side === 'home' ? 'away' : 'home']}%.` },
+      n: { icon: 'swap', topic: 'Владение', title: `Мяч чаще у «${name(side)}»`, text: `Владение: «${name(side)}» — ${poss[side]}%, «${other(side)}» — ${poss[side === 'home' ? 'away' : 'home']}%.`, bar: { label: 'Владение', home: poss.home, away: poss.away, kind: 'pct' } },
     })
   }
 

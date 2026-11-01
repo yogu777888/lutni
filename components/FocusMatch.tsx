@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import type { FeedItem } from '@/lib/data'
 import { leagueTitle } from '@/lib/flags'
-import { appNow, formatTime } from '@/lib/format'
+import { appNow, formatTime, ymdInTz } from '@/lib/format'
 import { matchHref } from '@/lib/links'
-import { matchNotes } from '@/lib/match-notes'
+import { matchNotes, type NoteBar } from '@/lib/match-notes'
 import { isLive } from '@/lib/rank'
 import type { MatchFull } from '@/lib/types'
 import { buildVerdict } from '@/lib/verdict'
@@ -12,6 +12,8 @@ import { TAG_BY_SLUG } from '@/lib/tags'
 import { StorySymbol, softTone, symbolSoft } from './story/StorySymbol'
 import { Icon } from './Icon'
 import { StatGlyph } from './match/StatIcon'
+import { ClubVars } from './match/ClubVars'
+import { MirrorBars, mirrorWidths } from './match/SplitBar'
 import { Tick } from './Live'
 import { TeamLogo } from './TeamLogo'
 import { untilText } from './shell/StateLine'
@@ -44,7 +46,7 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
   const started = m.status !== 'scheduled' && m.status !== 'postponed' && m.status !== 'cancelled'
 
   // значок факта: до начала — знак подборки её приглушённым цветом (как в правой панели), по ходу — о чём вывод
-  type Fact = { title: string; text?: string; sym?: string; icon?: 'chart' | 'ball' | 'card' | 'swap'; label?: string }
+  type Fact = { title: string; text?: string; sym?: string; icon?: 'chart' | 'ball' | 'card' | 'swap'; label?: string; bar?: NoteBar }
   const fact: Fact | null = started
     ? full
       ? (() => {
@@ -105,15 +107,14 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
           ) : (
             <p className="display-num text-[36px] leading-none">{formatTime(m.ts)}</p>
           )}
-          <p className="mt-1.5 text-[13px] text-dim">
-            {live
-              ? m.elapsed && m.elapsed > 45 ? '2-й тайм' : '1-й тайм'
-              : m.status === 'finished'
+          {/* по ходу — без «2-й тайм»: минута и так в углу карточки (владелец: «сделай как знаешь лучше») */}
+          {live ? null : <p className="mt-1.5 text-[13px] text-dim">
+            {m.status === 'finished'
                 ? 'матч завершён'
                 : until != null && until > 0 && until < 24 * 60
                   ? untilText(until)
                   : 'мск'}
-          </p>
+          </p>}
         </div>
         {team(m.away)}
       </div>
@@ -141,12 +142,37 @@ export function FocusMatch({ item, full }: { item: FeedItem; full: MatchFull | n
             {fact.label ?? 'Главное'}
           </p>
           <p className="mt-1.5 text-[15px] font-semibold leading-snug">{plain(fact.title)}</p>
-          {fact.text ? (
+          {fact.bar ? (
+            // цифры вывода — строкой сравнения, как в «Статистике» матча: текст «Удары: Барселона — 12, Леванте — 3»
+            // пересказывал заголовок и называл команду третий раз; у кого больше — цветом клуба
+            <FactBar bar={fact.bar} id={m.id} ymd={ymdInTz(m.ts)} same={fact.bar.label === fact.label} />
+          ) : fact.text ? (
             // текстом, без ⓘ у xG: кнопка подсказки внутри ссылки — недопустимая вложенность
             <p className="mt-1 text-[14px] leading-snug text-dim">{plain(fact.text)}</p>
           ) : null}
         </div>
       ) : null}
     </Link>
+  )
+}
+
+const num = (v: number, kind: NoteBar['kind']) =>
+  kind === 'pct' ? `${Math.round(v)}%` : kind === 'dec' ? v.toFixed(2).replace('.', ',') : String(Math.round(v))
+
+// подпись по центру — только если она не повторяет тему над заголовком («Удары» — «Удары»)
+function FactBar({ bar, id, ymd, same }: { bar: NoteBar; id: number; ymd: string; same: boolean }) {
+  const lead = bar.home === bar.away ? null : bar.home > bar.away ? 'home' : 'away'
+  const n = (side: 'home' | 'away') => (
+    <span className={`text-[16px] tabular-nums ${lead === side ? 'font-bold text-fg' : 'text-dim'}`}>{num(bar[side], bar.kind)}</span>
+  )
+  return (
+    <ClubVars id={id} ymd={ymd} className="mt-3">
+      <div className="flex items-baseline justify-between gap-3">
+        {n('home')}
+        {same ? null : <span className="text-[14px] text-dim">{bar.label}</span>}
+        {n('away')}
+      </div>
+      <MirrorBars className="mt-2 h-1.5" widths={mirrorWidths(bar.home, bar.away, bar.kind === 'pct')} lead={lead} />
+    </ClubVars>
   )
 }
