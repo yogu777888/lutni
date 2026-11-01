@@ -101,7 +101,7 @@ function ValueRow({ it }: { it: FeedItem }) {
           ) : null}
         </p>
       </div>
-      <div className="relative z-10 flex flex-col items-end gap-1">
+      <div className="relative z-10">
         {/* в кнопке — знак букмекера и кэф (владелец: «может в кнопке коеффициента ставить лого бк както?»): знак узнаётся
             быстрее подписи 11px; имя — в подсказке и для диктора */}
         <a
@@ -110,12 +110,13 @@ function ValueRow({ it }: { it: FeedItem }) {
           rel={SPONSORED_REL}
           title={`${capFirst(outcome)}: ${p.odd!.toFixed(2)} в ${partner.name} · Реклама 18+`}
           aria-label={`${p.odd!.toFixed(2)} в ${partner.name}`}
-          className="flex h-11 items-center gap-2 rounded-ctl bg-acid pl-1.5 pr-3 text-acid-ink transition-colors hover:bg-acid/85"
+          // одной ширины у всех строк (кэфы — ровной колонкой), знак — во всю высоту с полем 4px: его скругление (9px)
+          // вложено в скругление кнопки (14 = 9 + 4), кнопка читается одной плашкой, а не знаком, прилипшим к краю
+          className="group/odd flex h-11 w-[104px] items-center rounded-tile bg-acid p-1 text-acid-ink transition-colors hover:bg-acid/85"
         >
-          <PartnerBadge partner={partner} size={30} />
-          <span className="num text-[16px] font-bold">{p.odd!.toFixed(2)}</span>
+          <PartnerBadge partner={partner} size={36} />
+          <span className="num flex-1 text-center text-[17px] font-bold">{p.odd!.toFixed(2)}</span>
         </a>
-        <span className="text-[12px] text-mute">Реклама · 18+</span>
       </div>
     </div>
   )
@@ -276,10 +277,7 @@ export default async function TagPage({ params }: Props) {
                 <BlockTitle rows title={dayHead(ymd, list[0].match.ts, today)} aside={
                     // на телефоне — только число: «Завтра · 5 октября» с «3 ставки · Реклама · 18+» не влезали в строку, и подпись
                     // уходила под заголовок (владелец: «у завтра под заголовком почему-то описание»); «Реклама · 18+» — у кэфа в строке
-                    <span className="whitespace-nowrap">
-                      {pluralN(list.length, ['ставка', 'ставки', 'ставок'])}
-                      <span className="max-sm:hidden"> · Реклама · 18+</span>
-                    </span>
+pluralN(list.length, ['ставка', 'ставки', 'ставок'])
                   }
                 />
                 {/* строки — колонкой с порядком (`order`): по времени их переставляет CSS, черта — у каждой строки сверху,
@@ -296,6 +294,11 @@ export default async function TagPage({ params }: Props) {
                     })}
                   </div>
                 </div>
+                {/* пометка — одна на блок, под карточкой справа с букмекерами этого дня, как «PARI · Реклама · 18+» под блоками
+                    лиг (владелец: «может подписи бк реклама под блок перенести как везде а не под каждой кнопкой?») */}
+                <p className="mt-2 px-4 text-right text-[12px] text-mute/70 sm:px-5">
+                  {[...new Set(list.map((it) => getPartner(it.summary!.pick!.partnerSlug!)!.name))].join(', ')} · Реклама · 18+
+                </p>
               </section>
             )).concat(
               <p key="note" className="-mt-5 px-4 text-[13px] text-mute sm:px-5">
