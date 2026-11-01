@@ -50,7 +50,7 @@ export function StatusCell({ m }: { m: Match }) {
  * Кэфы 1X2 — только у матчей, которые ещё не начались. Есть линия легального партнёра (`line`) — ячейки-ссылки к нему
  * (`goHref(…, 'list-odds')`, rel=sponsored; пометка «Реклама» — в шапке блока): выглядят кнопками и ведут к ставке
  * (раньше клик по «кнопке» открывал сторис — владелец согласился сделать переход). Линии партнёра нет — простые числа
- * без плашек, не притворяются кнопками. Выгодный — лаймом.
+ * без плашек, не притворяются кнопками. Выгодный — лаймовой рамкой, остальные — серой.
  */
 function Odds({ m, hotKey, line }: { m: Match; hotKey: string | null; line: X12Line | null }) {
   const x = m.odds?.x12
@@ -68,11 +68,21 @@ function Odds({ m, hotKey, line }: { m: Match; hotKey: string | null; line: X12L
               target="_blank"
               rel={SPONSORED_REL}
               title={`${what}: ${formatOdd(line[k])} в ${line.bookmaker}${hot ? ' — выгодно: кэф выше честной цены' : ''} · Реклама 18+`}
-              className={`num rounded-ctl py-1.5 text-center text-[15px] font-semibold transition-colors ${
-                hot ? 'bg-acid text-acid-ink hover:bg-acid/85' : 'bg-white/[0.06] text-fg hover:bg-white/[0.14]'
+              // форма кнопок «Выгодных ставок» (владелец: «а может кэфы на главной у матчей тоже в таком же стиле с обводкой
+              // сделать и такие же формы?» — «да»): рамка 4px и внутренний блок с числом цвета карточки; рамка серая, у выгодного —
+              // лаймовая (лаймом на всех кэфах он перестал бы значить «выгодно»); наведение — обычный белеет, выгодный заливается
+              // лаймом, число графитовое; нажатие — сжатие. Высота прежняя 34px, скругление числа (6) вложено в рамку (10 = 6 + 4)
+              className={`group/odd flex h-[34px] rounded-ctl p-1 transition-transform duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 ${
+                hot ? 'bg-acid' : 'bg-white/10'
               }`}
             >
-              {formatOdd(line[k])}
+              <span
+                className={`num grid flex-1 place-items-center rounded-md bg-panel text-[15px] font-semibold text-fg transition-colors duration-150 group-hover/odd:text-ink group-focus-visible/odd:text-ink ${
+                  hot ? 'group-hover/odd:bg-acid group-focus-visible/odd:bg-acid' : 'group-hover/odd:bg-fg group-focus-visible/odd:bg-fg'
+                }`}
+              >
+                {formatOdd(line[k])}
+              </span>
             </a>
           )
         }
