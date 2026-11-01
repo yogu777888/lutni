@@ -48,7 +48,8 @@ export function Tabs({
   }
   if (items.length < 2) return <div className={className}>{items[0]?.content}</div>
   return (
-    <div className={className}>
+    // выбранная вкладка — атрибутом: по нему CSS прячет то, что ей вне вкладок дублирует (`.quick-card` на «Статистике»)
+    <div className={className} data-tab={param ? cur : undefined}>
       <div
         role="tablist"
         className={`flex gap-1 rounded-full bg-white/[0.07] p-1 ${small ? 'max-w-sm' : ''} ${barClassName}`}

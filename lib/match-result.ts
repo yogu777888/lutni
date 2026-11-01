@@ -32,7 +32,7 @@ export function goalFlow(events: MatchEvent[], final: Score | null) {
 }
 
 /** Итог словами — первым выводом «Главного»: кто выиграл, где, со счётом победителя первым, и решающий факт. */
-export function resultNote(m: Pick<Match, 'home' | 'away' | 'score' | 'statusCode'>, events: MatchEvent[]): MatchNote | null {
+export function resultNote(m: Pick<Match, 'home' | 'away' | 'score' | 'statusCode'>, events: MatchEvent[], shootout: Score | null = null): MatchNote | null {
   const s = m.score
   if (!s) return null
   const name = (x: Side) => (x === 'home' ? m.home.name : m.away.name)
@@ -41,11 +41,17 @@ export function resultNote(m: Pick<Match, 'home' | 'away' | 'score' | 'statusCod
   const lo = Math.min(s.home, s.away)
   const title = w
     ? `Победа «${name(w)}» ${w === 'home' ? 'дома' : 'в гостях'} — ${hi}:${lo}${m.statusCode === 9 ? ' в доп. время' : ''}`
-    : m.statusCode === 10
-      ? `${s.home}:${s.away} — дальше серия пенальти`
-      : hi
-        ? `Ничья — ${s.home}:${s.away}`
-        : 'Ничья без голов'
+    : m.statusCode === 10 && shootout && shootout.home !== shootout.away
+      ? (() => {
+          // серия — из событий (`splitShootout`): победитель серии, её счёт — победителя первым
+          const sw: Side = shootout.home > shootout.away ? 'home' : 'away'
+          return `Победа «${name(sw)}» по пенальти — ${s.home}:${s.away}, серия ${shootout[sw]}:${shootout[other(sw)]}`
+        })()
+      : m.statusCode === 10
+        ? `${s.home}:${s.away} — дальше серия пенальти`
+        : hi
+          ? `Ничья — ${s.home}:${s.away}`
+          : 'Ничья без голов'
 
   const facts: string[] = []
   const flow = goalFlow(events, s)

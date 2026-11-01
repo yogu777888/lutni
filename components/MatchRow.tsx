@@ -42,7 +42,7 @@ export function StatusCell({ m }: { m: Match }) {
         <span className="sr-only"> · итог</span>
       </span>
     )
-  if (m.status === 'postponed' || m.status === 'cancelled') return <span className="block text-[12px] font-medium leading-tight text-loss">{m.statusLabel}</span>
+  if (m.status === 'postponed' || m.status === 'cancelled') return <span className="block text-[12px] font-medium leading-tight text-mute">{m.statusLabel}</span>
   return <span className={`${base} text-fg`}>{formatTime(m.ts)}</span>
 }
 

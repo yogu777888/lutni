@@ -64,6 +64,8 @@ export type MatchFull = {
   venue: { name: string; city: string; capacity: number | null } | null
   referee: string | null
   formations: { home: string | null; away: string | null }
+  /** серия пенальти (забитые удары): в API отдельного поля нет (`homePenaltyResult` пустой) — собираем из событий (`splitShootout`) */
+  shootout?: Score | null
 }
 
 export type Glicko = {

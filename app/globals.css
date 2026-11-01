@@ -1322,3 +1322,9 @@ html[data-shell-rc] .shell-r-rail {
   background-color: rgb(255 255 255 / 0.22);
   color: var(--color-fg);
 }
+
+/* Страница матча: на вкладке «Статистика» карточка «xG · Удары · Угловые» под табло повторяла бы первые строки
+   статистики — прячем (владелец, план «мелочи» — «да»). Атрибут ставит `Tabs` (`data-tab`). */
+body:has([data-tab='stats']) .quick-card {
+  display: none;
+}

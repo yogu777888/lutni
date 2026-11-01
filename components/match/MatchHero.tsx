@@ -51,7 +51,9 @@ export function MatchHead({ full, league = null }: { full: MatchFull; league?: {
           {m.elapsed && m.statusCode !== 4 ? `${m.elapsed}′` : m.statusLabel}
         </span>
       ) : started ? (
-        <span className={`shrink-0 text-[13px] font-semibold ${played ? 'text-dim' : 'text-loss'}`}>{m.statusLabel}</span>
+        // одно слово с плашкой над табло и строками списка — «итог» (было «Завершён» здесь и «итог» там); после доп. времени
+        // и пенальти — как есть, это сведения; перенесён и отменён — серым, не красным (красный у нас — только «идёт»)
+        <span className="shrink-0 text-[13px] font-semibold text-dim">{m.status === 'finished' && m.statusCode === 8 ? 'итог' : m.statusCode === 10 && full.shootout ? `пенальти ${full.shootout.home}:${full.shootout.away}` : m.statusLabel}</span>
       ) : null}
     </>
   )
@@ -176,7 +178,17 @@ export function MatchHero({
           {row(m.home, 'home')}
           {row(m.away, 'away')}
         </div>
-        {!started ? (
+        {m.status === 'postponed' || m.status === 'cancelled' ? (
+          // перенесён или отменён — спокойно: справа слово и прежнее время, серым (без обратного отсчёта и без красного)
+          <div className="shrink-0 self-stretch border-l border-edge py-3 pl-4 text-right sm:pl-6">
+            <div className="flex h-full flex-col justify-center">
+              <div className="text-[20px] font-semibold leading-tight text-dim">{m.statusLabel}</div>
+              <div className="mt-1.5 text-[13px] text-mute">
+                было в {formatTime(m.ts)} {SITE.tzLabel.toLowerCase()}
+              </div>
+            </div>
+          </div>
+        ) : !started ? (
           // до начала — время справа от обеих строк, под ним «мск» и обратный отсчёт
           <div className="shrink-0 self-stretch border-l border-edge py-3 pl-4 text-right sm:pl-6">
             <div className="flex h-full flex-col justify-center">

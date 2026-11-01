@@ -158,8 +158,9 @@ export async function getMatchFull(id: number, opts: Opts = {}): Promise<MatchFu
     return await cache.get(
       // в кэше лежит уже разобранный матч, и у сыгранных старый разбор жил бы ещё неделю: v2 — события VAR больше не
       // голы и не карточки (`eventKind`), v3 — тур по-русски («Clausura - 11» → «Клаусура, 11-й тур», `ruRound`),
-      // v4 — у команд id во Flashscore (`flash`): по нему ищем составы и давление (`getLsExtra`)
-      `game:v4:${id}`,
+      // v4 — у команд id во Flashscore (`flash`): по нему ищем составы и давление (`getLsExtra`), v5 — удары серии
+      // пенальти больше не голы, счёт серии — `shootout` (`splitShootout`)
+      `game:v5:${id}`,
       async () => N.normalizeFull(await apiGet<RawGameFull>(`/Games/${id}`, { TimeZone: tz }, opts), tz),
       (full) => matchTtl(full.match),
     )

@@ -273,6 +273,24 @@ export function eventKind(e: RawEvent): MatchEvent['kind'] {
   return 'other'
 }
 
+/**
+ * Серия пенальти. В настоящем API её счёта нет (`homePenaltyResult` пустой), а удары серии приходят обычными событиями
+ * «Penalty» / «Missed Penalty» на 120+N′ — даже в кубках без доп. времени (Copa Argentina, 29 октября 2026): на табло они
+ * шли авторами голов. У матча «после пенальти» (10) или идущей серии (7) такие события — удары серии, если без них голы
+ * сходятся со счётом матча; не сходятся (настоящий пенальти на 120+1′ в доп. время) — ничего не трогаем.
+ */
+export function splitShootout(events: MatchEvent[], m: Pick<Match, 'statusCode' | 'score'>): { events: MatchEvent[]; shootout: Score | null } {
+  if ((m.statusCode !== 10 && m.statusCode !== 7) || !m.score) return { events, shootout: null }
+  const kick = (e: MatchEvent) => (e.kind === 'penalty' || e.kind === 'missed-penalty') && e.minute >= 120 && e.extra != null
+  const kicks = events.filter(kick)
+  const rest = events.filter((e) => !kick(e))
+  const goals = rest.filter((e) => e.kind === 'goal' || e.kind === 'penalty' || e.kind === 'own-goal').length
+  if (!kicks.length || goals !== m.score.home + m.score.away) return { events, shootout: null }
+  const shootout = { home: 0, away: 0 }
+  for (const k of kicks) if (k.kind === 'penalty') shootout[k.side]++
+  return { events: rest, shootout }
+}
+
 export function normalizeFull(raw: RawGameFull, tzOffset: number): MatchFull {
   const match = normalizeGame(raw.game, tzOffset)
   const events: MatchEvent[] = (raw.events ?? []).map((e) => ({
@@ -284,10 +302,12 @@ export function normalizeFull(raw: RawGameFull, tzOffset: number): MatchFull {
     assist: e.assistPlayer?.name ?? null,
   }))
   const v = raw.venue
+  const { events: inGame, shootout } = splitShootout(events, match)
   return {
     match,
     stats: normalizeStats(raw.statistics),
-    events: events.sort((a, b) => a.minute - b.minute || (a.extra ?? 0) - (b.extra ?? 0)),
+    events: inGame.sort((a, b) => a.minute - b.minute || (a.extra ?? 0) - (b.extra ?? 0)),
+    shootout,
     venue: v?.name ? { name: v.name, city: v.city ?? '', capacity: num(v.capacity) } : null,
     referee: raw.refereeName || null,
     formations: { home: raw.lineups?.homeFormation ?? null, away: raw.lineups?.awayFormation ?? null },

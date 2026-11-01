@@ -600,7 +600,7 @@ export default async function MatchPage({ params }: Props) {
     ? matchNotes({ home: m.home.name, away: m.away.name, score: m.score ?? null, stats: full.stats, events: full.events, momentum: ls?.momentum ?? null, live: isLive, minute: m.elapsed, points })
     : []
   // сыгран — первым выводом итог словами («Победа «Реал Мадрид» в гостях — 4:1» и решающий факт), дальше два из статистики
-  const result = finished ? resultNote(m, full.events) : null
+  const result = finished ? resultNote(m, full.events, full.shootout ?? null) : null
   const notes = result ? [result, ...statNotes.slice(0, 2)] : statNotes
   const sec_notes = notes.length ? (
     <Section outside title="Главное">
@@ -891,7 +891,7 @@ export default async function MatchPage({ params }: Props) {
         // три главные цифры — снова отдельной карточкой под табло (владелец: «а можешь блок где xg удары и угловые сделать
         // отдельно как было раньше?»; внутри табло под чертой — история); у каждого числа под ним код команды, хозяева
         // слева, гости справа — «1,90 : 0,38» без подписей не читалось, чьё какое
-        <div className="card relative mt-3 grid grid-cols-3 divide-x divide-edge py-3" aria-label="Главные цифры матча">
+        <div className="quick-card card relative mt-3 grid grid-cols-3 divide-x divide-edge py-3" aria-label="Главные цифры матча">
           {quick.map((st) => {
             const v = (x: number) => (st.key === 'expectedGoals' ? dec2(x) : String(x))
             return (
