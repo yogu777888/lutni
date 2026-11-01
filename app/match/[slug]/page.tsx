@@ -583,7 +583,19 @@ export default async function MatchPage({ params }: Props) {
     <>
           {scheduled && (verdict || pick) ? (
             // строки с командами в блоке нет — они на табло; «···» (картинка и «Поделиться») — справа в строке заголовка
-            <Section outside title="Расклад по кэфам" className="!p-4" aside={<span className="-my-2 -mr-2 block"><PredictShareButton {...predictProps} /></span>}>
+            <Section
+              outside
+              title="Шансы на матч"
+              className="!p-4"
+              note={
+                <>
+                  Математический расчёт по кэфам букмекеров, а не гарантия. Ставки — это риск · 18+.{' '}
+                  <Link href="/about" className="whitespace-nowrap text-dim underline-offset-2 hover:text-fg hover:underline">
+                    Как мы считаем →
+                  </Link>
+                </>
+              }
+              aside={<span className="-my-2 -mr-2 block"><PredictShareButton {...predictProps} /></span>}>
               <PredictBlock {...predictProps} />
             </Section>
           ) : null}

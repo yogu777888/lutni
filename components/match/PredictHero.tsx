@@ -1,5 +1,6 @@
 import { primaryPartner } from '@/config/bookmakers'
-import { goHref } from '@/lib/affiliate'
+import { goHref, SPONSORED_REL } from '@/lib/affiliate'
+import { PartnerBadge } from '@/components/PartnerBadge'
 import { formatTime, pct } from '@/lib/format'
 import type { Pick } from '@/lib/model'
 import type { Match } from '@/lib/types'
@@ -167,23 +168,32 @@ export function PredictBlock(p: Props) {
       ) : c && odd != null ? (
         // выгоды нет — без «Нашего выбора» и лаймовой кнопки (владелец: «а сам блок безопасный?» — «да»): совет ставить при
         // «кэф ниже — выгоды нет» внутри рекламы читался бы недостоверно; одна строка с кэфом и честной ценой и тихая ссылка
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-tile bg-white/[0.04] p-4">
+        // кнопка с кэфом — той же формы, что в подборках и «Выгодных ставках» (знак букмекера и кэф в серой рамке; лайм — только «выгодно»)
+        <div className="mt-4 flex items-center justify-between gap-4 rounded-tile bg-white/[0.04] p-4">
           <div className="min-w-0">
-            <p className="text-[15px] font-semibold first-letter:uppercase">
-              {outcomeText(c.key, m)}: <span className="num">{odd.toFixed(2)}</span> в {partner.name}
-            </p>
+            <p className="text-[15px] font-semibold first-letter:uppercase">{outcomeText(c.key, m)}</p>
             <p className="mt-0.5 text-[13px] text-dim first-letter:uppercase">{why}</p>
           </div>
-          <div id="pick-cta" className="flex shrink-0 flex-col items-start gap-1.5 sm:items-end">
-            <CtaLink href={goHref(partner, 'pick', m.id)} variant="secondary" size="sm">
-              На сайт {partner.name}
-            </CtaLink>
-            <AdMark partner={partner} />
+          <div id="pick-cta" className="w-[108px] shrink-0">
+            <a
+              href={goHref(partner, 'pick', m.id)}
+              target="_blank"
+              rel={SPONSORED_REL}
+              title={`${outcomeText(c.key, m)}: ${odd.toFixed(2)} в ${partner.name} · Реклама 18+`}
+              aria-label={`${outcomeText(c.key, m)}: ${odd.toFixed(2)} в ${partner.name}`}
+              className="group/odd flex h-11 w-full items-center gap-2 transition-transform duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
+            >
+              <PartnerBadge partner={partner} size={36} />
+              <span className="flex h-full flex-1 rounded-tile bg-white/10 p-1 transition-colors duration-150 group-hover/odd:bg-fg group-focus-visible/odd:bg-fg">
+                <span className="num grid flex-1 place-items-center rounded-lg bg-panel text-[17px] font-bold text-fg transition-colors duration-150 group-hover/odd:bg-fg group-hover/odd:text-ink group-focus-visible/odd:bg-fg group-focus-visible/odd:text-ink">
+                  {odd.toFixed(2)}
+                </span>
+              </span>
+            </a>
+            <AdMark partner={partner} className="mt-1.5 text-center" />
           </div>
         </div>
       ) : null}
-      {/* оговорка — внутри карточки, а не строкой под ней */}
-      <p className="mt-4 text-center text-[13px] text-mute">Шанс по кэфам, а не гарантия. Ставки — это риск · 18+</p>
     </div>
   )
 }
