@@ -112,12 +112,13 @@ function ValueRow({ it }: { it: FeedItem }) {
           aria-label={`${p.odd!.toFixed(2)} в ${partner.name}`}
           // знак букмекера — отдельно на цвете карточки, лаймовая рамка — только вокруг кэфа (владелец: «а в плане цветовой иерархии в
           // кнопке с кэфом все норм?» — розовый Марафона и бирюзовый PARI на лайме спорили с ним и были ярче кэфа; «да»): по яркости
-          // первым — кэф в рамке, потом знак; одной ширины у всех строк (108px — кэфы ровной колонкой), рамка 4px, скругление кэфа вложено в её
-          className="group/odd flex h-11 w-[108px] items-center gap-2"
+          // первым — кэф в рамке, потом знак; одной ширины у всех строк (108px — кэфы ровной колонкой), рамка 4px, скругление кэфа вложено в её.
+          // Наведение и фокус — кэф заливается лаймом, число графитовым: рамка становится сплошной лаймовой кнопкой; нажатие — чуть сжимается
+          className="group/odd flex h-11 w-[108px] items-center gap-2 transition-transform duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
         >
           <PartnerBadge partner={partner} size={36} />
-          <span className="flex h-full flex-1 rounded-tile bg-acid p-1 transition-colors group-hover/odd:bg-acid/85">
-            <span className="num grid flex-1 place-items-center rounded-lg bg-panel text-[17px] font-bold text-fg">{p.odd!.toFixed(2)}</span>
+          <span className="flex h-full flex-1 rounded-tile bg-acid p-1">
+            <span className="num grid flex-1 place-items-center rounded-lg bg-panel text-[17px] font-bold text-fg transition-colors duration-150 group-hover/odd:bg-acid group-hover/odd:text-ink group-focus-visible/odd:bg-acid group-focus-visible/odd:text-ink">{p.odd!.toFixed(2)}</span>
           </span>
         </a>
       </div>
