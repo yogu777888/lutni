@@ -151,7 +151,9 @@ export function PredictBlock(p: Props) {
         // кнопка с кэфом — той же формы, что в подборках и «Выгодных ставках» (знак букмекера и кэф в серой рамке; лайм — только «выгодно»)
         <div className="mt-4 flex items-center justify-between gap-4 rounded-tile bg-white/[0.04] p-4">
           <div className="min-w-0">
-            <p className="text-[15px] font-semibold first-letter:uppercase">{outcomeText(c.key, m)}</p>
+            {/* подпись, как «Выгодная ставка» у выгодной: иначе «Не больше 2 голов» под «Скорее выиграет «X»» читалась спором */}
+            <p className="text-[14px] font-semibold text-dim">Самая вероятная ставка</p>
+            <p className="mt-1 text-[16px] font-semibold first-letter:uppercase">{outcomeText(c.key, m)}</p>
             <p className="mt-0.5 text-[13px] text-dim first-letter:uppercase">{why}</p>
           </div>
           <div id="pick-cta" className="w-[108px] shrink-0">
