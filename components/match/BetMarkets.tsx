@@ -1,7 +1,7 @@
 import { PARTNERS, partnerForApiBookmaker, type Partner } from '@/config/bookmakers'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
-import { pct, type BetMarket } from '@/lib/bet-markets'
-import { formatOdd } from '@/lib/format'
+import { pct, type BetMarket, type Rate } from '@/lib/bet-markets'
+import { formatOdd, plural } from '@/lib/format'
 import { isValue, valueThreshold, type Candidate } from '@/lib/model'
 import type { BookOdds, Quote } from '@/lib/odds'
 import type { Match } from '@/lib/types'
@@ -11,9 +11,7 @@ import { DARK_PLATE } from '@/lib/crest-geo'
 import { CrestPlate } from '../CrestPlate'
 import { ClubVars } from './ClubVars'
 import { ymdInTz } from '@/lib/format'
-import { BlockNote, BlockTitle } from '../Section'
-
-const TITLE: Record<BetMarket['key'], string> = { x12: 'Исход матча', goals: 'Голы в матче', btts: 'Обе забьют?' }
+import { BlockNote } from '../Section'
 
 const quoteOf = (b: BookOdds, key: string): Quote | undefined => {
   if (key === 'home' || key === 'draw' || key === 'away') return b.x12?.[key]
@@ -52,9 +50,25 @@ export function OutcomeIcon({ k, m, big = false }: { k: string; m: Match; big?: 
   ) : null
 }
 
+/** Строка доли: подпись, процент, тонкая полоса; выборка — в подсказке («4 из 9»). */
+function Stat({ name, tip, r }: { name: string; tip: string; r: Rate | null }) {
+  return (
+    <div title={r ? `${tip}: ${r.hit} из ${r.of}` : `${tip}: мало данных`}>
+      <div className="flex items-baseline justify-between gap-3 text-[13px]">
+        <span className="min-w-0 leading-snug text-dim">{name}</span>
+        <span className={`num shrink-0 text-[14px] ${r ? 'font-semibold text-fg' : 'text-mute'}`}>{r ? `${pct(r)}%` : '—'}</span>
+      </div>
+      <div className="mt-1.5 h-1 rounded-full bg-white/[0.09]">
+        {r ? <div className="h-full rounded-full bg-linear-to-r from-white/30 to-white/85" style={{ width: `${pct(r)}%` }} /> : null}
+      </div>
+    </div>
+  )
+}
+
 /**
- * Вкладка «Ставки» — витрина: карточка на рынок (исход, голы, «обе забьют»), строка на исход — значок, название, шанс по
- * кэфам без маржи и кэфы партнёров кнопками; доли прошлых матчей — в подсказке строки. Только до начала матча.
+ * Вкладка «Ставки» — у каждого исхода своя плашка: как часто он был в прошлых матчах команд, как часто — в турнире за
+ * сезон, и кэфы партнёров кнопками той же формы, что в подборках (знак букмекера и кэф в серой рамке; выгодный — лаймовой).
+ * Вместо таблицы «Коэффициенты букмекеров». Только до начала матча.
  */
 export function BetMarkets({
   match: m,
@@ -86,7 +100,6 @@ export function BetMarkets({
   const valueKeys = new Set(candidates.filter(isValue).map((c) => c.key))
   const shown = markets.filter((mk) => mk.outcomes.some((o) => o.past || o.league || partners.some(({ b }) => quoteOf(b, o.key))))
 
-  // кэф — кнопкой со знаком букмекера (92×36, как в правой панели)
   const button = (p: Partner, q: Quote, key: string) => {
     const pr = prob.get(key)
     const val = !!(pr && valueKeys.has(key) && pr * q.value - 1 >= valueThreshold(q.value))
@@ -99,16 +112,16 @@ export function BetMarkets({
         rel={SPONSORED_REL}
         title={tip}
         aria-label={`${label(key, m)}: ${formatOdd(q.value)} в ${p.name}`}
-        className="group/odd flex h-9 w-[92px] items-center gap-1.5 transition-transform duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
+        className="group/odd flex h-11 w-[108px] items-center gap-2 transition-transform duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
       >
-        <PartnerBadge partner={p} size={28} />
+        <PartnerBadge partner={p} size={36} />
         <span
-          className={`flex h-full flex-1 rounded-ctl p-[3px] transition-colors duration-150 ${
+          className={`flex h-full flex-1 rounded-tile p-1 transition-colors duration-150 ${
             val ? 'bg-acid' : 'bg-white/10 group-hover/odd:bg-fg group-focus-visible/odd:bg-fg'
           }`}
         >
           <span
-            className={`num grid flex-1 place-items-center rounded-md bg-panel text-[15px] font-bold text-fg transition-colors duration-150 group-hover/odd:text-ink group-focus-visible/odd:text-ink ${
+            className={`num grid flex-1 place-items-center rounded-lg bg-panel text-[17px] font-bold text-fg transition-colors duration-150 group-hover/odd:text-ink group-focus-visible/odd:text-ink ${
               val ? 'group-hover/odd:bg-acid group-focus-visible/odd:bg-acid' : 'group-hover/odd:bg-fg group-focus-visible/odd:bg-fg'
             }`}
           >
@@ -119,76 +132,72 @@ export function BetMarkets({
     )
   }
 
+  const names = [...new Set(partners.map(({ p }) => p.name))].join(', ')
+  // подписи у полос — коротко, чьи матчи (владелец: «точнее … и короче»); подробно, какие именно, — в подсказке
   const teams = `«${m.home.name}» и «${m.away.name}»`
-  const pastTip = (k: BetMarket['key']) =>
-    k === 'x12' ? `в последних домашних матчах «${m.home.name}» и выездных «${m.away.name}»` : `в последних матчах ${teams}`
-  const leagueTip = `в турнире «${leagueName}»${seasonName ? ` за сезон ${seasonName}` : ''}`
+  const pastTip = (k: BetMarket['key'], low = false) =>
+    (k === 'x12'
+      ? `До 10 последних домашних матчей «${m.home.name}» и выездных «${m.away.name}»`
+      : `До 10 последних матчей ${teams}`
+    ).replace(/^Д/, low ? 'д' : 'Д')
+  const leagueTip = `Сыгранные матчи турнира «${leagueName}» в сезоне${seasonName ? ` ${seasonName}` : ''}`
 
-  // отдельная компактная карточка на каждый исход, одной формы, как у Polymarket (владелец: «сделай отдельные карточки на
-  // каждый исход, как было … немного прямоугольные и чуть компактнее»): значок, название, шанс, ниже кэфы
+  // все исходы — отдельными карточками одной формы в одной сетке, без заголовков разделов, зазоры между карточками
+  // одинаковые по горизонтали и вертикали (владелец: «чтоб все карточки были по форме как те 3 штуки что в верхнем ряду
+  // и убери все заголовки и сделай отступы сверху снизу слева справа равные между карточками»)
+  const items = shown.flatMap((mk) =>
+    mk.outcomes.map((o) => {
+      const pr = prob.get(o.key)
+      // самый вероятный исход своего рынка — светлее рамкой и цифрой шанса; почти поровну (50 на 50) — без выделения
+      const top = pr != null && mk.outcomes.every((x) => x.key === o.key || (prob.get(x.key) ?? 0) <= pr - 0.02)
+      return { mk, o, pr, top }
+    }),
+  )
   return (
-    <ClubVars id={m.id} ymd={ymdInTz(m.ts)} className="@container block space-y-8">
-      {shown.map((mk, i) => {
-        const top = mk.outcomes.reduce<string | null>((best, o) => {
-          const pr = prob.get(o.key)
-          if (pr == null) return best
-          return best == null || pr > (prob.get(best) ?? 0) ? o.key : best
-        }, null)
-        const topP = top ? prob.get(top)! : 0
-        // почти поровну (50 на 50) — без выделения
-        const lead = top && mk.outcomes.every((x) => x.key === top || (prob.get(x.key) ?? 0) <= topP - 0.02) ? top : null
-        const cols = partners.filter(({ b }) => mk.outcomes.some((o) => quoteOf(b, o.key)))
-        return (
-          <section key={mk.key}>
-            <BlockTitle rows title={TITLE[mk.key]} aside={cols.length ? `${cols.map(({ p }) => p.name).join(', ')} · Реклама · 18+` : undefined} />
-            <ul className={`grid gap-2 @[34rem]:grid-cols-2 ${mk.outcomes.length === 3 ? '@[52rem]:grid-cols-3' : ''}`}>
-              {mk.outcomes.map((o) => {
-                const pr = prob.get(o.key)
-                const isTop = o.key === lead
-                // свет цветом клуба — только у самого вероятного исхода и только у победы (владелец: «если победа эльче
-                // не топ по шансу то убери градиент»)
-                const club = isTop ? (o.key === 'home' ? 'var(--club-h)' : o.key === 'away' ? 'var(--club-a)' : null) : null
-                const facts = [
-                  o.past ? `${pct(o.past)}% ${pastTip(mk.key)} (${o.past.hit} из ${o.past.of})` : null,
-                  leagueN && o.league ? `${pct(o.league)}% ${leagueTip} (${o.league.hit} из ${o.league.of})` : null,
-                ].filter(Boolean)
-                return (
-                  <li
-                    key={o.key}
-                    title={facts.length ? `${label(o.key, m)}: ${facts.join('; ')}` : undefined}
-                    className={`card flex flex-col gap-3 !p-3 ${isTop ? 'ring-1 ring-inset ring-white/15' : ''}`}
-                    style={club ? { backgroundImage: `radial-gradient(120% 120% at 0% 0%, color-mix(in oklch, ${club} 22%, transparent), transparent 70%)` } : undefined}
-                  >
-                    <div className="flex items-center gap-3">
-                      <OutcomeIcon k={o.key} m={m} />
-                      {/* место под две строки: короткое и длинное название — карточки одной высоты */}
-                      <span className="line-clamp-2 flex min-h-10 min-w-0 flex-1 items-center text-[15px] font-semibold leading-tight">{label(o.key, m)}</span>
-                      {pr != null ? (
-                        <span className={`num shrink-0 text-[20px] font-bold ${isTop ? 'text-fg' : 'text-fg/55'}`} title="Шанс по кэфам букмекеров без маржи">
-                          {Math.round(pr * 100)}%
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="flex gap-2">
-                      {cols.length
-                        ? cols.map(({ b, p }) => {
-                            const q = quoteOf(b, o.key)
-                            return q ? button(p, q, o.key) : <span key={p.slug} aria-hidden className="h-9 w-[92px]" />
-                          })
-                        : <span className="text-[13px] text-mute">Кэфов нет</span>}
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-            {i === shown.length - 1 ? (
-              <BlockNote className="!px-4 sm:!px-5">
-                Шанс — по кэфам букмекеров без маржи. {note}Лаймом — кэф выше честной цены. Ставки — это риск · 18+.
-              </BlockNote>
-            ) : null}
-          </section>
-        )
-      })}
-    </ClubVars>
+    <section>
+      <ClubVars id={m.id} ymd={ymdInTz(m.ts)} className="@container">
+        <ul className="grid gap-2 @2xl:grid-cols-3">
+          {items.map(({ mk, o, pr, top }) => {
+            // свет цветом клуба — только у победы и только если она самый вероятный исход (владелец: «если например победа
+            // эльче это не топ по шансу то убери градиент с карточки»)
+            const club = top ? (o.key === 'home' ? 'var(--club-h)' : o.key === 'away' ? 'var(--club-a)' : null) : null
+            const qs = partners.map(({ b, p }) => ({ p, q: quoteOf(b, o.key) })).filter((x): x is { p: Partner; q: Quote } => Boolean(x.q))
+            return (
+              // на телефоне — шапка (значок, название, шанс) во всю ширину, под ней полосы слева и кэфы справа;
+              // от 42rem — три ряда подсетки (шапка · полосы · кэфы): в карточках одного ряда ряды на одной высоте
+              <li
+                key={o.key}
+                className={`card grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-4 !p-4 @2xl:row-span-3 @2xl:grid-cols-1 @2xl:grid-rows-subgrid ${top ? 'ring-1 ring-inset ring-white/15' : ''}`}
+                style={club ? { backgroundImage: `radial-gradient(120% 90% at 0% 0%, color-mix(in oklch, ${club} 20%, transparent), transparent 70%)` } : undefined}
+              >
+                {/* значок слева от названия, шанс справа — одной строкой (владелец: «иконку перенести слева от заголовка») */}
+                <div className="col-span-2 flex items-center gap-3 @2xl:col-span-1">
+                  <OutcomeIcon k={o.key} m={m} big />
+                  <p className="min-w-0 flex-1 break-words text-[16px] font-semibold leading-tight">{label(o.key, m)}</p>
+                  {pr != null ? (
+                    <span className="shrink-0 text-right" title="Шанс по кэфам букмекеров без маржи">
+                      <span className={`display-num block text-[28px] leading-none ${top ? 'text-fg' : 'text-fg/55'}`}>{Math.round(pr * 100)}%</span>
+                      <span className="mt-1 block text-[12px] text-mute">шанс</span>
+                    </span>
+                  ) : null}
+                </div>
+                <div className="min-w-0 space-y-3">
+                  <Stat name="Среднее у команд" tip={pastTip(mk.key)} r={o.past} />
+                  {leagueN ? <Stat name="Среднее в лиге" tip={leagueTip} r={o.league} /> : null}
+                </div>
+                <div className="flex shrink-0 flex-col justify-center gap-2 @2xl:flex-row @2xl:items-end @2xl:justify-start">
+                  {qs.length ? qs.map(({ p, q }) => button(p, q, o.key)) : <span className="text-[13px] text-mute">Кэфов нет</span>}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      </ClubVars>
+      <BlockNote>
+        Среднее у команд — {pastTip('x12', true)} (у голов — {pastTip('goals', true)}).
+        {leagueN ? ` Среднее в лиге — ${leagueN} ${plural(leagueN, ['матч', 'матча', 'матчей'])} турнира «${leagueName}» в сезоне${seasonName ? ` ${seasonName}` : ''}.` : ''}{' '}
+        {note}Это прошлые матчи, а не прогноз. Лаймом — кэф выше честной цены. {names ? `${names} · ` : ''}Реклама · Ставки — это риск · 18+.
+      </BlockNote>
+    </section>
   )
 }
