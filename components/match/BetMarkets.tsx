@@ -36,7 +36,7 @@ export const label = (key: string, m: Match) =>
 
 /** Значок исхода — скруглённым квадратом, как иконка приложения в iOS: у победы — эмблема команды, у остальных —
  * знак подборки той же темы белым; подложка — графит на тон светлее плашки, длинная тень — темнее её (владелец: светлая «не сочетается с карточкой»; до того — «с текстом сливается»).
- * В плашке «Ставок» — 40px над названием (`big`), в строках «Разбора исходов» — 32px слева. */
+ * В плашке «Ставок» — 40px слева от названия (`big`), в строках «Разбора исходов» — 32px слева. */
 export function OutcomeIcon({ k, m, big = false }: { k: string; m: Match; big?: boolean }) {
   const size = big ? 40 : 32
   const shape = big ? 'rounded-ctl' : 'rounded-lg'
@@ -176,31 +176,28 @@ export function BetMarkets({
                 const club = o.key === 'home' ? 'var(--club-h)' : o.key === 'away' ? 'var(--club-a)' : null
                 const qs = partners.map(({ b, p }) => ({ p, q: quoteOf(b, o.key) })).filter((x): x is { p: Partner; q: Quote } => Boolean(x.q))
                 return (
-                  // от 42rem — три ряда подсетки (значок с названием · полосы · кэфы): в соседних плашках ряды на одной высоте,
-                  // даже если название у одной в две строки
+                  // на телефоне — шапка (значок, название, шанс) во всю ширину, под ней полосы слева и кэфы справа;
+                  // от 42rem — три ряда подсетки (шапка · полосы · кэфы): в соседних плашках ряды на одной высоте
                   <li
                     key={o.key}
-                    className={`flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:row-span-3 @2xl:grid @2xl:grid-rows-subgrid @2xl:gap-y-4 ${top ? 'ring-1 ring-inset ring-white/15' : ''}`}
+                    className={`grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:row-span-3 @2xl:grid-cols-1 @2xl:grid-rows-subgrid ${top ? 'ring-1 ring-inset ring-white/15' : ''}`}
                     // у побед — свет цветом клуба из угла значка, как у обложки; ничья и голы — графит
                     style={club ? { backgroundImage: `radial-gradient(120% 90% at 0% 0%, color-mix(in oklch, ${club} 20%, transparent), transparent 70%)` } : undefined}
                   >
-                    <div className="min-w-0 flex-1 @2xl:contents">
-                      <div>
-                        <div className="flex items-start justify-between gap-3">
-                          <OutcomeIcon k={o.key} m={m} big />
-                          {pr != null ? (
-                            <span className="text-right" title="Шанс по кэфам букмекеров без маржи">
-                              <span className={`display-num block text-[28px] leading-none ${top ? 'text-fg' : 'text-fg/55'}`}>{Math.round(pr * 100)}%</span>
-                              <span className="mt-1 block text-[12px] text-mute">шанс</span>
-                            </span>
-                          ) : null}
-                        </div>
-                        <p className="mt-3 line-clamp-2 text-[16px] font-semibold leading-tight">{label(o.key, m)}</p>
-                      </div>
-                      <div className="mt-4 space-y-3 @2xl:mt-0">
-                        <Stat name="Среднее у команд" tip={pastTip(mk.key)} r={o.past} />
-                        {leagueN ? <Stat name="Среднее в лиге" tip={leagueTip} r={o.league} /> : null}
-                      </div>
+                    {/* значок слева от названия, шанс справа — одной строкой (владелец: «иконку перенести слева от заголовка») */}
+                    <div className="col-span-2 flex items-center gap-3 @2xl:col-span-1">
+                      <OutcomeIcon k={o.key} m={m} big />
+                      <p className="min-w-0 flex-1 break-words text-[16px] font-semibold leading-tight">{label(o.key, m)}</p>
+                      {pr != null ? (
+                        <span className="shrink-0 text-right" title="Шанс по кэфам букмекеров без маржи">
+                          <span className={`display-num block text-[28px] leading-none ${top ? 'text-fg' : 'text-fg/55'}`}>{Math.round(pr * 100)}%</span>
+                          <span className="mt-1 block text-[12px] text-mute">шанс</span>
+                        </span>
+                        ) : null}
+                    </div>
+                    <div className="min-w-0 space-y-3">
+                      <Stat name="Среднее у команд" tip={pastTip(mk.key)} r={o.past} />
+                      {leagueN ? <Stat name="Среднее в лиге" tip={leagueTip} r={o.league} /> : null}
                     </div>
                     <div className="flex shrink-0 flex-col justify-center gap-2 @2xl:flex-row @2xl:items-end @2xl:justify-start">
                       {qs.length ? qs.map(({ p, q }) => button(p, q, o.key)) : <span className="text-[13px] text-mute">Кэфов нет</span>}
