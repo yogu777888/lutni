@@ -20,7 +20,7 @@ const quoteOf = (b: BookOdds, key: string): Quote | undefined => {
   if (key === 'bttsNo') return b.btts?.no
 }
 
-const label = (key: string, m: Match) =>
+export const label = (key: string, m: Match) =>
   ({
     home: `Победа «${m.home.name}»`,
     draw: 'Ничья',
@@ -32,7 +32,7 @@ const label = (key: string, m: Match) =>
   })[key] ?? key
 
 /** Значок исхода слева от названия: у победы — эмблема команды, у остальных — знак подборки той же темы, серым. */
-function OutcomeIcon({ k, m }: { k: string; m: Match }) {
+export function OutcomeIcon({ k, m }: { k: string; m: Match }) {
   if (k === 'home' || k === 'away') {
     const t = k === 'home' ? m.home : m.away
     return <TeamLogo name={t.name} src={t.logo ?? null} size={22} />

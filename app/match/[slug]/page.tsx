@@ -52,6 +52,8 @@ import type { Match } from '@/lib/types'
 import { buildVerdict, outcomeText, split100 } from '@/lib/verdict'
 import { devig } from '@/lib/odds'
 import { Icon } from '@/components/Icon'
+import { OutcomeNotes } from '@/components/match/OutcomeNotes'
+import { outcomeNotes } from '@/lib/outcome-notes'
 
 // готовая страница хранится 30 с и отдаётся всем (ISR; владелец: «если будет 10000 посетителей…»): данные и так
 // обновляются не чаще раза в минуту (кэш и прогрев), а сборка страницы на каждого посетителя — главная нагрузка на
@@ -575,6 +577,26 @@ export default async function MatchPage({ params }: Props) {
 
     </>
   )
+  // разбор каждого исхода — шанс по кэфам и факты прошлых игр «за» и «против» (владелец: «на странице ставки сделать
+  // чтото типа прогноза только разбор каждого исхода? почему такая оценка, какая статистика»); «Прогноз на матч» — в «Статистике»
+  const outNotes = scheduled
+    ? outcomeNotes({
+        match: m,
+        x12: x ?? null,
+        over25: over25 ?? null,
+        btts: btts ?? null,
+        homeForm: ins.homeForm,
+        awayForm: ins.awayForm,
+        h2h: ins.h2h,
+        injuries: ins.injuries ?? [],
+        standings: ins.standings,
+      })
+    : []
+  const sec_outcomes = outNotes.some((n) => n.lines.length) ? (
+    <Section outside title="Разбор исходов" note="Шанс — по кэфам букмекеров без маржи; ✓ — статистика прошлых игр за исход, ✕ — против. Это прошлые матчи, а не прогноз. Ставки — это риск · 18+.">
+      <OutcomeNotes match={m} notes={outNotes} />
+    </Section>
+  ) : null
   const predictProps = { m, v: verdict, pick, probs: x, tags, url: `${SITE.url}${canonical}`, when: `${leagueTitle(m.league.name)} · ${dayLabel(ymdInTz(m.ts)).toLowerCase()}` }
   const sec_predict = (
     <>
@@ -850,9 +872,9 @@ export default async function MatchPage({ params }: Props) {
             key: 'predict',
             label: 'Ставки',
             on: Boolean(hasPredict || x || chanceMoved || scheduled || ins.preview.length),
-            content: <>{sec_predict}{sec_odds}{sec_chance}{sec_preview}</>,
+            content: <>{sec_predict}{sec_odds}{sec_outcomes}{sec_chance}</>,
           },
-          { key: 'teams', label: 'Статистика', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings || sec_points || shownTags.length), content: <>{sec_form}{sec_points}{sec_tags}{sec_h2h}{sec_inj}{sec_table}</> },
+          { key: 'teams', label: 'Статистика', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings || sec_points || shownTags.length || ins.preview.length), content: <>{sec_form}{sec_points}{sec_tags}{sec_h2h}{sec_inj}{sec_table}{sec_preview}</> },
           { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
         ]
   )
