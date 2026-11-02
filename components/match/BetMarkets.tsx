@@ -32,17 +32,20 @@ export const label = (key: string, m: Match) =>
     bttsNo: 'Кто-то не забьёт',
   })[key] ?? key
 
-/** Значок исхода слева от названия — скруглённым квадратом 32px, отдельно от текста: у победы — эмблема команды на светлой подложке,
- * у остальных — знак подборки той же темы графитом на той же подложке и с той же длинной тенью (владелец: «с текстом сливается»). */
-export function OutcomeIcon({ k, m }: { k: string; m: Match }) {
+/** Значок исхода — скруглённым квадратом, как иконка приложения в iOS: у победы — эмблема команды на светлой подложке,
+ * у остальных — знак подборки той же темы графитом на той же подложке и с той же длинной тенью (владелец: «с текстом сливается»).
+ * В плашке «Ставок» — 44px над названием (`big`), в строках «Разбора исходов» — 32px слева. */
+export function OutcomeIcon({ k, m, big = false }: { k: string; m: Match; big?: boolean }) {
+  const size = big ? 44 : 32
+  const shape = big ? 'rounded-ctl' : 'rounded-lg'
   if (k === 'home' || k === 'away') {
     const t = k === 'home' ? m.home : m.away
-    return <CrestPlate name={t.name} logo={t.logo} size={32} crest={0.68} shape="rounded-lg" />
+    return <CrestPlate name={t.name} logo={t.logo} size={size} crest={0.66} shape={shape} />
   }
   const sym = ({ draw: 'ravnye', 'over2.5': 'tb-2-5', 'under2.5': 'tm-2-5', bttsYes: 'obe-zabyut', bttsNo: 'kto-ne-zabyot' } as Record<string, string>)[k]
   return sym ? (
-    <span aria-hidden className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-lg" style={{ background: PLATE }}>
-      <ShadowSymbol k={sym} className="size-[18px]" />
+    <span aria-hidden className={`grid shrink-0 place-items-center overflow-hidden ${shape}`} style={{ width: size, height: size, background: PLATE }}>
+      <ShadowSymbol k={sym} className={big ? 'size-6' : 'size-[18px]'} />
     </span>
   ) : null
 }
@@ -169,10 +172,8 @@ export function BetMarkets({
                 return (
                   <li key={o.key} className="flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:flex-col">
                     <div className="min-w-0 flex-1">
-                      <p className="flex items-center gap-2.5 text-[15px] font-semibold leading-tight">
-                        <OutcomeIcon k={o.key} m={m} />
-                        <span className="line-clamp-2 min-w-0">{label(o.key, m)}</span>
-                      </p>
+                      <OutcomeIcon k={o.key} m={m} big />
+                      <p className="mt-3 line-clamp-2 text-[16px] font-semibold leading-tight">{label(o.key, m)}</p>
                       <Stat name="Среднее у команд" tip={pastTip(mk.key)} r={o.past} />
                       {leagueN ? <Stat name="Среднее в лиге" tip={leagueTip} r={o.league} /> : null}
                     </div>
