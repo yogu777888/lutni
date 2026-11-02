@@ -34,9 +34,9 @@ export const label = (key: string, m: Match) =>
 
 /** Значок исхода — скруглённым квадратом, как иконка приложения в iOS: у победы — эмблема команды, у остальных —
  * знак подборки той же темы белым; подложка — графит на тон светлее плашки, длинная тень — темнее её (владелец: светлая «не сочетается с карточкой»; до того — «с текстом сливается»).
- * В плашке «Ставок» — 44px над названием (`big`), в строках «Разбора исходов» — 32px слева. */
+ * В плашке «Ставок» — 40px над названием (`big`), в строках «Разбора исходов» — 32px слева. */
 export function OutcomeIcon({ k, m, big = false }: { k: string; m: Match; big?: boolean }) {
-  const size = big ? 44 : 32
+  const size = big ? 40 : 32
   const shape = big ? 'rounded-ctl' : 'rounded-lg'
   if (k === 'home' || k === 'away') {
     const t = k === 'home' ? m.home : m.away
@@ -53,12 +53,12 @@ export function OutcomeIcon({ k, m, big = false }: { k: string; m: Match; big?: 
 /** Строка доли: подпись, процент, тонкая полоса; выборка — в подсказке («4 из 9»). */
 function Stat({ name, tip, r }: { name: string; tip: string; r: Rate | null }) {
   return (
-    <div className="mt-2" title={r ? `${tip}: ${r.hit} из ${r.of}` : `${tip}: мало данных`}>
+    <div title={r ? `${tip}: ${r.hit} из ${r.of}` : `${tip}: мало данных`}>
       <div className="flex items-baseline justify-between gap-3 text-[13px]">
         <span className="min-w-0 leading-snug text-dim">{name}</span>
         <span className={`num shrink-0 text-[14px] ${r ? 'font-semibold text-fg' : 'text-mute'}`}>{r ? `${pct(r)}%` : '—'}</span>
       </div>
-      <div className="mt-1 h-1 rounded-full bg-white/[0.09]">
+      <div className="mt-1.5 h-1 rounded-full bg-white/[0.09]">
         {r ? <div className="h-full rounded-full bg-linear-to-r from-white/30 to-white/85" style={{ width: `${pct(r)}%` }} /> : null}
       </div>
     </div>
@@ -166,18 +166,24 @@ export function BetMarkets({
         >
           {/* плашка на исход: узкий блок — строкой (доли слева, кнопки справа столбиком), широкий — колонками */}
           <div className="@container">
-            <ul className={`grid gap-2 ${mk.outcomes.length === 3 ? '@2xl:grid-cols-3' : '@2xl:grid-cols-2'}`}>
+            <ul className={`grid gap-2 @2xl:gap-y-0 ${mk.outcomes.length === 3 ? '@2xl:grid-cols-3' : '@2xl:grid-cols-2'}`}>
               {mk.outcomes.map((o) => {
                 const qs = partners.map(({ b, p }) => ({ p, q: quoteOf(b, o.key) })).filter((x): x is { p: Partner; q: Quote } => Boolean(x.q))
                 return (
-                  <li key={o.key} className="flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:flex-col">
-                    <div className="min-w-0 flex-1">
-                      <OutcomeIcon k={o.key} m={m} big />
-                      <p className="mt-3 line-clamp-2 text-[16px] font-semibold leading-tight">{label(o.key, m)}</p>
-                      <Stat name="Среднее у команд" tip={pastTip(mk.key)} r={o.past} />
-                      {leagueN ? <Stat name="Среднее в лиге" tip={leagueTip} r={o.league} /> : null}
+                  // от 42rem — три ряда подсетки (значок с названием · полосы · кэфы): в соседних плашках ряды на одной высоте,
+                  // даже если название у одной в две строки
+                  <li key={o.key} className="flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:row-span-3 @2xl:grid @2xl:grid-rows-subgrid @2xl:gap-y-5">
+                    <div className="min-w-0 flex-1 @2xl:contents">
+                      <div>
+                        <OutcomeIcon k={o.key} m={m} big />
+                        <p className="mt-3 line-clamp-2 text-[16px] font-semibold leading-tight">{label(o.key, m)}</p>
+                      </div>
+                      <div className="mt-4 space-y-3 @2xl:mt-0">
+                        <Stat name="Среднее у команд" tip={pastTip(mk.key)} r={o.past} />
+                        {leagueN ? <Stat name="Среднее в лиге" tip={leagueTip} r={o.league} /> : null}
+                      </div>
                     </div>
-                    <div className="flex shrink-0 flex-col justify-center gap-2 @2xl:flex-row">
+                    <div className="flex shrink-0 flex-col justify-center gap-2 @2xl:flex-row @2xl:items-end">
                       {qs.length ? qs.map(({ p, q }) => button(p, q, o.key)) : <span className="text-[13px] text-mute">Кэфов нет</span>}
                     </div>
                   </li>
