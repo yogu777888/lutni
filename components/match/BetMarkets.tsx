@@ -1,7 +1,7 @@
 import { PARTNERS, partnerForApiBookmaker, type Partner } from '@/config/bookmakers'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import { pct, type BetMarket, type Rate } from '@/lib/bet-markets'
-import { formatOdd, pluralN } from '@/lib/format'
+import { formatOdd } from '@/lib/format'
 import { isValue, valueThreshold, type Candidate } from '@/lib/model'
 import type { BookOdds, Quote } from '@/lib/odds'
 import type { Match } from '@/lib/types'
@@ -30,9 +30,9 @@ const label = (key: string, m: Match) =>
   })[key] ?? key
 
 /** Строка доли: подпись, процент, тонкая полоса; выборка — в подсказке («4 из 9»). */
-function Stat({ name, r }: { name: string; r: Rate | null }) {
+function Stat({ name, tip, r }: { name: string; tip: string; r: Rate | null }) {
   return (
-    <div className="mt-2" title={r ? `${r.hit} из ${r.of}` : 'мало данных'}>
+    <div className="mt-2" title={r ? `${tip}: ${r.hit} из ${r.of}` : `${tip}: мало данных`}>
       <div className="flex items-baseline justify-between gap-3 text-[13px]">
         <span className="min-w-0 leading-snug text-dim">{name}</span>
         <span className={`num shrink-0 text-[14px] ${r ? 'font-semibold text-fg' : 'text-mute'}`}>{r ? `${pct(r)}%` : '—'}</span>
@@ -66,7 +66,7 @@ export function BetMarkets({
   /** сколько сыгранных матчей турнира в выборке «в лиге» (0 — её нет) */
   leagueN: number
   leagueName: string
-  /** «2025/2026»; нет сезона — null */
+  /** «2026/27»; нет сезона — null */
   seasonName: string | null
   /** что добавить в пояснение под последним блоком (время кэфов) */
   note?: React.ReactNode
@@ -112,12 +112,12 @@ export function BetMarkets({
   }
 
   const names = [...new Set(partners.map(({ p }) => p.name))].join(', ')
-  // подписи у полос — точно, о каких матчах доля (владелец: «не в лиге, а среднее в Ла Лиге за сезон 2025/2026»)
-  const pastName = (k: BetMarket['key']) =>
-    k === 'x12' ? `«${m.home.name}» дома и «${m.away.name}» в гостях` : `Последние матчи «${m.home.name}» и «${m.away.name}»`
-  const leagueLabel = `В среднем в турнире «${leagueName}»${seasonName ? ` за сезон ${seasonName}` : ' за сезон'}`
-  const past = (k: BetMarket['key']) =>
-    k === 'x12' ? 'до 10 последних домашних и выездных игр' : 'до 10 последних игр каждой команды, где бы ни играли'
+  // подписи у полос — коротко, чьи матчи (владелец: «точнее … и короче»); подробно, какие именно, — в подсказке
+  const teams = `«${m.home.name}» и «${m.away.name}»`
+  const leagueLabel = `«${leagueName}»${seasonName ? ` ${seasonName}` : ''}`
+  const pastTip = (k: BetMarket['key']) =>
+    k === 'x12' ? `Последние домашние матчи «${m.home.name}» и выездные «${m.away.name}»` : `Последние матчи ${teams}`
+  const leagueTip = `Сыгранные матчи турнира «${leagueName}» в сезоне${seasonName ? ` ${seasonName}` : ''}`
 
   return (
     <>
@@ -128,16 +128,12 @@ export function BetMarkets({
           title={TITLE[mk.key]}
           aside={names ? `${names} · Реклама · 18+` : undefined}
           note={
-            <>
-              Матчи команд — {past(mk.key)}.{leagueN ? ` Турнир — ${pluralN(leagueN, ['сыгранный матч', 'сыгранных матча', 'сыгранных матчей'])} сезона.` : ''}{' '}
-              Это частота в прошлом, а не прогноз.
-              {i === shown.length - 1 ? (
-                <>
-                  {' '}
-                  {note}Лаймом — кэф выше честной цены. Кэфы меняются — проверяйте у букмекера. Ставки — это риск · 18+.
-                </>
-              ) : null}
-            </>
+            i === shown.length - 1 ? (
+              <>
+                {note}Проценты — как часто так заканчивались прошлые матчи, это не прогноз. Лаймом — кэф выше честной
+                цены. Ставки — это риск · 18+.
+              </>
+            ) : undefined
           }
           className="!p-2"
         >
@@ -150,8 +146,8 @@ export function BetMarkets({
                   <li key={o.key} className="flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:flex-col">
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 text-[15px] font-semibold leading-tight">{label(o.key, m)}</p>
-                      <Stat name={pastName(mk.key)} r={o.past} />
-                      {leagueN ? <Stat name={leagueLabel} r={o.league} /> : null}
+                      <Stat name={teams} tip={pastTip(mk.key)} r={o.past} />
+                      {leagueN ? <Stat name={leagueLabel} tip={leagueTip} r={o.league} /> : null}
                     </div>
                     <div className="flex shrink-0 flex-col justify-center gap-2 @2xl:flex-row">
                       {qs.length ? qs.map(({ p, q }) => button(p, q, o.key)) : <span className="text-[13px] text-mute">Кэфов нет</span>}

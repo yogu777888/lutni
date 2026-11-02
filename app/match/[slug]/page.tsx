@@ -482,7 +482,7 @@ export default async function MatchPage({ params }: Props) {
       candidates={candidates}
       leagueN={leagueN >= LEAGUE_MIN ? leagueN : 0}
       leagueName={leagueTitle(m.league.name)}
-      seasonName={m.season ? `${m.season.year}/${m.season.year + 1}` : null}
+      seasonName={m.season ? `${m.season.year}/${String(m.season.year + 1).slice(2)}` : null}
       note={oddsAt ? `Кэфы обновлены ${updatedText(oddsAt)} мск. ` : null}
     />
   ) : null
