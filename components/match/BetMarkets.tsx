@@ -7,7 +7,7 @@ import type { BookOdds, Quote } from '@/lib/odds'
 import type { Match } from '@/lib/types'
 import { PartnerBadge } from '../PartnerBadge'
 import { StorySymbol } from '../story/StorySymbol'
-import { TeamLogo } from '../TeamLogo'
+import { CrestPlate } from '../CrestPlate'
 import { Section } from '../Section'
 
 const TITLE: Record<BetMarket['key'], string> = { x12: 'Исход матча', goals: 'Голы в матче', btts: 'Обе забьют?' }
@@ -31,15 +31,19 @@ export const label = (key: string, m: Match) =>
     bttsNo: 'Кто-то не забьёт',
   })[key] ?? key
 
-/** Значок исхода слева от названия: у победы — эмблема команды, у остальных — знак подборки той же темы, серым. */
+/** Значок исхода слева от названия — кругом 32px, отдельно от текста: у победы — эмблема команды на светлой подложке,
+ * у остальных — знак подборки той же темы на тёмном круге (владелец: «с текстом сливается»). */
 export function OutcomeIcon({ k, m }: { k: string; m: Match }) {
   if (k === 'home' || k === 'away') {
     const t = k === 'home' ? m.home : m.away
-    return <TeamLogo name={t.name} src={t.logo ?? null} size={22} />
+    return <CrestPlate name={t.name} logo={t.logo} size={32} crest={0.68} />
   }
-  const cls = 'size-[22px] shrink-0 text-dim'
   const sym = ({ draw: 'ravnye', 'over2.5': 'tb-2-5', 'under2.5': 'tm-2-5', bttsYes: 'obe-zabyut', bttsNo: 'kto-ne-zabyot' } as Record<string, string>)[k]
-  return sym ? <StorySymbol k={sym} tone="currentColor" className={cls} /> : null
+  return sym ? (
+    <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full bg-white/[0.08] text-fg/80">
+      <StorySymbol k={sym} tone="currentColor" className="size-[18px]" />
+    </span>
+  ) : null
 }
 
 /** Строка доли: подпись, процент, тонкая полоса; выборка — в подсказке («4 из 9»). */
@@ -164,7 +168,7 @@ export function BetMarkets({
                 return (
                   <li key={o.key} className="flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:flex-col">
                     <div className="min-w-0 flex-1">
-                      <p className="flex items-center gap-2 text-[15px] font-semibold leading-tight">
+                      <p className="flex items-center gap-2.5 text-[15px] font-semibold leading-tight">
                         <OutcomeIcon k={o.key} m={m} />
                         <span className="line-clamp-2 min-w-0">{label(o.key, m)}</span>
                       </p>

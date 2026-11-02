@@ -23,7 +23,7 @@ export function OutcomeNotes({ match: m, notes }: { match: Match; notes: Outcome
             ) : null}
             <Icon k="chevron-right" className="h-4 w-4 shrink-0 text-mute transition-transform group-open:rotate-90" />
           </summary>
-          <div className="pb-4 pl-[34px] text-[15px] leading-relaxed">
+          <div className="pb-4 pl-11 text-[15px] leading-relaxed">
             {n.chance != null ? (
               <p className="text-[14px] text-dim">
                 Шанс — по кэфам букмекеров без маржи, честный кэф <span className="num">{(1 / n.chance).toFixed(2)}</span>.
