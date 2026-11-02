@@ -33,9 +33,9 @@ const label = (key: string, m: Match) =>
 function Stat({ name, r }: { name: string; r: Rate | null }) {
   return (
     <div className="mt-2" title={r ? `${r.hit} из ${r.of}` : 'мало данных'}>
-      <div className="flex items-baseline justify-between gap-2 text-[13px]">
-        <span className="text-dim">{name}</span>
-        <span className={`num text-[14px] ${r ? 'font-semibold text-fg' : 'text-mute'}`}>{r ? `${pct(r)}%` : '—'}</span>
+      <div className="flex items-baseline justify-between gap-3 text-[13px]">
+        <span className="min-w-0 leading-snug text-dim">{name}</span>
+        <span className={`num shrink-0 text-[14px] ${r ? 'font-semibold text-fg' : 'text-mute'}`}>{r ? `${pct(r)}%` : '—'}</span>
       </div>
       <div className="mt-1 h-1 rounded-full bg-white/[0.09]">
         {r ? <div className="h-full rounded-full bg-white/70" style={{ width: `${pct(r)}%` }} /> : null}
@@ -56,6 +56,7 @@ export function BetMarkets({
   candidates,
   leagueN,
   leagueName,
+  seasonName,
   note,
 }: {
   match: Match
@@ -65,6 +66,8 @@ export function BetMarkets({
   /** сколько сыгранных матчей турнира в выборке «в лиге» (0 — её нет) */
   leagueN: number
   leagueName: string
+  /** «2025/2026»; нет сезона — null */
+  seasonName: string | null
   /** что добавить в пояснение под последним блоком (время кэфов) */
   note?: React.ReactNode
 }) {
@@ -109,10 +112,12 @@ export function BetMarkets({
   }
 
   const names = [...new Set(partners.map(({ p }) => p.name))].join(', ')
+  // подписи у полос — точно, о каких матчах доля (владелец: «не в лиге, а среднее в Ла Лиге за сезон 2025/2026»)
+  const pastName = (k: BetMarket['key']) =>
+    k === 'x12' ? `«${m.home.name}» дома и «${m.away.name}» в гостях` : `Последние матчи «${m.home.name}» и «${m.away.name}»`
+  const leagueLabel = `В среднем в турнире «${leagueName}»${seasonName ? ` за сезон ${seasonName}` : ' за сезон'}`
   const past = (k: BetMarket['key']) =>
-    k === 'x12'
-      ? `«${m.home.name}» дома и «${m.away.name}» в гостях, до 10 последних игр каждой`
-      : 'до 10 последних игр каждой команды, где бы ни играли'
+    k === 'x12' ? 'до 10 последних домашних и выездных игр' : 'до 10 последних игр каждой команды, где бы ни играли'
 
   return (
     <>
@@ -124,7 +129,7 @@ export function BetMarkets({
           aside={names ? `${names} · Реклама · 18+` : undefined}
           note={
             <>
-              Прошлые матчи — {past(mk.key)}.{leagueN ? ` В лиге — ${leagueN} сыгранных матчей турнира «${leagueName}» в этом сезоне.` : ''}{' '}
+              Матчи команд — {past(mk.key)}.{leagueN ? ` Турнир — ${leagueN} сыгранных матчей сезона.` : ''}{' '}
               Это частота в прошлом, а не прогноз.
               {i === shown.length - 1 ? (
                 <>
@@ -145,8 +150,8 @@ export function BetMarkets({
                   <li key={o.key} className="flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:flex-col">
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 text-[15px] font-semibold leading-tight">{label(o.key, m)}</p>
-                      <Stat name="Прошлые матчи" r={o.past} />
-                      {leagueN ? <Stat name="В лиге" r={o.league} /> : null}
+                      <Stat name={pastName(mk.key)} r={o.past} />
+                      {leagueN ? <Stat name={leagueLabel} r={o.league} /> : null}
                     </div>
                     <div className="flex shrink-0 flex-col justify-center gap-2 @2xl:flex-row">
                       {qs.length ? qs.map(({ p, q }) => button(p, q, o.key)) : <span className="text-[13px] text-mute">Кэфов нет</span>}
