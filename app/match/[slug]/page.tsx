@@ -850,7 +850,7 @@ export default async function MatchPage({ params }: Props) {
             key: 'predict',
             label: 'Ставки',
             on: Boolean(hasPredict || x || chanceMoved || scheduled || ins.preview.length),
-            content: <>{sec_predict}{sec_odds}{sec_goals}{sec_chance}{sec_preview}</>,
+            content: <>{sec_predict}{sec_odds}{sec_chance}{sec_preview}</>,
           },
           { key: 'teams', label: 'Статистика', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings || sec_points || shownTags.length), content: <>{sec_form}{sec_points}{sec_tags}{sec_h2h}{sec_inj}{sec_table}</> },
           { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
