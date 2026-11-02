@@ -832,8 +832,10 @@ export default async function MatchPage({ params }: Props) {
       ? [
           // сыгран — «чем кончилось, почему и сбылся ли расклад»; «Матч в подборках» — во вкладке «До матча»: это сведения до начала
           finished
-            ? { key: 'overview', label: 'Обзор', on: Boolean(sec_notes || sec_events || sec_best || sec_check || sec_momentum || sec_next), content: <>{sec_notes}{sec_events}{sec_best}{sec_check}{sec_momentum}{sec_next}</> }
-            : { key: 'overview', label: 'Обзор', on: Boolean(sec_notes || sec_events || sec_live || sec_momentum), content: <>{sec_notes}{sec_events}{sec_live}{sec_momentum}</> },
+            ? { key: 'overview', label: 'Матч', on: Boolean(sec_notes || sec_events || sec_best || sec_check || sec_momentum || sec_next), content: <>{sec_notes}{sec_events}{sec_best}{sec_check}{sec_momentum}{sec_next}</> }
+            : { key: 'overview', label: 'Матч', on: Boolean(sec_notes || sec_events || sec_momentum), content: <>{sec_notes}{sec_events}{sec_momentum}</> },
+          // по ходу игры тоже ставят — своя вкладка с кэфами PARI сейчас (владелец: «страница про ставки — самое важное для заработка»)
+          ...(finished ? [] : [{ key: 'bets', label: 'Ставки', on: Boolean(sec_live), content: sec_live }]),
           { key: 'stats', label: 'Статистика', on: Boolean(sec_stats), content: sec_stats },
           { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
           {
@@ -845,13 +847,15 @@ export default async function MatchPage({ params }: Props) {
           },
         ]
       : [
+          // до матча первой — «Ставки»: только то, что помогает выбрать ставку на этот матч (владелец: «1 про ставки, 2 статистика,
+          // 3 составы»); ключ прежний — старые ссылки `?tab=predict` открывают её же. «Матч в подборках» — поводы из формы и серий — в «Статистике»
           {
             key: 'predict',
-            label: 'Обзор',
-            on: Boolean(hasPredict || shownTags.length || x || chanceMoved || scheduled || ins.preview.length),
-            content: <>{sec_predict}{sec_odds}{sec_goals}{sec_chance}{sec_tags}{sec_preview}</>,
+            label: 'Ставки',
+            on: Boolean(hasPredict || x || chanceMoved || scheduled || ins.preview.length),
+            content: <>{sec_predict}{sec_odds}{sec_goals}{sec_chance}{sec_preview}</>,
           },
-          { key: 'teams', label: 'Статистика', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings || sec_points), content: <>{sec_form}{sec_points}{sec_h2h}{sec_inj}{sec_table}</> },
+          { key: 'teams', label: 'Статистика', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings || sec_points || shownTags.length), content: <>{sec_form}{sec_points}{sec_tags}{sec_h2h}{sec_inj}{sec_table}</> },
           { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
         ]
   )
