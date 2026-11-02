@@ -23,7 +23,6 @@ import { Momentum } from '@/components/match/Momentum'
 import { Hint } from '@/components/match/Hint'
 import { Tabs, type TabItem } from '@/components/match/Tabs'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
-import { PredictBlock, PredictShareButton } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
 import { MatchTags } from '@/components/match/MatchTags'
 import { LiveChances, type LiveChanceRow } from '@/components/match/LiveChances'
@@ -597,31 +596,8 @@ export default async function MatchPage({ params }: Props) {
       <OutcomeNotes match={m} notes={outNotes} />
     </Section>
   ) : null
-  const predictProps = { m, v: verdict, pick, probs: x, tags, url: `${SITE.url}${canonical}`, when: `${leagueTitle(m.league.name)} · ${dayLabel(ymdInTz(m.ts)).toLowerCase()}` }
-  const sec_predict = (
-    <>
-          {scheduled && (verdict || pick) ? (
-            // строки с командами в блоке нет — они на табло; «···» (картинка и «Поделиться») — справа в строке заголовка
-            <Section
-              outside
-              title="Шансы на матч"
-              className="!p-4"
-              note={
-                <>
-                  Математический расчёт по кэфам букмекеров, а не гарантия. Ставки — это риск · 18+.{' '}
-                  <Link href="/about" className="whitespace-nowrap text-dim underline-offset-2 hover:text-fg hover:underline">
-                    Как мы считаем →
-                  </Link>
-                </>
-              }
-              aside={<span className="-my-2 -mr-2 block"><PredictShareButton {...predictProps} /></span>}>
-              {clubVars(<PredictBlock {...predictProps} />)}
-            </Section>
-          ) : null}
-
-    </>
-  )
-
+  // «Шансы на матч» (`PredictBlock`) во вкладке «Ставки» больше нет — владелец: «убрать верхний блок шансы на матч и
+  // оставить только маленькие карточки»; вернуть — по истории git
 
   const started = !scheduled && m.status !== 'postponed' && m.status !== 'cancelled'
   // «Главное» — два-три вывода словами из статистики и давления (как «Главное за минуту» в прототипе владельца)
@@ -872,7 +848,7 @@ export default async function MatchPage({ params }: Props) {
             key: 'predict',
             label: 'Ставки',
             on: Boolean(hasPredict || x || chanceMoved || scheduled || ins.preview.length),
-            content: <>{sec_predict}{sec_odds}{sec_outcomes}{sec_chance}</>,
+            content: <>{sec_odds}{sec_outcomes}{sec_chance}</>,
           },
           { key: 'teams', label: 'Статистика', on: Boolean(ins.homeForm || ins.awayForm || ins.h2h || scheduled || ins.standings || sec_points || shownTags.length || ins.preview.length), content: <>{sec_form}{sec_points}{sec_tags}{sec_h2h}{sec_inj}{sec_table}{sec_preview}</> },
           { key: 'lineups', label: 'Составы', on: Boolean(sec_lineups), content: sec_lineups },
