@@ -6,6 +6,8 @@ import { isValue, valueThreshold, type Candidate } from '@/lib/model'
 import type { BookOdds, Quote } from '@/lib/odds'
 import type { Match } from '@/lib/types'
 import { PartnerBadge } from '../PartnerBadge'
+import { StorySymbol } from '../story/StorySymbol'
+import { TeamLogo } from '../TeamLogo'
 import { Section } from '../Section'
 
 const TITLE: Record<BetMarket['key'], string> = { x12: 'Исход матча', goals: 'Голы в матче', btts: 'Обе забьют?' }
@@ -28,6 +30,24 @@ const label = (key: string, m: Match) =>
     bttsYes: 'Обе забьют',
     bttsNo: 'Кто-то не забьёт',
   })[key] ?? key
+
+/** Значок исхода слева от названия: у победы — эмблема команды, у остальных — знак подборки той же темы, серым. */
+function OutcomeIcon({ k, m }: { k: string; m: Match }) {
+  if (k === 'home' || k === 'away') {
+    const t = k === 'home' ? m.home : m.away
+    return <TeamLogo name={t.name} src={t.logo ?? null} size={22} />
+  }
+  const cls = 'size-[22px] shrink-0 text-dim'
+  if (k === 'bttsNo')
+    // перечёркнутый ноль — «кто-то останется без гола» (тот же знак, что «Матчи без забитых» в статистике)
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden className={cls} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 4.5c3 0 4.5 3.4 4.5 7.5s-1.5 7.5-4.5 7.5S7.5 16.1 7.5 12S9 4.5 12 4.5M5 19L19 5" />
+      </svg>
+    )
+  const sym = ({ draw: 'ravnye', 'over2.5': 'tb-2-5', 'under2.5': 'tm-2-5', bttsYes: 'obe-zabyut' } as Record<string, string>)[k]
+  return sym ? <StorySymbol k={sym} tone="currentColor" className={cls} /> : null
+}
 
 /** Строка доли: подпись, процент, тонкая полоса; выборка — в подсказке («4 из 9»). */
 function Stat({ name, tip, r }: { name: string; tip: string; r: Rate | null }) {
@@ -151,7 +171,10 @@ export function BetMarkets({
                 return (
                   <li key={o.key} className="flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:flex-col">
                     <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-[15px] font-semibold leading-tight">{label(o.key, m)}</p>
+                      <p className="flex items-center gap-2 text-[15px] font-semibold leading-tight">
+                        <OutcomeIcon k={o.key} m={m} />
+                        <span className="line-clamp-2 min-w-0">{label(o.key, m)}</span>
+                      </p>
                       <Stat name="Среднее у команд" tip={pastTip(mk.key)} r={o.past} />
                       {leagueN ? <Stat name="Среднее в лиге" tip={leagueTip} r={o.league} /> : null}
                     </div>
