@@ -32,16 +32,16 @@ export const label = (key: string, m: Match) =>
     bttsNo: 'Кто-то не забьёт',
   })[key] ?? key
 
-/** Значок исхода слева от названия — кругом 32px, отдельно от текста: у победы — эмблема команды на светлой подложке,
+/** Значок исхода слева от названия — скруглённым квадратом 32px, отдельно от текста: у победы — эмблема команды на светлой подложке,
  * у остальных — знак подборки той же темы графитом на той же подложке и с той же длинной тенью (владелец: «с текстом сливается»). */
 export function OutcomeIcon({ k, m }: { k: string; m: Match }) {
   if (k === 'home' || k === 'away') {
     const t = k === 'home' ? m.home : m.away
-    return <CrestPlate name={t.name} logo={t.logo} size={32} crest={0.68} />
+    return <CrestPlate name={t.name} logo={t.logo} size={32} crest={0.68} shape="rounded-lg" />
   }
   const sym = ({ draw: 'ravnye', 'over2.5': 'tb-2-5', 'under2.5': 'tm-2-5', bttsYes: 'obe-zabyut', bttsNo: 'kto-ne-zabyot' } as Record<string, string>)[k]
   return sym ? (
-    <span aria-hidden className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full" style={{ background: PLATE }}>
+    <span aria-hidden className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-lg" style={{ background: PLATE }}>
       <ShadowSymbol k={sym} className="size-[18px]" />
     </span>
   ) : null
