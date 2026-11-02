@@ -112,7 +112,7 @@ export function BetMarkets({
         rel={SPONSORED_REL}
         title={tip}
         aria-label={`${label(key, m)}: ${formatOdd(q.value)} в ${p.name}`}
-        className="group/odd flex h-11 w-[108px] items-center gap-2 transition-transform duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 @2xl:w-auto @2xl:flex-1"
+        className="group/odd flex h-11 w-[108px] items-center gap-2 transition-transform duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
       >
         <PartnerBadge partner={p} size={36} />
         <span
@@ -172,7 +172,7 @@ export function BetMarkets({
                 return (
                   // от 42rem — три ряда подсетки (значок с названием · полосы · кэфы): в соседних плашках ряды на одной высоте,
                   // даже если название у одной в две строки
-                  <li key={o.key} className="flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:row-span-3 @2xl:grid @2xl:grid-rows-subgrid @2xl:gap-y-5">
+                  <li key={o.key} className="flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:row-span-3 @2xl:grid @2xl:grid-rows-subgrid @2xl:gap-y-4">
                     <div className="min-w-0 flex-1 @2xl:contents">
                       <div>
                         <OutcomeIcon k={o.key} m={m} big />
@@ -183,7 +183,7 @@ export function BetMarkets({
                         {leagueN ? <Stat name="Среднее в лиге" tip={leagueTip} r={o.league} /> : null}
                       </div>
                     </div>
-                    <div className="flex shrink-0 flex-col justify-center gap-2 @2xl:flex-row @2xl:items-end">
+                    <div className="flex shrink-0 flex-col justify-center gap-2 @2xl:flex-row @2xl:items-end @2xl:justify-start">
                       {qs.length ? qs.map(({ p, q }) => button(p, q, o.key)) : <span className="text-[13px] text-mute">Кэфов нет</span>}
                     </div>
                   </li>
