@@ -1,7 +1,7 @@
 import { PARTNERS, partnerForApiBookmaker, type Partner } from '@/config/bookmakers'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import { pct, type BetMarket, type Rate } from '@/lib/bet-markets'
-import { formatOdd } from '@/lib/format'
+import { formatOdd, pluralN } from '@/lib/format'
 import { isValue, valueThreshold, type Candidate } from '@/lib/model'
 import type { BookOdds, Quote } from '@/lib/odds'
 import type { Match } from '@/lib/types'
@@ -129,7 +129,7 @@ export function BetMarkets({
           aside={names ? `${names} · Реклама · 18+` : undefined}
           note={
             <>
-              Матчи команд — {past(mk.key)}.{leagueN ? ` Турнир — ${leagueN} сыгранных матчей сезона.` : ''}{' '}
+              Матчи команд — {past(mk.key)}.{leagueN ? ` Турнир — ${pluralN(leagueN, ['сыгранный матч', 'сыгранных матча', 'сыгранных матчей'])} сезона.` : ''}{' '}
               Это частота в прошлом, а не прогноз.
               {i === shown.length - 1 ? (
                 <>
