@@ -9,7 +9,7 @@ import type { DayLeague, DayLeagues } from '@/lib/day-leagues'
 import { leagueLogo } from '@/lib/league-logos'
 import { useFavMatches, useFavorites } from '../favorites'
 import { ymdInTz } from '@/lib/format'
-import { LeagueMark, PLATE } from '../LeagueMark'
+import { LeagueMark, PLATE, ShadowCrest } from '../LeagueMark'
 import { PlateMark } from '../story/GroupMark'
 import { CrestPlate } from '../CrestPlate'
 import type { StoryGroup } from '@/lib/story-groups'
@@ -30,8 +30,11 @@ const inLeagues = (n: number) => `в ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'т
 /** При наведении на строку — белая ▶ на месте значка, как у подборок справа. */
 function PlayOverlay() {
   return (
-    <span aria-hidden className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-      <Icon k="play-fill" className="ml-0.5 h-3.5 w-3.5" />
+    // лёгкая вуаль и «плей» в тёмном кружке — логотип под ними виден (владелец: «наводишь — а лого не видно»)
+    <span aria-hidden className="absolute inset-0 grid place-items-center rounded-full bg-white/25 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+      <span className="grid h-5 w-5 place-items-center rounded-full bg-ink/55 text-white">
+        <Icon k="play-fill" className="ml-px h-2.5 w-2.5" />
+      </span>
     </span>
   )
 }
@@ -49,9 +52,16 @@ function reveal(id: string): boolean {
 function LeagueFlag({ l }: { l: Pick<DayLeague, 'id' | 'flag' | 'name'> }) {
   // все круги историй — на светлой подложке `PLATE`, как эмблемы подборок справа (владелец: «давай на все истории подложку»)
   if (leagueLogo(l.id)) return <LeagueMark id={l.id} flag={l.flag} size={36} light />
+  // флаг — кругом с той же длинной тенью, что у логотипов (владелец: «если вместо логотипа лиги флаг — сделать им тень тоже»)
+  if (l.flag)
+    return (
+      <span aria-hidden className="grid h-9 w-9 shrink-0 grid-cols-1 grid-rows-1 place-items-center overflow-hidden rounded-full" style={{ background: PLATE }}>
+        <ShadowCrest src={`/flags/${l.flag}.svg`} tile="round" style={{ width: 20, height: 20 }} />
+      </span>
+    )
   return (
     <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full" style={{ background: PLATE }}>
-      <LeagueMark id={l.id} flag={l.flag} size={20} fallback={<span className="text-[12px] font-semibold text-ink/70">{l.name.charAt(0)}</span>} />
+      <span className="text-[12px] font-semibold text-ink/70">{l.name.charAt(0)}</span>
     </span>
   )
 }

@@ -25,11 +25,12 @@ export function crestBox(aspect: number) {
  * `tile` — логотип с квадратной подложкой в самом файле (Бундеслига, `TILES` в lib/league-logos.ts): квадрат на всю
  * картинку и скругление 22%, как прежде делал `border-radius`; тень — от скруглённого квадрата.
  */
-export async function bakeCrest(src: Buffer, aspect: number, tile = false): Promise<Buffer> {
+export async function bakeCrest(src: Buffer, aspect: number, tile: boolean | 'round' = false): Promise<Buffer> {
   const { w, h } = crestBox(tile ? 1 : aspect)
   let img = sharp(src, { density: 288 }).resize(w, h, tile ? { fit: 'cover' } : { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
   if (tile) {
-    const r = Math.round(w * 0.22)
+    // 'round' — флаг страны кругом (турнир без логотипа в левой панели)
+    const r = Math.round(w * (tile === 'round' ? 0.5 : 0.22))
     const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" rx="${r}" ry="${r}"/></svg>`)
     img = sharp(await img.ensureAlpha().composite([{ input: mask, blend: 'dest-in' }]).png().toBuffer())
   }

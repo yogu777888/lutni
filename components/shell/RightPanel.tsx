@@ -319,12 +319,13 @@ export function RightPanel({ picks }: { picks: DayPicks }) {
                       >
                         <GroupMark
                           g={g}
-                          className="h-[18px] w-[18px] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"
+                          className="h-[18px] w-[18px]"
                           crest="h-[22px] w-[22px]"
-                          fade="transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"
                         />
-                        <span className="absolute inset-0 grid place-items-center rounded-full bg-white text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-                          <Play className="ml-0.5 h-3.5 w-3.5" />
+                        <span className="absolute inset-0 grid place-items-center rounded-full bg-white/25 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                          <span className="grid h-5 w-5 place-items-center rounded-full bg-ink/55 text-white">
+                            <Play className="ml-px h-2.5 w-2.5" />
+                          </span>
                         </span>
                         {/* кольцо, как вокруг сторис: непросмотренные матчи подборки — приглушённым цветом подборки (как знак и заливка круга), просмотренные — серые */}
                         <StoryRing group={g.key} ids={g.items.map((it) => it.id)} seen={seen} />

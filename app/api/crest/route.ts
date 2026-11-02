@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
  */
 const DIR = process.env.CREST_DIR || path.join(process.cwd(), '.cache', 'crests')
 const REMOTE = /^https:\/\/(?:[\w-]+\.)?sstats\.net\/[\w./-]+\.(?:png|jpe?g|webp|svg)$/i
-const LOCAL = /^\/leagues\/[\w.-]+\.(?:png|webp|svg)$/i
+const LOCAL = /^\/(?:leagues|flags)\/[\w.-]+\.(?:png|webp|svg)$/i
 const busy = new Map<string, Promise<Buffer>>()
 
 async function source(u: string): Promise<Buffer> {
@@ -22,8 +22,8 @@ async function source(u: string): Promise<Buffer> {
   return Buffer.from(await r.arrayBuffer())
 }
 
-async function baked(u: string, a: number, t: boolean): Promise<Buffer> {
-  const file = path.join(DIR, `${createHash('sha1').update(`${u}|${a}${t ? '|t' : ''}`).digest('hex')}.webp`)
+async function baked(u: string, a: number, t: boolean | 'round'): Promise<Buffer> {
+  const file = path.join(DIR, `${createHash('sha1').update(`${u}|${a}${t === 'round' ? '|r' : t ? '|t' : ''}`).digest('hex')}.webp`)
   try {
     return await readFile(file)
   } catch {}
@@ -37,7 +37,8 @@ export async function GET(req: Request) {
   const q = new URL(req.url).searchParams
   const u = q.get('u') ?? ''
   // t=1 — логотип-плитка с квадратной подложкой: скруглённым квадратом, пропорция не нужна
-  const t = q.get('t') === '1'
+  // t=2 — флаг страны кругом
+  const t = q.get('t') === '2' ? 'round' : q.get('t') === '1'
   const a = t ? 1 : Math.round(Math.min(8, Math.max(0.125, Number(q.get('a')) || 1)) * 1000) / 1000
   if (!REMOTE.test(u) && !LOCAL.test(u)) return new Response('bad crest', { status: 400 })
   const key = `${u}|${a}|${t}`
