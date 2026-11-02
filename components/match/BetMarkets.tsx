@@ -9,6 +9,8 @@ import { PartnerBadge } from '../PartnerBadge'
 import { ShadowSymbol } from '../story/StorySymbol'
 import { DARK_PLATE } from '@/lib/crest-geo'
 import { CrestPlate } from '../CrestPlate'
+import { ClubVars } from './ClubVars'
+import { ymdInTz } from '@/lib/format'
 import { Section } from '../Section'
 
 const TITLE: Record<BetMarket['key'], string> = { x12: 'Исход матча', goals: 'Голы в матче', btts: 'Обе забьют?' }
@@ -165,17 +167,34 @@ export function BetMarkets({
           className="!p-2"
         >
           {/* плашка на исход: узкий блок — строкой (доли слева, кнопки справа столбиком), широкий — колонками */}
-          <div className="@container">
+          <ClubVars id={m.id} ymd={ymdInTz(m.ts)} className="@container">
             <ul className={`grid gap-2 @2xl:gap-y-0 ${mk.outcomes.length === 3 ? '@2xl:grid-cols-3' : '@2xl:grid-cols-2'}`}>
               {mk.outcomes.map((o) => {
+                const pr = prob.get(o.key)
+                // самый вероятный исход раздела — светлее рамкой и цифрой шанса: у плашек есть порядок, глаз знает, куда смотреть
+                const top = pr != null && mk.outcomes.every((x) => x.key === o.key || (prob.get(x.key) ?? 0) <= pr - 0.02) // почти поровну (50 на 50) — без выделения
+                const club = o.key === 'home' ? 'var(--club-h)' : o.key === 'away' ? 'var(--club-a)' : null
                 const qs = partners.map(({ b, p }) => ({ p, q: quoteOf(b, o.key) })).filter((x): x is { p: Partner; q: Quote } => Boolean(x.q))
                 return (
                   // от 42rem — три ряда подсетки (значок с названием · полосы · кэфы): в соседних плашках ряды на одной высоте,
                   // даже если название у одной в две строки
-                  <li key={o.key} className="flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:row-span-3 @2xl:grid @2xl:grid-rows-subgrid @2xl:gap-y-4">
+                  <li
+                    key={o.key}
+                    className={`flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:row-span-3 @2xl:grid @2xl:grid-rows-subgrid @2xl:gap-y-4 ${top ? 'ring-1 ring-inset ring-white/15' : ''}`}
+                    // у побед — свет цветом клуба из угла значка, как у обложки; ничья и голы — графит
+                    style={club ? { backgroundImage: `radial-gradient(120% 90% at 0% 0%, color-mix(in oklch, ${club} 20%, transparent), transparent 70%)` } : undefined}
+                  >
                     <div className="min-w-0 flex-1 @2xl:contents">
                       <div>
-                        <OutcomeIcon k={o.key} m={m} big />
+                        <div className="flex items-start justify-between gap-3">
+                          <OutcomeIcon k={o.key} m={m} big />
+                          {pr != null ? (
+                            <span className="text-right" title="Шанс по кэфам букмекеров без маржи">
+                              <span className={`display-num block text-[28px] leading-none ${top ? 'text-fg' : 'text-fg/55'}`}>{Math.round(pr * 100)}%</span>
+                              <span className="mt-1 block text-[12px] text-mute">шанс</span>
+                            </span>
+                          ) : null}
+                        </div>
                         <p className="mt-3 line-clamp-2 text-[16px] font-semibold leading-tight">{label(o.key, m)}</p>
                       </div>
                       <div className="mt-4 space-y-3 @2xl:mt-0">
@@ -190,7 +209,7 @@ export function BetMarkets({
                 )
               })}
             </ul>
-          </div>
+          </ClubVars>
         </Section>
       ))}
     </>
