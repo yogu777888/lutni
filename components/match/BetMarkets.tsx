@@ -65,6 +65,9 @@ function Stat({ name, tip, r }: { name: string; tip: string; r: Rate | null }) {
   )
 }
 
+/** сколько карточек исходов видно сразу */
+const SHOWN = 6
+
 /**
  * Вкладка «Ставки» — у каждого исхода своя плашка: как часто он был в прошлых матчах команд, как часто — в турнире за
  * сезон, и кэфы партнёров кнопками той же формы, что в подборках (знак букмекера и кэф в серой рамке; выгодный — лаймовой).
@@ -154,10 +157,12 @@ export function BetMarkets({
     }),
   )
   return (
-    <section>
+    // первые 6 карточек, остальные — по «Показать больше исходов», как на Polymarket (владелец: «можно после 6 сделать кнопку
+    // как на полимаркете типа показать больше исходов?»); без JS — флажок и `has()`, разметка целиком в коде страницы
+    <section className="bets">
       <ClubVars id={m.id} ymd={ymdInTz(m.ts)} className="@container">
         <ul className="grid gap-2 @2xl:grid-cols-3">
-          {items.map(({ mk, o, pr, top }) => {
+          {items.map(({ mk, o, pr, top }, idx) => {
             // свет цветом клуба — только у победы и только если она самый вероятный исход (владелец: «если например победа
             // эльче это не топ по шансу то убери градиент с карточки»)
             const club = top ? (o.key === 'home' ? 'var(--club-h)' : o.key === 'away' ? 'var(--club-a)' : null) : null
@@ -167,7 +172,7 @@ export function BetMarkets({
               // от 42rem — три ряда подсетки (шапка · полосы · кэфы): в карточках одного ряда ряды на одной высоте
               <li
                 key={o.key}
-                className={`card grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-4 !p-4 @2xl:row-span-3 @2xl:grid-cols-1 @2xl:grid-rows-subgrid ${top ? 'ring-1 ring-inset ring-white/15' : ''}`}
+                className={`${idx >= SHOWN ? 'in-[.bets:not(:has(.bets-more:checked))]:hidden ' : ''}card grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-4 !p-4 @2xl:row-span-3 @2xl:grid-cols-1 @2xl:grid-rows-subgrid ${top ? 'ring-1 ring-inset ring-white/15' : ''}`}
                 style={club ? { backgroundImage: `radial-gradient(120% 90% at 0% 0%, color-mix(in oklch, ${club} 20%, transparent), transparent 70%)` } : undefined}
               >
                 {/* значок слева от названия, шанс справа — одной строкой (владелец: «иконку перенести слева от заголовка») */}
@@ -193,6 +198,12 @@ export function BetMarkets({
           })}
         </ul>
       </ClubVars>
+      {items.length > SHOWN ? (
+        <label className="mx-auto mt-4 flex h-11 w-fit cursor-pointer items-center rounded-full border border-white/15 px-5 text-[15px] font-semibold transition-colors hover:bg-white/[0.06] has-[:checked]:hidden has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-fg">
+          <input type="checkbox" className="bets-more sr-only" />
+          Показать больше исходов
+        </label>
+      ) : null}
       <BlockNote>
         Среднее у команд — {pastTip('x12', true)} (у голов — {pastTip('goals', true)}).
         {leagueN ? ` Среднее в лиге — ${leagueN} ${plural(leagueN, ['матч', 'матча', 'матчей'])} турнира «${leagueName}» в сезоне${seasonName ? ` ${seasonName}` : ''}.` : ''}{' '}
