@@ -59,7 +59,7 @@ function Stat({ name, tip, r }: { name: string; tip: string; r: Rate | null }) {
         <span className={`num shrink-0 text-[14px] ${r ? 'font-semibold text-fg' : 'text-mute'}`}>{r ? `${pct(r)}%` : '—'}</span>
       </div>
       <div className="mt-1 h-1 rounded-full bg-white/[0.09]">
-        {r ? <div className="h-full rounded-full bg-white/70" style={{ width: `${pct(r)}%` }} /> : null}
+        {r ? <div className="h-full rounded-full bg-linear-to-r from-white/30 to-white/85" style={{ width: `${pct(r)}%` }} /> : null}
       </div>
     </div>
   )
