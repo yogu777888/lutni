@@ -22,12 +22,12 @@ async function source(u: string): Promise<Buffer> {
   return Buffer.from(await r.arrayBuffer())
 }
 
-async function baked(u: string, a: number, t: boolean | 'round'): Promise<Buffer> {
-  const file = path.join(DIR, `${createHash('sha1').update(`${u}|${a}${t === 'round' ? '|r' : t ? '|t' : ''}`).digest('hex')}.webp`)
+async function baked(u: string, a: number, t: boolean | 'round', d: boolean): Promise<Buffer> {
+  const file = path.join(DIR, `${createHash('sha1').update(`${u}|${a}${t === 'round' ? '|r' : t ? '|t' : ''}${d ? '|d' : ''}`).digest('hex')}.webp`)
   try {
     return await readFile(file)
   } catch {}
-  const out = await bakeCrest(await source(u), a, t)
+  const out = await bakeCrest(await source(u), a, t, d)
   await mkdir(DIR, { recursive: true })
   await writeFile(file, out).catch(() => {})
   return out
@@ -41,11 +41,13 @@ export async function GET(req: Request) {
   const t = q.get('t') === '2' ? 'round' : q.get('t') === '1'
   const a = t ? 1 : Math.round(Math.min(8, Math.max(0.125, Number(q.get('a')) || 1)) * 1000) / 1000
   if (!REMOTE.test(u) && !LOCAL.test(u)) return new Response('bad crest', { status: 400 })
-  const key = `${u}|${a}|${t}`
+  // d=1 — тень для тёмной подложки (значки исходов во «Ставках»)
+  const d = q.get('d') === '1'
+  const key = `${u}|${a}|${t}|${d}`
   try {
     let p = busy.get(key)
     if (!p) {
-      p = baked(u, a, t).finally(() => busy.delete(key))
+      p = baked(u, a, t, d).finally(() => busy.delete(key))
       busy.set(key, p)
     }
     const body = await p

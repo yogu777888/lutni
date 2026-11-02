@@ -39,7 +39,7 @@ export const PLATE = '#cdd2d8'
  * `#crest-shadow` в браузере больше нет — ни у эмблем, ни у логотипов-плиток. Светлый контур не делать — владелец отверг.
  */
 /** Эмблема с длинной тенью — готовой картинкой; `tile` — логотип с квадратной подложкой, скруглённым квадратом. */
-export function ShadowCrest({ src, aspect = 1, tile = false, className = '', style }: { src: string; aspect?: number; tile?: boolean | 'round'; className?: string; style?: CSSProperties }) {
+export function ShadowCrest({ src, aspect = 1, tile = false, dark = false, className = '', style }: { src: string; aspect?: number; tile?: boolean | 'round'; dark?: boolean; className?: string; style?: CSSProperties }) {
   // тень — уже в картинке (/api/crest, lib/crest-shadow.ts): эмблема в левом верхнем углу, след вправо и вниз; место — по
   // эмблеме, картинка шире и выше его и выходит за рамку, круг подложки срезает
   const k = crestScale(tile ? 1 : aspect)
@@ -47,7 +47,7 @@ export function ShadowCrest({ src, aspect = 1, tile = false, className = '', sty
     <span className={`relative block ${className}`} style={style}>
       {/* eslint-disable-next-line @next/next/no-img-element -- готовая картинка с нашего сервера */}
       <img
-        src={crestSrc(src, aspect, tile)}
+        src={crestSrc(src, aspect, tile, dark)}
         alt=""
         loading="lazy"
         decoding="async"

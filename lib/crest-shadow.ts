@@ -13,6 +13,8 @@ import { TRAIL } from './crest-geo'
 
 /** Цвет тени — тот же, что был у фильтра (`SHADOW_TONE` в components/LeagueMark.tsx). */
 const TONE = [0xbb, 0xc1, 0xc8]
+/** Тень на тёмной подложке (`DARK_SHADOW` в lib/crest-geo.ts, `&d=1`). */
+const TONE_DARK = [0x1f, 0x25, 0x2c]
 /** Большая сторона эмблемы в картинке: самая крупная на экране — ~52px (ряд кружков над историей), на ретине ×2. */
 const SIZE = 128
 
@@ -25,7 +27,8 @@ export function crestBox(aspect: number) {
  * `tile` — логотип с квадратной подложкой в самом файле (Бундеслига, `TILES` в lib/league-logos.ts): квадрат на всю
  * картинку и скругление 22%, как прежде делал `border-radius`; тень — от скруглённого квадрата.
  */
-export async function bakeCrest(src: Buffer, aspect: number, tile: boolean | 'round' = false): Promise<Buffer> {
+export async function bakeCrest(src: Buffer, aspect: number, tile: boolean | 'round' = false, dark = false): Promise<Buffer> {
+  const tone = dark ? TONE_DARK : TONE
   const { w, h } = crestBox(tile ? 1 : aspect)
   let img = sharp(src, { density: 288 }).resize(w, h, tile ? { fit: 'cover' } : { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
   if (tile) {
@@ -54,9 +57,9 @@ export async function bakeCrest(src: Buffer, aspect: number, tile: boolean | 'ro
   }
   const shadow = Buffer.alloc(W * H * 4)
   for (let i = 0; i < W * H; i++) {
-    shadow[i * 4] = TONE[0]
-    shadow[i * 4 + 1] = TONE[1]
-    shadow[i * 4 + 2] = TONE[2]
+    shadow[i * 4] = tone[0]
+    shadow[i * 4 + 1] = tone[1]
+    shadow[i * 4 + 2] = tone[2]
     shadow[i * 4 + 3] = Math.round(a[i] * 255)
   }
   return sharp(shadow, { raw: { width: W, height: H, channels: 4 } })

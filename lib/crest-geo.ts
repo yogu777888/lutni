@@ -9,5 +9,9 @@ export function crestScale(aspect: number) {
 }
 
 /** Адрес эмблемы с тенью. */
-export const crestSrc = (src: string, aspect = 1, tile: boolean | 'round' = false) =>
-  `/api/crest?u=${encodeURIComponent(src)}${tile === 'round' ? '&t=2' : tile ? '&t=1' : aspect === 1 ? '' : `&a=${Math.round(aspect * 1000) / 1000}`}`
+export const crestSrc = (src: string, aspect = 1, tile: boolean | 'round' = false, dark = false) =>
+  `/api/crest?u=${encodeURIComponent(src)}${tile === 'round' ? '&t=2' : tile ? '&t=1' : aspect === 1 ? '' : `&a=${Math.round(aspect * 1000) / 1000}`}${dark ? '&d=1' : ''}`
+
+/** Тёмная подложка значков исходов во «Ставках» и её тень — графит на тон светлее и темнее плашки исхода. */
+export const DARK_PLATE = '#2b333d'
+export const DARK_SHADOW = '#1f252c'

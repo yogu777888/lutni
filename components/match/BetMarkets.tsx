@@ -7,7 +7,7 @@ import type { BookOdds, Quote } from '@/lib/odds'
 import type { Match } from '@/lib/types'
 import { PartnerBadge } from '../PartnerBadge'
 import { ShadowSymbol } from '../story/StorySymbol'
-import { PLATE } from '../LeagueMark'
+import { DARK_PLATE } from '@/lib/crest-geo'
 import { CrestPlate } from '../CrestPlate'
 import { Section } from '../Section'
 
@@ -32,20 +32,20 @@ export const label = (key: string, m: Match) =>
     bttsNo: 'Кто-то не забьёт',
   })[key] ?? key
 
-/** Значок исхода — скруглённым квадратом, как иконка приложения в iOS: у победы — эмблема команды на светлой подложке,
- * у остальных — знак подборки той же темы графитом на той же подложке и с той же длинной тенью (владелец: «с текстом сливается»).
+/** Значок исхода — скруглённым квадратом, как иконка приложения в iOS: у победы — эмблема команды, у остальных —
+ * знак подборки той же темы белым; подложка — графит на тон светлее плашки, длинная тень — темнее её (владелец: светлая «не сочетается с карточкой»; до того — «с текстом сливается»).
  * В плашке «Ставок» — 44px над названием (`big`), в строках «Разбора исходов» — 32px слева. */
 export function OutcomeIcon({ k, m, big = false }: { k: string; m: Match; big?: boolean }) {
   const size = big ? 44 : 32
   const shape = big ? 'rounded-ctl' : 'rounded-lg'
   if (k === 'home' || k === 'away') {
     const t = k === 'home' ? m.home : m.away
-    return <CrestPlate name={t.name} logo={t.logo} size={size} crest={0.66} shape={shape} />
+    return <CrestPlate name={t.name} logo={t.logo} size={size} crest={0.66} shape={shape} dark />
   }
   const sym = ({ draw: 'ravnye', 'over2.5': 'tb-2-5', 'under2.5': 'tm-2-5', bttsYes: 'obe-zabyut', bttsNo: 'kto-ne-zabyot' } as Record<string, string>)[k]
   return sym ? (
-    <span aria-hidden className={`grid shrink-0 place-items-center overflow-hidden ${shape}`} style={{ width: size, height: size, background: PLATE }}>
-      <ShadowSymbol k={sym} className={big ? 'size-6' : 'size-[18px]'} />
+    <span aria-hidden className={`grid shrink-0 place-items-center overflow-hidden ${shape}`} style={{ width: size, height: size, background: DARK_PLATE }}>
+      <ShadowSymbol k={sym} dark className={big ? 'size-6' : 'size-[18px]'} />
     </span>
   ) : null
 }
