@@ -6,7 +6,8 @@ import { isValue, valueThreshold, type Candidate } from '@/lib/model'
 import type { BookOdds, Quote } from '@/lib/odds'
 import type { Match } from '@/lib/types'
 import { PartnerBadge } from '../PartnerBadge'
-import { StorySymbol } from '../story/StorySymbol'
+import { ShadowSymbol } from '../story/StorySymbol'
+import { PLATE } from '../LeagueMark'
 import { CrestPlate } from '../CrestPlate'
 import { Section } from '../Section'
 
@@ -32,7 +33,7 @@ export const label = (key: string, m: Match) =>
   })[key] ?? key
 
 /** Значок исхода слева от названия — кругом 32px, отдельно от текста: у победы — эмблема команды на светлой подложке,
- * у остальных — знак подборки той же темы на тёмном круге (владелец: «с текстом сливается»). */
+ * у остальных — знак подборки той же темы графитом на той же подложке и с той же длинной тенью (владелец: «с текстом сливается»). */
 export function OutcomeIcon({ k, m }: { k: string; m: Match }) {
   if (k === 'home' || k === 'away') {
     const t = k === 'home' ? m.home : m.away
@@ -40,8 +41,8 @@ export function OutcomeIcon({ k, m }: { k: string; m: Match }) {
   }
   const sym = ({ draw: 'ravnye', 'over2.5': 'tb-2-5', 'under2.5': 'tm-2-5', bttsYes: 'obe-zabyut', bttsNo: 'kto-ne-zabyot' } as Record<string, string>)[k]
   return sym ? (
-    <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full bg-white/[0.08] text-fg/80">
-      <StorySymbol k={sym} tone="currentColor" className="size-[18px]" />
+    <span aria-hidden className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full" style={{ background: PLATE }}>
+      <ShadowSymbol k={sym} className="size-[18px]" />
     </span>
   ) : null
 }

@@ -200,3 +200,24 @@ export function StorySymbol({ k, className = '', tone }: { k: string; className?
     </svg>
   )
 }
+
+/**
+ * Знак на светлой подложке с длинной тенью вниз вправо до края круга — как у эмблем команд (`/api/crest`, цвет `#bbc1c8`):
+ * копии знака со сдвигом по диагонали шагом 0,5 единицы, сверху — сам знак графитом. Обрезает круг обёртки.
+ */
+export function ShadowSymbol({ k, className = '' }: { k: string; className?: string }) {
+  const s = SYMBOLS[k] ?? FALLBACK
+  const steps = Array.from({ length: 48 }, (_, i) => (i + 1) * 0.5)
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={className} overflow="visible">
+      <g style={{ color: '#bbc1c8' }}>
+        {steps.map((d) => (
+          <g key={d} transform={`translate(${d} ${d})`}>
+            {s.draw}
+          </g>
+        ))}
+      </g>
+      <g style={{ color: 'var(--color-ink)' }}>{s.draw}</g>
+    </svg>
+  )
+}
