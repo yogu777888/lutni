@@ -23,7 +23,6 @@ import { Momentum } from '@/components/match/Momentum'
 import { Hint } from '@/components/match/Hint'
 import { Tabs, type TabItem } from '@/components/match/Tabs'
 import { MatchHero, type BoardCell } from '@/components/match/MatchHero'
-import { hasMoves, OddsTable } from '@/components/match/OddsTable'
 import { PredictBlock, PredictShareButton } from '@/components/match/PredictHero'
 import { MatchRow } from '@/components/MatchRow'
 import { MatchTags } from '@/components/match/MatchTags'
@@ -42,6 +41,8 @@ import { ChanceChart, type ChanceSeries } from '@/components/match/ChanceChart'
 import { LiveRefresh } from '@/components/Live'
 import { leagueTitle } from '@/lib/flags'
 import { matchNotes } from '@/lib/match-notes'
+import { betMarkets, LEAGUE_MIN, playedBefore } from '@/lib/bet-markets'
+import { BetMarkets } from '@/components/match/BetMarkets'
 import { bestPlayer, forecastCheck, lastName, nextOf, playerDeeds, resultNote } from '@/lib/match-result'
 import { appNow, dayLabel, formatDateShort, formatTime, idFromSlug, pct, updatedText, ymdInTz } from '@/lib/format'
 import { valueThreshold } from '@/lib/model'
@@ -164,7 +165,8 @@ export default async function MatchPage({ params }: Props) {
     // идёт матч — на табло кэфы PARI по ходу матча (доматчевые там уже история, поставить по ним нельзя)
     isLive ? Promise.race([getLiveOdds(m).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1500))]) : null,
     // сыгран — следующий матч каждой команды в турнире (список сезона; ждём не дольше 1,2 с, дальше — из кэша в следующий раз)
-    finished && m.season
+    // до начала — ещё и для «в лиге» во вкладке «Ставки»
+    (finished || m.status === 'scheduled') && m.season
       ? Promise.race([getSeasonGames(m.league.id, m.season.year).catch(() => [] as Match[]), new Promise<Match[]>((r) => setTimeout(() => r([]), 1200))])
       : ([] as Match[]),
   ])
@@ -468,27 +470,21 @@ export default async function MatchPage({ params }: Props) {
 
     </>
   )
-  const sec_odds = (
-    <>
-          {/* только до начала (владелец: «а коэффициенты букмекеров как?»): после — по доматчевым кэфам не поставить, а кэфы
-              «сейчас» — на табло */}
-          {scheduled ? (
-            <Section outside
-              title="Коэффициенты букмекеров"
-              note={
-                <>
-                  {oddsAt ? `Кэфы обновлены ${updatedText(oddsAt)} мск. ` : ''}
-                  {hasMoves(legalBooks, m) ? '▼▲ — изменение с открытия линии. ' : ''}
-                  <OddsTable part="note" match={m} books={legalBooks} model={model} candidates={candidates} />
-                </>
-              }
-            >
-              <OddsTable part="table" match={m} books={legalBooks} model={model} candidates={candidates} />
-            </Section>
-          ) : null}
-
-    </>
-  )
+  // вместо таблицы «Коэффициенты букмекеров» — плашка на каждый исход: прошлые матчи, турнир за сезон и кэфы кнопками
+  // (владелец: «для каждого исхода свой блок … сколько ожидается на основании прошлых матчей, сколько в среднем по матчам
+  // в этой лиге и кнопку с коеффициентом»); только до начала — после по доматчевым кэфам не поставить
+  const leagueN = playedBefore(m, season).length
+  const sec_odds = scheduled ? (
+    <BetMarkets
+      match={m}
+      markets={betMarkets(m, ins.homeForm, ins.awayForm, season)}
+      books={legalBooks}
+      candidates={candidates}
+      leagueN={leagueN >= LEAGUE_MIN ? leagueN : 0}
+      leagueName={leagueTitle(m.league.name)}
+      note={oddsAt ? `Кэфы обновлены ${updatedText(oddsAt)} мск. ` : null}
+    />
+  ) : null
   // цвета клубов (`--club-h/-a`) — полосам «Формы» и «Статистики», линиям «Давления», номерам в «Составах»
   const clubVars = (node: React.ReactNode) => <ClubVars id={m.id} ymd={ymdInTz(m.ts)}>{node}</ClubVars>
   const side = (t: typeof m.home) => ({ id: t.id, name: t.name, logo: t.logo })
