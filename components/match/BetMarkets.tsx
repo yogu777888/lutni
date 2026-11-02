@@ -1,7 +1,7 @@
 import { PARTNERS, partnerForApiBookmaker, type Partner } from '@/config/bookmakers'
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import { pct, type BetMarket, type Rate } from '@/lib/bet-markets'
-import { formatOdd } from '@/lib/format'
+import { formatOdd, plural } from '@/lib/format'
 import { isValue, valueThreshold, type Candidate } from '@/lib/model'
 import type { BookOdds, Quote } from '@/lib/odds'
 import type { Match } from '@/lib/types'
@@ -114,9 +114,11 @@ export function BetMarkets({
   const names = [...new Set(partners.map(({ p }) => p.name))].join(', ')
   // подписи у полос — коротко, чьи матчи (владелец: «точнее … и короче»); подробно, какие именно, — в подсказке
   const teams = `«${m.home.name}» и «${m.away.name}»`
-  const leagueLabel = `«${leagueName}»${seasonName ? ` ${seasonName}` : ''}`
-  const pastTip = (k: BetMarket['key']) =>
-    k === 'x12' ? `Последние домашние матчи «${m.home.name}» и выездные «${m.away.name}»` : `Последние матчи ${teams}`
+  const pastTip = (k: BetMarket['key'], low = false) =>
+    (k === 'x12'
+      ? `До 10 последних домашних матчей «${m.home.name}» и выездных «${m.away.name}»`
+      : `До 10 последних матчей ${teams}`
+    ).replace(/^Д/, low ? 'д' : 'Д')
   const leagueTip = `Сыгранные матчи турнира «${leagueName}» в сезоне${seasonName ? ` ${seasonName}` : ''}`
 
   return (
@@ -128,12 +130,16 @@ export function BetMarkets({
           title={TITLE[mk.key]}
           aside={names ? `${names} · Реклама · 18+` : undefined}
           note={
-            i === shown.length - 1 ? (
-              <>
-                {note}Проценты — как часто так заканчивались прошлые матчи, это не прогноз. Лаймом — кэф выше честной
-                цены. Ставки — это риск · 18+.
-              </>
-            ) : undefined
+            <>
+              Среднее у команд — {pastTip(mk.key, true)}.
+              {leagueN ? ` Среднее в лиге — ${leagueN} ${plural(leagueN, ['матч', 'матча', 'матчей'])} турнира «${leagueName}» в сезоне${seasonName ? ` ${seasonName}` : ''}.` : ''}
+              {i === shown.length - 1 ? (
+                <>
+                  {' '}
+                  {note}Это прошлые матчи, а не прогноз. Лаймом — кэф выше честной цены. Ставки — это риск · 18+.
+                </>
+              ) : null}
+            </>
           }
           className="!p-2"
         >
@@ -146,8 +152,8 @@ export function BetMarkets({
                   <li key={o.key} className="flex gap-4 rounded-tile bg-white/[0.04] p-4 @2xl:flex-col">
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 text-[15px] font-semibold leading-tight">{label(o.key, m)}</p>
-                      <Stat name={teams} tip={pastTip(mk.key)} r={o.past} />
-                      {leagueN ? <Stat name={leagueLabel} tip={leagueTip} r={o.league} /> : null}
+                      <Stat name="Среднее у команд" tip={pastTip(mk.key)} r={o.past} />
+                      {leagueN ? <Stat name="Среднее в лиге" tip={leagueTip} r={o.league} /> : null}
                     </div>
                     <div className="flex shrink-0 flex-col justify-center gap-2 @2xl:flex-row">
                       {qs.length ? qs.map(({ p, q }) => button(p, q, o.key)) : <span className="text-[13px] text-mute">Кэфов нет</span>}
