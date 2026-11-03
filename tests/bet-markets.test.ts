@@ -21,5 +21,8 @@ describe('betMarkets', () => {
     expect(goals.outcomes[0].past).toEqual({ hit: 2, of: 6 })
     const season = Array.from({ length: 20 }, (_, i) => game(5, 6, i % 2, 0))
     expect(betMarkets(m, null, null, season)[0].outcomes[0].league).toEqual({ hit: 10, of: 20 })
+    // двойной шанс: «хозяева или ничья» — хозяева дома не проиграли (3) и гости в гостях не выиграли (2)
+    const dc = betMarkets(m, buildForm(1, past), buildForm(2, past), past).find((x) => x.key === 'dc')!
+    expect(dc.outcomes.map((o) => o.past)).toEqual([{ hit: 5, of: 6 }, { hit: 3, of: 6 }, { hit: 4, of: 6 }])
   })
 })

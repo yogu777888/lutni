@@ -2,7 +2,7 @@ import { PARTNERS, partnerForApiBookmaker, type Partner } from '@/config/bookmak
 import { goHref, SPONSORED_REL } from '@/lib/affiliate'
 import { pct, type BetMarket, type Rate } from '@/lib/bet-markets'
 import { formatOdd, plural } from '@/lib/format'
-import { isValue, valueThreshold, type Candidate } from '@/lib/model'
+import { isValue, quoteOf, valueThreshold, type Candidate } from '@/lib/model'
 import type { BookOdds, Quote } from '@/lib/odds'
 import type { Match } from '@/lib/types'
 import { PartnerBadge } from '../PartnerBadge'
@@ -13,19 +13,18 @@ import { ClubVars } from './ClubVars'
 import { ymdInTz } from '@/lib/format'
 import { BlockNote } from '../Section'
 
-const quoteOf = (b: BookOdds, key: string): Quote | undefined => {
-  if (key === 'home' || key === 'draw' || key === 'away') return b.x12?.[key]
-  if (key === 'over2.5') return b.totals.find((t) => t.line === 2.5)?.over
-  if (key === 'under2.5') return b.totals.find((t) => t.line === 2.5)?.under
-  if (key === 'bttsYes') return b.btts?.yes
-  if (key === 'bttsNo') return b.btts?.no
-}
-
 export const label = (key: string, m: Match) =>
   ({
     home: `Победа «${m.home.name}»`,
     draw: 'Ничья',
     away: `Победа «${m.away.name}»`,
+    hd: `«${m.home.name}» или ничья`,
+    da: `«${m.away.name}» или ничья`,
+    ha: 'Кто-то победит',
+    'over1.5': '2 гола и больше',
+    'under1.5': 'Не больше 1 гола',
+    'over3.5': '4 гола и больше',
+    'under3.5': 'Не больше 3 голов',
     'over2.5': '3 гола и больше',
     'under2.5': 'Не больше 2 голов',
     bttsYes: 'Обе забьют',
@@ -38,11 +37,22 @@ export const label = (key: string, m: Match) =>
 export function OutcomeIcon({ k, m, big = false }: { k: string; m: Match; big?: boolean }) {
   const size = big ? 40 : 32
   const shape = big ? 'rounded-ctl' : 'rounded-lg'
-  if (k === 'home' || k === 'away') {
-    const t = k === 'home' ? m.home : m.away
+  // двойной шанс с ничьей — эмблема той команды, что в названии
+  if (k === 'home' || k === 'away' || k === 'hd' || k === 'da') {
+    const t = k === 'home' || k === 'hd' ? m.home : m.away
     return <CrestPlate name={t.name} logo={t.logo} size={size} crest={0.66} shape={shape} dark />
   }
-  const sym = ({ draw: 'ravnye', 'over2.5': 'tb-2-5', 'under2.5': 'tm-2-5', bttsYes: 'obe-zabyut', bttsNo: 'kto-ne-zabyot' } as Record<string, string>)[k]
+  // тоталы 1,5 и 3,5 — числом, как знаки «3+» / «≤2» у 2,5
+  const t = /^(over|under)(1\.5|3\.5)$/.exec(k)
+  if (t) {
+    const n = Number(t[2])
+    return (
+      <span aria-hidden className={`grid shrink-0 place-items-center ${shape}`} style={{ width: size, height: size, background: DARK_PLATE }}>
+        <span className={`display-num leading-none text-fg ${big ? 'text-[20px]' : 'text-[16px]'}`}>{t[1] === 'over' ? `${n + 0.5}+` : `≤${n - 0.5}`}</span>
+      </span>
+    )
+  }
+  const sym = ({ draw: 'ravnye', ha: 'h2h', 'over2.5': 'tb-2-5', 'under2.5': 'tm-2-5', bttsYes: 'obe-zabyut', bttsNo: 'kto-ne-zabyot' } as Record<string, string>)[k]
   return sym ? (
     <span aria-hidden className={`grid shrink-0 place-items-center overflow-hidden ${shape}`} style={{ width: size, height: size, background: DARK_PLATE }}>
       <ShadowSymbol k={sym} dark className={big ? 'size-6' : 'size-[18px]'} />
@@ -139,7 +149,7 @@ export function BetMarkets({
   // подписи у полос — коротко, чьи матчи (владелец: «точнее … и короче»); подробно, какие именно, — в подсказке
   const teams = `«${m.home.name}» и «${m.away.name}»`
   const pastTip = (k: BetMarket['key'], low = false) =>
-    (k === 'x12'
+    (k === 'x12' || k === 'dc'
       ? `До 10 последних домашних матчей «${m.home.name}» и выездных «${m.away.name}»`
       : `До 10 последних матчей ${teams}`
     ).replace(/^Д/, low ? 'д' : 'Д')
