@@ -166,13 +166,33 @@ export function BetMarkets({
       return { mk, o, pr, top }
     }),
   )
-    // по шансу, самый вероятный — первым (владелец: «чтоб всегда у кого выше вероятность тот выше был»); без шанса — в конце,
-    // в прежнем порядке (sort устойчивый)
-    .sort((a, b) => (b.pr ?? -1) - (a.pr ?? -1))
+  // два порядка — переключателем над сеткой (владелец: «сделай тогда по популярности и по шансам сортировку?»): «По
+  // популярности» — порядок рынков в `betMarkets` (исход, «3 гола», «обе забьют», двойной шанс, тоталы 1,5 / 3,5 — на что
+  // обычно ставят; своих данных о ставках у нас нет), «По шансам» — самый вероятный первым, без шанса — в конце. Без JS:
+  // карточки переставляет CSS `order`, а «Показать больше» прячет седьмую и дальше в выбранном порядке
+  const byChance = items.map((_, i) => i).sort((a, b) => (items[b].pr ?? -1) - (items[a].pr ?? -1) || a - b)
+  const chanceIdx = new Map(byChance.map((i, rank) => [i, rank]))
   return (
     // первые 6 карточек, остальные — по «Показать больше исходов», как на Polymarket (владелец: «можно после 6 сделать кнопку
     // как на полимаркете типа показать больше исходов?»); без JS — флажок и `has()`, разметка целиком в коде страницы
     <section className="bets">
+      {/* скругление пунктов вложено в скругление капсулы: 10 = 6 + 4 */}
+      <div role="radiogroup" aria-label="Порядок исходов" className="mb-3 flex w-fit rounded-ctl bg-white/[0.06] p-1 text-[14px] font-semibold">
+        {(
+          [
+            ['По популярности', false],
+            ['По шансам', true],
+          ] as const
+        ).map(([name, chance]) => (
+          <label
+            key={name}
+            className="flex h-8 cursor-pointer items-center rounded-md px-3 text-dim transition-colors hover:text-fg has-[:checked]:bg-fg has-[:checked]:text-ink has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-fg"
+          >
+            <input type="radio" name={`bets-sort-${m.id}`} defaultChecked={!chance} className={`${chance ? 'bets-by-chance ' : ''}sr-only`} />
+            {name}
+          </label>
+        ))}
+      </div>
       <ClubVars id={m.id} ymd={ymdInTz(m.ts)} className="@container">
         <ul className="grid gap-2 @2xl:grid-cols-3">
           {items.map(({ mk, o, pr, top }, idx) => {
@@ -185,8 +205,8 @@ export function BetMarkets({
               // от 42rem — три ряда подсетки (шапка · полосы · кэфы): в карточках одного ряда ряды на одной высоте
               <li
                 key={o.key}
-                className={`${idx >= SHOWN ? 'in-[.bets:not(:has(.bets-more:checked))]:hidden ' : ''}card grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-4 !p-4 @2xl:row-span-3 @2xl:grid-cols-1 @2xl:grid-rows-subgrid ${top ? 'ring-1 ring-inset ring-white/15' : ''}`}
-                style={club ? { backgroundImage: `radial-gradient(120% 90% at 0% 0%, color-mix(in oklch, ${club} 20%, transparent), transparent 70%)` } : undefined}
+                style={{ '--op': idx, '--oc': chanceIdx.get(idx), ...(club ? { backgroundImage: `radial-gradient(120% 90% at 0% 0%, color-mix(in oklch, ${club} 20%, transparent), transparent 70%)` } : {}) } as React.CSSProperties}
+                className={`${idx >= SHOWN ? 'in-[.bets:not(:has(.bets-by-chance:checked)):not(:has(.bets-more:checked))]:hidden ' : ''}${(chanceIdx.get(idx) ?? 0) >= SHOWN ? 'in-[.bets:has(.bets-by-chance:checked):not(:has(.bets-more:checked))]:hidden ' : ''}order-(--op) in-[.bets:has(.bets-by-chance:checked)]:order-(--oc) card grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-4 !p-4 @2xl:row-span-3 @2xl:grid-cols-1 @2xl:grid-rows-subgrid ${top ? 'ring-1 ring-inset ring-white/15' : ''}`}
               >
                 {/* значок слева от названия, шанс справа — одной строкой (владелец: «иконку перенести слева от заголовка») */}
                 <div className="col-span-2 flex items-center gap-3 @2xl:col-span-1">
