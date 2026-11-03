@@ -125,22 +125,16 @@ export function BetMarkets({
         rel={SPONSORED_REL}
         title={tip}
         aria-label={`${label(key, m)}: ${formatOdd(q.value)} в ${p.name}`}
-        className="group/odd flex h-11 w-[108px] items-center gap-2 transition-transform duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
+        // одна плоская капсула: знак 20px и кэф (владелец: «карточка исхода внизу тяжелая изза кнопок бк» — знак 36px
+        // и рамка 4px вокруг кэфа были ярче названия и шанса); лайм — только у выгодного
+        className={`num flex h-9 w-[92px] items-center gap-2 rounded-ctl px-2 text-[15px] font-bold transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 ${
+          val
+            ? 'bg-acid/15 text-acid ring-1 ring-inset ring-acid/60 hover:bg-acid hover:text-ink focus-visible:bg-acid focus-visible:text-ink'
+            : 'bg-white/[0.06] text-fg hover:bg-white/[0.14] focus-visible:bg-white/[0.14]'
+        }`}
       >
-        <PartnerBadge partner={p} size={36} />
-        <span
-          className={`flex h-full flex-1 rounded-tile p-1 transition-colors duration-150 ${
-            val ? 'bg-acid' : 'bg-white/10 group-hover/odd:bg-fg group-focus-visible/odd:bg-fg'
-          }`}
-        >
-          <span
-            className={`num grid flex-1 place-items-center rounded-lg bg-panel text-[17px] font-bold text-fg transition-colors duration-150 group-hover/odd:text-ink group-focus-visible/odd:text-ink ${
-              val ? 'group-hover/odd:bg-acid group-focus-visible/odd:bg-acid' : 'group-hover/odd:bg-fg group-focus-visible/odd:bg-fg'
-            }`}
-          >
-            {formatOdd(q.value)}
-          </span>
-        </span>
+        <PartnerBadge partner={p} size={20} />
+        <span className="flex-1 text-center">{formatOdd(q.value)}</span>
       </a>
     )
   }
